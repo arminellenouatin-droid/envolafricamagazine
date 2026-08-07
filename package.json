@@ -4,14 +4,21 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate || echo 'prisma generate skipped' && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "supabase:migrate": "node scripts/migrate-to-supabase.js"
   },
   "dependencies": {
+    "@prisma/client": "^7.9.1",
+    "@supabase/supabase-js": "^2.112.2",
     "bcryptjs": "^3.0.3",
     "jsonwebtoken": "^9.0.3",
     "next": "16.3.0",
+    "pg": "^8.22.0",
+    "prisma": "^7.9.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "uuid": "^14.0.1"
