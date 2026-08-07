@@ -9,12 +9,6 @@ import { verifyToken } from "@/lib/auth";
 export const metadata: Metadata = {
   title: "Envol Africa Magazine | Le magazine économique panafricain de référence",
   description: "Envol Africa Magazine est le futur site de presse économique consacré à l'Afrique. Analyses, enquêtes exclusives, Kiosque, abonnements, financement, emploi. Afrique qui gagne.",
-  keywords: ["Afrique", "economie", "finance", "magazine", "Envol Africa", "panafricain", "entreprise", "startup"],
-  openGraph: {
-    title: "Envol Africa Magazine",
-    description: "Le magazine économique panafricain haut de gamme",
-    type: "website",
-  },
 };
 
 async function getUserFromCookie() {
@@ -36,24 +30,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="fr" className="h-full antialiased">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
         <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@400;600;700&display=swap');
           :root {
-            --font-geist-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-geist-sans: 'Inter', system-ui, sans-serif;
             --font-playfair: 'Playfair Display', Georgia, serif;
           }
         `}</style>
       </head>
-      <body className="min-h-full flex flex-col bg-[#FFFCF5]" style={{ fontFamily: "Inter, system-ui, -apple-system, sans-serif" }}>
+      <body className="min-h-full flex flex-col bg-[#FFFCF5]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
         <Header user={user ? { id: user.id, nom: user.nom, prenom: user.prenom, email: user.email, role: user.role } : undefined} />
-        <main className="flex-1">
-          {children}
-        </main>
+        <main className="flex-1">{children}</main>
         <Footer />
-        {/* Affiliate tracker */}
         <script dangerouslySetInnerHTML={{__html: `
           (function(){
             try {
