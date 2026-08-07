@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const topLinks = [
   { name: "S'abonner", href: "/abonnement", highlight: true },
@@ -29,13 +29,35 @@ export default function Header({ user }: { user?: any }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const [cartCount, setCartCount] = useState(0);
   const [currentLang, setCurrentLang] = useState("fr");
   const [currentDevise, setCurrentDevise] = useState("XOF");
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", onScroll);
+    // auto detection lang/devise
+    const savedLang = localStorage.getItem("eam_lang");
+    const savedDevise = localStorage.getItem("eam_devise");
+    if (savedLang) setCurrentLang(savedLang);
+    else {
+      const browserLang = navigator.language.slice(0,2);
+      if (["fr","en","es"].includes(browserLang)) {
+        setCurrentLang(browserLang);
+        localStorage.setItem("eam_lang", browserLang);
+      }
+    }
+    if (savedDevise) setCurrentDevise(savedDevise);
+    else {
+      // simple IP-based guess: if browser lang en => USD, else XOF
+      const lang = navigator.language;
+      if (lang.includes("US")) { setCurrentDevise("USD"); localStorage.setItem("eam_devise","USD"); }
+      else if (lang.includes("FR") && !lang.includes("BJ") && !lang.includes("CI")) { setCurrentDevise("EUR"); localStorage.setItem("eam_devise","EUR"); }
+    }
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
@@ -58,6 +80,25 @@ export default function Header({ user }: { user?: any }) {
     };
   }, []);
 
+  const handleLangChange = (code:string) => {
+    setCurrentLang(code);
+    localStorage.setItem("eam_lang", code);
+    window.dispatchEvent(new Event("storage"));
+  };
+  const handleDeviseChange = (code:string) => {
+    setCurrentDevise(code);
+    localStorage.setItem("eam_devise", code);
+    window.dispatchEvent(new Event("storage"));
+  };
+
+  const doSearch = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!searchQuery.trim()) { setSearchResults(null); return; }
+    const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
+    const data = await res.json();
+    setSearchResults(data);
+  };
+
   return (
     <>
       {/* Ticker */}
@@ -69,45 +110,33 @@ export default function Header({ user }: { user?: any }) {
             <span>• Nigeria : Lagos attire les licornes de la Tech avec 2,5Md$ levés en 2025</span>
             <span>• BCEAO maintient son taux directeur à 3,5% malgré l'inflation</span>
             <span>• Cacao ivoirien : la barre des 50% de transformation locale en vue</span>
-            <span>• Fintech : Wave dépasse les 20M d'utilisateurs en Afrique de l'Ouest</span>
-            <span>• Entretien exclusif avec le PDG de la BAD ce weekend</span>
-          </span>
-          <span className="flex items-center gap-8">
-            <span className="bg-[#D4AF37] text-[#0A1931] px-2 py-0.5 rounded font-bold text-[10px] uppercase tracking-wider">À LA UNE</span>
-            <span>• Zone de libre-échange continentale : un marché de 1,3 milliard de consommateurs</span>
-            <span>• Nigeria : Lagos attire les licornes de la Tech avec 2,5Md$ levés en 2025</span>
-            <span>• Cacao ivoirien : la barre des 50% de transformation locale en vue</span>
+            <span>• Fintech : Wave dépasse les 20M d'utilisateurs</span>
           </span>
         </div>
       </div>
 
-      {/* Top bar */}
       <header className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? "bg-white/95 backdrop-blur-xl shadow-[0_2px_20px_rgba(0,0,0,0.06)] border-b border-zinc-100" : "bg-white border-b border-zinc-100"}`}>
-        {/* Upper header */}
         <div className="border-b border-zinc-100 bg-[#FFFCF5]/50 hidden lg:block">
           <div className="max-w-[1440px] mx-auto px-6 xl:px-8 flex items-center justify-between h-10 text-[12px]">
             <div className="flex items-center gap-6">
-              <span className="text-zinc-500 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-                Édition du {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-              </span>
+              <span className="text-zinc-500 flex items-center gap-2"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>Édition du {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
               <span className="h-3 w-px bg-zinc-200"></span>
-              <Link href="/don" className="text-zinc-600 hover:text-[#0A1931] transition-colors flex items-center gap-1.5">
-                <span>❤️</span> Faire un don
-              </Link>
+              <Link href="/don" className="text-zinc-600 hover:text-[#0A1931] transition-colors flex items-center gap-1.5"><span>❤️</span> Faire un don</Link>
               <Link href="/affiliation" className="text-zinc-600 hover:text-[#0A1931] transition-colors">Parrainage</Link>
+              <Link href="/service" className="text-zinc-600 hover:text-[#0A1931] transition-colors">Demande de service</Link>
             </div>
             <div className="flex items-center gap-5">
+              <button onClick={()=>setShowSearch(!showSearch)} className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center">🔍</button>
               <div className="flex items-center gap-1 bg-zinc-100 rounded-full p-1">
                 {langs.map(l => (
-                  <button key={l.code} onClick={() => setCurrentLang(l.code)} className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${currentLang===l.code ? "bg-[#0A1931] text-white shadow" : "text-zinc-600 hover:text-[#0A1931]"}`}>
+                  <button key={l.code} onClick={() => handleLangChange(l.code)} className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${currentLang===l.code ? "bg-[#0A1931] text-white shadow" : "text-zinc-600 hover:text-[#0A1931]"}`}>
                     {l.label}
                   </button>
                 ))}
               </div>
               <div className="flex items-center gap-1 bg-zinc-100 rounded-full p-1">
                 {devises.map(d => (
-                  <button key={d.code} onClick={() => setCurrentDevise(d.code)} className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${currentDevise===d.code ? "bg-[#D4AF37] text-[#0A1931] shadow" : "text-zinc-600 hover:text-[#0A1931]"}`}>
+                  <button key={d.code} onClick={() => handleDeviseChange(d.code)} className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${currentDevise===d.code ? "bg-[#D4AF37] text-[#0A1931] shadow" : "text-zinc-600 hover:text-[#0A1931]"}`}>
                     {d.code}
                   </button>
                 ))}
@@ -116,78 +145,86 @@ export default function Header({ user }: { user?: any }) {
           </div>
         </div>
 
-        {/* Main header */}
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-8">
           <div className="flex items-center justify-between h-[68px] md:h-[80px]">
-            {/* Logo - REAL */}
             <Link href="/" className="flex items-center gap-3 group">
-              {/* Desktop real logo couleur */}
-              <img 
-                src="/logo-couleur-entete.png" 
-                alt="Envol Africa Mag - envolafricamag.com - Batir une jeunesse entreprenante" 
-                className="hidden md:block h-[52px] lg:h-[60px] w-auto object-contain group-hover:scale-[1.01] transition-transform"
-              />
-              {/* Mobile fallback EA icon + text */}
+              <img src="/logo-couleur-entete.png" alt="Envol Africa Mag" className="hidden md:block h-[52px] lg:h-[60px] w-auto object-contain group-hover:scale-[1.01] transition-transform" />
               <div className="md:hidden flex items-center gap-2.5">
-                <div className="w-11 h-11 bg-[#0A1931] rounded-[12px] flex items-center justify-center relative overflow-hidden">
-                  <span className="text-[#D4AF37] font-serif font-black text-xl">E</span><span className="text-white font-serif font-black text-xl -ml-0.5">A</span>
-                </div>
-                <div className="leading-[0.9]">
-                  <div className="font-serif font-black text-[18px] tracking-tight text-[#0A1931] uppercase">Envol Africa</div>
-                  <div className="font-sans font-bold text-[10px] tracking-[0.2em] text-[#D4AF37] uppercase -mt-0.5">Magazine</div>
-                </div>
+                <div className="w-11 h-11 bg-[#0A1931] rounded-[12px] flex items-center justify-center"><span className="text-[#D4AF37] font-serif font-black text-xl">E</span><span className="text-white font-serif font-black text-xl -ml-0.5">A</span></div>
+                <div className="leading-[0.9]"><div className="font-serif font-black text-[18px] tracking-tight text-[#0A1931] uppercase">Envol Africa</div><div className="font-sans font-bold text-[10px] tracking-[0.2em] text-[#D4AF37] uppercase -mt-0.5">Magazine</div></div>
               </div>
             </Link>
 
-            {/* Desktop nav */}
             <nav className="hidden lg:flex items-center gap-1">
               {topLinks.map(link => (
-                <Link key={link.name} href={link.href}
-                  className={`px-3.5 py-2.5 rounded-full text-[13px] font-medium transition-all ${link.highlight ? "bg-[#0A1931] text-white hover:bg-[#142850] shadow-sm" : pathname===link.href ? "bg-zinc-900 text-white" : "text-zinc-700 hover:text-[#0A1931] hover:bg-zinc-50"}`}>
+                <Link key={link.name} href={link.href} className={`px-3.5 py-2.5 rounded-full text-[13px] font-medium transition-all ${link.highlight ? "bg-[#0A1931] text-white hover:bg-[#142850] shadow-sm" : pathname===link.href ? "bg-zinc-900 text-white" : "text-zinc-700 hover:text-[#0A1931] hover:bg-zinc-50"}`}>
                   {link.name}
                 </Link>
               ))}
             </nav>
 
-            {/* Actions */}
             <div className="flex items-center gap-1.5 md:gap-2.5">
-              <Link href="/panier" className="relative w-10 h-10 rounded-full bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 flex items-center justify-center transition-colors group">
+              <button onClick={()=>setShowSearch(!showSearch)} className="w-10 h-10 rounded-full bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 flex items-center justify-center">🔍</button>
+              <Link href="/panier" className="relative w-10 h-10 rounded-full bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 flex items-center justify-center group">
                 <svg className="w-4 h-4 text-zinc-700 group-hover:text-[#0A1931]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
                 {cartCount>0 && <span className="absolute -top-1 -right-1 bg-[#D4AF37] text-[#0A1931] text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">{cartCount}</span>}
               </Link>
-              <Link href="/compte" className="hidden md:flex w-10 h-10 rounded-full bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 items-center justify-center transition-colors">
-                {user ? (
-                  <span className="w-7 h-7 rounded-full bg-[#0A1931] text-white flex items-center justify-center text-xs font-bold">{user.prenom?.[0]}{user.nom?.[0]}</span>
-                ) : (
-                  <svg className="w-4 h-4 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                )}
+              <Link href="/compte" className="hidden md:flex w-10 h-10 rounded-full bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 items-center justify-center">
+                {user ? <span className="w-7 h-7 rounded-full bg-[#0A1931] text-white flex items-center justify-center text-xs font-bold">{user.prenom?.[0]}{user.nom?.[0]}</span> : <svg className="w-4 h-4 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
               </Link>
               {user ? (
-                <Link href="/compte" className="hidden lg:flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-zinc-900 text-white text-[13px] font-medium hover:bg-black transition-colors">
+                <Link href="/compte" className="hidden lg:flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-zinc-900 text-white text-[13px] font-medium hover:bg-black">
                   <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-[11px] font-bold">{user.prenom?.[0]}</span>
                   <span className="max-w-[80px] truncate">{user.prenom}</span>
                 </Link>
               ) : (
                 <div className="hidden lg:flex items-center gap-2">
                   <Link href="/auth/login" className="px-4 py-2.5 text-[13px] font-medium text-zinc-700 hover:text-[#0A1931]">Connexion</Link>
-                  <Link href="/auth/register" className="px-5 py-2.5 rounded-full bg-[#D4AF37] text-[#0A1931] text-[13px] font-bold hover:bg-[#C9A44A] transition-colors shadow-sm">S'inscrire</Link>
+                  <Link href="/auth/register" className="px-5 py-2.5 rounded-full bg-[#D4AF37] text-[#0A1931] text-[13px] font-bold hover:bg-[#C9A44A] shadow-sm">S'inscrire</Link>
                 </div>
               )}
               <button onClick={()=>setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden w-10 h-10 rounded-full bg-zinc-900 text-white flex items-center justify-center">
-                {mobileMenuOpen ? (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                ) : (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-                )}
+                {mobileMenuOpen ? <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg> : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Mobile menu */}
+        {showSearch && (
+          <div className="border-t border-zinc-100 bg-white p-4 animate-fade-in">
+            <div className="max-w-[720px] mx-auto">
+              <form onSubmit={doSearch} className="flex gap-2">
+                <input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder="Rechercher articles, magazines, catégories... (ex: ZLECAf, cacao, fintech)" className="flex-1 h-12 rounded-full border border-zinc-200 bg-zinc-50 px-5 text-[14px] focus:outline-none focus:border-[#0A1931] focus:bg-white" />
+                <button type="submit" className="h-12 px-6 rounded-full bg-[#0A1931] text-white font-bold text-[13px]">Rechercher</button>
+                <button type="button" onClick={()=>setShowSearch(false)} className="h-12 w-12 rounded-full border border-zinc-200 flex items-center justify-center">×</button>
+              </form>
+              {searchResults && (
+                <div className="mt-4 bg-white rounded-[16px] border border-zinc-100 p-4 max-h-[60vh] overflow-y-auto">
+                  <div className="text-[11px] font-bold uppercase tracking-wide text-zinc-500">{searchResults.articles?.length} articles • {searchResults.magazines?.length} magazines pour "{searchResults.query}"</div>
+                  <div className="mt-3 space-y-2">
+                    {searchResults.articles?.slice(0,5).map((a:any)=>(
+                      <Link key={a.id} href={`/article/${a.slug}`} onClick={()=>setShowSearch(false)} className="flex gap-3 p-2 rounded-[12px] hover:bg-zinc-50">
+                        <img src={a.image} alt="" className="w-16 h-16 rounded-[10px] object-cover" />
+                        <div><div className="font-bold text-[13px] line-clamp-1">{a.title}</div><div className="text-[11px] text-zinc-500 mt-1">{a.category} • {a.views} vues</div></div>
+                      </Link>
+                    ))}
+                    {searchResults.magazines?.map((m:any)=>(
+                      <Link key={m.id} href={`/kiosque/${m.id}`} onClick={()=>setShowSearch(false)} className="flex gap-3 p-2 rounded-[12px] hover:bg-zinc-50">
+                        <img src={m.cover} alt="" className="w-12 h-16 rounded-[8px] object-cover" />
+                        <div><div className="font-bold text-[13px]">{m.title}</div><div className="text-[11px] text-zinc-500">N°{m.numero}</div></div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {mobileMenuOpen && (
           <div className="lg:hidden border-t border-zinc-100 bg-white animate-fade-in">
             <div className="px-4 py-6 space-y-6">
+              <form onSubmit={(e)=>{e.preventDefault(); setMobileMenuOpen(false); setShowSearch(true);}} className="flex gap-2"><input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder="Rechercher..." className="flex-1 h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" /><button className="h-11 w-11 rounded-full bg-[#0A1931] text-white">🔍</button></form>
               <div className="grid grid-cols-2 gap-2">
                 {topLinks.map(link=>(
                   <Link key={link.name} href={link.href} onClick={()=>setMobileMenuOpen(false)} className={`p-3.5 rounded-2xl text-[13px] font-medium border ${link.highlight ? "bg-[#0A1931] text-white border-[#0A1931]" : "bg-zinc-50 text-zinc-800 border-zinc-100"}`}>
@@ -199,21 +236,12 @@ export default function Header({ user }: { user?: any }) {
                 <Link href="/auth/login" onClick={()=>setMobileMenuOpen(false)} className="flex-1 py-3 rounded-full border border-zinc-200 text-center text-[14px] font-medium">Connexion</Link>
                 <Link href="/auth/register" onClick={()=>setMobileMenuOpen(false)} className="flex-1 py-3 rounded-full bg-[#D4AF37] text-[#0A1931] text-center text-[14px] font-bold">S'inscrire</Link>
               </div>
-              <div className="pt-4 border-t border-zinc-100 flex items-center justify-between text-xs">
-                <div className="flex gap-1">
-                  {langs.map(l=><button key={l.code} className={`px-3 py-1.5 rounded-full border ${currentLang===l.code ? "bg-[#0A1931] text-white" : "bg-zinc-50"}`}>{l.label}</button>)}
-                </div>
-                <div className="flex gap-1">
-                  {devises.map(d=><button key={d.code} className={`px-3 py-1.5 rounded-full border ${currentDevise===d.code ? "bg-[#D4AF37] text-[#0A1931] border-[#D4AF37]" : "bg-zinc-50"}`}>{d.symbol}</button>)}
-                </div>
-              </div>
             </div>
           </div>
         )}
       </header>
 
-      {/* Mobile bottom bar */}
-      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl border-t border-zinc-200 px-2 py-2 safe-area-bottom">
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl border-t border-zinc-200 px-2 py-2">
         <div className="flex items-center justify-around">
           {[
             { name: "Accueil", href: "/", icon: "⌂" },

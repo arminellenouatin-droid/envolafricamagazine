@@ -157,6 +157,11 @@ const defaultDB: DB = {
   settings: {
     homeSections: {},
     ads: [],
+    serviceRequests: [],
+    withdrawRequests: [],
+    shippingRates: {
+      BJ: 2000, CI: 2500, SN: 3000, TG: 2000, CM: 3500, NG: 4000, GH: 3500, FR: 8000, US: 12000, GB: 10000, default: 5000
+    },
   }
 };
 
@@ -173,7 +178,15 @@ export function readDB(): DB {
   ensureDataDir();
   try {
     const raw = fs.readFileSync(DB_FILE, 'utf-8');
-    return JSON.parse(raw) as DB;
+    const parsed = JSON.parse(raw) as DB;
+    // ensure settings defaults for new fields
+    if (!parsed.settings) parsed.settings = defaultDB.settings as any;
+    if (!parsed.settings.serviceRequests) parsed.settings.serviceRequests = [];
+    if (!parsed.settings.withdrawRequests) parsed.settings.withdrawRequests = [];
+    if (!parsed.settings.shippingRates) parsed.settings.shippingRates = (defaultDB.settings as any).shippingRates;
+    if (!parsed.settings.homeSections) parsed.settings.homeSections = {};
+    if (!parsed.settings.ads) parsed.settings.ads = [];
+    return parsed;
   } catch (e) {
     return defaultDB;
   }

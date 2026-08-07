@@ -4,6 +4,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { verifyToken, COOKIE_NAME } from "@/lib/auth";
 import ArticlePaywall from "@/components/ArticlePaywall";
+import ArticleActions from "@/components/ArticleActions";
 
 async function getIsSubscribed() {
   try {
@@ -24,13 +25,13 @@ async function getIsSubscribed() {
   } catch { return false; }
 }
 
-export default async function ArticlePage({ params }: { params: { slug: string } }) {
+export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const db = readDB();
-  const article = db.articles.find(a=>a.slug===params.slug);
+  const article = db.articles.find(a=>a.slug===slug);
   if (!article) return notFound();
   const isSubscriber = await getIsSubscribed();
 
-  // server-side paywall: compute preview only if not subscriber
   const words = article.content.split(/\s+/);
   const preview = words.slice(0, 12*14).join(' ');
   const blur = words.slice(12*14, 15*14).join(' ');
@@ -43,6 +44,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
       <div className="max-w-[780px] mx-auto px-4 sm:px-6 pt-8 pb-20">
         <div className="flex items-center gap-2 text-[11px] uppercase tracking-widest font-bold text-zinc-500">
           <Link href="/" className="hover:text-[#0A1931]">Accueil</Link><span>›</span><span className="text-[#0A1931]">{article.category}</span><span>•</span><span>{article.readingTime} min de lecture</span>
+          {article.hasAudio && <><span>•</span><span className="text-[#D4AF37]">🔊 Audio {isSubscriber?"disponible":"réservé abonné"}</span></>}
         </div>
 
         <h1 className="font-serif font-black text-[30px] md:text-[44px] leading-[0.95] tracking-tight text-[#0A1931] mt-5">{article.title}</h1>
@@ -53,17 +55,33 @@ export default async function ArticlePage({ params }: { params: { slug: string }
             <div className="w-10 h-10 rounded-full bg-[#0A1931] text-white flex items-center justify-center font-bold text-sm">{article.author[0]}</div>
             <div>
               <div className="text-[14px] font-semibold text-[#0A1931]">{article.author}</div>
-              <div className="text-[12px] text-zinc-500">{new Date(article.publishedAt!).toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' })} • {article.views.toLocaleString()} vues</div>
+              <div className="text-[12px] text-zinc-500">{new Date(article.publishedAt!).toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' })} • {article.views.toLocaleString()} vues • {article.language.toUpperCase()}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="w-9 h-9 rounded-full border border-zinc-200 flex items-center justify-center hover:bg-zinc-50">♡</button>
-            <button className="w-9 h-9 rounded-full border border-zinc-200 flex items-center justify-center hover:bg-zinc-50">↗</button>
-            <button className="w-9 h-9 rounded-full border border-zinc-200 flex items-center justify-center hover:bg-zinc-50">🔊</button>
+            {isSubscriber && article.hasAudio && (
+              <div className="hidden md:flex items-center gap-2 h-9 px-3 rounded-full bg-green-50 border border-green-100 text-[11px] font-bold text-green-700">
+                <span className="w-5 h-5 rounded-full bg-green-600 text-white flex items-center justify-center">▶</span> Écouter l'article • 12 langues
+              </div>
+            )}
           </div>
         </div>
 
         <img src={article.image} alt={article.title} className="w-full aspect-[16/9] object-cover rounded-[20px] mt-8" />
+
+        {isSubscriber && article.hasAudio && (
+          <div className="mt-6 rounded-[16px] bg-[#0A1931] p-4 flex items-center gap-4 text-white">
+            <button className="w-12 h-12 rounded-full bg-[#D4AF37] text-[#0A1931] flex items-center justify-center text-lg font-bold">▶</button>
+            <div className="flex-1">
+              <div className="text-[12px] font-bold uppercase tracking-wide text-[#D4AF37]">Audio • 12 langues disponibles</div>
+              <div className="text-[13px] mt-1">Écoutez cet article en {article.language === "fr" ? "Français" : article.language} • Fongbé, Wolof, Swahili, Mina...</div>
+              <div className="mt-2 h-1.5 bg-white/10 rounded-full overflow-hidden"><div className="h-full w-[23%] bg-[#D4AF37]"></div></div>
+            </div>
+            <select className="h-9 rounded-full bg-white/10 border border-white/10 px-3 text-[11px]">
+              <option>FR</option><option>EN</option><option>ES</option><option>SW</option><option>YO</option><option>FON</option>
+            </select>
+          </div>
+        )}
 
         <ArticlePaywall
           preview={preview}
@@ -74,17 +92,10 @@ export default async function ArticlePage({ params }: { params: { slug: string }
           articleId={article.id}
         />
 
-        {/* Actions under article */}
-        <div className="mt-10 flex flex-wrap gap-2">
-          <button className="h-10 px-4 rounded-full bg-zinc-900 text-white text-[13px] font-semibold flex items-center gap-2">❤️ {article.likes} J'aime</button>
-          <button className="h-10 px-4 rounded-full border border-zinc-200 text-[13px] font-medium">💬 Commenter</button>
-          <button className="h-10 px-4 rounded-full border border-zinc-200 text-[13px] font-medium">🔖 Sauvegarder</button>
-          <div className="ml-auto flex items-center gap-2 text-[12px] text-zinc-500"><span>Partager:</span><span className="flex gap-1"><span className="w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center">𝕏</span><span className="w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center">f</span><span className="w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center">in</span></span></div>
-        </div>
+        <ArticleActions articleId={article.id} initialLikes={article.likes} />
 
-        {/* Related */}
         <div className="mt-14">
-          <h3 className="font-serif font-bold text-xl text-[#0A1931]">À lire aussi</h3>
+          <h3 className="font-serif font-bold text-xl text-[#0A1931]">À lire aussi - {article.category}</h3>
           <div className="grid md:grid-cols-3 gap-4 mt-5">
             {related.map(r=>(
               <Link key={r.id} href={`/article/${r.slug}`} className="group">

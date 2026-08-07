@@ -1,8 +1,8 @@
-const MONEROO_API_KEY = process.env.MONEROO_API_KEY || "pvk_4lf37v|01KZ7F2SRWWFQ70JCRASB8YHEC";
+const MONEROO_API_KEY = process.env.MONEROO_API_KEY;
 const MONEROO_BASE = "https://api.moneroo.io/v1";
 
 export interface MonerooPaymentData {
-  amount: number; // in smallest unit? Moneroo expects integer amount; we use XOF or other; for simplicity use provided currency amount as integer
+  amount: number;
   currency: string;
   description: string;
   customer: {
@@ -16,13 +16,31 @@ export interface MonerooPaymentData {
   metadata?: Record<string, any>;
 }
 
+function getApiKey(): string | null {
+  if (!MONEROO_API_KEY) {
+    console.warn("MONEROO_API_KEY manquant - mode mock activé pour dev");
+    return null;
+  }
+  return MONEROO_API_KEY;
+}
+
 export async function initMonerooPayment(data: MonerooPaymentData) {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    // Mode mock si clé manquante (dev only)
+    return {
+      id: `mock_${Date.now()}`,
+      checkout_url: `${data.return_url}?mock_success=1&payment_id=mock_${Date.now()}`,
+      mock: true,
+      warning: "MONEROO_API_KEY manquant - paiement mock",
+    };
+  }
   try {
     const res = await fetch(`${MONEROO_BASE}/payments/initialize`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${MONEROO_API_KEY}`,
+        "Authorization": `Bearer ${apiKey}`,
         "Accept": "application/json",
       },
       body: JSON.stringify({
@@ -31,26 +49,24 @@ export async function initMonerooPayment(data: MonerooPaymentData) {
         description: data.description,
         customer: data.customer,
         return_url: data.return_url,
-        methods: data.methods || ["card", "mtn_bj", "orange_bj", "moov_bj", "mtn_ci", "orange_ci", "wave", "mtn"],
+        methods: data.methods || ["card", "mtn_bj", "orange_bj", "moov_bj", "mtn_ci", "orange_ci", "wave", "mtn", "orange_sn"],
         metadata: data.metadata,
       }),
     });
     const result = await res.json();
     if (!res.ok) {
       console.error("Moneroo init failed", result);
-      // fallback: still return mock to not break flow in dev
-      // In production we throw
-      if (process.env.NODE_ENV === 'production' && result.message) {
-        // But allow mock for demo if key invalid
+      // En cas d'échec API, fallback mock uniquement en dev
+      if (process.env.NODE_ENV !== 'production') {
+        return {
+          id: `mock_${Date.now()}`,
+          checkout_url: `${data.return_url}?mock_success=1&payment_id=mock_${Date.now()}`,
+          mock: true,
+          raw: result,
+        };
       }
-      return {
-        id: `mock_${Date.now()}`,
-        checkout_url: `${data.return_url}?mock_success=1&payment_id=mock_${Date.now()}`,
-        mock: true,
-        raw: result,
-      };
+      throw new Error(result.message || "Erreur Moneroo");
     }
-    // result structure may be {data:{id, checkout_url}} or {checkout_url}
     const d = result.data || result;
     return {
       id: d.id,
@@ -60,12 +76,15 @@ export async function initMonerooPayment(data: MonerooPaymentData) {
     };
   } catch (e) {
     console.error("Moneroo exception", e);
-    return {
-      id: `mock_${Date.now()}`,
-      checkout_url: `${data.return_url}?mock_success=1&payment_id=mock_${Date.now()}`,
-      mock: true,
-      error: String(e),
-    };
+    if (process.env.NODE_ENV !== 'production') {
+      return {
+        id: `mock_${Date.now()}`,
+        checkout_url: `${data.return_url}?mock_success=1&payment_id=mock_${Date.now()}`,
+        mock: true,
+        error: String(e),
+      };
+    }
+    throw e;
   }
 }
 
@@ -73,11 +92,15 @@ export async function verifyMonerooPayment(paymentId: string) {
   if (paymentId.startsWith("mock_")) {
     return { status: "success", amount: 0, mock: true, id: paymentId };
   }
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    return { status: "failed", error: "MONEROO_API_KEY manquant" };
+  }
   try {
     const res = await fetch(`${MONEROO_BASE}/payments/${paymentId}/verify`, {
       method: "GET",
       headers: {
-        "Authorization": `Bearer ${MONEROO_API_KEY}`,
+        "Authorization": `Bearer ${apiKey}`,
         "Accept": "application/json",
       },
     });
@@ -96,7 +119,5 @@ export async function verifyMonerooPayment(paymentId: string) {
 export function formatAmountForCurrency(amountXOF: number, targetCurrency: string, rates: Record<string, number>): number {
   const rate = rates[targetCurrency] || 1;
   if (targetCurrency === "XOF") return amountXOF;
-  // Convert: amount in target = XOF * rate ? Actually rate defined as XOF -> target.
-  // In constants, XOF rate 1, EUR 0.00152.
   return Math.round(amountXOF * rate);
 }

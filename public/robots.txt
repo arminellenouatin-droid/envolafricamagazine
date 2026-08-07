@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /compte/
+Disallow: /panier?*
+Sitemap: https://envolafricamag.com/sitemap.xml
+
+# IA - Choix stratégique: autoriser lecture contenu gratuit mais pas paywall
+User-agent: GPTBot
+Allow: /$
+Allow: /article/*?preview=1
+Disallow: /article/
+Disallow: /kiosque/*
+
+User-agent: CCBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
