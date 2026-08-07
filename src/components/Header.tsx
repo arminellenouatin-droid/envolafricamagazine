@@ -119,16 +119,23 @@ export default function Header({ user }: { user?: any }) {
         {/* Main header */}
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-8">
           <div className="flex items-center justify-between h-[68px] md:h-[80px]">
-            {/* Logo */}
+            {/* Logo - REAL */}
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-11 h-11 md:w-12 md:h-12 bg-[#0A1931] rounded-[12px] flex items-center justify-center relative overflow-hidden group-hover:scale-[1.02] transition-transform">
-                <span className="text-[#D4AF37] font-serif font-black text-xl leading-none tracking-tight">E</span>
-                <span className="text-white font-serif font-black text-xl leading-none tracking-tight -ml-0.5">A</span>
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#D4AF37] rounded-full blur-[8px] opacity-60"></div>
-              </div>
-              <div className="leading-[0.9]">
-                <div className="font-serif font-black text-[18px] md:text-[22px] tracking-tight text-[#0A1931] uppercase">Envol Africa</div>
-                <div className="font-sans font-bold text-[10px] md:text-[11px] tracking-[0.2em] text-[#D4AF37] uppercase -mt-0.5">Magazine</div>
+              {/* Desktop real logo couleur */}
+              <img 
+                src="/logo-couleur-entete.png" 
+                alt="Envol Africa Mag - envolafricamag.com - Batir une jeunesse entreprenante" 
+                className="hidden md:block h-[52px] lg:h-[60px] w-auto object-contain group-hover:scale-[1.01] transition-transform"
+              />
+              {/* Mobile fallback EA icon + text */}
+              <div className="md:hidden flex items-center gap-2.5">
+                <div className="w-11 h-11 bg-[#0A1931] rounded-[12px] flex items-center justify-center relative overflow-hidden">
+                  <span className="text-[#D4AF37] font-serif font-black text-xl">E</span><span className="text-white font-serif font-black text-xl -ml-0.5">A</span>
+                </div>
+                <div className="leading-[0.9]">
+                  <div className="font-serif font-black text-[18px] tracking-tight text-[#0A1931] uppercase">Envol Africa</div>
+                  <div className="font-sans font-bold text-[10px] tracking-[0.2em] text-[#D4AF37] uppercase -mt-0.5">Magazine</div>
+                </div>
               </div>
             </Link>
 

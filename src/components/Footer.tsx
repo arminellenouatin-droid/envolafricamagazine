@@ -20,14 +20,13 @@ export default function Footer() {
       <div className="max-w-[1440px] mx-auto px-6 xl:px-8 py-14">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-10">
           <div className="col-span-2">
-            <Link href="/" className="flex items-center gap-3">
-              <div className="w-11 h-11 bg-white rounded-[12px] flex items-center justify-center">
-                <span className="text-[#0A1931] font-serif font-black text-xl">E</span><span className="text-[#D4AF37] font-serif font-black text-xl -ml-0.5">A</span>
-              </div>
-              <div>
-                <div className="font-serif font-black text-[18px] text-white uppercase leading-none">Envol Africa</div>
-                <div className="text-[10px] tracking-[0.2em] text-[#D4AF37] uppercase font-bold">Magazine</div>
-              </div>
+            <Link href="/" className="flex flex-col gap-3">
+              {/* REAL LOGO BLANC POUR FOOTER sur fond sombre */}
+              <img 
+                src="/logo-blanc-footer.png" 
+                alt="Envol Africa Mag - envolafricamag.com - Batir une jeunesse entreprenante" 
+                className="h-[72px] w-auto object-contain object-left"
+              />
             </Link>
             <p className="mt-5 text-[13px] leading-6 text-zinc-400 max-w-[320px]">
               Le magazine économique panafricain de référence. Analyses, enquêtes, portraits et perspectives pour comprendre l'Afrique qui bouge.
