@@ -98,10 +98,17 @@ export default function Header({ user }: { user?: any }) {
 
             <div className="hidden lg:flex items-center gap-2">
               {user ? (
-                <Link href="/compte" className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-[#303030] text-white text-[13px] font-medium">
-                  <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-[11px] font-bold">{user.prenom?.[0]}</span>
-                  <span className="max-w-[80px] truncate">{user.prenom}</span>
-                </Link>
+                <>
+                  {["redacteur","redacteur_chef","gerant","admin"].includes(user.role) && (
+                    <Link href="/admin" className="h-9 px-4 rounded-full bg-[#9e001f] text-white text-[12px] font-bold flex items-center gap-1 hover:bg-[#c8102e] shadow-md">
+                      <span className="material-symbols-outlined text-[16px]">admin_panel_settings</span> Administration
+                    </Link>
+                  )}
+                  <Link href="/compte" className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-[#303030] text-white text-[13px] font-medium">
+                    <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-[11px] font-bold">{user.prenom?.[0]}</span>
+                    <span className="max-w-[80px] truncate">{user.prenom}</span>
+                  </Link>
+                </>
               ) : (
                 <>
                   <Link href="/auth/login" className="text-[12px] font-semibold px-4 py-2 hover:bg-[#f0eded] rounded transition-colors">SE CONNECTER</Link>
