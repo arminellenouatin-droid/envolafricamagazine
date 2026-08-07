@@ -1,64 +1,87 @@
 @import "tailwindcss";
 
 :root {
-  --background: #FFFCF5;
-  --foreground: #111827;
-  --primary: #0A1931;
-  --primary-light: #142850;
+  --background: #fcf9f8;
+  --foreground: #1b1c1c;
+  --primary: #9e001f;
+  --primary-container: #c8102e;
+  --primary-fixed: #ffdad8;
+  --on-primary: #ffffff;
+  --on-primary-container: #ffdad8;
+  --inverse-surface: #303030;
+  --inverse-on-surface: #f3f0f0;
+  --surface: #fcf9f8;
+  --surface-container: #f0eded;
+  --surface-container-low: #f6f3f2;
+  --surface-container-high: #eae7e7;
+  --surface-container-highest: #e4e2e1;
+  --surface-container-lowest: #ffffff;
+  --surface-bright: #fcf9f8;
+  --surface-dim: #dcd9d9;
+  --on-surface: #1b1c1c;
+  --on-surface-variant: #5c403f;
+  --outline: #906f6e;
+  --outline-variant: #e5bdbb;
+  --secondary: #5f5e5e;
+  --secondary-container: #e2dfde;
+  --tertiary: #664700;
+  --tertiary-container: #845e00;
+  --error: #ba1a1a;
   --gold: #D4AF37;
-  --gold-light: #F0D878;
-  --gold-dark: #B8960C;
-  --accent: #C9A86A;
-  --muted: #6B7280;
-  --border: #E5E7EB;
-  --card: #FFFFFF;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
+  --color-primary-container: var(--primary-container);
   --color-gold: var(--gold);
-  --color-accent: var(--accent);
-  --font-sans: var(--font-geist-sans), Inter, system-ui, sans-serif;
-  --font-serif: var(--font-playfair), Georgia, serif;
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-display: Montserrat, sans-serif;
+  --font-serif: "Source Serif 4", Georgia, serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), Inter, system-ui, -apple-system, sans-serif;
+  font-family: "Source Serif 4", Georgia, serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3, .font-serif {
-  font-family: var(--font-playfair, Georgia), serif;
+h1, h2, h3, h4, .font-display {
+  font-family: Montserrat, sans-serif;
+  font-weight: 700;
 }
 
-/* Premium scrollbars */
+.font-label {
+  font-family: Inter, sans-serif;
+}
+
+/* Scrollbar */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #F3F4F6; }
-::-webkit-scrollbar-thumb { background: #D4AF37; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #B8960C; }
+::-webkit-scrollbar-track { background: #f0eded; }
+::-webkit-scrollbar-thumb { background: #9e001f; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #c8102e; }
 
-/* Animations */
 @keyframes ticker {
   0% { transform: translateX(100%); }
   100% { transform: translateX(-100%); }
 }
 .animate-ticker {
-  animation: ticker 60s linear infinite;
+  white-space: nowrap;
+  animation: ticker 30s linear infinite;
+}
+.scrolling-ticker {
+  display: inline-block;
+  white-space: nowrap;
+  animation: ticker 30s linear infinite;
 }
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-out;
-}
+.animate-fade-in { animation: fadeIn 0.5s ease-out; }
 
-/* Paywall blur */
 .paywall-blur {
   filter: blur(6px);
   user-select: none;
@@ -67,35 +90,16 @@ h1, h2, h3, .font-serif {
   -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
 }
 
-/* Magazine cover shadow */
 .magazine-shadow {
-  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.2), 0 10px 20px -5px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05);
+  box-shadow: -10px 0 15px -5px rgba(0,0,0,0.3) inset, 0 10px 20px rgba(0,0,0,0.2);
 }
 
-/* Gold gradient */
-.gold-gradient {
-  background: linear-gradient(135deg, #D4AF37 0%, #F0D878 50%, #D4AF37 100%);
-}
-.navy-gradient {
-  background: linear-gradient(135deg, #0A1931 0%, #142850 100%);
-}
-
-/* Glass effect */
-.glass {
-  backdrop-filter: blur(12px);
-  background: rgba(255,255,255,0.85);
-}
-
-/* Line clamp */
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.line-clamp-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
+
+.custom-scrollbar::-webkit-scrollbar { height: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #9e001f; border-radius: 10px; }

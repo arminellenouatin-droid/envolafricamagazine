@@ -40,73 +40,76 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   const related = db.articles.filter(a=>a.category===article.category && a.id!==article.id).slice(0,3);
 
   return (
-    <div className="bg-white min-h-screen">
-      <div className="max-w-[780px] mx-auto px-4 sm:px-6 pt-8 pb-20">
-        <div className="flex items-center gap-2 text-[11px] uppercase tracking-widest font-bold text-zinc-500">
-          <Link href="/" className="hover:text-[#0A1931]">Accueil</Link><span>›</span><span className="text-[#0A1931]">{article.category}</span><span>•</span><span>{article.readingTime} min de lecture</span>
-          {article.hasAudio && <><span>•</span><span className="text-[#D4AF37]">🔊 Audio {isSubscriber?"disponible":"réservé abonné"}</span></>}
-        </div>
-
-        <h1 className="font-serif font-black text-[30px] md:text-[44px] leading-[0.95] tracking-tight text-[#0A1931] mt-5">{article.title}</h1>
-        <p className="text-[17px] md:text-[19px] leading-7 text-zinc-600 mt-5 font-serif">{article.summary}</p>
-
-        <div className="flex items-center justify-between mt-8 pb-8 border-b border-zinc-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#0A1931] text-white flex items-center justify-center font-bold text-sm">{article.author[0]}</div>
-            <div>
-              <div className="text-[14px] font-semibold text-[#0A1931]">{article.author}</div>
-              <div className="text-[12px] text-zinc-500">{new Date(article.publishedAt!).toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' })} • {article.views.toLocaleString()} vues • {article.language.toUpperCase()}</div>
+    <div className="bg-[#fcf9f8] min-h-screen">
+      <main className="max-w-[1280px] mx-auto px-5 md:px-[64px] py-12">
+        <article className="max-w-[720px] mx-auto">
+          <header className="mb-8">
+            <div className="flex gap-2 mb-4">
+              <span className="bg-[#9e001f]/10 text-[#9e001f] px-3 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold">{article.category}</span>
+              <span className="bg-[#5f5e5e]/10 text-[#5f5e5e] px-3 py-1 rounded-full text-[11px] uppercase tracking-wider">Exclusif</span>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {isSubscriber && article.hasAudio && (
-              <div className="hidden md:flex items-center gap-2 h-9 px-3 rounded-full bg-green-50 border border-green-100 text-[11px] font-bold text-green-700">
-                <span className="w-5 h-5 rounded-full bg-green-600 text-white flex items-center justify-center">▶</span> Écouter l'article • 12 langues
+            <h1 className="text-[32px] md:text-[40px] leading-tight font-bold text-[#1b1c1c] mb-6" style={{ fontFamily: "Montserrat" }}>{article.title}</h1>
+            <p className="text-[18px] text-[#5c403f] mb-8 italic leading-[1.6]" style={{ fontFamily: "Source Serif 4" }}>{article.summary}</p>
+
+            <div className="flex items-center justify-between py-6 border-y border-[#e5bdbb]">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-cover bg-center overflow-hidden" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100')` }}></div>
+                <div>
+                  <p className="text-[14px] font-bold text-[#1b1c1c]">{article.author}</p>
+                  <p className="text-[12px] text-[#5f5e5e]">Éditorialiste Économique</p>
+                </div>
               </div>
-            )}
-          </div>
-        </div>
-
-        <img src={article.image} alt={article.title} className="w-full aspect-[16/9] object-cover rounded-[20px] mt-8" />
-
-        {isSubscriber && article.hasAudio && (
-          <div className="mt-6 rounded-[16px] bg-[#0A1931] p-4 flex items-center gap-4 text-white">
-            <button className="w-12 h-12 rounded-full bg-[#D4AF37] text-[#0A1931] flex items-center justify-center text-lg font-bold">▶</button>
-            <div className="flex-1">
-              <div className="text-[12px] font-bold uppercase tracking-wide text-[#D4AF37]">Audio • 12 langues disponibles</div>
-              <div className="text-[13px] mt-1">Écoutez cet article en {article.language === "fr" ? "Français" : article.language} • Fongbé, Wolof, Swahili, Mina...</div>
-              <div className="mt-2 h-1.5 bg-white/10 rounded-full overflow-hidden"><div className="h-full w-[23%] bg-[#D4AF37]"></div></div>
+              <div className="text-right">
+                <p className="text-[11px] text-[#5c403f] uppercase">{new Date(article.publishedAt!).toLocaleDateString('fr-FR',{day:'numeric', month:'short', year:'numeric'})}</p>
+                <p className="text-[11px] text-[#5f5e5e] flex items-center justify-end gap-1"><span className="material-symbols-outlined text-[14px]">schedule</span> {article.readingTime} min • {article.language.toUpperCase()} {article.hasAudio&&"• 🔊"}</p>
+              </div>
             </div>
-            <select className="h-9 rounded-full bg-white/10 border border-white/10 px-3 text-[11px]">
-              <option>FR</option><option>EN</option><option>ES</option><option>SW</option><option>YO</option><option>FON</option>
-            </select>
-          </div>
-        )}
 
-        <ArticlePaywall
-          preview={preview}
-          blur={blur}
-          rest={isSubscriber ? rest : ""}
-          isSubscriber={isSubscriber}
-          fullContent={isSubscriber ? article.content : ""}
-          articleId={article.id}
-        />
+            <div className="flex items-center gap-6 py-4">
+              <button className="flex items-center gap-2 hover:text-[#9e001f] group text-[12px]"><span className="material-symbols-outlined text-[20px]">share</span> Partager</button>
+              <button className="flex items-center gap-2 hover:text-[#9e001f] group text-[12px]"><span className="material-symbols-outlined text-[20px]">favorite</span> {article.likes}</button>
+              <button className="flex items-center gap-2 hover:text-[#9e001f] text-[12px]"><span className="material-symbols-outlined text-[20px]">chat_bubble</span> 12</button>
+              <div className="flex-grow"></div>
+              {isSubscriber && article.hasAudio ? (
+                <div className="flex items-center gap-2 bg-[#e2dfde] text-[#1c1b1b] px-4 py-2 rounded-lg text-[11px] font-bold"><span className="material-symbols-outlined">headphones</span> Écouter (12 langues)</div>
+              ) : (
+                <div className="flex items-center gap-2 bg-[#f0eded] text-[#5c403f] px-4 py-2 rounded-lg text-[11px]">🔒 Audio réservé abonnés</div>
+              )}
+            </div>
+          </header>
 
-        <ArticleActions articleId={article.id} initialLikes={article.likes} />
+          <figure className="mb-12">
+            <img src={article.image} alt={article.title} className="w-full aspect-video object-cover rounded-xl shadow-lg" />
+            <figcaption className="mt-4 text-[12px] text-[#5f5e5e] italic text-center">{article.title} - {article.category} • {article.views.toLocaleString()} vues • © Envol Africa</figcaption>
+          </figure>
 
-        <div className="mt-14">
-          <h3 className="font-serif font-bold text-xl text-[#0A1931]">À lire aussi - {article.category}</h3>
-          <div className="grid md:grid-cols-3 gap-4 mt-5">
-            {related.map(r=>(
-              <Link key={r.id} href={`/article/${r.slug}`} className="group">
-                <img src={r.image} alt={r.title} className="w-full aspect-[4/3] object-cover rounded-[14px] group-hover:scale-[1.01] transition-transform" />
-                <div className="text-[11px] font-bold uppercase tracking-wide text-[#D4AF37] mt-2.5">{r.category}</div>
-                <div className="font-serif font-bold text-[14px] leading-tight mt-1 group-hover:text-[#0A1931] line-clamp-2">{r.title}</div>
+          {isSubscriber && article.hasAudio && (
+            <div className="mb-8 rounded-xl bg-[#303030] p-4 flex items-center gap-4 text-white">
+              <button className="w-12 h-12 rounded-full bg-[#9e001f] flex items-center justify-center"><span className="material-symbols-outlined">play_arrow</span></button>
+              <div className="flex-1"><div className="text-[11px] font-bold uppercase tracking-wider text-[#ffdad8]">Audio • 12 langues</div><div className="text-[13px] mt-1">Écoutez en {article.language.toUpperCase()} • Fongbé, Wolof, Swahili, Mina...</div><div className="mt-2 h-1.5 bg-white/10 rounded-full overflow-hidden"><div className="h-full w-[23%] bg-[#9e001f]"></div></div></div>
+              <select className="h-9 rounded-full bg-white/10 border border-white/10 px-3 text-[11px]"><option>FR</option><option>EN</option><option>ES</option><option>SW</option><option>FON</option></select>
+            </div>
+          )}
+
+          <ArticlePaywall preview={preview} blur={blur} rest={isSubscriber ? rest : ""} isSubscriber={isSubscriber} fullContent={isSubscriber ? article.content : ""} articleId={article.id} />
+
+          <ArticleActions articleId={article.id} initialLikes={article.likes} />
+        </article>
+
+        <section className="mt-[80px] pt-[80px] border-t border-[#e5bdbb]">
+          <h2 className="text-[28px] font-bold text-center md:text-left mb-12" style={{ fontFamily: "Montserrat" }}>À lire également</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {related.map((r:any)=>(
+              <Link key={r.id} href={`/article/${r.slug}`} className="group cursor-pointer">
+                <div className="aspect-video rounded-lg overflow-hidden mb-4 shadow-sm group-hover:shadow-lg transition-shadow"><img src={r.image} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /></div>
+                <span className="text-[12px] text-[#9e001f] uppercase font-bold tracking-wider">{r.category}</span>
+                <h3 className="text-[18px] font-bold mt-2 group-hover:text-[#9e001f] transition-colors line-clamp-2 leading-tight" style={{ fontFamily: "Montserrat" }}>{r.title}</h3>
+                <div className="mt-3 flex items-center justify-between text-[#5f5e5e] text-[11px]"><span>{r.author}</span><span>{r.readingTime} min</span></div>
               </Link>
             ))}
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 }

@@ -14,12 +14,10 @@ export default function MagazineDetailPage() {
   const [adding, setAdding] = useState(false);
 
   useEffect(()=>{
-    // fetch from db via api? For demo, we read from local storage? We'll fetch via API route not yet created, so fallback to direct fetch of db.json? Simpler: call api to get magazine from client side using window fetch to /api/magazines?id
     fetch(`/api/magazines?id=${id}`).then(r=>r.json()).then(data=>{
       setMagazine(data.magazine || data.magazines?.find((m:any)=>m.id===id));
       setLoading(false);
     }).catch(()=>{
-      // fallback hardcoded
       setMagazine({
         id,
         numero: 25,
@@ -38,6 +36,8 @@ export default function MagazineDetailPage() {
     ? ["fr","en","es","sw","ha","yo","ig","fon","ff","zu","ee","wo"] 
     : ["fr","en","es"];
 
+  const prices: any = { numerique: "12,90 €", papier: "19,50 €", cd_audio: "24,00 €", audio_pdf: "15,50 €", audio_papier: "29,90 €" };
+
   const addToCart = () => {
     setAdding(true);
     const cart = JSON.parse(localStorage.getItem("eam_cart")||"[]");
@@ -47,96 +47,115 @@ export default function MagazineDetailPage() {
     setTimeout(()=>{ setAdding(false); alert("Ajouté au panier !"); }, 400);
   };
 
-  if (loading) return <div className="max-w-[1440px] mx-auto px-6 py-20 text-center">Chargement...</div>;
-  if (!magazine) return <div className="max-w-[1440px] mx-auto px-6 py-20 text-center">Magazine introuvable</div>;
+  if (loading) return <div className="max-w-[1280px] mx-auto px-6 py-20 text-center">Chargement...</div>;
+  if (!magazine) return <div className="max-w-[1280px] mx-auto px-6 py-20 text-center">Magazine introuvable</div>;
 
   return (
-    <div className="bg-[#FFFCF5] min-h-screen pb-20">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-8 pt-8">
-        <div className="flex items-center gap-2 text-[11px] uppercase tracking-widest font-bold text-zinc-500"><Link href="/" className="hover:text-[#0A1931]">Accueil</Link><span>›</span><Link href="/kiosque" className="hover:text-[#0A1931]">Kiosque</Link><span>›</span><span className="text-[#0A1931]">N°{magazine.numero}</span></div>
+    <div className="bg-[#fcf9f8] min-h-screen">
+      <main className="max-w-[1280px] mx-auto px-5 md:px-[64px] py-[80px]">
+        <nav className="mb-8 flex items-center gap-2 text-[#5c403f]/70 text-[12px]">
+          <Link href="/" className="hover:text-[#9e001f]">Accueil</Link><span className="material-symbols-outlined text-[14px]">chevron_right</span>
+          <Link href="/kiosque" className="hover:text-[#9e001f]">Kiosque</Link><span className="material-symbols-outlined text-[14px]">chevron_right</span>
+          <span className="text-[#1b1c1c] font-semibold">Numéro {magazine.numero} - {new Date(magazine.date).toLocaleDateString('fr-FR',{month:'long', year:'numeric'})}</span>
+        </nav>
 
-        <div className="mt-8 grid lg:grid-cols-[420px_1fr] gap-10">
-          <div>
-            <div className="rounded-[20px] overflow-hidden bg-white border border-zinc-100 magazine-shadow p-2">
-              <img src={magazine.cover} alt={magazine.title} className="w-full aspect-[3/4] object-cover rounded-[14px]" />
-            </div>
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              {[1,2,3].map(i=>(
-                <div key={i} className="aspect-[3/4] rounded-[12px] bg-zinc-100 border border-zinc-200 flex items-center justify-center text-[11px] text-zinc-500">Aperçu p.{i*10}</div>
-              ))}
-            </div>
-            <div className="mt-4 rounded-[14px] bg-amber-50 border border-amber-100 p-4 text-[12px] text-amber-900">
-              <div className="font-bold">🔒 Aperçu limité</div>
-              <div className="mt-1">Vous pouvez feuilleter 5 pages gratuitement. L'intégralité (124 pages) est disponible après achat avec lien sécurisé expirant en 24h.</div>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+          <div className="md:col-span-5 lg:col-span-4 sticky top-32">
+            <div className="relative group">
+              <div className="aspect-[3/4] w-full bg-[#eae7e7] rounded-lg overflow-hidden shadow-2xl relative" style={{ boxShadow: "inset 12px 0 15px -10px rgba(0,0,0,0.5)" }}>
+                <img src={magazine.cover} alt={magazine.title} className="w-full h-full object-cover rounded-lg" />
+                <div className="absolute inset-0 bg-black/5 pointer-events-none"></div>
+                <button onClick={()=>alert("Feuilletage: 5 pages gratuites - aperçu limité")} className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/90 backdrop-blur-md text-[#9e001f] px-6 py-3 rounded-full text-[12px] font-bold shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"><span className="material-symbols-outlined">menu_book</span> FEUILLETER L'APERÇU</button>
+              </div>
+              <div className="mt-4 flex gap-4 justify-center">
+                {[1,2].map(i=>(
+                  <div key={i} className="w-16 h-20 bg-[#f6f3f2] rounded border border-[#e5bdbb]/30 overflow-hidden"><img src={magazine.cover} alt="" className="w-full h-full object-cover" /></div>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div>
-            <div className="inline-flex items-center gap-2 bg-[#0A1931] text-white rounded-full px-3 py-1 text-[11px] font-bold uppercase">N°{magazine.numero} • {magazine.year} • 124 pages</div>
-            <h1 className="font-serif font-black text-[28px] md:text-[40px] leading-[0.95] tracking-tight text-[#0A1931] mt-4">{magazine.title}</h1>
-            <p className="text-[15px] leading-7 text-zinc-600 mt-4">{magazine.description} Ce numéro inclut notre enquête sur la transformation locale du cacao, un entretien avec le CEO de Wave, et le classement des 50 entreprises les plus performantes.</p>
+          <div className="md:col-span-7 lg:col-span-8 space-y-6">
+            <header>
+              <div className="flex items-center gap-3 mb-2">
+                <span className="px-3 py-1 bg-[#ffdad8] text-[#9e001f] rounded-full text-[11px] uppercase tracking-wider font-bold">Magazine Mensuel</span>
+                <span className="text-[#5c403f] text-[12px] italic">N° {magazine.numero} — {magazine.year} • 124 pages</span>
+              </div>
+              <h1 className="text-[32px] md:text-[40px] font-bold leading-tight text-[#1b1c1c] mb-2" style={{ fontFamily: "Montserrat" }}>{magazine.title}</h1>
+              <p className="text-[18px] text-[#5f5e5e] leading-relaxed max-w-2xl" style={{ fontFamily: "Source Serif 4" }}>{magazine.description} Ce numéro inclut notre enquête sur la transformation locale du cacao, entretien CEO Wave, classement 50 entreprises les plus performantes.</p>
+            </header>
 
-            <div className="mt-8">
-              <h3 className="font-bold text-[14px] uppercase tracking-wide text-[#0A1931]">1. Choisissez votre format</h3>
-              <div className="mt-3 grid md:grid-cols-2 gap-3">
-                {KIOSQUE_FORMATS.map(f=>(
-                  <button key={f.id} onClick={()=>setFormat(f.id)} className={`text-left rounded-[16px] border p-4 transition-all ${format===f.id ? "bg-[#0A1931] border-[#0A1931] text-white shadow-lg" : "bg-white border-zinc-200 hover:border-zinc-300"}`}>
-                    <div className="flex items-center justify-between">
-                      <span className={`font-bold text-[14px] ${format===f.id ? "text-white" : "text-[#0A1931]"}`}>{f.label}</span>
-                      <span className={`text-[12px] font-bold px-2.5 py-1 rounded-full ${format===f.id ? "bg-[#D4AF37] text-[#0A1931]" : "bg-zinc-100 text-zinc-700"}`}>{f.price.toLocaleString()} F CFA</span>
-                    </div>
-                    <div className={`text-[12px] mt-1 ${format===f.id ? "text-zinc-300" : "text-zinc-500"}`}>{f.description}</div>
-                  </button>
-                ))}
+            <section className="p-6 bg-[#f0eded] rounded-xl">
+              <h3 className="text-[14px] font-bold uppercase tracking-widest mb-4">Au sommaire de ce numéro</h3>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[#5c403f] text-[14px]">
+                <li className="flex items-start gap-2"><span className="material-symbols-outlined text-[#9e001f] text-[20px] mt-0.5">check_circle</span><span><strong>Économie :</strong> Les nouveaux corridors commerciaux de l'Est.</span></li>
+                <li className="flex items-start gap-2"><span className="material-symbols-outlined text-[#9e001f] text-[20px]">check_circle</span><span><strong>Finance :</strong> Pourquoi les banques misent sur la Fintech.</span></li>
+                <li className="flex items-start gap-2"><span className="material-symbols-outlined text-[#9e001f] text-[20px]">check_circle</span><span><strong>Tech :</strong> L'IA au service de l'agriculture.</span></li>
+                <li className="flex items-start gap-2"><span className="material-symbols-outlined text-[#9e001f] text-[20px]">check_circle</span><span><strong>Focus :</strong> Portrait de 10 leaders tech africains.</span></li>
+              </ul>
+            </section>
+
+            <div className="space-y-6">
+              <div>
+                <h4 className="text-[12px] font-bold uppercase tracking-widest mb-3">1. Choisir la version</h4>
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                  {[
+                    { id:"numerique", label:"Numérique", icon:"tablet_android", desc:"Accès immédiat PDF/Web" },
+                    { id:"papier", label:"Papier", icon:"auto_stories", desc:"Livraison à domicile" },
+                    { id:"audio_pdf", label:"Audio + PDF", icon:"headphones", desc:"Lecture & écoute" },
+                    { id:"cd_audio", label:"CD Audio", icon:"album", desc:"Version collector" },
+                    { id:"audio_papier", label:"Audio + Papier", icon:"auto_awesome", desc:"Expérience complète" },
+                  ].map(f=>(
+                    <button key={f.id} onClick={()=>setFormat(f.id)} className={`p-4 border-2 rounded-xl text-left hover:border-[#9e001f] transition-all group flex flex-col ${format===f.id?"border-[#9e001f] bg-[#9e001f]/10 text-[#9e001f]":"border-[#e5bdbb]"}`}>
+                      <span className="material-symbols-outlined mb-2 group-hover:scale-110 transition-transform">{f.icon}</span>
+                      <span className="font-bold text-[14px]">{f.label}</span>
+                      <span className="text-[11px] opacity-70">{f.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-[12px] font-bold uppercase tracking-widest mb-3">2. Choisir la langue {format.includes("audio")&&"(12 langues)"}</h4>
+                <div className="flex flex-wrap gap-2">
+                  {languagesForFormat.map((code:string)=>(
+                    <button key={code} onClick={()=>setLanguage(code)} className={`px-6 py-2 border-2 rounded-lg text-[14px] font-medium transition-colors ${language===code?"border-[#9e001f] bg-[#9e001f]/10 text-[#9e001f]":"border-[#e5bdbb] hover:border-[#9e001f]"}`}>
+                      {LANGUAGE_LABELS[code]} • {code.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <div className="mt-8">
-              <h3 className="font-bold text-[14px] uppercase tracking-wide text-[#0A1931]">2. Choisissez la langue {format.includes("audio") && "(12 langues disponibles)"}</h3>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {languagesForFormat.map(code=>(
-                  <button key={code} onClick={()=>setLanguage(code)} className={`px-4 py-2 rounded-full text-[13px] font-medium border transition-all ${language===code ? "bg-[#D4AF37] border-[#D4AF37] text-[#0A1931] font-bold" : "bg-white border-zinc-200 hover:border-zinc-300"}`}>
-                    {LANGUAGE_LABELS[code]} • {code.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-8 rounded-[20px] bg-white border border-zinc-100 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-[11px] uppercase tracking-widest font-bold text-zinc-500">Prix total</div>
-                  <div className="font-serif font-black text-[28px] text-[#0A1931]">{selectedFormat?.price.toLocaleString()} F CFA</div>
-                  <div className="text-[12px] text-zinc-500">+ livraison {format.includes("papier") ? "2 000 F CFA (BJ) à 12 000 F CFA (US) • Calcul auto au panier" : "incluse (digital)"} • {LANGUAGE_LABELS[language]}</div>
-                </div>
-                <div className="text-right hidden md:block">
-                  <div className="text-[11px] font-bold uppercase tracking-wide text-green-700 bg-green-50 border border-green-100 rounded-full px-3 py-1 inline-block">✓ Lien sécurisé 24h</div>
-                  <div className="text-[11px] text-zinc-500 mt-2">Aucune donnée bancaire stockée</div>
+            <div className="pt-6 border-t border-[#e5bdbb] flex flex-col sm:flex-row items-center justify-between gap-6">
+              <div className="text-center sm:text-left">
+                <span className="text-[#5c403f] text-[12px] block">Prix TTC</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[48px] font-bold text-[#9e001f]" style={{ fontFamily: "Montserrat" }}>{prices[format]||"12,90 €"}</span>
+                  <span className="text-[#5c403f] text-[14px] line-through">15,00 €</span>
                 </div>
               </div>
-              <div className="mt-6 flex gap-3">
-                <button onClick={addToCart} disabled={adding} className="flex-1 h-12 rounded-full bg-[#0A1931] text-white font-bold text-[14px] hover:bg-black disabled:opacity-60 flex items-center justify-center gap-2">
-                  {adding ? "Ajout..." : <><span>🛒</span> Ajouter au panier</>}
+              <div className="flex flex-col w-full sm:w-auto gap-3">
+                <button onClick={addToCart} disabled={adding} className="flex items-center justify-center gap-3 bg-[#9e001f] text-white px-10 py-5 rounded-xl font-bold text-[16px] hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-[#9e001f]/20 disabled:opacity-60">
+                  <span className="material-symbols-outlined">shopping_cart</span> {adding?"Ajout...":"AJOUTER AU PANIER"}
                 </button>
-                <Link href="/panier" className="h-12 px-6 rounded-full bg-[#D4AF37] text-[#0A1931] font-bold text-[14px] flex items-center gap-2 hover:bg-[#F0D878]">Acheter maintenant →</Link>
-              </div>
-              <div className="mt-4 flex items-center gap-3 text-[11px] text-zinc-500">
-                <span className="flex items-center gap-1">🔒 Paiement Moneroo sécurisé</span>
-                <span>•</span>
-                <span>Mobile Money & Carte</span>
-                <span>•</span>
-                <span>Téléchargement immédiat</span>
+                <p className="text-center text-[11px] text-[#5f5e5e]">Livraison offerte Papier en zone CEDEAO • Lien sécurisé 24h</p>
               </div>
             </div>
 
-            <div className="mt-8 grid md:grid-cols-3 gap-3 text-[12px]">
-              <div className="rounded-[14px] bg-zinc-50 border border-zinc-100 p-4"><div className="font-bold">📦 Livraison papier</div><div className="text-zinc-600 mt-1">DHL • Suivi inclus • 3-7 jours</div></div>
-              <div className="rounded-[14px] bg-zinc-50 border border-zinc-100 p-4"><div className="font-bold">🎧 Audio 12 langues</div><div className="text-zinc-600 mt-1">Fongbé, Wolof, Swahili, etc.</div></div>
-              <div className="rounded-[14px] bg-zinc-50 border border-zinc-100 p-4"><div className="font-bold">♻️ Engagement</div><div className="text-zinc-600 mt-1">1% reversé à la formation journalistique</div></div>
+            <div className="mt-12 border-t border-[#e5bdbb]/30 pt-8">
+              <div className="flex gap-8 border-b border-[#e5bdbb]/30 mb-8">
+                <button className="pb-4 border-b-2 border-[#9e001f] text-[#9e001f] text-[14px] font-bold">Description détaillée</button>
+                <button className="pb-4 border-b-2 border-transparent text-[#5f5e5e] text-[14px]">Spécifications</button>
+                <button className="pb-4 border-b-2 border-transparent text-[#5f5e5e] text-[14px]">Avis (12)</button>
+              </div>
+              <div className="max-w-3xl">
+                <p className="text-[16px] leading-loose">Ce numéro spécial de {magazine.year} dresse un état des lieux sans concession de la maturité numérique sur le continent. Alors que les câbles sous-marins multiplient les points d'ancrage, comment les entreprises locales s'approprient-elles ces nouvelles capacités ? Nos journalistes ont voyagé de Nairobi à Lagos. Inclus : guide pratique 12 pages sécurisation transactions.</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

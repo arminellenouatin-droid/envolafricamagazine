@@ -4,92 +4,48 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 const topLinks = [
-  { name: "S'abonner", href: "/abonnement", highlight: true },
-  { name: "Kiosque", href: "/kiosque" },
-  { name: "Emploi", href: "/emploi" },
-  { name: "Marketplace", href: "/marketplace" },
-  { name: "Financement", href: "/financement" },
-  { name: "Africa Awards", href: "/africa-awards" },
-  { name: "Salons", href: "/salons" },
-  { name: "WAB", href: "/wab" },
+  { name: "S'abonner", href: "/abonnement", icon: "stars" },
+  { name: "Kiosque", href: "/kiosque", icon: "menu_book" },
+  { name: "Jobs", href: "/emploi", icon: "work" },
+  { name: "Marketplace", href: "/marketplace", icon: "storefront" },
+  { name: "Crowdfunding", href: "/financement", icon: "volunteer_activism" },
+  { name: "Africa Awards", href: "/africa-awards", icon: "emoji_events" },
+  { name: "Salons", href: "/salons", icon: "event_seat" },
+  { name: "World Africa Business", href: "/wab", icon: "public" },
 ];
 
-const langs = [
-  { code: "fr", label: "FR" },
-  { code: "en", label: "EN" },
-  { code: "es", label: "ES" },
-];
-const devises = [
-  { code: "XOF", symbol: "F CFA" },
-  { code: "EUR", symbol: "€" },
-  { code: "USD", symbol: "$" },
+const mainNav = [
+  { name: "Finance", href: "/?cat=Finance" },
+  { name: "Économie", href: "/?cat=Economie" },
+  { name: "Politique", href: "/?cat=Politique" },
+  { name: "Tech", href: "/?cat=Tech" },
+  { name: "Lifestyle", href: "/?cat=Lifestyle" },
+  { name: "Analyses", href: "/?cat=Analyse" },
 ];
 
 export default function Header({ user }: { user?: any }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const pathname = usePathname();
-  const router = useRouter();
   const [cartCount, setCartCount] = useState(0);
-  const [currentLang, setCurrentLang] = useState("fr");
-  const [currentDevise, setCurrentDevise] = useState("XOF");
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any>(null);
+  const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", onScroll);
-    // auto detection lang/devise
-    const savedLang = localStorage.getItem("eam_lang");
-    const savedDevise = localStorage.getItem("eam_devise");
-    if (savedLang) setCurrentLang(savedLang);
-    else {
-      const browserLang = navigator.language.slice(0,2);
-      if (["fr","en","es"].includes(browserLang)) {
-        setCurrentLang(browserLang);
-        localStorage.setItem("eam_lang", browserLang);
-      }
+    const saved = localStorage.getItem("eam_cart");
+    if (saved) {
+      try { setCartCount(JSON.parse(saved).length); } catch {}
     }
-    if (savedDevise) setCurrentDevise(savedDevise);
-    else {
-      // simple IP-based guess: if browser lang en => USD, else XOF
-      const lang = navigator.language;
-      if (lang.includes("US")) { setCurrentDevise("USD"); localStorage.setItem("eam_devise","USD"); }
-      else if (lang.includes("FR") && !lang.includes("BJ") && !lang.includes("CI")) { setCurrentDevise("EUR"); localStorage.setItem("eam_devise","EUR"); }
-    }
-    return () => window.removeEventListener("scroll", onScroll);
+    const interval = setInterval(() => {
+      const s = localStorage.getItem("eam_cart");
+      if (s) { try { setCartCount(JSON.parse(s).length); } catch {} }
+    }, 1000);
+    return () => { window.removeEventListener("scroll", onScroll); clearInterval(interval); };
   }, []);
-
-  useEffect(() => {
-    const loadCart = () => {
-      const saved = localStorage.getItem("eam_cart");
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          setCartCount(parsed.length);
-        } catch {}
-      }
-    };
-    loadCart();
-    window.addEventListener("storage", loadCart);
-    const interval = setInterval(loadCart, 1000);
-    return () => {
-      window.removeEventListener("storage", loadCart);
-      clearInterval(interval);
-    };
-  }, []);
-
-  const handleLangChange = (code:string) => {
-    setCurrentLang(code);
-    localStorage.setItem("eam_lang", code);
-    window.dispatchEvent(new Event("storage"));
-  };
-  const handleDeviseChange = (code:string) => {
-    setCurrentDevise(code);
-    localStorage.setItem("eam_devise", code);
-    window.dispatchEvent(new Event("storage"));
-  };
 
   const doSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -101,117 +57,82 @@ export default function Header({ user }: { user?: any }) {
 
   return (
     <>
-      {/* Ticker */}
-      <div className="bg-[#0A1931] text-white text-[11px] md:text-xs py-2 overflow-hidden relative border-b border-[#1a3355]">
-        <div className="flex animate-ticker whitespace-nowrap gap-8">
-          <span className="flex items-center gap-8">
-            <span className="bg-[#D4AF37] text-[#0A1931] px-2 py-0.5 rounded font-bold text-[10px] uppercase tracking-wider">À LA UNE</span>
-            <span>• Zone de libre-échange continentale : un marché de 1,3 milliard de consommateurs</span>
-            <span>• Nigeria : Lagos attire les licornes de la Tech avec 2,5Md$ levés en 2025</span>
-            <span>• BCEAO maintient son taux directeur à 3,5% malgré l'inflation</span>
-            <span>• Cacao ivoirien : la barre des 50% de transformation locale en vue</span>
-            <span>• Fintech : Wave dépasse les 20M d'utilisateurs</span>
-          </span>
-        </div>
-      </div>
-
-      <header className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? "bg-white/95 backdrop-blur-xl shadow-[0_2px_20px_rgba(0,0,0,0.06)] border-b border-zinc-100" : "bg-white border-b border-zinc-100"}`}>
-        <div className="border-b border-zinc-100 bg-[#FFFCF5]/50 hidden lg:block">
-          <div className="max-w-[1440px] mx-auto px-6 xl:px-8 flex items-center justify-between h-10 text-[12px]">
-            <div className="flex items-center gap-6">
-              <span className="text-zinc-500 flex items-center gap-2"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>Édition du {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
-              <span className="h-3 w-px bg-zinc-200"></span>
-              <Link href="/don" className="text-zinc-600 hover:text-[#0A1931] transition-colors flex items-center gap-1.5"><span>❤️</span> Faire un don</Link>
-              <Link href="/affiliation" className="text-zinc-600 hover:text-[#0A1931] transition-colors">Parrainage</Link>
-              <Link href="/service" className="text-zinc-600 hover:text-[#0A1931] transition-colors">Demande de service</Link>
-            </div>
-            <div className="flex items-center gap-5">
-              <button onClick={()=>setShowSearch(!showSearch)} className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center">🔍</button>
-              <div className="flex items-center gap-1 bg-zinc-100 rounded-full p-1">
-                {langs.map(l => (
-                  <button key={l.code} onClick={() => handleLangChange(l.code)} className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${currentLang===l.code ? "bg-[#0A1931] text-white shadow" : "text-zinc-600 hover:text-[#0A1931]"}`}>
-                    {l.label}
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center gap-1 bg-zinc-100 rounded-full p-1">
-                {devises.map(d => (
-                  <button key={d.code} onClick={() => handleDeviseChange(d.code)} className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${currentDevise===d.code ? "bg-[#D4AF37] text-[#0A1931] shadow" : "text-zinc-600 hover:text-[#0A1931]"}`}>
-                    {d.code}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-8">
-          <div className="flex items-center justify-between h-[68px] md:h-[80px]">
-            <Link href="/" className="flex items-center gap-3 group">
-              <img src="/logo-couleur-entete.png" alt="Envol Africa Mag" className="hidden md:block h-[52px] lg:h-[60px] w-auto object-contain group-hover:scale-[1.01] transition-transform" />
-              <div className="md:hidden flex items-center gap-2.5">
-                <div className="w-11 h-11 bg-[#0A1931] rounded-[12px] flex items-center justify-center"><span className="text-[#D4AF37] font-serif font-black text-xl">E</span><span className="text-white font-serif font-black text-xl -ml-0.5">A</span></div>
-                <div className="leading-[0.9]"><div className="font-serif font-black text-[18px] tracking-tight text-[#0A1931] uppercase">Envol Africa</div><div className="font-sans font-bold text-[10px] tracking-[0.2em] text-[#D4AF37] uppercase -mt-0.5">Magazine</div></div>
-              </div>
+      {/* TOP HEADER LAYER 1 - inverse-surface #303030 */}
+      <nav className="bg-[#303030] text-white py-2 px-5 md:px-[64px] hidden md:flex justify-between items-center z-50">
+        <div className="flex items-center gap-4 text-[12px] font-medium opacity-80">
+          {topLinks.map(l=>(
+            <Link key={l.name} href={l.href} className="hover:text-[#ffdad8] flex items-center gap-1 transition-colors">
+              <span className="material-symbols-outlined text-[14px]">{l.icon}</span> {l.name}
             </Link>
+          ))}
+        </div>
+        <div className="flex items-center gap-4">
+          <button className="flex items-center gap-1 text-[12px] opacity-80 hover:opacity-100">FR <span className="material-symbols-outlined text-[14px]">expand_more</span></button>
+          <button className="flex items-center gap-1 text-[12px] opacity-80 hover:opacity-100">EUR <span className="material-symbols-outlined text-[14px]">expand_more</span></button>
+        </div>
+      </nav>
 
-            <nav className="hidden lg:flex items-center gap-1">
-              {topLinks.map(link => (
-                <Link key={link.name} href={link.href} className={`px-3.5 py-2.5 rounded-full text-[13px] font-medium transition-all ${link.highlight ? "bg-[#0A1931] text-white hover:bg-[#142850] shadow-sm" : pathname===link.href ? "bg-zinc-900 text-white" : "text-zinc-700 hover:text-[#0A1931] hover:bg-zinc-50"}`}>
-                  {link.name}
-                </Link>
+      {/* MAIN HEADER LAYER 2 - surface #fcf9f8 sticky */}
+      <header className={`bg-[#fcf9f8] sticky top-0 z-40 border-b border-[#e5bdbb] shadow-sm ${scrolled ? "shadow-md" : ""}`}>
+        <div className="max-w-[1280px] mx-auto px-5 md:px-[64px] flex items-center justify-between h-20">
+          <div className="flex items-center gap-8">
+            <Link href="/" className="font-black tracking-tighter leading-none text-[#9e001f]" style={{ fontFamily: "Montserrat, sans-serif", fontSize: "2.2rem" }}>Envol Africa</Link>
+            <nav className="hidden lg:flex items-center gap-6 text-[14px] text-[#5c403f]" style={{ fontFamily: "Inter, sans-serif" }}>
+              {mainNav.map(m=>(
+                <Link key={m.name} href={m.href} className="hover:text-[#9e001f] transition-colors font-medium">{m.name}</Link>
               ))}
             </nav>
+          </div>
 
-            <div className="flex items-center gap-1.5 md:gap-2.5">
-              <button onClick={()=>setShowSearch(!showSearch)} className="w-10 h-10 rounded-full bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 flex items-center justify-center">🔍</button>
-              <Link href="/panier" className="relative w-10 h-10 rounded-full bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 flex items-center justify-center group">
-                <svg className="w-4 h-4 text-zinc-700 group-hover:text-[#0A1931]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
-                {cartCount>0 && <span className="absolute -top-1 -right-1 bg-[#D4AF37] text-[#0A1931] text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">{cartCount}</span>}
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-1 border-r border-[#e5bdbb] pr-4 text-[#5f5e5e]">
+              <Link href="/panier" className="relative hover:text-[#9e001f] p-1.5">
+                <span className="material-symbols-outlined">shopping_cart</span>
+                {cartCount>0 && <span className="absolute -top-1 -right-1 bg-[#9e001f] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{cartCount}</span>}
               </Link>
-              <Link href="/compte" className="hidden md:flex w-10 h-10 rounded-full bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 items-center justify-center">
-                {user ? <span className="w-7 h-7 rounded-full bg-[#0A1931] text-white flex items-center justify-center text-xs font-bold">{user.prenom?.[0]}{user.nom?.[0]}</span> : <svg className="w-4 h-4 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
-              </Link>
+              <button className="hover:text-[#9e001f] p-1.5"><span className="material-symbols-outlined">notifications</span></button>
+              <Link href="/service" className="hover:text-[#9e001f] p-1.5"><span className="material-symbols-outlined">mail</span></Link>
+              <Link href="/compte/favoris" className="hover:text-[#9e001f] p-1.5"><span className="material-symbols-outlined">favorite</span></Link>
+              <button onClick={()=>setShowSearch(!showSearch)} className="hover:text-[#9e001f] p-1.5"><span className="material-symbols-outlined">search</span></button>
+            </div>
+
+            <div className="hidden lg:flex items-center gap-2">
               {user ? (
-                <Link href="/compte" className="hidden lg:flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-zinc-900 text-white text-[13px] font-medium hover:bg-black">
+                <Link href="/compte" className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-[#303030] text-white text-[13px] font-medium">
                   <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-[11px] font-bold">{user.prenom?.[0]}</span>
                   <span className="max-w-[80px] truncate">{user.prenom}</span>
                 </Link>
               ) : (
-                <div className="hidden lg:flex items-center gap-2">
-                  <Link href="/auth/login" className="px-4 py-2.5 text-[13px] font-medium text-zinc-700 hover:text-[#0A1931]">Connexion</Link>
-                  <Link href="/auth/register" className="px-5 py-2.5 rounded-full bg-[#D4AF37] text-[#0A1931] text-[13px] font-bold hover:bg-[#C9A44A] shadow-sm">S'inscrire</Link>
-                </div>
+                <>
+                  <Link href="/auth/login" className="text-[12px] font-semibold px-4 py-2 hover:bg-[#f0eded] rounded transition-colors">SE CONNECTER</Link>
+                  <Link href="/abonnement" className="text-[12px] font-semibold px-4 py-2 bg-[#9e001f] text-white hover:bg-[#c8102e] rounded shadow-md active:scale-95 transition-all">S'ABONNER</Link>
+                  <Link href="/don" className="text-[12px] font-semibold px-4 py-2 border-2 border-[#9e001f] text-[#9e001f] hover:bg-[#9e001f] hover:text-white rounded transition-all">FAIRE UN DON</Link>
+                </>
               )}
-              <button onClick={()=>setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden w-10 h-10 rounded-full bg-zinc-900 text-white flex items-center justify-center">
-                {mobileMenuOpen ? <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg> : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>}
-              </button>
             </div>
+
+            <button onClick={()=>setMobileMenuOpen(!mobileMenuOpen)} className="p-2 ml-2 hover:bg-[#f0eded] rounded-full lg:hidden">
+              <span className="material-symbols-outlined">{mobileMenuOpen?"close":"menu"}</span>
+            </button>
           </div>
         </div>
 
         {showSearch && (
-          <div className="border-t border-zinc-100 bg-white p-4 animate-fade-in">
+          <div className="border-t border-[#e5bdbb] bg-white p-4">
             <div className="max-w-[720px] mx-auto">
               <form onSubmit={doSearch} className="flex gap-2">
-                <input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder="Rechercher articles, magazines, catégories... (ex: ZLECAf, cacao, fintech)" className="flex-1 h-12 rounded-full border border-zinc-200 bg-zinc-50 px-5 text-[14px] focus:outline-none focus:border-[#0A1931] focus:bg-white" />
-                <button type="submit" className="h-12 px-6 rounded-full bg-[#0A1931] text-white font-bold text-[13px]">Rechercher</button>
-                <button type="button" onClick={()=>setShowSearch(false)} className="h-12 w-12 rounded-full border border-zinc-200 flex items-center justify-center">×</button>
+                <input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder="Rechercher articles, magazines..." className="flex-1 h-11 rounded-lg border border-[#e5bdbb] bg-[#f6f3f2] px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-[#9e001f]" />
+                <button type="submit" className="h-11 px-6 rounded-lg bg-[#9e001f] text-white font-bold text-[13px]">Rechercher</button>
+                <button type="button" onClick={()=>setShowSearch(false)} className="h-11 w-11 rounded-full border flex items-center justify-center">×</button>
               </form>
               {searchResults && (
-                <div className="mt-4 bg-white rounded-[16px] border border-zinc-100 p-4 max-h-[60vh] overflow-y-auto">
-                  <div className="text-[11px] font-bold uppercase tracking-wide text-zinc-500">{searchResults.articles?.length} articles • {searchResults.magazines?.length} magazines pour "{searchResults.query}"</div>
+                <div className="mt-4 bg-white rounded-[12px] border p-4 max-h-[60vh] overflow-y-auto">
+                  <div className="text-[11px] font-bold uppercase text-[#5c403f]">{searchResults.articles?.length} articles • {searchResults.magazines?.length} magazines</div>
                   <div className="mt-3 space-y-2">
                     {searchResults.articles?.slice(0,5).map((a:any)=>(
-                      <Link key={a.id} href={`/article/${a.slug}`} onClick={()=>setShowSearch(false)} className="flex gap-3 p-2 rounded-[12px] hover:bg-zinc-50">
-                        <img src={a.image} alt="" className="w-16 h-16 rounded-[10px] object-cover" />
-                        <div><div className="font-bold text-[13px] line-clamp-1">{a.title}</div><div className="text-[11px] text-zinc-500 mt-1">{a.category} • {a.views} vues</div></div>
-                      </Link>
-                    ))}
-                    {searchResults.magazines?.map((m:any)=>(
-                      <Link key={m.id} href={`/kiosque/${m.id}`} onClick={()=>setShowSearch(false)} className="flex gap-3 p-2 rounded-[12px] hover:bg-zinc-50">
-                        <img src={m.cover} alt="" className="w-12 h-16 rounded-[8px] object-cover" />
-                        <div><div className="font-bold text-[13px]">{m.title}</div><div className="text-[11px] text-zinc-500">N°{m.numero}</div></div>
+                      <Link key={a.id} href={`/article/${a.slug}`} onClick={()=>setShowSearch(false)} className="flex gap-3 p-2 rounded hover:bg-[#f6f3f2]">
+                        <img src={a.image} alt="" className="w-16 h-16 rounded object-cover" />
+                        <div><div className="font-bold text-[13px]">{a.title}</div><div className="text-[11px] text-[#5c403f]">{a.category}</div></div>
                       </Link>
                     ))}
                   </div>
@@ -222,43 +143,33 @@ export default function Header({ user }: { user?: any }) {
         )}
 
         {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-zinc-100 bg-white animate-fade-in">
-            <div className="px-4 py-6 space-y-6">
-              <form onSubmit={(e)=>{e.preventDefault(); setMobileMenuOpen(false); setShowSearch(true);}} className="flex gap-2"><input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder="Rechercher..." className="flex-1 h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" /><button className="h-11 w-11 rounded-full bg-[#0A1931] text-white">🔍</button></form>
+          <div className="lg:hidden border-t border-[#e5bdbb] bg-white">
+            <div className="px-5 py-6 space-y-4">
               <div className="grid grid-cols-2 gap-2">
-                {topLinks.map(link=>(
-                  <Link key={link.name} href={link.href} onClick={()=>setMobileMenuOpen(false)} className={`p-3.5 rounded-2xl text-[13px] font-medium border ${link.highlight ? "bg-[#0A1931] text-white border-[#0A1931]" : "bg-zinc-50 text-zinc-800 border-zinc-100"}`}>
-                    {link.name}
-                  </Link>
+                {topLinks.map(l=>(
+                  <Link key={l.name} href={l.href} onClick={()=>setMobileMenuOpen(false)} className="p-3 rounded-xl border bg-[#f6f3f2] text-[13px] font-medium flex items-center gap-1"><span className="material-symbols-outlined text-[16px]">{l.icon}</span>{l.name}</Link>
                 ))}
               </div>
               <div className="flex gap-2">
-                <Link href="/auth/login" onClick={()=>setMobileMenuOpen(false)} className="flex-1 py-3 rounded-full border border-zinc-200 text-center text-[14px] font-medium">Connexion</Link>
-                <Link href="/auth/register" onClick={()=>setMobileMenuOpen(false)} className="flex-1 py-3 rounded-full bg-[#D4AF37] text-[#0A1931] text-center text-[14px] font-bold">S'inscrire</Link>
+                <Link href="/auth/login" onClick={()=>setMobileMenuOpen(false)} className="flex-1 py-3 rounded-full border text-center text-[14px] font-medium">Connexion</Link>
+                <Link href="/auth/register" onClick={()=>setMobileMenuOpen(false)} className="flex-1 py-3 rounded-full bg-[#9e001f] text-white text-center text-[14px] font-bold">S'inscrire</Link>
               </div>
             </div>
           </div>
         )}
       </header>
 
-      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl border-t border-zinc-200 px-2 py-2">
-        <div className="flex items-center justify-around">
-          {[
-            { name: "Accueil", href: "/", icon: "⌂" },
-            { name: "Kiosque", href: "/kiosque", icon: "◫" },
-            { name: "Emploi", href: "/emploi", icon: "💼" },
-            { name: "Finance", href: "/financement", icon: "💰" },
-            { name: "Market", href: "/marketplace", icon: "🛒" },
-            { name: "Awards", href: "/africa-awards", icon: "🏆" },
-            { name: "WAB", href: "/wab", icon: "🌍" },
-          ].map(item=>(
-            <Link key={item.name} href={item.href} className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl ${pathname===item.href ? "text-[#0A1931]" : "text-zinc-500"}`}>
-              <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[14px] ${pathname===item.href ? "bg-[#0A1931] text-white" : "bg-zinc-100"}`}>{item.icon}</span>
-              <span className="text-[9px] font-medium tracking-wide uppercase">{item.name}</span>
-            </Link>
-          ))}
+      {/* TICKER BAR */}
+      <section className="bg-[#f6f3f2] border-b border-[#e5bdbb] py-2 overflow-hidden flex items-center">
+        <div className="px-5 md:px-[64px] flex items-center w-full">
+          <span className="bg-[#9e001f] text-white text-[12px] px-3 py-1 mr-4 shrink-0 font-bold tracking-wider">À LA UNE</span>
+          <div className="w-full overflow-hidden">
+            <p className="scrolling-ticker text-[#5c403f] text-[13px]" style={{ fontFamily: "Inter, sans-serif" }}>
+              • Transition énergétique au Nigeria : investissement record 12M$ • Sommet UA : accords libre-échange ratifiés • PIB continental : prévisions 2025 • Fintech Kenya : rapport inclusion financière • ZLECAf : 1,3Md consommateurs • Cacao ivoirien : 50% transformation locale
+            </p>
+          </div>
         </div>
-      </div>
+      </section>
     </>
   );
 }
