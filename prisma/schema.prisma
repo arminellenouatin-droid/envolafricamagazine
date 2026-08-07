@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                String    @id @default(uuid())
+  nom               String
+  prenom            String
+  email             String    @unique
+  passwordHash      String    @map("password_hash")
+  role              String    @default("user")
+  avatar            String?
+  lang              String    @default("fr")
+  currency          String    @default("XOF")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  isVerified        Boolean   @default(true) @map("is_verified")
+  twoFactorEnabled  Boolean   @default(false) @map("two_factor_enabled")
+  company           String?
+  country           String    @default("BJ")
+  phone             String?
+  affiliateCode     String    @unique @map("affiliate_code")
+  referredBy        String?   @map("referred_by")
+  subscription      Json?
+  favorites         String[]  @default([])
+  downloads         String[]  @default([])
+
+  affiliateEarnings AffiliateEarning[]
+  comments          Comment[]
+
+  @@map("users")
+}
+
+model Article {
+  id            String    @id @default(uuid())
+  slug          String    @unique
+  title         String
+  summary       String?
+  content       String
+  previewLines  Int       @default(12) @map("preview_lines")
+  category      String?
+  tags          String[]  @default([])
+  author        String?
+  authorId      String?   @map("author_id")
+  image         String?
+  images        String[]  @default([])
+  isPublished   Boolean   @default(true) @map("is_published")
+  isFeatured    Boolean   @default(false) @map("is_featured")
+  isSentinelle  Boolean   @default(false) @map("is_sentinelle")
+  isEssor       Boolean   @default(false) @map("is_essor")
+  isOmbreDouce  Boolean   @default(false) @map("is_ombre_douce")
+  views         Int       @default(0)
+  likes         Int       @default(0)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  publishedAt   DateTime? @default(now()) @map("published_at")
+  language      String    @default("fr")
+  hasAudio      Boolean   @default(true) @map("has_audio")
+  audioUrl      String?   @map("audio_url")
+  readingTime   Int       @default(5) @map("reading_time")
+  isVideo       Boolean   @default(false) @map("is_video")
+  videoUrl      String?   @map("video_url")
+
+  comments Comment[]
+
+  @@index([slug])
+  @@index([category])
+  @@map("articles")
+}
+
+model Magazine {
+  id             String   @id @default(uuid())
+  numero         Int      @unique
+  title          String
+  cover          String?
+  date           DateTime? @db.Date
+  year           Int?
+  description    String?
+  previewPages   Int      @default(5) @map("preview_pages")
+  formats        String[] @default(["numerique", "papier", "cd_audio", "audio_pdf", "audio_papier"])
+  languages      String[] @default(["fr", "en", "es"])
+  featured       Boolean  @default(false)
+  priceOverrides Json?    @map("price_overrides")
+
+  @@map("magazines")
+}
+
+model Order {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  items           Json
+  total           Int
+  currency        String   @default("XOF")
+  status          String   @default("pending")
+  paymentId       String?  @map("payment_id")
+  affiliateCode   String?  @map("affiliate_code")
+  shippingCountry String?  @map("shipping_country")
+  shippingCost    Int      @default(0) @map("shipping_cost")
+  createdAt       DateTime @default(now()) @map("created_at")
+  paidAt          DateTime? @map("paid_at")
+
+  affiliateEarnings AffiliateEarning[]
+
+  @@index([userId])
+  @@map("orders")
+}
+
+model AffiliateEarning {
+  id          String   @id @default(uuid())
+  affiliateId String   @map("affiliate_id")
+  orderId     String   @map("order_id")
+  amount      Int
+  commission  Int
+  rate        Float
+  status      String   @default("available")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  affiliate User  @relation(fields: [affiliateId], references: [id])
+  order     Order @relation(fields: [orderId], references: [id])
+
+  @@index([affiliateId])
+  @@map("affiliate_earnings")
+}
+
+model Donation {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  amount    Int
+  currency  String   @default("XOF")
+  email     String?
+  message   String?
+  paymentId String?  @map("payment_id")
+  status    String   @default("pending")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("donations")
+}
+
+model Comment {
+  id          String   @id @default(uuid())
+  articleId   String   @map("article_id")
+  userId      String   @map("user_id")
+  content     String
+  createdAt   DateTime @default(now()) @map("created_at")
+  likes       Int      @default(0)
+  isModerated Boolean  @default(false) @map("is_moderated")
+
+  article Article @relation(fields: [articleId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@map("comments")
+}
