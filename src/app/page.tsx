@@ -1,6 +1,7 @@
 import { readDB } from "@/lib/db";
 import { SentinellesSection, EssorOmbreSection, MagazineCarousel, FilInfoManager, MostReadFormations, TabsSection, VideoProchainEcosystem } from "@/components/home/HeroSections";
 import Link from "next/link";
+import PromoPopup from "@/components/PromoPopup";
 
 export default function HomePage() {
   const db = readDB();
@@ -72,6 +73,8 @@ export default function HomePage() {
       <MostReadFormations articles={articles} />
       <TabsSection />
       <VideoProchainEcosystem articles={articles} magazines={magazines} />
+
+      <PromoPopup />
 
       {/* Don / Affiliate CTA */}
       <section className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-8 py-8">
