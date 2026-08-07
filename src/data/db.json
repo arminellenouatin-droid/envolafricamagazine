@@ -1,0 +1,1059 @@
+{
+  "users": [
+    {
+      "id": "6c2b846b-2288-420c-a51d-4d6fddf1f628",
+      "nom": "DAVAKAN",
+      "prenom": "Quentin",
+      "email": "yekpondafe@gmail.com",
+      "passwordHash": "$2b$10$fzqosoD.e2UKaHXL.bfakOF6mXJJJjHBUxOrS4wdpC3vkl/JKcG.C",
+      "role": "admin",
+      "lang": "fr",
+      "currency": "XOF",
+      "createdAt": "2026-08-07T13:10:17.881Z",
+      "isVerified": true,
+      "twoFactorEnabled": false,
+      "country": "BJ",
+      "affiliateCode": "QUE2294",
+      "favorites": [],
+      "downloads": [],
+      "phone": "+22900000000"
+    }
+  ],
+  "articles": [
+    {
+      "id": "a6bd4d1c-6228-45bb-b821-2f0f6db051a5",
+      "slug": "zlecaf-le-grand-tournant-de-l-int-gration-africaine-0",
+      "title": "ZLECAf : le grand tournant de l'intégration africaine",
+      "summary": "L'Afrique de l'Ouest connaît une transformation économique sans précédent. Les investissements directs étrangers ont augmenté de 15% cette année, portés par les secteurs de l'énerg...",
+      "content": "L'Afrique de l'Ouest connaît une transformation économique sans précédent. Les investissements directs étrangers ont augmenté de 15% cette année, portés par les secteurs de l'énergie et de la technologie. Cette dynamique s'explique par une jeunesse de plus en plus qualifiée, une urbanisation rapide et une classe moyenne émergente qui redéfinit les codes de la consommation.\n\nAu Nigeria, la réforme du secteur pétrolier commence à porter ses fruits. Les autorités ont mis en place un cadre réglementaire plus transparent, attirant ainsi de nouveaux investisseurs. Le Ghana, de son côté, se positionne comme un hub technologique, avec Accra qui accueille désormais plusieurs incubateurs de renommée internationale.\n\nLa Côte d'Ivoire confirme son statut de locomotive économique régionale, avec une croissance soutenue par le cacao et l'anacarde, mais aussi par une diversification vers les services. Les experts s'accordent à dire que la Zone de libre-échange continentale africaine (ZLECAf) va accélérer cette intégration économique, offrant un marché de 1,3 milliard de consommateurs.\n\nPourtant, des défis subsistent. L'accès au financement reste un frein majeur pour les PME, qui représentent 90% du tissu économique. Les infrastructures, bien qu'en amélioration, nécessitent encore des investissements colossaux. C'est précisément là qu'interviennent les innovations en matière de financement participatif et de fintech, qui démocratisent l'accès au capital.\n\nL'avenir de l'Afrique se joue aujourd'hui dans sa capacité à transformer ses matières premières sur place, à investir dans le capital humain et à créer des chaînes de valeur locales. Les prochains mois seront décisifs, avec plusieurs élections majeures et des réformes structurelles attendues dans la plupart des pays de la région.",
+      "previewLines": 12,
+      "category": "Economie",
+      "tags": [
+        "Afrique",
+        "Economie",
+        "Economie"
+      ],
+      "author": "Aïssata Diop",
+      "authorId": "auth1",
+      "image": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800",
+      "isPublished": true,
+      "isFeatured": true,
+      "isSentinelle": true,
+      "isEssor": false,
+      "isOmbreDouce": false,
+      "views": 4874,
+      "likes": 80,
+      "createdAt": "2026-08-07T13:10:17.778Z",
+      "publishedAt": "2026-08-07T13:10:17.778Z",
+      "language": "fr",
+      "hasAudio": true,
+      "audioUrl": "/audio/sample.mp3",
+      "readingTime": 5
+    },
+    {
+      "id": "9374d638-425a-4cda-ab2a-7cf5cf797043",
+      "slug": "nigeria-pourquoi-lagos-attire-les-licornes-de-la-tech-1",
+      "title": "Nigeria : pourquoi Lagos attire les licornes de la Tech",
+      "summary": "Le marché des capitaux africains est en pleine ébullition. La BRVM a enregistré une hausse de 12% depuis le début de l'année, tandis que la bourse de Nairobi attire de plus en plus...",
+      "content": "Le marché des capitaux africains est en pleine ébullition. La BRVM a enregistré une hausse de 12% depuis le début de l'année, tandis que la bourse de Nairobi attire de plus en plus d'investisseurs internationaux. Cette performance s'explique par une meilleure gouvernance des entreprises cotées et par l'arrivée de nouvelles valeurs technologiques.\n\nLes obligations vertes font également leur apparition, avec le Maroc et l'Afrique du Sud en tête de file. Ces instruments financiers permettent de financer la transition énergétique tout en offrant des rendements attractifs. Les investisseurs soucieux de leur impact environnemental y trouvent un moyen concret de soutenir le développement durable du continent.\n\nMais au-delà des marchés traditionnels, c'est la finance décentralisée qui pourrait révolutionner l'accès aux services bancaires. Avec un taux de bancarisation qui reste faible dans de nombreuses régions, le mobile money s'est imposé comme une alternative crédible, traitant désormais plus de transactions que les banques traditionnelles dans certains pays.\n\nLes régulateurs tentent de s'adapter à cette nouvelle donne, en mettant en place des bacs à sable réglementaires pour tester les innovations sans mettre en danger la stabilité financière. Un équilibre délicat mais nécessaire pour ne pas freiner l'innovation tout en protégeant les consommateurs.\n\nLes perspectives pour 2026-2027 restent optimistes, avec une croissance attendue autour de 4,2% pour l'ensemble du continent, selon la BAD. Les secteurs porteurs restent l'agroalimentaire, les énergies renouvelables et l'économie numérique, qui pourraient créer des millions d'emplois si les conditions sont réunies.",
+      "previewLines": 12,
+      "category": "Finance",
+      "tags": [
+        "Afrique",
+        "Economie",
+        "Finance"
+      ],
+      "author": "Kwame Nkrumah Jr.",
+      "authorId": "auth2",
+      "image": "https://images.unsplash.com/photo-1497366811353-524cc3f3968e?w=800",
+      "isPublished": true,
+      "isFeatured": true,
+      "isSentinelle": true,
+      "isEssor": false,
+      "isOmbreDouce": false,
+      "views": 1523,
+      "likes": 53,
+      "createdAt": "2026-08-06T13:10:17.778Z",
+      "publishedAt": "2026-08-06T13:10:17.778Z",
+      "language": "fr",
+      "hasAudio": true,
+      "audioUrl": "/audio/sample.mp3",
+      "readingTime": 6
+    },
+    {
+      "id": "58363b62-6b5d-4a5e-8303-c9435a127f21",
+      "slug": "cacao-ivoirien-vers-une-transformation-locale-50-2",
+      "title": "Cacao ivoirien : vers une transformation locale à 50%",
+      "summary": "Portrait d'une entrepreneure qui bouscule les codes. À 32 ans, Aminata Traoré a créé la plus grande plateforme de e-commerce de produits cosmétiques bio en Afrique francophone. Par...",
+      "content": "Portrait d'une entrepreneure qui bouscule les codes. À 32 ans, Aminata Traoré a créé la plus grande plateforme de e-commerce de produits cosmétiques bio en Afrique francophone. Partie d'un petit atelier à Dakar, son entreprise emploie aujourd'hui 150 personnes et livre dans 15 pays.\n\nSon secret ? Une connaissance intime des besoins des femmes africaines et une chaîne d'approvisionnement qui valorise les productrices locales de karité et d'huile de baobab. Nous ne voulons pas seulement vendre des produits, nous voulons raconter l'histoire de celles qui les fabriquent, explique-t-elle dans son bureau baigné de lumière.\n\nSon parcours n'a pas été sans embûches. Levée de fonds difficile, préjugés, logistique complexe... Elle a dû faire preuve d'une résilience à toute épreuve. Mais son succès inspire aujourd'hui toute une génération de jeunes femmes qui voient en elle un modèle.\n\nAminata est également engagée dans la formation, avec une académie qui a déjà formé plus de 500 jeunes entrepreneures. L'Afrique regorge de talents, il suffit de leur donner les moyens et la confiance, affirme-t-elle. Son prochain défi : conquérir le marché européen, où la demande pour des produits éthiques et africains explose.\n\nCette success story illustre parfaitement le potentiel du continent, où l'innovation frugale et l'impact social peuvent rimer avec rentabilité. Une leçon pour tous les investisseurs qui cherchent le prochain joyau africain.",
+      "previewLines": 12,
+      "category": "Entrepreneuriat",
+      "tags": [
+        "Afrique",
+        "Economie",
+        "Entrepreneuriat"
+      ],
+      "author": "Fatou Sow",
+      "authorId": "auth3",
+      "image": "https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?w=800",
+      "isPublished": true,
+      "isFeatured": true,
+      "isSentinelle": true,
+      "isEssor": false,
+      "isOmbreDouce": false,
+      "views": 2455,
+      "likes": 190,
+      "createdAt": "2026-08-05T13:10:17.778Z",
+      "publishedAt": "2026-08-05T13:10:17.778Z",
+      "language": "fr",
+      "hasAudio": true,
+      "audioUrl": "/audio/sample.mp3",
+      "readingTime": 7
+    },
+    {
+      "id": "b2e7513e-6a48-4910-8043-7e5b21c4b7e2",
+      "slug": "nergie-solaire-le-pari-gagnant-du-sahel-3",
+      "title": "Énergie solaire : le pari gagnant du Sahel",
+      "summary": "L'Afrique de l'Ouest connaît une transformation économique sans précédent. Les investissements directs étrangers ont augmenté de 15% cette année, portés par les secteurs de l'énerg...",
+      "content": "L'Afrique de l'Ouest connaît une transformation économique sans précédent. Les investissements directs étrangers ont augmenté de 15% cette année, portés par les secteurs de l'énergie et de la technologie. Cette dynamique s'explique par une jeunesse de plus en plus qualifiée, une urbanisation rapide et une classe moyenne émergente qui redéfinit les codes de la consommation.\n\nAu Nigeria, la réforme du secteur pétrolier commence à porter ses fruits. Les autorités ont mis en place un cadre réglementaire plus transparent, attirant ainsi de nouveaux investisseurs. Le Ghana, de son côté, se positionne comme un hub technologique, avec Accra qui accueille désormais plusieurs incubateurs de renommée internationale.\n\nLa Côte d'Ivoire confirme son statut de locomotive économique régionale, avec une croissance soutenue par le cacao et l'anacarde, mais aussi par une diversification vers les services. Les experts s'accordent à dire que la Zone de libre-échange continentale africaine (ZLECAf) va accélérer cette intégration économique, offrant un marché de 1,3 milliard de consommateurs.\n\nPourtant, des défis subsistent. L'accès au financement reste un frein majeur pour les PME, qui représentent 90% du tissu économique. Les infrastructures, bien qu'en amélioration, nécessitent encore des investissements colossaux. C'est précisément là qu'interviennent les innovations en matière de financement participatif et de fintech, qui démocratisent l'accès au capital.\n\nL'avenir de l'Afrique se joue aujourd'hui dans sa capacité à transformer ses matières premières sur place, à investir dans le capital humain et à créer des chaînes de valeur locales. Les prochains mois seront décisifs, avec plusieurs élections majeures et des réformes structurelles attendues dans la plupart des pays de la région.",
+      "previewLines": 12,
+      "category": "Énergie",
+      "tags": [
+        "Afrique",
+        "Economie",
+        "Énergie"
+      ],
+      "author": "Jean-Marc Koffi",
+      "authorId": "auth4",
+      "image": "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800",
+      "isPublished": true,
+      "isFeatured": true,
+      "isSentinelle": false,
+      "isEssor": true,
+      "isOmbreDouce": false,
+      "views": 5219,
+      "likes": 340,
+      "createdAt": "2026-08-04T13:10:17.778Z",
+      "publishedAt": "2026-08-04T13:10:17.778Z",
+      "language": "fr",
+      "hasAudio": true,
+      "audioUrl": "/audio/sample.mp3",
+      "readingTime": 8
+    },
+    {
+      "id": "ef039580-a6a4-48d0-9971-51623d7c9075",
+      "slug": "fintech-comment-le-mobile-money-redessine-la-banque-4",
+      "title": "Fintech : comment le Mobile Money redessine la banque",
+      "summary": "Le marché des capitaux africains est en pleine ébullition. La BRVM a enregistré une hausse de 12% depuis le début de l'année, tandis que la bourse de Nairobi attire de plus en plus...",
+      "content": "Le marché des capitaux africains est en pleine ébullition. La BRVM a enregistré une hausse de 12% depuis le début de l'année, tandis que la bourse de Nairobi attire de plus en plus d'investisseurs internationaux. Cette performance s'explique par une meilleure gouvernance des entreprises cotées et par l'arrivée de nouvelles valeurs technologiques.\n\nLes obligations vertes font également leur apparition, avec le Maroc et l'Afrique du Sud en tête de file. Ces instruments financiers permettent de financer la transition énergétique tout en offrant des rendements attractifs. Les investisseurs soucieux de leur impact environnemental y trouvent un moyen concret de soutenir le développement durable du continent.\n\nMais au-delà des marchés traditionnels, c'est la finance décentralisée qui pourrait révolutionner l'accès aux services bancaires. Avec un taux de bancarisation qui reste faible dans de nombreuses régions, le mobile money s'est imposé comme une alternative crédible, traitant désormais plus de transactions que les banques traditionnelles dans certains pays.\n\nLes régulateurs tentent de s'adapter à cette nouvelle donne, en mettant en place des bacs à sable réglementaires pour tester les innovations sans mettre en danger la stabilité financière. Un équilibre délicat mais nécessaire pour ne pas freiner l'innovation tout en protégeant les consommateurs.\n\nLes perspectives pour 2026-2027 restent optimistes, avec une croissance attendue autour de 4,2% pour l'ensemble du continent, selon la BAD. Les secteurs porteurs restent l'agroalimentaire, les énergies renouvelables et l'économie numérique, qui pourraient créer des millions d'emplois si les conditions sont réunies.",
+      "previewLines": 12,
+      "category": "Tech",
+      "tags": [
+        "Afrique",
+        "Economie",
+        "Tech"
+      ],
+      "author": "Aïssata Diop",
+      "authorId": "auth1",
+      "image": "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800",
+      "isPublished": true,
+      "isFeatured": true,
+      "isSentinelle": false,
+      "isEssor": true,
+      "isOmbreDouce": false,
+      "views": 3611,
+      "likes": 287,
+      "createdAt": "2026-08-03T13:10:17.778Z",
+      "publishedAt": "2026-08-03T13:10:17.778Z",
+      "language": "fr",
+      "hasAudio": true,
+      "audioUrl": "/audio/sample.mp3",
+      "readingTime": 9
+    },
+    {
+      "id": "2f682e4c-550c-425d-b305-db89876f746a",
+      "slug": "portrait-aminata-traor-la-reine-du-bio-africain-5",
+      "title": "Portrait - Aminata Traoré, la reine du bio africain",
+      "summary": "Portrait d'une entrepreneure qui bouscule les codes. À 32 ans, Aminata Traoré a créé la plus grande plateforme de e-commerce de produits cosmétiques bio en Afrique francophone. Par...",
+      "content": "Portrait d'une entrepreneure qui bouscule les codes. À 32 ans, Aminata Traoré a créé la plus grande plateforme de e-commerce de produits cosmétiques bio en Afrique francophone. Partie d'un petit atelier à Dakar, son entreprise emploie aujourd'hui 150 personnes et livre dans 15 pays.\n\nSon secret ? Une connaissance intime des besoins des femmes africaines et une chaîne d'approvisionnement qui valorise les productrices locales de karité et d'huile de baobab. Nous ne voulons pas seulement vendre des produits, nous voulons raconter l'histoire de celles qui les fabriquent, explique-t-elle dans son bureau baigné de lumière.\n\nSon parcours n'a pas été sans embûches. Levée de fonds difficile, préjugés, logistique complexe... Elle a dû faire preuve d'une résilience à toute épreuve. Mais son succès inspire aujourd'hui toute une génération de jeunes femmes qui voient en elle un modèle.\n\nAminata est également engagée dans la formation, avec une académie qui a déjà formé plus de 500 jeunes entrepreneures. L'Afrique regorge de talents, il suffit de leur donner les moyens et la confiance, affirme-t-elle. Son prochain défi : conquérir le marché européen, où la demande pour des produits éthiques et africains explose.\n\nCette success story illustre parfaitement le potentiel du continent, où l'innovation frugale et l'impact social peuvent rimer avec rentabilité. Une leçon pour tous les investisseurs qui cherchent le prochain joyau africain.",
+      "previewLines": 12,
+      "category": "Agro",
+      "tags": [
+        "Afrique",
+        "Economie",
+        "Agro"
+      ],
+      "author": "Kwame Nkrumah Jr.",
+      "authorId": "auth2",
+      "image": "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=800",
+      "isPublished": true,
+      "isFeatured": false,
+      "isSentinelle": false,
+      "isEssor": true,
+      "isOmbreDouce": false,
+      "views": 2583,
+      "likes": 61,
+      "createdAt": "2026-08-02T13:10:17.778Z",
+      "publishedAt": "2026-08-02T13:10:17.778Z",
+      "language": "fr",
+      "hasAudio": true,
+      "audioUrl": "/audio/sample.mp3",
+      "readingTime": 5
+    },
+    {
+      "id": "ea97c6ca-ac05-4e2d-b2f1-ed53978f40db",
+      "slug": "maroc-le-nouveau-hub-automobile-du-continent-6",
+      "title": "Maroc : le nouveau hub automobile du continent",
+      "summary": "L'Afrique de l'Ouest connaît une transformation économique sans précédent. Les investissements directs étrangers ont augmenté de 15% cette année, portés par les secteurs de l'énerg...",
+      "content": "L'Afrique de l'Ouest connaît une transformation économique sans précédent. Les investissements directs étrangers ont augmenté de 15% cette année, portés par les secteurs de l'énergie et de la technologie. Cette dynamique s'explique par une jeunesse de plus en plus qualifiée, une urbanisation rapide et une classe moyenne émergente qui redéfinit les codes de la consommation.\n\nAu Nigeria, la réforme du secteur pétrolier commence à porter ses fruits. Les autorités ont mis en place un cadre réglementaire plus transparent, attirant ainsi de nouveaux investisseurs. Le Ghana, de son côté, se positionne comme un hub technologique, avec Accra qui accueille désormais plusieurs incubateurs de renommée internationale.\n\nLa Côte d'Ivoire confirme son statut de locomotive économique régionale, avec une croissance soutenue par le cacao et l'anacarde, mais aussi par une diversification vers les services. Les experts s'accordent à dire que la Zone de libre-échange continentale africaine (ZLECAf) va accélérer cette intégration économique, offrant un marché de 1,3 milliard de consommateurs.\n\nPourtant, des défis subsistent. L'accès au financement reste un frein majeur pour les PME, qui représentent 90% du tissu économique. Les infrastructures, bien qu'en amélioration, nécessitent encore des investissements colossaux. C'est précisément là qu'interviennent les innovations en matière de financement participatif et de fintech, qui démocratisent l'accès au capital.\n\nL'avenir de l'Afrique se joue aujourd'hui dans sa capacité à transformer ses matières premières sur place, à investir dans le capital humain et à créer des chaînes de valeur locales. Les prochains mois seront décisifs, avec plusieurs élections majeures et des réformes structurelles attendues dans la plupart des pays de la région.",
+      "previewLines": 12,
+      "category": "Interview",
+      "tags": [
+        "Afrique",
+        "Economie",
+        "Interview"
+      ],
+      "author": "Fatou Sow",
+      "authorId": "auth3",
+      "image": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800",
+      "isPublished": true,
+      "isFeatured": false,
+      "isSentinelle": false,
+      "isEssor": false,
+      "isOmbreDouce": true,
+      "views": 2765,
+      "likes": 297,
+      "createdAt": "2026-08-01T13:10:17.778Z",
+      "publishedAt": "2026-08-01T13:10:17.778Z",
+      "language": "fr",
+      "hasAudio": true,
+      "audioUrl": "/audio/sample.mp3",
+      "readingTime": 6
+    },
+    {
+      "id": "879f751b-f57c-4db0-8234-bdbd08d56a53",
+      "slug": "startups-dakar-et-kigali-dans-le-top-10-mondial-7",
+      "title": "Startups : Dakar et Kigali dans le top 10 mondial",
+      "summary": "Le marché des capitaux africains est en pleine ébullition. La BRVM a enregistré une hausse de 12% depuis le début de l'année, tandis que la bourse de Nairobi attire de plus en plus...",
+      "content": "Le marché des capitaux africains est en pleine ébullition. La BRVM a enregistré une hausse de 12% depuis le début de l'année, tandis que la bourse de Nairobi attire de plus en plus d'investisseurs internationaux. Cette performance s'explique par une meilleure gouvernance des entreprises cotées et par l'arrivée de nouvelles valeurs technologiques.\n\nLes obligations vertes font également leur apparition, avec le Maroc et l'Afrique du Sud en tête de file. Ces instruments financiers permettent de financer la transition énergétique tout en offrant des rendements attractifs. Les investisseurs soucieux de leur impact environnemental y trouvent un moyen concret de soutenir le développement durable du continent.\n\nMais au-delà des marchés traditionnels, c'est la finance décentralisée qui pourrait révolutionner l'accès aux services bancaires. Avec un taux de bancarisation qui reste faible dans de nombreuses régions, le mobile money s'est imposé comme une alternative crédible, traitant désormais plus de transactions que les banques traditionnelles dans certains pays.\n\nLes régulateurs tentent de s'adapter à cette nouvelle donne, en mettant en place des bacs à sable réglementaires pour tester les innovations sans mettre en danger la stabilité financière. Un équilibre délicat mais nécessaire pour ne pas freiner l'innovation tout en protégeant les consommateurs.\n\nLes perspectives pour 2026-2027 restent optimistes, avec une croissance attendue autour de 4,2% pour l'ensemble du continent, selon la BAD. Les secteurs porteurs restent l'agroalimentaire, les énergies renouvelables et l'économie numérique, qui pourraient créer des millions d'emplois si les conditions sont réunies.",
+      "previewLines": 12,
+      "category": "Analyse",
+      "tags": [
+        "Afrique",
+        "Economie",
+        "Analyse"
+      ],
+      "author": "Jean-Marc Koffi",
+      "authorId": "auth4",
+      "image": "https://images.unsplash.com/photo-1497366811353-524cc3f3968e?w=800",
+      "isPublished": true,
+      "isFeatured": false,
+      "isSentinelle": false,
+      "isEssor": false,
+      "isOmbreDouce": true,
+      "views": 4890,
+      "likes": 417,
+      "createdAt": "2026-07-31T13:10:17.778Z",
+      "publishedAt": "2026-07-31T13:10:17.778Z",
+      "language": "fr",
+      "hasAudio": true,
+      "audioUrl": "/audio/sample.mp3",
+      "readingTime": 7
+    },
+    {
+      "id": "c93def19-be3c-4bf4-86b8-199fea1e2f3b",
+      "slug": "agrobusiness-le-retour-gagnant-du-fonio-8",
+      "title": "Agrobusiness : le retour gagnant du fonio",
+      "summary": "Portrait d'une entrepreneure qui bouscule les codes. À 32 ans, Aminata Traoré a créé la plus grande plateforme de e-commerce de produits cosmétiques bio en Afrique francophone. Par...",
+      "content": "Portrait d'une entrepreneure qui bouscule les codes. À 32 ans, Aminata Traoré a créé la plus grande plateforme de e-commerce de produits cosmétiques bio en Afrique francophone. Partie d'un petit atelier à Dakar, son entreprise emploie aujourd'hui 150 personnes et livre dans 15 pays.\n\nSon secret ? Une connaissance intime des besoins des femmes africaines et une chaîne d'approvisionnement qui valorise les productrices locales de karité et d'huile de baobab. Nous ne voulons pas seulement vendre des produits, nous voulons raconter l'histoire de celles qui les fabriquent, explique-t-elle dans son bureau baigné de lumière.\n\nSon parcours n'a pas été sans embûches. Levée de fonds difficile, préjugés, logistique complexe... Elle a dû faire preuve d'une résilience à toute épreuve. Mais son succès inspire aujourd'hui toute une génération de jeunes femmes qui voient en elle un modèle.\n\nAminata est également engagée dans la formation, avec une académie qui a déjà formé plus de 500 jeunes entrepreneures. L'Afrique regorge de talents, il suffit de leur donner les moyens et la confiance, affirme-t-elle. Son prochain défi : conquérir le marché européen, où la demande pour des produits éthiques et africains explose.\n\nCette success story illustre parfaitement le potentiel du continent, où l'innovation frugale et l'impact social peuvent rimer avec rentabilité. Une leçon pour tous les investisseurs qui cherchent le prochain joyau africain.",
+      "previewLines": 12,
+      "category": "Economie",
+      "tags": [
+        "Afrique",
+        "Economie",
+        "Economie"
+      ],
+      "author": "Aïssata Diop",
+      "authorId": "auth1",
+      "image": "https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?w=800",
+      "isPublished": true,
+      "isFeatured": false,
+      "isSentinelle": false,
+      "isEssor": false,
+      "isOmbreDouce": true,
+      "views": 4923,
+      "likes": 37,
+      "createdAt": "2026-07-30T13:10:17.778Z",
+      "publishedAt": "2026-07-30T13:10:17.778Z",
+      "language": "fr",
+      "hasAudio": true,
+      "audioUrl": "/audio/sample.mp3",
+      "readingTime": 8
+    },
+    {
+      "id": "a8351a91-07a8-47e0-bef5-21a3b42ae56d",
+      "slug": "dette-africaine-les-solutions-qui-fonctionnent-9",
+      "title": "Dette africaine : les solutions qui fonctionnent",
+      "summary": "L'Afrique de l'Ouest connaît une transformation économique sans précédent. Les investissements directs étrangers ont augmenté de 15% cette année, portés par les secteurs de l'énerg...",
+      "content": "L'Afrique de l'Ouest connaît une transformation économique sans précédent. Les investissements directs étrangers ont augmenté de 15% cette année, portés par les secteurs de l'énergie et de la technologie. Cette dynamique s'explique par une jeunesse de plus en plus qualifiée, une urbanisation rapide et une classe moyenne émergente qui redéfinit les codes de la consommation.\n\nAu Nigeria, la réforme du secteur pétrolier commence à porter ses fruits. Les autorités ont mis en place un cadre réglementaire plus transparent, attirant ainsi de nouveaux investisseurs. Le Ghana, de son côté, se positionne comme un hub technologique, avec Accra qui accueille désormais plusieurs incubateurs de renommée internationale.\n\nLa Côte d'Ivoire confirme son statut de locomotive économique régionale, avec une croissance soutenue par le cacao et l'anacarde, mais aussi par une diversification vers les services. Les experts s'accordent à dire que la Zone de libre-échange continentale africaine (ZLECAf) va accélérer cette intégration économique, offrant un marché de 1,3 milliard de consommateurs.\n\nPourtant, des défis subsistent. L'accès au financement reste un frein majeur pour les PME, qui représentent 90% du tissu économique. Les infrastructures, bien qu'en amélioration, nécessitent encore des investissements colossaux. C'est précisément là qu'interviennent les innovations en matière de financement participatif et de fintech, qui démocratisent l'accès au capital.\n\nL'avenir de l'Afrique se joue aujourd'hui dans sa capacité à transformer ses matières premières sur place, à investir dans le capital humain et à créer des chaînes de valeur locales. Les prochains mois seront décisifs, avec plusieurs élections majeures et des réformes structurelles attendues dans la plupart des pays de la région.",
+      "previewLines": 12,
+      "category": "Finance",
+      "tags": [
+        "Afrique",
+        "Economie",
+        "Finance"
+      ],
+      "author": "Kwame Nkrumah Jr.",
+      "authorId": "auth2",
+      "image": "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800",
+      "isPublished": true,
+      "isFeatured": false,
+      "isSentinelle": false,
+      "isEssor": false,
+      "isOmbreDouce": false,
+      "views": 3303,
+      "likes": 381,
+      "createdAt": "2026-07-29T13:10:17.778Z",
+      "publishedAt": "2026-07-29T13:10:17.778Z",
+      "language": "fr",
+      "hasAudio": true,
+      "audioUrl": "/audio/sample.mp3",
+      "readingTime": 9
+    },
+    {
+      "id": "aa80492e-af39-489c-aeb1-e641fc2c9433",
+      "slug": "interview-exclusive-le-patron-de-la-bad-se-confie-10",
+      "title": "Interview exclusive : le patron de la BAD se confie",
+      "summary": "Le marché des capitaux africains est en pleine ébullition. La BRVM a enregistré une hausse de 12% depuis le début de l'année, tandis que la bourse de Nairobi attire de plus en plus...",
+      "content": "Le marché des capitaux africains est en pleine ébullition. La BRVM a enregistré une hausse de 12% depuis le début de l'année, tandis que la bourse de Nairobi attire de plus en plus d'investisseurs internationaux. Cette performance s'explique par une meilleure gouvernance des entreprises cotées et par l'arrivée de nouvelles valeurs technologiques.\n\nLes obligations vertes font également leur apparition, avec le Maroc et l'Afrique du Sud en tête de file. Ces instruments financiers permettent de financer la transition énergétique tout en offrant des rendements attractifs. Les investisseurs soucieux de leur impact environnemental y trouvent un moyen concret de soutenir le développement durable du continent.\n\nMais au-delà des marchés traditionnels, c'est la finance décentralisée qui pourrait révolutionner l'accès aux services bancaires. Avec un taux de bancarisation qui reste faible dans de nombreuses régions, le mobile money s'est imposé comme une alternative crédible, traitant désormais plus de transactions que les banques traditionnelles dans certains pays.\n\nLes régulateurs tentent de s'adapter à cette nouvelle donne, en mettant en place des bacs à sable réglementaires pour tester les innovations sans mettre en danger la stabilité financière. Un équilibre délicat mais nécessaire pour ne pas freiner l'innovation tout en protégeant les consommateurs.\n\nLes perspectives pour 2026-2027 restent optimistes, avec une croissance attendue autour de 4,2% pour l'ensemble du continent, selon la BAD. Les secteurs porteurs restent l'agroalimentaire, les énergies renouvelables et l'économie numérique, qui pourraient créer des millions d'emplois si les conditions sont réunies.",
+      "previewLines": 12,
+      "category": "Entrepreneuriat",
+      "tags": [
+        "Afrique",
+        "Economie",
+        "Entrepreneuriat"
+      ],
+      "author": "Fatou Sow",
+      "authorId": "auth3",
+      "image": "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800",
+      "isPublished": true,
+      "isFeatured": false,
+      "isSentinelle": false,
+      "isEssor": false,
+      "isOmbreDouce": false,
+      "views": 2188,
+      "likes": 333,
+      "createdAt": "2026-07-28T13:10:17.778Z",
+      "publishedAt": "2026-07-28T13:10:17.778Z",
+      "language": "fr",
+      "hasAudio": true,
+      "audioUrl": "/audio/sample.mp3",
+      "readingTime": 5
+    },
+    {
+      "id": "b6e4a35e-a621-4595-9c58-dea991141442",
+      "slug": "rwanda-le-miracle-conomique-d-crypt-11",
+      "title": "Rwanda : le miracle économique décrypté",
+      "summary": "Portrait d'une entrepreneure qui bouscule les codes. À 32 ans, Aminata Traoré a créé la plus grande plateforme de e-commerce de produits cosmétiques bio en Afrique francophone. Par...",
+      "content": "Portrait d'une entrepreneure qui bouscule les codes. À 32 ans, Aminata Traoré a créé la plus grande plateforme de e-commerce de produits cosmétiques bio en Afrique francophone. Partie d'un petit atelier à Dakar, son entreprise emploie aujourd'hui 150 personnes et livre dans 15 pays.\n\nSon secret ? Une connaissance intime des besoins des femmes africaines et une chaîne d'approvisionnement qui valorise les productrices locales de karité et d'huile de baobab. Nous ne voulons pas seulement vendre des produits, nous voulons raconter l'histoire de celles qui les fabriquent, explique-t-elle dans son bureau baigné de lumière.\n\nSon parcours n'a pas été sans embûches. Levée de fonds difficile, préjugés, logistique complexe... Elle a dû faire preuve d'une résilience à toute épreuve. Mais son succès inspire aujourd'hui toute une génération de jeunes femmes qui voient en elle un modèle.\n\nAminata est également engagée dans la formation, avec une académie qui a déjà formé plus de 500 jeunes entrepreneures. L'Afrique regorge de talents, il suffit de leur donner les moyens et la confiance, affirme-t-elle. Son prochain défi : conquérir le marché européen, où la demande pour des produits éthiques et africains explose.\n\nCette success story illustre parfaitement le potentiel du continent, où l'innovation frugale et l'impact social peuvent rimer avec rentabilité. Une leçon pour tous les investisseurs qui cherchent le prochain joyau africain.",
+      "previewLines": 12,
+      "category": "Énergie",
+      "tags": [
+        "Afrique",
+        "Economie",
+        "Énergie"
+      ],
+      "author": "Jean-Marc Koffi",
+      "authorId": "auth4",
+      "image": "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=800",
+      "isPublished": true,
+      "isFeatured": false,
+      "isSentinelle": false,
+      "isEssor": false,
+      "isOmbreDouce": false,
+      "views": 2003,
+      "likes": 194,
+      "createdAt": "2026-07-27T13:10:17.778Z",
+      "publishedAt": "2026-07-27T13:10:17.778Z",
+      "language": "fr",
+      "hasAudio": true,
+      "audioUrl": "/audio/sample.mp3",
+      "readingTime": 6
+    },
+    {
+      "id": "dcb5a622-b62f-4cd0-a6cc-18fc6f385227",
+      "slug": "p-trole-s-n-galais-les-premiers-barils-changent-tout-12",
+      "title": "Pétrole sénégalais : les premiers barils changent tout",
+      "summary": "L'Afrique de l'Ouest connaît une transformation économique sans précédent. Les investissements directs étrangers ont augmenté de 15% cette année, portés par les secteurs de l'énerg...",
+      "content": "L'Afrique de l'Ouest connaît une transformation économique sans précédent. Les investissements directs étrangers ont augmenté de 15% cette année, portés par les secteurs de l'énergie et de la technologie. Cette dynamique s'explique par une jeunesse de plus en plus qualifiée, une urbanisation rapide et une classe moyenne émergente qui redéfinit les codes de la consommation.\n\nAu Nigeria, la réforme du secteur pétrolier commence à porter ses fruits. Les autorités ont mis en place un cadre réglementaire plus transparent, attirant ainsi de nouveaux investisseurs. Le Ghana, de son côté, se positionne comme un hub technologique, avec Accra qui accueille désormais plusieurs incubateurs de renommée internationale.\n\nLa Côte d'Ivoire confirme son statut de locomotive économique régionale, avec une croissance soutenue par le cacao et l'anacarde, mais aussi par une diversification vers les services. Les experts s'accordent à dire que la Zone de libre-échange continentale africaine (ZLECAf) va accélérer cette intégration économique, offrant un marché de 1,3 milliard de consommateurs.\n\nPourtant, des défis subsistent. L'accès au financement reste un frein majeur pour les PME, qui représentent 90% du tissu économique. Les infrastructures, bien qu'en amélioration, nécessitent encore des investissements colossaux. C'est précisément là qu'interviennent les innovations en matière de financement participatif et de fintech, qui démocratisent l'accès au capital.\n\nL'avenir de l'Afrique se joue aujourd'hui dans sa capacité à transformer ses matières premières sur place, à investir dans le capital humain et à créer des chaînes de valeur locales. Les prochains mois seront décisifs, avec plusieurs élections majeures et des réformes structurelles attendues dans la plupart des pays de la région.",
+      "previewLines": 12,
+      "category": "Tech",
+      "tags": [
+        "Afrique",
+        "Economie",
+        "Tech"
+      ],
+      "author": "Aïssata Diop",
+      "authorId": "auth1",
+      "image": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800",
+      "isPublished": true,
+      "isFeatured": false,
+      "isSentinelle": false,
+      "isEssor": false,
+      "isOmbreDouce": false,
+      "views": 1816,
+      "likes": 334,
+      "createdAt": "2026-07-26T13:10:17.778Z",
+      "publishedAt": "2026-07-26T13:10:17.778Z",
+      "language": "fr",
+      "hasAudio": true,
+      "audioUrl": "/audio/sample.mp3",
+      "readingTime": 7
+    },
+    {
+      "id": "89ccc8f1-afba-4efb-a17d-4e59c90a8c23",
+      "slug": "femmes-entrepreneures-elles-l-vent-200m-en-2025-13",
+      "title": "Femmes entrepreneures : elles lèvent 200M$ en 2025",
+      "summary": "Le marché des capitaux africains est en pleine ébullition. La BRVM a enregistré une hausse de 12% depuis le début de l'année, tandis que la bourse de Nairobi attire de plus en plus...",
+      "content": "Le marché des capitaux africains est en pleine ébullition. La BRVM a enregistré une hausse de 12% depuis le début de l'année, tandis que la bourse de Nairobi attire de plus en plus d'investisseurs internationaux. Cette performance s'explique par une meilleure gouvernance des entreprises cotées et par l'arrivée de nouvelles valeurs technologiques.\n\nLes obligations vertes font également leur apparition, avec le Maroc et l'Afrique du Sud en tête de file. Ces instruments financiers permettent de financer la transition énergétique tout en offrant des rendements attractifs. Les investisseurs soucieux de leur impact environnemental y trouvent un moyen concret de soutenir le développement durable du continent.\n\nMais au-delà des marchés traditionnels, c'est la finance décentralisée qui pourrait révolutionner l'accès aux services bancaires. Avec un taux de bancarisation qui reste faible dans de nombreuses régions, le mobile money s'est imposé comme une alternative crédible, traitant désormais plus de transactions que les banques traditionnelles dans certains pays.\n\nLes régulateurs tentent de s'adapter à cette nouvelle donne, en mettant en place des bacs à sable réglementaires pour tester les innovations sans mettre en danger la stabilité financière. Un équilibre délicat mais nécessaire pour ne pas freiner l'innovation tout en protégeant les consommateurs.\n\nLes perspectives pour 2026-2027 restent optimistes, avec une croissance attendue autour de 4,2% pour l'ensemble du continent, selon la BAD. Les secteurs porteurs restent l'agroalimentaire, les énergies renouvelables et l'économie numérique, qui pourraient créer des millions d'emplois si les conditions sont réunies.",
+      "previewLines": 12,
+      "category": "Agro",
+      "tags": [
+        "Afrique",
+        "Economie",
+        "Agro"
+      ],
+      "author": "Kwame Nkrumah Jr.",
+      "authorId": "auth2",
+      "image": "https://images.unsplash.com/photo-1497366811353-524cc3f3968e?w=800",
+      "isPublished": true,
+      "isFeatured": false,
+      "isSentinelle": false,
+      "isEssor": false,
+      "isOmbreDouce": false,
+      "views": 4204,
+      "likes": 300,
+      "createdAt": "2026-07-25T13:10:17.778Z",
+      "publishedAt": "2026-07-25T13:10:17.778Z",
+      "language": "fr",
+      "hasAudio": true,
+      "audioUrl": "/audio/sample.mp3",
+      "readingTime": 8
+    },
+    {
+      "id": "a4b51ad4-17da-46d8-b887-cca850f02774",
+      "slug": "bourse-la-brvm-bat-tous-les-records-14",
+      "title": "Bourse : la BRVM bat tous les records",
+      "summary": "Portrait d'une entrepreneure qui bouscule les codes. À 32 ans, Aminata Traoré a créé la plus grande plateforme de e-commerce de produits cosmétiques bio en Afrique francophone. Par...",
+      "content": "Portrait d'une entrepreneure qui bouscule les codes. À 32 ans, Aminata Traoré a créé la plus grande plateforme de e-commerce de produits cosmétiques bio en Afrique francophone. Partie d'un petit atelier à Dakar, son entreprise emploie aujourd'hui 150 personnes et livre dans 15 pays.\n\nSon secret ? Une connaissance intime des besoins des femmes africaines et une chaîne d'approvisionnement qui valorise les productrices locales de karité et d'huile de baobab. Nous ne voulons pas seulement vendre des produits, nous voulons raconter l'histoire de celles qui les fabriquent, explique-t-elle dans son bureau baigné de lumière.\n\nSon parcours n'a pas été sans embûches. Levée de fonds difficile, préjugés, logistique complexe... Elle a dû faire preuve d'une résilience à toute épreuve. Mais son succès inspire aujourd'hui toute une génération de jeunes femmes qui voient en elle un modèle.\n\nAminata est également engagée dans la formation, avec une académie qui a déjà formé plus de 500 jeunes entrepreneures. L'Afrique regorge de talents, il suffit de leur donner les moyens et la confiance, affirme-t-elle. Son prochain défi : conquérir le marché européen, où la demande pour des produits éthiques et africains explose.\n\nCette success story illustre parfaitement le potentiel du continent, où l'innovation frugale et l'impact social peuvent rimer avec rentabilité. Une leçon pour tous les investisseurs qui cherchent le prochain joyau africain.",
+      "previewLines": 12,
+      "category": "Interview",
+      "tags": [
+        "Afrique",
+        "Economie",
+        "Interview"
+      ],
+      "author": "Fatou Sow",
+      "authorId": "auth3",
+      "image": "https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?w=800",
+      "isPublished": true,
+      "isFeatured": false,
+      "isSentinelle": false,
+      "isEssor": false,
+      "isOmbreDouce": false,
+      "views": 3127,
+      "likes": 26,
+      "createdAt": "2026-07-24T13:10:17.778Z",
+      "publishedAt": "2026-07-24T13:10:17.778Z",
+      "language": "fr",
+      "hasAudio": true,
+      "audioUrl": "/audio/sample.mp3",
+      "readingTime": 9
+    }
+  ],
+  "magazines": [
+    {
+      "id": "6f98d70a-c1a6-49fc-b74c-e7e737b404ec",
+      "numero": 25,
+      "title": "Envol Africa N°25 - Spécial Investissements 2026",
+      "cover": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600",
+      "date": "2025-01-01",
+      "year": 2025,
+      "description": "Dans ce numéro 25, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": true
+    },
+    {
+      "id": "2ed0179f-623d-4e05-ac0a-a269a0eae8aa",
+      "numero": 24,
+      "title": "Envol Africa N°24 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600",
+      "date": "2025-12-01",
+      "year": 2025,
+      "description": "Dans ce numéro 24, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "68ae80e9-1d06-4b70-a19a-793755821f8b",
+      "numero": 23,
+      "title": "Envol Africa N°23 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600",
+      "date": "2025-11-01",
+      "year": 2025,
+      "description": "Dans ce numéro 23, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "b77146ad-be0b-438c-862e-5238c003084a",
+      "numero": 22,
+      "title": "Envol Africa N°22 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600",
+      "date": "2025-10-01",
+      "year": 2025,
+      "description": "Dans ce numéro 22, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "71c6627a-efab-43f0-b0bd-38ab5c7f25db",
+      "numero": 21,
+      "title": "Envol Africa N°21 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600",
+      "date": "2025-09-01",
+      "year": 2025,
+      "description": "Dans ce numéro 21, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "542bdfd1-1f84-43a3-9c41-2dd12d01e4aa",
+      "numero": 20,
+      "title": "Envol Africa N°20 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600",
+      "date": "2025-08-01",
+      "year": 2025,
+      "description": "Dans ce numéro 20, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "f7366da6-771e-4b6a-8d11-eae6fc605948",
+      "numero": 19,
+      "title": "Envol Africa N°19 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600",
+      "date": "2025-07-01",
+      "year": 2025,
+      "description": "Dans ce numéro 19, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "52326e4c-a260-49ab-8647-170d3b6e5f84",
+      "numero": 18,
+      "title": "Envol Africa N°18 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600",
+      "date": "2025-06-01",
+      "year": 2025,
+      "description": "Dans ce numéro 18, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "dc6c4f64-72c8-4e51-8e18-58812b4fa526",
+      "numero": 17,
+      "title": "Envol Africa N°17 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600",
+      "date": "2025-05-01",
+      "year": 2025,
+      "description": "Dans ce numéro 17, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "71b3df5e-5f85-43f9-8573-b365e46923f0",
+      "numero": 16,
+      "title": "Envol Africa N°16 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600",
+      "date": "2025-04-01",
+      "year": 2025,
+      "description": "Dans ce numéro 16, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "386c36ad-791c-4314-9bd9-5426c513fefc",
+      "numero": 15,
+      "title": "Envol Africa N°15 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600",
+      "date": "2025-03-01",
+      "year": 2025,
+      "description": "Dans ce numéro 15, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "904fea26-603c-49fb-bb7a-da4770e31580",
+      "numero": 14,
+      "title": "Envol Africa N°14 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600",
+      "date": "2025-02-01",
+      "year": 2025,
+      "description": "Dans ce numéro 14, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "af854acf-bc64-4f6b-b9b9-92fb7623879b",
+      "numero": 13,
+      "title": "Envol Africa N°13 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600",
+      "date": "2025-01-01",
+      "year": 2025,
+      "description": "Dans ce numéro 13, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "24d8f3e6-b257-4bba-ac9f-4b241362b37c",
+      "numero": 12,
+      "title": "Envol Africa N°12 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600",
+      "date": "2025-12-01",
+      "year": 2025,
+      "description": "Dans ce numéro 12, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "2a90c684-bb5b-4261-a1e3-50ff15fbc19f",
+      "numero": 11,
+      "title": "Envol Africa N°11 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600",
+      "date": "2025-11-01",
+      "year": 2025,
+      "description": "Dans ce numéro 11, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "c87d0e91-7cf7-40a2-80a7-94c118af67aa",
+      "numero": 10,
+      "title": "Envol Africa N°10 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600",
+      "date": "2025-10-01",
+      "year": 2025,
+      "description": "Dans ce numéro 10, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "f02ee3d4-b608-4f7f-a660-9fd0fcfa16e7",
+      "numero": 9,
+      "title": "Envol Africa N°9 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600",
+      "date": "2025-09-01",
+      "year": 2025,
+      "description": "Dans ce numéro 9, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "83040987-8ecb-49b0-a997-642227f6d8da",
+      "numero": 8,
+      "title": "Envol Africa N°8 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600",
+      "date": "2025-08-01",
+      "year": 2025,
+      "description": "Dans ce numéro 8, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "d9a73c7f-a43a-4aa3-b74a-0fd1fb2726cc",
+      "numero": 7,
+      "title": "Envol Africa N°7 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600",
+      "date": "2025-07-01",
+      "year": 2025,
+      "description": "Dans ce numéro 7, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "026cfa51-0669-4f07-8b47-879cfe8e0f77",
+      "numero": 6,
+      "title": "Envol Africa N°6 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600",
+      "date": "2026-06-01",
+      "year": 2026,
+      "description": "Dans ce numéro 6, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "e507280b-552c-4dff-8d32-c6eb13f0c9a7",
+      "numero": 5,
+      "title": "Envol Africa N°5 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600",
+      "date": "2026-05-01",
+      "year": 2026,
+      "description": "Dans ce numéro 5, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "2b8eb465-bd2a-4b09-93d1-878fac5dae20",
+      "numero": 4,
+      "title": "Envol Africa N°4 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600",
+      "date": "2026-04-01",
+      "year": 2026,
+      "description": "Dans ce numéro 4, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "ed7f02f0-265e-4d8d-8f77-1da694ab28c5",
+      "numero": 3,
+      "title": "Envol Africa N°3 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600",
+      "date": "2026-03-01",
+      "year": 2026,
+      "description": "Dans ce numéro 3, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "064be1a1-7385-45a0-8ff3-9661f5d4e560",
+      "numero": 2,
+      "title": "Envol Africa N°2 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600",
+      "date": "2026-02-01",
+      "year": 2026,
+      "description": "Dans ce numéro 2, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    },
+    {
+      "id": "30574411-c1e6-4f40-850d-d8284b30a562",
+      "numero": 1,
+      "title": "Envol Africa N°1 - L'Afrique qui gagne",
+      "cover": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600",
+      "date": "2026-01-01",
+      "year": 2026,
+      "description": "Dans ce numéro 1, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
+      "previewPages": 5,
+      "formats": [
+        "numerique",
+        "papier",
+        "cd_audio",
+        "audio_pdf",
+        "audio_papier"
+      ],
+      "languages": [
+        "fr",
+        "en",
+        "es"
+      ],
+      "featured": false
+    }
+  ],
+  "orders": [],
+  "affiliateEarnings": [],
+  "donations": [],
+  "comments": [],
+  "settings": {
+    "homeSections": {},
+    "ads": []
+  }
+}

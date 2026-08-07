@@ -1,0 +1,4 @@
+import Link from "next/link";
+export default function Page(){
+  return (<div className="bg-[#FFFCF5] min-h-screen pb-20"><div className="max-w-[1120px] mx-auto px-6 pt-10"><div className="flex items-center gap-2 text-[11px] uppercase tracking-widest font-bold text-zinc-500"><Link href="/" className="hover:text-[#0A1931]">Accueil</Link><span>›</span><span className="text-[#0A1931]">Africa Awards</span></div><h1 className="font-serif font-black text-[36px] text-[#0A1931] mt-4">Africa Awards • Célébrer l'excellence</h1><p className="text-zinc-600 mt-2 max-w-[640px]">Bientôt: la cérémonie qui récompense les leaders qui font bouger l'Afrique. 12 catégories. Jury international.</p><div className="mt-10 bg-[#0A1931] rounded-[24px] p-10 text-white text-center"><div className="text-5xl">🏆</div><div className="font-serif font-black text-2xl mt-4">Édition 2026 • Cotonou</div><div className="text-zinc-400 mt-2">Bientôt ouvert aux candidatures</div></div></div></div>);
+}
