@@ -4,17 +4,54 @@ Disallow: /api/
 Disallow: /admin/
 Disallow: /compte/
 Disallow: /panier?*
+Disallow: /2fa/
+Disallow: /auth/
 Sitemap: https://envolafricamag.com/sitemap.xml
+Sitemap: https://envolafricamag.com/server-sitemap.xml
 
-# IA - Choix stratégique: autoriser lecture contenu gratuit mais pas paywall
+# Gestion robots IA - Arbitrage stratégique en attente validation Quentin §17.3 / DECISIONS.md #5
+# Proposition: autoriser métadonnées + contenu gratuit (chapo + 12 lignes) pour visibilité IA, bloquer contenu payant complet
+# En attente validation: actuellement AUTORISE tout sauf paywall complet via isAccessibleForFree
+
 User-agent: GPTBot
 Allow: /$
+Allow: /kiosque
+Allow: /abonnement
+Allow: /don
+Allow: /affiliation
 Allow: /article/*?preview=1
 Disallow: /article/
-Disallow: /kiosque/*
+Disallow: /api/
+Disallow: /compte/
+Disallow: /admin/
+# GPTBot peut crawler chapo + 12 lignes visibles (= partie citable pour GEO §17.3) mais pas body complet
+
+User-agent: Google-Extended
+Allow: /$
+Allow: /kiosque
+Disallow: /article/
+Disallow: /api/
+
+User-agent: PerplexityBot
+Allow: /$
+Allow: /kiosque
+Disallow: /article/
+Disallow: /api/
+
+User-agent: ClaudeBot
+Allow: /$
+Allow: /kiosque
+Disallow: /article/
+Disallow: /api/
 
 User-agent: CCBot
 Allow: /
 
 User-agent: ChatGPT-User
 Allow: /
+
+# Paywall Google balisage
+# isAccessibleForFree: false sur partie verrouillée, hasPart avec isAccessibleForFree false
+# Voir schema.org NewsArticle
+
+# Vitesse indexation: soumettre via Indexing API à chaque publication §17.1

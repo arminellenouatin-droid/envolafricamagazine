@@ -1,0 +1,26 @@
+name: CI Quality Gate (RULES.md §7)
+
+on:
+  pull_request:
+    branches: [main, staging]
+  push:
+    branches: [main, staging]
+
+jobs:
+  lint-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run lint --if-present
+      - run: npx tsc --noEmit
+      - run: npm run build
+      # Playwright critical flows: paywall, achat kiosque, abonnement 1re->2e échéance
+      - run: npx playwright install --with-deps
+      - run: npm run test:e2e --if-present
+
+  # Vercel deploy is native via Git integration, NOT via GitHub Actions (RULES.md §5, §9.15)
+  # This workflow is quality gate only, must be green before merge to main

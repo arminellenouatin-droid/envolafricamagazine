@@ -50,7 +50,7 @@ export async function PUT(req: NextRequest) {
   if (!decoded) return NextResponse.json({ error: "Token invalide" }, { status: 401 });
   const db = readDB();
   const user = db.users.find(u=>u.id===decoded.id);
-  if (!user || !['gerant','admin','redacteur_chef'].includes(user.role)) return NextResponse.json({ error: "Rôle gerant requis" }, { status: 403 });
+  if (!user || !['gerant','admin'].includes(user.role)) return NextResponse.json({ error: "Rôle gerant/admin requis pour modération (MATRICE_PERMISSIONS §1.1)" }, { status: 403 });
 
   const { id, isModerated } = await req.json();
   const comment = db.comments.find(c=>c.id===id);
