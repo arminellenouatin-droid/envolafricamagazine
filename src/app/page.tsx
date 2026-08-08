@@ -1,6 +1,7 @@
 import { readDB } from "@/lib/db";
 import Link from "next/link";
 import PromoPopup from "@/components/PromoPopup";
+import AvantPremiereCarousel from "@/components/home/AvantPremiereCarousel";
 
 export default function HomePage() {
   const db = readDB();
@@ -29,20 +30,9 @@ export default function HomePage() {
       {/* IMAGE CATEGORIE A - 4 blocs avec mesures exactes */}
       <section className="max-w-[1280px] mx-auto px-5 md:px-[64px] py-8">
         <div className="grid grid-cols-12 gap-6">
-          {/* Sentinelles 1000x1000 */}
-          {mainFeatured && (
-            <Link href={`/article/${mainFeatured.slug}`} className="col-span-12 lg:col-span-7 group relative overflow-hidden rounded-lg" style={{ width: "100%", maxWidth: "1000px", aspectRatio: "1/1" }}>
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10"></div>
-              <img src={mainFeatured.image} alt="" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-              <div className="absolute bottom-0 left-0 p-6 md:p-8 z-20 text-white w-full">
-                <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-3" style={{ background: mainFeatured.category==="Economie"?"#9e001f":"#5f5e5e", color:"white" }}>{mainFeatured.category}</span>
-                <h2 className="text-[22px] md:text-[28px] font-bold leading-tight mb-2 line-clamp-3" style={{ fontFamily: "Montserrat" }}>{mainFeatured.title}</h2>
-                <p className="text-[14px] line-clamp-2 opacity-90 mb-3 hidden md:block" style={{ fontFamily: "Source Serif 4" }}>{mainFeatured.summary}</p>
-                <div className="flex items-center gap-2 text-[11px] opacity-80"><span>{mainFeatured.author}</span><span>•</span><span>{new Date(mainFeatured.publishedAt!).toLocaleDateString('fr-FR')}</span></div>
-              </div>
-              <div className="absolute top-3 left-3 bg-[#9e001f] text-white text-[10px] font-bold px-2 py-1 rounded">Sentinelles • 1000x1000</div>
-            </Link>
-          )}
+          {/* Avant première 1000x1000 - CARROUSEL DEFILEMENT GAUCHE→DROITE AUTOMATIQUE */}
+          {/* Tous les articles ayant "Avant première" dans leurs catégories défilent ici */}
+          <AvantPremiereCarousel articles={articles} />
 
           <div className="col-span-12 lg:col-span-5 flex flex-col gap-6">
             {/* Bloc secondaire 1000x460 */}
