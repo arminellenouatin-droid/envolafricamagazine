@@ -30,15 +30,35 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="fr" className="h-full antialiased">
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
         <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@400;600;700&display=swap');
+          .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+          }
           :root {
             --font-geist-sans: 'Inter', system-ui, sans-serif;
-            --font-playfair: 'Playfair Display', Georgia, serif;
+            --font-playfair: 'Source Serif 4', Georgia, serif;
+            --font-display: 'Montserrat', sans-serif;
           }
         `}</style>
       </head>
-      <body className="min-h-full flex flex-col bg-[#FFFCF5]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+      <body className="min-h-full flex flex-col bg-[#fcf9f8]" style={{ fontFamily: "Source Serif 4, Georgia, serif" }}>
         <Header user={user ? { id: user.id, nom: user.nom, prenom: user.prenom, email: user.email, role: user.role } : undefined} />
         <main className="flex-1">{children}</main>
         <Footer />
