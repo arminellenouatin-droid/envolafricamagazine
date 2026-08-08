@@ -14,9 +14,14 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error }, { status });
   try {
     const body = await req.json();
-    const { numero, title, cover, year, description, featured, formats, languages } = body;
+    const { 
+      numero, title, cover, year, periode, category, description, featured, 
+      formats, languages, previewImages, pdfs, audios, prices, sommaire 
+    } = body;
+    
     if (!numero || !title) return NextResponse.json({ error: "Numéro et titre requis" }, { status: 400 });
-    if (db!.magazines.some(m=>m.numero===numero)) return NextResponse.json({ error: "Numéro déjà existant" }, { status: 409 });
+    if (db!.magazines.some(m=>m.numero===parseInt(numero))) return NextResponse.json({ error: "Numéro déjà existant" }, { status: 409 });
+    
     const newMag = {
       id: uuidv4(),
       numero: parseInt(numero),
@@ -24,18 +29,31 @@ export async function POST(req: NextRequest) {
       cover: cover || "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600",
       date: new Date().toISOString().split('T')[0],
       year: year || new Date().getFullYear(),
+      periode: periode || `${new Date().toLocaleDateString('fr-FR',{month:'long', year:'numeric'})}`,
+      category: category || "Economie",
       description: description || "",
-      previewPages: 5,
+      previewPages: previewImages?.length || 5,
+      previewImages: previewImages || [],
       formats: formats || ["numerique","papier","cd_audio","audio_pdf","audio_papier"],
       languages: languages || ["fr","en","es"],
       featured: featured || false,
+      pdfs: pdfs || {}, // { fr: "/uploads/...", en: "...", es: "..." }
+      audios: audios || {}, // 12 langues
+      prices: prices || {
+        numerique: 10000,
+        papier: 16000,
+        cd_audio: 5000,
+        audio_pdf: 12000,
+        audio_papier: 18000
+      },
+      sommaire: sommaire || ["Dossier Spécial Fintech", "Interview : Patrice Motsepe", "Bourse : Le rallye de la BRVM", "Énergie : L'hydrogène vert"],
     };
     db!.magazines.push(newMag as any);
     writeDB(db!);
     return NextResponse.json({ success: true, magazine: newMag });
   } catch (e) {
     console.error(e);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    return NextResponse.json({ error: "Erreur serveur: " + (e as any).message }, { status: 500 });
   }
 }
 
@@ -48,7 +66,11 @@ export async function PUT(req: NextRequest) {
     if (!id) return NextResponse.json({ error: "ID requis" }, { status: 400 });
     const mag = db!.magazines.find(m=>m.id===id);
     if (!mag) return NextResponse.json({ error: "Magazine introuvable" }, { status: 404 });
+    // Mise à jour tous les champs y compris nouveaux
     Object.assign(mag, updates);
+    if (updates.previewImages) {
+      (mag as any).previewPages = updates.previewImages.length;
+    }
     writeDB(db!);
     return NextResponse.json({ success: true, magazine: mag });
   } catch (e) {

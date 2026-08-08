@@ -71,12 +71,20 @@ export interface Magazine {
   cover: string;
   date: string;
   year: number;
+  periode?: string; // Ex: "Mars-Avril 2024" ou "Mars 2024"
+  category?: string; // Catégorie magazine: Economie, Finance, etc.
   description: string;
   previewPages: number;
+  previewImages?: string[]; // URLs des 10 premières pages pour flipbook aperçu
   formats: string[];
   languages: string[];
   featured: boolean;
+  // Nouveaux champs pour version corrigée
+  pdfs?: Record<string, string>; // { fr: "/uploads/magazines/pdf/...", en: "...", es: "..." }
+  audios?: Record<string, string>; // { fr: "/uploads/...", en: "...", sw: "...", ha: "...", etc. 12 langues }
+  prices?: Record<string, number>; // { numerique: 10000, papier: 16000, cd_audio: 5000, audio_pdf: 12000, audio_papier: 18000 }
   priceOverrides?: Record<string, number>;
+  sommaire?: string[]; // Liste points au sommaire
 }
 
 export interface Order {

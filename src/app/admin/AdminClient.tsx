@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { SUBSCRIPTION_PLANS } from "@/lib/constants";
+import MagazineModal from "./MagazineModal";
 
 export default function AdminDashboardClient({ user, stats, db }: { user: any, stats: any, db: any }) {
   const [activeTab, setActiveTab] = useState<"overview"|"articles"|"magazines"|"users"|"orders"|"affiliate"|"abonnements"|"commentaires"|"service"|"settings">("overview");
@@ -215,24 +216,33 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
 
         {activeTab==="magazines" && (
           <div className="bg-white rounded-[18px] border p-6">
-            <div className="flex items-center justify-between"><h3 className="font-bold text-[18px]">Kiosque - Magazines CRUD + KPIs</h3><button onClick={()=>{setEditingMag(null); setShowMagModal(true);}} className="h-9 px-4 rounded-full bg-[#0A1931] text-white text-[12px] font-bold">+ Nouveau numéro</button></div>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-[18px]">Kiosque - Magazines CRUD Complet (Version Corrigée)</h3>
+                <p className="text-[11px] text-zinc-500 mt-1">Numéro, période, titre, description, catégorie, couverture upload direct (pas URL), 10 premières pages flipbook, PDF 3 langues, audio 12 langues, prix par version</p>
+              </div>
+              <button onClick={()=>{setEditingMag(null); setShowMagModal(true);}} className="h-9 px-4 rounded-full bg-[#9e001f] text-white text-[12px] font-bold">+ Nouveau numéro</button>
+            </div>
             <div className="mt-6 grid md:grid-cols-4 gap-4">
-              {magazines.map((m:any)=>(<div key={m.id} className="rounded-[14px] border p-3"><img src={m.cover} alt="" className="w-full aspect-[3/4] object-cover rounded-[10px]" /><div className="font-bold text-[12px] mt-2 line-clamp-2">{m.title}</div><div className="text-[10px] text-zinc-500">N°{m.numero} • {m.year}</div><div className="mt-2 flex gap-1"><button onClick={()=>{setEditingMag(m); setShowMagModal(true);}} className="h-7 flex-1 rounded-full border text-[10px]">Éditer</button><button onClick={()=>handleDeleteMag(m.id)} className="h-7 flex-1 rounded-full bg-red-50 text-red-600 border text-[10px]">Suppr</button></div></div>))}
+              {magazines.map((m:any)=>(
+                <div key={m.id} className="rounded-[14px] border p-3 group hover:shadow-lg transition-shadow">
+                  <div className="relative"><img src={m.cover} alt="" className="w-full aspect-[3/4] object-cover rounded-[10px]" /><div className="absolute top-2 left-2 bg-white/90 backdrop-blur text-[10px] font-bold px-2 py-1 rounded-full">N°{m.numero}</div>{m.featured&&<div className="absolute top-2 right-2 bg-[#9e001f] text-white text-[9px] px-2 py-1 rounded-full">À la une</div>}</div>
+                  <div className="font-bold text-[12px] mt-2 line-clamp-2">{m.title}</div>
+                  <div className="text-[10px] text-zinc-500 mt-1">{m.periode||m.year} • {m.category||"Economie"} • {m.previewImages?.length||0}/10 pages • {Object.keys(m.pdfs||{}).length||0} PDF • {Object.keys(m.audios||{}).length||0} audios</div>
+                  <div className="text-[10px] text-zinc-500">Prix: {m.prices ? `${m.prices.numerique?.toLocaleString()||10}k F CFA num` : "10k F num"}</div>
+                  <div className="mt-2 flex gap-1">
+                    <button onClick={()=>{setEditingMag(m); setShowMagModal(true);}} className="h-7 flex-1 rounded-full border text-[10px] hover:bg-zinc-50">Éditer complet</button>
+                    <button onClick={()=>handleDeleteMag(m.id)} className="h-7 flex-1 rounded-full bg-red-50 text-red-600 border border-red-100 text-[10px]">Suppr</button>
+                  </div>
+                </div>
+              ))}
             </div>
             {showMagModal && (
-              <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-                <form onSubmit={handleCreateMag} className="bg-white rounded-[20px] p-6 w-full max-w-[560px]">
-                  <h3 className="font-bold">{editingMag?"Modifier":"Nouveau"} magazine</h3>
-                  <div className="mt-4 grid gap-3">
-                    <div className="grid grid-cols-2 gap-2"><input name="numero" type="number" defaultValue={editingMag?.numero} placeholder="Numéro" required className="h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" /><input name="year" type="number" defaultValue={editingMag?.year} placeholder="Année" className="h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" /></div>
-                    <input name="title" defaultValue={editingMag?.title} placeholder="Titre" required className="h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" />
-                    <input name="cover" defaultValue={editingMag?.cover} placeholder="URL couverture" className="h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" />
-                    <textarea name="description" defaultValue={editingMag?.description} placeholder="Description" rows={3} className="rounded-[14px] border bg-zinc-50 p-3 text-[13px]" />
-                    <label className="flex items-center gap-2 text-[12px]"><input type="checkbox" name="featured" defaultChecked={editingMag?.featured}/> À la une</label>
-                  </div>
-                  <div className="mt-6 flex gap-2"><button type="submit" className="h-10 px-5 rounded-full bg-[#0A1931] text-white text-[13px] font-bold">Enregistrer</button><button type="button" onClick={()=>{setShowMagModal(false); setEditingMag(null);}} className="h-10 px-5 rounded-full border text-[13px]">Annuler</button></div>
-                </form>
-              </div>
+              <MagazineModal 
+                editingMag={editingMag}
+                onClose={()=>{setShowMagModal(false); setEditingMag(null);}}
+                onSaved={()=>{fetchMagazines(); setMessage(editingMag?"Magazine modifié ✅":"Magazine créé ✅ avec couverture upload + 10 pages flipbook + PDF 3 langues + audio 12 langues");}}
+              />
             )}
           </div>
         )}
