@@ -34,10 +34,10 @@ export default function HomePage() {
           {/* Tous les articles ayant "Avant première" dans leurs catégories défilent ici */}
           <AvantPremiereCarousel articles={articles} />
 
-          <div className="col-span-12 lg:col-span-5 flex flex-col gap-6">
-            {/* Bloc secondaire 1000x460 */}
+          <div className="col-span-12 lg:col-span-5 flex flex-col gap-6 h-full">
+            {/* Bloc secondaire 1000x460 DOUBLE HAUTEUR pour harmonie avec Avant première 1000x1000 */}
             {secondary && (
-              <Link href={`/article/${secondary.slug}`} className="relative overflow-hidden rounded-lg group" style={{ width: "100%", maxWidth: "1000px", aspectRatio: "1000/460" }}>
+              <Link href={`/article/${secondary.slug}`} className="relative overflow-hidden rounded-lg group flex-[2]" style={{ width: "100%", minHeight: "460px" }}>
                 <img src={secondary.image} alt="" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
                 <div className="absolute bottom-0 left-0 p-4 text-white">
@@ -45,7 +45,7 @@ export default function HomePage() {
                   <h3 className="text-[16px] font-bold leading-tight mt-2 line-clamp-2">{secondary.title}</h3>
                   <div className="text-[10px] opacity-80 mt-1">{secondary.author} • {new Date(secondary.publishedAt!).toLocaleDateString('fr-FR')}</div>
                 </div>
-                <div className="absolute top-2 left-2 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded">Bloc secondaire • 1000x460 • fixe</div>
+                <div className="absolute top-2 left-2 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded">Bloc secondaire • 1000x920 • hauteur doublée pour harmonie avec Avant première 1000x1000</div>
               </Link>
             )}
 
@@ -81,17 +81,21 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* IMAGE CATEGORIE B CARROUSEL MAGAZINE - 4 photos */}
-      <section className="bg-[#303030] py-[60px] text-white">
+      {/* IMAGE CATEGORIE B - Nos derniers magazines - sans fond, avec flèches */}
+      <section className="py-[60px] bg-white">
         <div className="max-w-[1280px] mx-auto px-5 md:px-[64px]">
-          <div className="flex items-end justify-between mb-8 border-l-4 border-[#9e001f] pl-6">
-            <div><h2 className="text-[28px] font-bold" style={{ fontFamily: "Montserrat" }}>L'édition Papier</h2><p className="text-[#e4e2e1] mt-1 text-[14px]">4 photos carousel droite → gauche couvertures derniers numéros</p></div>
-            <Link href="/kiosque" className="text-[#ffdad8] text-[13px] hover:underline flex items-center gap-1">TOUT LE KIOSQUE <span className="material-symbols-outlined">arrow_forward</span></Link>
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-[28px] font-black" style={{ fontFamily: "Montserrat" }}>Nos derniers magazines</h2>
+            <div className="flex items-center gap-2">
+              <button id="mag-prev" className="w-10 h-10 rounded-full border border-[#e5bdbb] flex items-center justify-center hover:bg-[#f6f3f2]"><span className="material-symbols-outlined">chevron_left</span></button>
+              <button id="mag-next" className="w-10 h-10 rounded-full border border-[#e5bdbb] flex items-center justify-center hover:bg-[#f6f3f2]"><span className="material-symbols-outlined">chevron_right</span></button>
+              <Link href="/kiosque" className="ml-4 text-[#9e001f] text-[13px] font-bold hover:underline flex items-center gap-1">TOUT LE KIOSQUE <span className="material-symbols-outlined">arrow_forward</span></Link>
+            </div>
           </div>
-          <div className="flex overflow-x-auto gap-6 pb-6 custom-scrollbar">
-            {magazines.slice(0,4).map((m:any)=>(
+          <div id="mag-carousel" className="flex overflow-x-auto gap-6 pb-6 custom-scrollbar scroll-smooth">
+            {magazines.slice(0,8).map((m:any)=>(
               <Link key={m.id} href={`/kiosque/${m.id}`} className="flex-none w-[260px] group">
-                <div className="aspect-[3/4] rounded-lg overflow-hidden bg-white shadow-xl relative"><img src={m.cover} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" /><div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-3"><span className="bg-[#9e001f] text-white text-[10px] px-2 py-1 rounded-full uppercase font-bold">{m.category||"Economie"}</span><div className="text-white text-[12px] font-bold leading-tight mt-1 line-clamp-2">{m.title}</div></div></div>
+                <div className="aspect-[3/4] rounded-lg overflow-hidden bg-white shadow-lg border border-[#e5bdbb]/50 relative"><img src={m.cover} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" /><div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3"><span className="bg-[#9e001f] text-white text-[10px] px-2 py-1 rounded-full uppercase font-bold">{m.category||"Economie"}</span><div className="text-white text-[12px] font-bold leading-tight mt-1 line-clamp-2">{m.title}</div></div></div>
               </Link>
             ))}
           </div>
@@ -103,23 +107,22 @@ export default function HomePage() {
         <div className="grid grid-cols-12 gap-6">
           <div className="col-span-12 lg:col-span-8">
             <div className="flex items-center gap-4 mb-6">
-              <h2 className="text-[20px] uppercase tracking-widest font-bold text-[#5f5e5e]">Fil d'info - 9 sous-blocs</h2>
+              <h2 className="text-[24px] font-black uppercase tracking-widest" style={{ fontFamily: "Montserrat", fontWeight: 900 }}>Fil d'infos</h2>
               <div className="h-px bg-[#e5bdbb] flex-grow"></div>
             </div>
 
-            {/* Clarté 700x933 */}
+            {/* Clarté 700x933 - titre/desc/auteur/date sur photo */}
             {clarte && (
-              <Link href={`/article/${clarte.slug}`} className="flex flex-col md:flex-row gap-6 border-b border-[#e5bdbb] pb-8 group mb-8" style={{ maxWidth: "100%" }}>
-                <div className="w-full md:w-[700px] aspect-[700/933] max-w-full rounded-lg overflow-hidden bg-[#eae7e7] flex-shrink-0 relative">
-                  <img src={clarte.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                  <div className="absolute top-2 left-2 bg-[#9e001f] text-white text-[10px] px-2 py-1 rounded">Clarté • 700x933</div>
+              <Link href={`/article/${clarte.slug}`} className="block relative rounded-xl overflow-hidden group mb-8" style={{ width: "100%", maxWidth: "700px", aspectRatio: "700/933" }}>
+                <img src={clarte.image} alt="" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+                <div className="absolute bottom-0 left-0 p-6 text-white w-full">
+                  <span className="bg-[#9e001f] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">{clarte.category}</span>
+                  <h3 className="text-[22px] md:text-[26px] font-bold leading-tight mt-3" style={{ fontFamily: "Montserrat" }}>{clarte.title}</h3>
+                  <p className="text-[14px] mt-2 line-clamp-2 opacity-90">{clarte.summary}</p>
+                  <div className="flex items-center gap-2 text-[11px] mt-3 opacity-80"><span>{clarte.author}</span><span>•</span><span>{new Date(clarte.publishedAt!).toLocaleDateString('fr-FR')}</span></div>
                 </div>
-                <div className="flex-1">
-                  <span className="text-[#9e001f] text-[12px] uppercase font-bold tracking-wider">{clarte.category}</span>
-                  <h3 className="text-[22px] font-bold leading-tight mt-2 group-hover:text-[#9e001f]">{clarte.title}</h3>
-                  <p className="text-[#5c403f] mt-3 line-clamp-3 text-[14px]">{clarte.summary}</p>
-                  <div className="text-[11px] text-[#5f5e5e] mt-4">{clarte.author} • {new Date(clarte.publishedAt!).toLocaleDateString('fr-FR')}</div>
-                </div>
+                <div className="absolute top-3 left-3 bg-black/60 text-white text-[10px] px-2 py-1 rounded">Clarté • 700x933 • titre/desc/auteur/date sur photo</div>
               </Link>
             )}
 
@@ -135,24 +138,40 @@ export default function HomePage() {
           </div>
 
           <div className="col-span-12 lg:col-span-4">
-            <div className="bg-[#eae7e7] rounded-xl p-6 sticky top-24">
-              <h3 className="text-[18px] font-bold text-center mb-6 uppercase border-b-2 border-[#9e001f] pb-3">Manager du mois</h3>
-              <div className="aspect-square rounded-full overflow-hidden mb-4 border-4 border-white shadow-xl max-w-[200px] mx-auto"><img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400" alt="" className="w-full h-full object-cover" /></div>
-              <div className="text-center"><h4 className="font-bold">Fatoumata Kane</h4><p className="text-[#9e001f] text-[12px] font-bold">CEO, Sahel Digital</p><p className="text-[13px] italic mt-2 text-[#5c403f] line-clamp-2">"L'innovation technologique en Afrique n'est plus une option..."</p><Link href="/abonnement" className="mt-4 w-full bg-[#1b1c1c] text-white text-[12px] py-2 rounded-full block text-center">LIRE L'INTERVIEW - 2 lignes</Link></div>
+            <div className="bg-[#eae7e7] rounded-xl overflow-hidden sticky top-24">
+              <h3 className="text-[18px] font-black text-center py-4 uppercase tracking-wider bg-white border-b-2 border-[#9e001f]" style={{ fontFamily: "Montserrat", fontWeight: 900 }}>Manager du mois</h3>
+              {/* Photo complète en portrait avec titre/desc/auteur sur photo */}
+              <div className="relative aspect-[3/4] overflow-hidden">
+                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400" alt="" className="absolute inset-0 w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
+                <div className="absolute bottom-0 left-0 p-5 text-white w-full">
+                  <h4 className="font-bold text-[18px] leading-tight">Fatoumata Kane</h4>
+                  <p className="text-[#ffdad8] text-[12px] font-bold mt-1">CEO, Sahel Digital Solutions</p>
+                  <p className="text-[13px] mt-2 line-clamp-2 opacity-90">"L'innovation technologique en Afrique n'est plus une option, c'est le socle de notre souveraineté..."</p>
+                  <div className="text-[11px] mt-2 opacity-80">Par Aïssata Diop • 12 Jan 2024</div>
+                </div>
+              </div>
+              <div className="p-4 bg-white">
+                <Link href="/abonnement" className="w-full bg-[#1b1c1c] text-white text-[12px] py-3 rounded-full block text-center font-bold hover:bg-[#9e001f] transition-colors">LIRE L'INTERVIEW</Link>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* PLUS LUS - 3 lignes x 3 carreaux = 9 articles */}
+      {/* PLUS LUS - 6 articles, Montserrat black, chiffre plus grand */}
       <section className="bg-white py-[60px] border-y border-[#e5bdbb]/30">
         <div className="max-w-[1280px] mx-auto px-5 md:px-[64px]">
-          <h2 className="text-[22px] font-bold mb-6 flex items-center gap-3">Nos articles les plus lus - 3 lignes x 3 carreaux (9 articles auto) <span className="h-px bg-[#e5bdbb] flex-1"></span></h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {plusLus.map((a:any, i:number)=>(
-              <Link key={a.id} href={`/article/${a.slug}`} className="rounded-xl border border-[#e5bdbb] p-4 flex flex-col gap-2 hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start"><span className="text-[20px] font-black text-[#e5bdbb]">{String(i+1).padStart(2,'0')}</span><span className="text-[10px] bg-[#f0eded] px-2 py-0.5 rounded-full uppercase font-bold">{a.category}</span></div>
-                <h3 className="text-[13px] font-semibold leading-tight line-clamp-2">{a.title}</h3>
+          <h2 className="text-[26px] font-black mb-8 flex items-center gap-3" style={{ fontFamily: "Montserrat", fontWeight: 900 }}>Nos articles les plus lus <span className="h-px bg-[#e5bdbb] flex-1"></span></h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {plusLus.slice(0,6).map((a:any, i:number)=>(
+              <Link key={a.id} href={`/article/${a.slug}`} className="rounded-xl border border-[#e5bdbb] p-5 flex flex-col gap-3 hover:shadow-lg transition-shadow group">
+                <div className="flex justify-between items-start">
+                  <span className="text-[48px] font-black leading-none" style={{ fontFamily: "Montserrat", fontWeight: 900, color: "#e5bdbb" }}>{String(i+1).padStart(2,'0')}</span>
+                  <span className="text-[10px] bg-[#f0eded] px-2 py-1 rounded-full uppercase font-bold">{a.category}</span>
+                </div>
+                <h3 className="text-[15px] font-bold leading-tight line-clamp-2 group-hover:text-[#9e001f] transition-colors" style={{ fontFamily: "Montserrat" }}>{a.title}</h3>
+                <div className="text-[11px] text-[#5c403f] mt-auto">{a.author} • {a.views.toLocaleString()} vues</div>
               </Link>
             ))}
           </div>
