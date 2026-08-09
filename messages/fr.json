@@ -1,0 +1,12 @@
+{
+  "common": {
+    "vote": "Voter",
+    "live": "En direct",
+    "competitions": "Compétitions",
+    "candidates": "Candidats",
+    "rankings": "Classements"
+  },
+  "hero": {
+    "title": "La plus grande plateforme africaine de compétitions en direct"
+  }
+}

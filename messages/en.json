@@ -1,0 +1,12 @@
+{
+  "common": {
+    "vote": "Vote",
+    "live": "Live",
+    "competitions": "Competitions",
+    "candidates": "Candidates",
+    "rankings": "Rankings"
+  },
+  "hero": {
+    "title": "The largest African live competitions platform"
+  }
+}
