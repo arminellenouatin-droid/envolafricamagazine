@@ -2,9 +2,10 @@ import { readAwardsDB } from "@/lib/awards-db";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-export default function CandidateProfile({ params }: { params: { id: string } }) {
+export default async function CandidateProfile({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const db = readAwardsDB();
-  const candidate = db.candidates.find(c=>c.id===params.id);
+  const candidate = db.candidates.find(c=>c.id===id);
   if (!candidate) return notFound();
   const comp = db.competitions.find(c=>c.id===candidate.competition_id);
 

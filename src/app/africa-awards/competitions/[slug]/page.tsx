@@ -2,9 +2,10 @@ import { readAwardsDB } from "@/lib/awards-db";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-export default function CompetitionDetail({ params }: { params: { slug: string } }) {
+export default async function CompetitionDetail({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const db = readAwardsDB();
-  const comp = db.competitions.find(c=>c.slug===params.slug);
+  const comp = db.competitions.find(c=>c.slug===slug);
   if (!comp) return notFound();
   const candidates = db.candidates.filter(c=>c.competition_id===comp.id);
 
@@ -24,7 +25,7 @@ export default function CompetitionDetail({ params }: { params: { slug: string }
         <div>
           <p className="text-[16px] leading-7 text-[#A8A6A0]">{comp.description}</p>
           <div className="mt-8 grid md:grid-cols-3 gap-4">
-            <div className="bg-[#16161D] border border-white/10 rounded-xl p-4"><div className="text-[11px] uppercase tracking-wider text-[#A8A6A0]">Vote</div><div className="font-bold mt-1">{comp.vote_price_cents/100} F / vote • {comp.points_per_vote} pts</div></div>
+            <div className="bg-[#16161D] border border-white/10 rounded-xl p-4"><div className="text-[11px] uppercase tracking-wider text-[#A8A6A0]">Vote</div><div className="font-bold mt-1">{(comp.vote_price_cents||0)/100} F / vote • {comp.points_per_vote} pts</div></div>
             <div className="bg-[#16161D] border border-white/10 rounded-xl p-4"><div className="text-[11px] uppercase tracking-wider text-[#A8A6A0]">Pondération</div><div className="font-bold mt-1">Public {comp.public_vote_weight}% / Jury {comp.jury_weight}%</div></div>
             <div className="bg-[#16161D] border border-white/10 rounded-xl p-4"><div className="text-[11px] uppercase tracking-wider text-[#A8A6A0]">Calendrier</div><div className="font-bold mt-1 text-[12px]">{new Date(comp.starts_at||comp.created_at).toLocaleDateString()} → {new Date(comp.ends_at||Date.now()+30*86400000).toLocaleDateString()}</div></div>
           </div>

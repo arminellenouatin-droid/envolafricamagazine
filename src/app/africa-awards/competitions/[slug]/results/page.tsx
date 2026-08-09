@@ -2,9 +2,10 @@ import { readAwardsDB } from "@/lib/awards-db";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-export default function ResultsPage({ params }: { params: { slug: string } }) {
+export default async function ResultsPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const db = readAwardsDB();
-  const comp = db.competitions.find(c=>c.slug===params.slug);
+  const comp = db.competitions.find(c=>c.slug===slug);
   if (!comp) return notFound();
   const candidates = db.candidates.filter(c=>c.competition_id===comp.id).sort((a,b)=>b.votes-a.votes);
   const podium = candidates.slice(0,3);
