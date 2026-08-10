@@ -21,9 +21,9 @@ export interface CrowdProject {
   statut: 'en_attente_validation' | 'en_cours' | 'objectif_atteint' | 'objectif_depasse' | 'termine_sans_objectif' | 'cloture' | 'en_litige';
   porteurId: string;
   pays: string;
-  tauxInteret?: number; // pour prêt
-  pourcentageVendu?: number; // pour prise de part
-  valorisation?: number; // calculée auto
+  tauxInteret?: number;
+  pourcentageVendu?: number;
+  valorisation?: number;
   createdAt: string;
   dateFin: string;
   vues: number;
@@ -37,25 +37,75 @@ export interface CrowdContribution {
   investisseurId: string;
   type: 'don' | 'prise_part' | 'pret';
   montant: number;
-  pourcentage?: number; // pour prise de part
-  tauxInteret?: number; // pour prêt
-  calendrierRemboursement?: Array<{ date: string; capital: number; interet: number; total: number; statut: 'prevu'|'paye'|'retard' }>;
+  pourcentage?: number;
+  tauxInteret?: number;
+  calendrierRemboursement?: Array<{ date: string; capital: number; interet: number; total: number; statut: 'prevu'|'paye'|'retard'; retardJours?: number }>;
   contratPdf?: string;
   createdAt: string;
+}
+
+export interface CrowdDocument {
+  id: string;
+  projetId: string;
+  userId: string;
+  type: 'plan_affaires' | 'comptes_financiers' | 'carte_identite' | 'enregistrement_entreprise' | 'photo' | 'autre';
+  nom: string;
+  url: string;
+  taille: number;
+  mimeType: string;
+  createdAt: string;
+  statut: 'en_attente_verification' | 'verifie' | 'rejete';
+}
+
+export interface CrowdMessage {
+  id: string;
+  projetId: string;
+  fromId: string;
+  fromNom: string;
+  toId: string;
+  toNom: string;
+  content: string;
+  createdAt: string;
+  lu: boolean;
+}
+
+export interface CrowdRepayment {
+  id: string;
+  contributionId: string;
+  projetId: string;
+  investisseurId: string;
+  porteurId: string;
+  datePrevue: string;
+  datePayee?: string;
+  capital: number;
+  interet: number;
+  total: number;
+  statut: 'prevu' | 'paye' | 'retard';
+  retardJours: number;
+  montantRetard?: number;
+  emailEnvoye?: boolean;
 }
 
 interface CrowdDB {
   projets: CrowdProject[];
   contributions: CrowdContribution[];
+  documents: CrowdDocument[];
+  messages: CrowdMessage[];
+  repayments: CrowdRepayment[];
   retraits: any[];
   cagnottes: any[];
+  rapports: Array<{ id: string; projetId: string; porteurId: string; type: 'mensuel'|'trimestriel'; periode: string; contenu: string; documents: string[]; createdAt: string }>;
 }
 
 const defaultDB: CrowdDB = {
   projets: [],
   contributions: [],
+  documents: [],
+  messages: [],
+  repayments: [],
   retraits: [],
   cagnottes: [],
+  rapports: [],
 };
 
 let inMemory: CrowdDB | null = null;
@@ -72,6 +122,11 @@ export function readCrowdDB(): CrowdDB {
   try {
     const raw = fs.readFileSync(CROWD_DB_FILE, 'utf-8');
     const parsed = JSON.parse(raw);
+    // Ensure new fields exist for old DBs
+    if (!parsed.documents) parsed.documents = [];
+    if (!parsed.messages) parsed.messages = [];
+    if (!parsed.repayments) parsed.repayments = [];
+    if (!parsed.rapports) parsed.rapports = [];
     inMemory = parsed;
     return parsed;
   } catch {
@@ -131,3 +186,48 @@ export function seedCrowdIfEmpty() {
 }
 
 try { seedCrowdIfEmpty(); } catch {}
+
+// Helpers
+export function generateCalendrierRemboursement(montant: number, tauxAnnuel: number, dureeMois: number = 12) {
+  const calendrier = [];
+  const tauxMensuel = tauxAnnuel / 100 / 12;
+  const mensualite = (montant * tauxMensuel) / (1 - Math.pow(1 + tauxMensuel, -dureeMois));
+  let capitalRestant = montant;
+  
+  for (let i=1; i<=dureeMois; i++) {
+    const interet = capitalRestant * tauxMensuel;
+    const capital = mensualite - interet;
+    capitalRestant -= capital;
+    const date = new Date();
+    date.setMonth(date.getMonth() + i);
+    calendrier.push({
+      date: date.toISOString().split('T')[0],
+      capital: Math.round(capital),
+      interet: Math.round(interet),
+      total: Math.round(mensualite),
+      statut: 'prevu' as const,
+      retardJours: 0
+    });
+  }
+  return calendrier;
+}
+
+export function checkRetards() {
+  const db = readCrowdDB();
+  let changed = false;
+  const now = new Date();
+  for (const repayment of db.repayments) {
+    if (repayment.statut === 'prevu') {
+      const datePrevue = new Date(repayment.datePrevue);
+      const diffJours = Math.floor((now.getTime() - datePrevue.getTime()) / 86400000);
+      if (diffJours > 0) {
+        repayment.statut = 'retard';
+        repayment.retardJours = diffJours;
+        changed = true;
+        // Ici on enverrait email automatique via Resend
+        console.log(`Retard détecté: remboursement ${repayment.id} en retard de ${diffJours} jours - email auto prévu`);
+      }
+    }
+  }
+  if (changed) writeCrowdDB(db);
+}
