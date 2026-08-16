@@ -1,0 +1,76 @@
+{
+  "posts": [
+    {
+      "id": "wab-1",
+      "author": "Aïcha Bamba",
+      "headline": "Fondatrice · Abidjan Green Logistics",
+      "location": "Abidjan, Côte d’Ivoire",
+      "content": "Nous ouvrons notre programme de partenaires pour accélérer la logistique urbaine durable en Afrique de l’Ouest. Nous recherchons des opérateurs, investisseurs et experts de la chaîne du froid.",
+      "type": "opportunity",
+      "tags": [
+        "Logistique",
+        "Partenariat",
+        "Côte d’Ivoire"
+      ],
+      "views": 1840,
+      "watchSeconds": 0,
+      "likes": 126,
+      "comments": 18,
+      "isBoosted": true,
+      "createdAt": "2026-08-15T08:00:00.000Z",
+      "moderationStatus": "published"
+    },
+    {
+      "id": "wab-2",
+      "author": "Moussa Diallo",
+      "headline": "Consultant finance & stratégie",
+      "location": "Dakar, Sénégal",
+      "content": "Trois leviers concrets pour rendre une PME exportatrice : une offre normalisée, une logistique tracée et une stratégie de paiement adaptée à chaque marché cible.",
+      "type": "text",
+      "tags": [
+        "PME",
+        "Export",
+        "Finance"
+      ],
+      "views": 960,
+      "watchSeconds": 0,
+      "likes": 74,
+      "comments": 9,
+      "isBoosted": false,
+      "createdAt": "2026-08-15T07:20:00.000Z",
+      "moderationStatus": "published"
+    },
+    {
+      "id": "wab-3",
+      "author": "Njeri Wanjiku",
+      "headline": "Product Lead · Fintech Africa",
+      "location": "Nairobi, Kenya",
+      "content": "Retour sur notre étude des parcours de paiement des entrepreneurs africains. Le document présente les usages et recommandations pour les plateformes B2B régionales.",
+      "type": "document",
+      "tags": [
+        "Fintech",
+        "Étude",
+        "Paiement"
+      ],
+      "views": 1204,
+      "watchSeconds": 0,
+      "likes": 103,
+      "comments": 22,
+      "isBoosted": false,
+      "createdAt": "2026-08-14T18:00:00.000Z",
+      "moderationStatus": "published"
+    }
+  ],
+  "profiles": [],
+  "reactions": [],
+  "comments": [],
+  "reports": [],
+  "views": [],
+  "rewards": [],
+  "salons": [],
+  "salonParticipants": [],
+  "salonMessages": [],
+  "boosts": [],
+  "connections": [],
+  "notifications": []
+}

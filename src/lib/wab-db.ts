@@ -1,0 +1,34 @@
+import fs from "fs";
+import path from "path";
+import { v4 as uuid } from "uuid";
+
+const FILE = path.join(process.cwd(), "src", "data", "wab.json");
+export type WabPost = { id: string; author: string; authorUserId?: string; headline: string; location: string; content: string; type: "text" | "opportunity" | "document" | "video"; media?: Array<{ path: string; mimeType: string; name: string }>; tags: string[]; views: number; watchSeconds: number; likes: number; comments: number; isBoosted: boolean; createdAt: string; moderationStatus: "published" | "pending_review" | "hidden"; };
+export type WabProfile = { id: string; userId: string; fullName: string; headline: string; about: string; companyName?: string; industry?: string; country: string; city?: string; status: "active" | "silent" | "banned"; createdAt: string; updatedAt: string; };
+export type WabReaction = { postId: string; userId: string; createdAt: string };
+export type WabComment = { id: string; postId: string; userId: string; author: string; content: string; status: "published" | "hidden"; createdAt: string };
+export type WabReport = { id: string; targetType: "post" | "profile"; targetId: string; reporterId: string; reason: string; status: "open" | "reviewing" | "resolved" | "dismissed"; createdAt: string };
+export type WabView = { postId: string; userId?: string; visitorId?: string; watchSeconds: number; createdAt: string };
+export type WabReward = { id: string; userId: string; postId: string; type: "views_1000" | "watch_minutes_3000"; threshold: number; amount: number; status: "pending_review" | "validated" | "rejected" | "paid"; createdAt: string; validatedAt?: string; paidAt?: string };
+export type WabSalon = { id: string; hostUserId: string; host: string; title: string; description: string; startsAt: string; endsAt?: string; status: "scheduled" | "live" | "ended" | "cancelled"; replayUrl?: string; participants: number; createdAt: string };
+export type WabSalonParticipant = { salonId: string; userId: string; name: string; joinedAt: string };
+export type WabSalonMessage = { id: string; salonId: string; userId: string; author: string; content: string; createdAt: string };
+export type WabBoost = { id: string; postId: string; userId: string; budgetXof: number; durationDays: number; targetCountries: string[]; targetIndustries: string[]; paymentId?: string; status: "pending" | "active" | "ended" | "cancelled" | "failed"; startsAt?: string; endsAt?: string; createdAt: string };
+export type WabConnection = { followerUserId: string; profileId: string; createdAt: string };
+export type WabNotification = { id: string; userId: string; type: string; title: string; body: string; href?: string; readAt?: string; createdAt: string };
+export type WabDatabase = { posts: WabPost[]; profiles: WabProfile[]; reactions: WabReaction[]; comments: WabComment[]; reports: WabReport[]; views: WabView[]; rewards: WabReward[]; salons: WabSalon[]; salonParticipants: WabSalonParticipant[]; salonMessages: WabSalonMessage[]; boosts: WabBoost[]; connections: WabConnection[]; notifications: WabNotification[] };
+const seed: WabPost[] = [
+ { id: "wab-1", author: "Aïcha Bamba", headline: "Fondatrice · Abidjan Green Logistics", location: "Abidjan, Côte d’Ivoire", content: "Nous ouvrons notre programme de partenaires pour accélérer la logistique urbaine durable en Afrique de l’Ouest. Nous recherchons des opérateurs, investisseurs et experts de la chaîne du froid.", type: "opportunity", tags: ["Logistique", "Partenariat", "Côte d’Ivoire"], views: 1840, watchSeconds: 0, likes: 126, comments: 18, isBoosted: true, createdAt: "2026-08-15T08:00:00.000Z", moderationStatus: "published" },
+ { id: "wab-2", author: "Moussa Diallo", headline: "Consultant finance & stratégie", location: "Dakar, Sénégal", content: "Trois leviers concrets pour rendre une PME exportatrice : une offre normalisée, une logistique tracée et une stratégie de paiement adaptée à chaque marché cible.", type: "text", tags: ["PME", "Export", "Finance"], views: 960, watchSeconds: 0, likes: 74, comments: 9, isBoosted: false, createdAt: "2026-08-15T07:20:00.000Z", moderationStatus: "published" },
+ { id: "wab-3", author: "Njeri Wanjiku", headline: "Product Lead · Fintech Africa", location: "Nairobi, Kenya", content: "Retour sur notre étude des parcours de paiement des entrepreneurs africains. Le document présente les usages et recommandations pour les plateformes B2B régionales.", type: "document", tags: ["Fintech", "Étude", "Paiement"], views: 1204, watchSeconds: 0, likes: 103, comments: 22, isBoosted: false, createdAt: "2026-08-14T18:00:00.000Z", moderationStatus: "published" }
+];
+function reconcileWabDatabase(database: WabDatabase): WabDatabase {
+  const now = Date.now();
+  database.boosts.forEach((boost) => { if (boost.status === "active" && boost.endsAt && Date.parse(boost.endsAt) <= now) boost.status = "ended"; });
+  database.posts.forEach((post) => { const active = database.boosts.some((boost) => boost.postId === post.id && boost.status === "active" && (!boost.endsAt || Date.parse(boost.endsAt) > now)); post.isBoosted = active || (post.isBoosted && !post.authorUserId); });
+  return database;
+}
+
+export function readWabDB(): WabDatabase { try { if (!fs.existsSync(FILE)) { fs.mkdirSync(path.dirname(FILE), { recursive: true }); fs.writeFileSync(FILE, JSON.stringify({ posts: seed, profiles: [], reactions: [], comments: [], reports: [], views: [], rewards: [], salons: [], salonParticipants: [], salonMessages: [], boosts: [], connections: [], notifications: [] }, null, 2)); } const data = JSON.parse(fs.readFileSync(FILE, "utf8")) as Partial<WabDatabase>; return reconcileWabDatabase({ posts: data.posts ?? seed, profiles: data.profiles ?? [], reactions: data.reactions ?? [], comments: data.comments ?? [], reports: data.reports ?? [], views: data.views ?? [], rewards: data.rewards ?? [], salons: data.salons ?? [], salonParticipants: data.salonParticipants ?? [], salonMessages: data.salonMessages ?? [], boosts: data.boosts ?? [], connections: data.connections ?? [], notifications: data.notifications ?? [] }); } catch { return { posts: seed, profiles: [], reactions: [], comments: [], reports: [], views: [], rewards: [], salons: [], salonParticipants: [], salonMessages: [], boosts: [], connections: [], notifications: [] }; } }
+export function writeWabDB(db: WabDatabase) { fs.mkdirSync(path.dirname(FILE), { recursive: true }); fs.writeFileSync(FILE, JSON.stringify(db, null, 2)); }
+export function createWabPost(data: Omit<WabPost, "id" | "views" | "watchSeconds" | "likes" | "comments" | "isBoosted" | "createdAt" | "moderationStatus">) { const db = readWabDB(); const post: WabPost = { ...data, id: uuid(), views: 0, watchSeconds: 0, likes: 0, comments: 0, isBoosted: false, createdAt: new Date().toISOString(), moderationStatus: "published" }; db.posts.unshift(post); writeWabDB(db); return post; }

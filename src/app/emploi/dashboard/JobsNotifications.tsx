@@ -1,0 +1,4 @@
+"use client";
+import { useEffect, useState } from "react";
+type Notice = { id: string; title: string; body: string; href: string };
+export default function JobsNotifications() { const [items, setItems] = useState<Notice[]>([]); useEffect(() => { fetch("/api/jobs/notifications").then((response) => response.json()).then((data) => setItems(data.notifications ?? [])).catch(() => undefined); }, []); return <section className="mt-8 rounded-3xl bg-white p-6 shadow-sm"><h2 className="font-display text-xl font-extrabold">Notifications Jobs</h2>{items.length ? <div className="mt-4 space-y-3">{items.map((item) => <a key={item.id} href={item.href} className="block rounded-xl bg-[#e9f7f5] p-4 text-sm"><strong className="block text-[#087e8b]">{item.title}</strong><span className="text-slate-600">{item.body}</span></a>)}</div> : <p className="mt-3 text-sm text-slate-500">Vos nouvelles interactions Jobs apparaîtront ici.</p>}</section>; }

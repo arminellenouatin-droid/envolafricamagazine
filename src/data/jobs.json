@@ -1,0 +1,127 @@
+{
+  "offers": [
+    {
+      "id": "job-bj-finance",
+      "title": "Responsable administratif et financier",
+      "description": "Pilotez la fonction financière, le reporting et le contrôle de gestion d'une entreprise en croissance. Vous travaillez avec la direction et les équipes opérationnelles.",
+      "companyName": "Confidentiel",
+      "contactEmail": "recrutement@confidentiel.africa",
+      "country": "Bénin",
+      "city": "Cotonou",
+      "sector": "Finance",
+      "contractType": "CDI",
+      "salary": "Selon profil",
+      "skills": [
+        "Finance",
+        "Reporting",
+        "Excel"
+      ],
+      "publishedAt": "2026-08-14T09:00:00.000Z",
+      "expiresAt": "2026-09-14T09:00:00.000Z",
+      "status": "published",
+      "isBoosted": true,
+      "boostEndsAt": "2026-08-28T09:00:00.000Z",
+      "views": 1240,
+      "applications": 28
+    },
+    {
+      "id": "job-ci-product",
+      "title": "Product Manager — Mobile Money",
+      "description": "Concevez des produits de paiement simples et accessibles. Vous coordonnez les priorités produit, la recherche utilisateur et les lancements.",
+      "companyName": "Confidentiel",
+      "contactEmail": "talents@confidentiel.africa",
+      "country": "Côte d’Ivoire",
+      "city": "Abidjan",
+      "sector": "Tech",
+      "contractType": "CDI",
+      "salary": "2,5 à 4 M FCFA",
+      "skills": [
+        "Product",
+        "Fintech",
+        "Agile"
+      ],
+      "publishedAt": "2026-08-13T09:00:00.000Z",
+      "expiresAt": "2026-09-13T09:00:00.000Z",
+      "status": "published",
+      "isBoosted": true,
+      "boostEndsAt": "2026-08-25T09:00:00.000Z",
+      "views": 987,
+      "applications": 34
+    },
+    {
+      "id": "job-sn-agro",
+      "title": "Responsable développement commercial",
+      "description": "Développez le portefeuille B2B et les partenariats d'une entreprise agroalimentaire présente en Afrique de l'Ouest.",
+      "companyName": "Confidentiel",
+      "contactEmail": "jobs@confidentiel.africa",
+      "country": "Sénégal",
+      "city": "Dakar",
+      "sector": "Commerce",
+      "contractType": "CDI",
+      "salary": "Selon profil",
+      "skills": [
+        "Vente B2B",
+        "Négociation",
+        "Agroalimentaire"
+      ],
+      "publishedAt": "2026-08-12T09:00:00.000Z",
+      "expiresAt": "2026-09-12T09:00:00.000Z",
+      "status": "published",
+      "isBoosted": false,
+      "views": 654,
+      "applications": 19
+    },
+    {
+      "id": "job-ke-data",
+      "title": "Data Analyst — Impact & Inclusion",
+      "description": "Analysez les indicateurs d'impact et transformez les données en décisions utiles pour des programmes régionaux.",
+      "companyName": "Confidentiel",
+      "contactEmail": "apply@confidentiel.africa",
+      "country": "Kenya",
+      "city": "Nairobi",
+      "sector": "Data",
+      "contractType": "Remote",
+      "salary": "Competitive",
+      "skills": [
+        "SQL",
+        "Power BI",
+        "Analyse"
+      ],
+      "publishedAt": "2026-08-11T09:00:00.000Z",
+      "expiresAt": "2026-09-11T09:00:00.000Z",
+      "status": "published",
+      "isBoosted": false,
+      "views": 521,
+      "applications": 17
+    },
+    {
+      "id": "job-ng-marketing",
+      "title": "Growth Marketing Lead",
+      "description": "Accélérez l'acquisition et la fidélisation sur plusieurs marchés africains avec une approche pilotée par la donnée.",
+      "companyName": "Confidentiel",
+      "contactEmail": "careers@confidentiel.africa",
+      "country": "Nigeria",
+      "city": "Lagos",
+      "sector": "Marketing",
+      "contractType": "CDI",
+      "salary": "Competitive",
+      "skills": [
+        "Growth",
+        "Acquisition",
+        "Analytics"
+      ],
+      "publishedAt": "2026-08-10T09:00:00.000Z",
+      "expiresAt": "2026-09-10T09:00:00.000Z",
+      "status": "published",
+      "isBoosted": false,
+      "views": 712,
+      "applications": 25
+    }
+  ],
+  "candidates": [],
+  "unlocks": [],
+  "applications": [],
+  "subscriptions": [],
+  "boosts": [],
+  "events": []
+}

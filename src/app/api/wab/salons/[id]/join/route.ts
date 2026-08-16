@@ -1,0 +1,4 @@
+import { NextResponse } from "next/server";
+import { getCurrentUserFromCookie } from "@/lib/auth";
+import { readWabDB, writeWabDB } from "@/lib/wab-db";
+export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) { const user = await getCurrentUserFromCookie(); if (!user) return NextResponse.json({ error: "Connexion requise." }, { status: 401 }); const { id } = await params; const db = readWabDB(); const salon = db.salons.find((item) => item.id === id); if (!salon) return NextResponse.json({ error: "Salon introuvable." }, { status: 404 }); if (!db.salonParticipants.some((item) => item.salonId === id && item.userId === user.id)) { db.salonParticipants.push({ salonId: id, userId: user.id, name: `${user.prenom} ${user.nom}`, joinedAt: new Date().toISOString() }); salon.participants += 1; writeWabDB(db); } return NextResponse.json({ joined: true, participants: salon.participants }); }

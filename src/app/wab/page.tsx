@@ -1,4 +1,4 @@
-import Link from "next/link";
-export default function Page(){
-  return (<div className="bg-[#FFFCF5] min-h-screen pb-20"><div className="max-w-[1120px] mx-auto px-6 pt-10"><div className="flex items-center gap-2 text-[11px] uppercase tracking-widest font-bold text-zinc-500"><Link href="/" className="hover:text-[#0A1931]">Accueil</Link><span>›</span><span className="text-[#0A1931]">World Africa Business</span></div><h1 className="font-serif font-black text-[36px] text-[#0A1931] mt-4">World Africa Business</h1><p className="text-zinc-600 mt-2 max-w-[640px]">Bientôt: la plateforme B2B qui connecte l'Afrique au monde. Opportunités, partenariats, sourcing. Même compte Envol Africa.</p><div className="mt-10 bg-white rounded-[24px] border p-10 text-center"><div className="text-5xl">🌍</div><div className="font-serif font-black text-2xl mt-4 text-[#0A1931]">Global • Africa • Business</div></div></div></div>);
-}
+import type { Metadata } from "next";
+import WabClient from "./WabClient";
+export const metadata: Metadata = { title: "World Africa Business | Réseau professionnel africain", description: "Le réseau africain dédié à l’entrepreneuriat, au business, aux opportunités et à la formation." };
+export default function WabPage() { return <WabClient />; }

@@ -1,0 +1,5 @@
+"use client";
+import { useEffect, useState } from "react";
+import TrackedVideo from "./TrackedVideo";
+type Media = { path: string; mimeType: string; name: string };
+export default function PostMedia({ postId, media }: { postId: string; media: Media[] }) { const [urls, setUrls] = useState<Array<{ url: string; mimeType: string; name: string }>>([]); useEffect(() => { Promise.all(media.map((_, index) => fetch(`/api/wab/media?postId=${postId}&index=${index}`).then((response) => response.ok ? response.json() : null))).then((values) => setUrls(values.filter(Boolean))); }, [media, postId]); if (!urls.length) return null; return <div className="mt-5 space-y-3">{urls.map((item) => item.mimeType.startsWith("image/") ? <img key={item.url} src={item.url} alt={item.name} className="max-h-[520px] w-full rounded-xl object-cover"/> : item.mimeType === "video/mp4" ? <TrackedVideo key={item.url} postId={postId} src={item.url} name={item.name}/> : <a key={item.url} href={item.url} target="_blank" className="block rounded-xl bg-[#e9f7f5] p-4 text-sm font-bold text-[#087e8b]">Ouvrir le document : {item.name} ↗</a>)}</div>; }
