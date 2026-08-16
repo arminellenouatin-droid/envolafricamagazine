@@ -1,4 +1,13 @@
-import Link from "next/link";
-export default function Page(){
-  return (<div className="bg-[#FFFCF5] min-h-screen pb-20"><div className="max-w-[1120px] mx-auto px-6 pt-10"><div className="flex items-center gap-2 text-[11px] uppercase tracking-widest font-bold text-zinc-500"><Link href="/" className="hover:text-[#0A1931]">Accueil</Link><span>›</span><span className="text-[#0A1931]">Marketplace</span></div><h1 className="font-serif font-black text-[36px] text-[#0A1931] mt-4">Marketplace • Produits africains d'exception</h1><p className="text-zinc-600 mt-2 max-w-[640px]">Bientôt disponible. Karité, Wax, Café, Chocolat, Artisanat… Direct producteurs. Même compte Envol Africa.</p><div className="mt-10 grid md:grid-cols-3 gap-4">{[1,2,3,4,5,6].map(i=><div key={i} className="bg-white rounded-[16px] border border-zinc-100 p-4 h-56 flex items-center justify-center text-zinc-400">Produit {i} • Bientôt</div>)}</div></div></div>);
+import type { Metadata } from "next";
+import MarketplaceClient from "./MarketplaceClient";
+
+export const metadata: Metadata = {
+  title: "Marketplace Envol Africa | Acheter et vendre en Afrique",
+  description: "Découvrez des fournisseurs africains, des produits vérifiés et des options de paiement comptant ou échelonné jusqu’à 12 mois.",
+  alternates: { canonical: "/marketplace" },
+  openGraph: { title: "Marketplace Envol Africa", description: "Le commerce africain, sans détour.", type: "website" },
+};
+
+export default function MarketplacePage() {
+  return <MarketplaceClient />;
 }
