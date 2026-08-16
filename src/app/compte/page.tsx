@@ -11,8 +11,8 @@ export default function ComptePage() {
     fetch("/api/auth/me").then(r=>r.json()).then(d=>{
       if (d.user) {
         setUser(d.user);
-        fetch(`/api/orders?userId=${d.user.id}`).then(r=>r.json()).then(o=>setOrders(o.orders||[])).catch(()=>{});
-        fetch(`/api/affiliate?userId=${d.user.id}`).then(r=>r.json()).then(e=>setEarnings(e.earnings||[])).catch(()=>{});
+        fetch("/api/orders?userId=" + encodeURIComponent(d.user.id)).then(r=>r.ok ? r.json() : { orders: [] }).then(o=>setOrders(o.orders||[])).catch(()=>{});
+        fetch("/api/affiliate").then(r=>r.ok ? r.json() : { earnings: [] }).then(e=>setEarnings(e.earnings||[])).catch(()=>{});
       }
     });
   },[]);

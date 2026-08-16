@@ -11,7 +11,7 @@ export default function AffiliationPage() {
     fetch("/api/auth/me").then(r=>r.json()).then(d=>{
       if (d.user) {
         setUser(d.user);
-        fetch(`/api/affiliate?userId=${d.user.id}`).then(r=>r.json()).then(e=>setEarnings(e.earnings||[]));
+        fetch("/api/affiliate").then(r=>r.ok ? r.json() : { earnings: [] }).then(e=>setEarnings(e.earnings||[]));
       }
     });
   },[]);

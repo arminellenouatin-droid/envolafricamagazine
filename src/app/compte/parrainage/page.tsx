@@ -7,7 +7,7 @@ export default function ParrainageCompte(){
   useEffect(()=>{
     fetch("/api/auth/me").then(r=>r.json()).then(d=>{
       setUser(d.user);
-      if (d.user) fetch(`/api/affiliate?userId=${d.user.id}`).then(r=>r.json()).then(e=>setEarnings(e.earnings||[]));
+      if (d.user) fetch("/api/affiliate").then(r=>r.ok ? r.json() : { earnings: [] }).then(e=>setEarnings(e.earnings||[]));
     });
   },[]);
   const total=earnings.reduce((s,e)=>s+e.commission,0);

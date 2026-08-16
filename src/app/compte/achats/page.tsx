@@ -5,7 +5,7 @@ export default function AchatsPage(){
   const [orders,setOrders]=useState<any[]>([]);
   useEffect(()=>{
     fetch("/api/auth/me").then(r=>r.json()).then(d=>{
-      if (d.user) fetch(`/api/orders?userId=${d.user.id}`).then(r=>r.json()).then(o=>setOrders(o.orders||[]));
+      if (d.user) fetch("/api/orders?userId=" + encodeURIComponent(d.user.id)).then(r=>r.ok ? r.json() : { orders: [] }).then(o=>setOrders(o.orders||[]));
     });
   },[]);
   return (
