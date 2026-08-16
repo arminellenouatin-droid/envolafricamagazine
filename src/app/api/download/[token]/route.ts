@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyDownloadToken } from "@/lib/download";
-import { readDB } from "@/lib/db";
+import { findMagazineById, findUserById, listOrders } from "@/lib/core-db";
 
 export async function GET(req: NextRequest, context: { params: Promise<{ token: string }> }) {
   const { token } = await context.params;
@@ -9,23 +9,22 @@ export async function GET(req: NextRequest, context: { params: Promise<{ token: 
     return NextResponse.json({ error: "Lien expiré ou invalide - 24h écoulées" }, { status: 403 });
   }
 
-  const db = readDB();
-  // Vérifier que l'utilisateur a bien acheté ou est abonné
-  const user = db.users.find(u=>u.id===payload.userId);
+  // Vérifier que l'utilisateur existe dans la base active
+  const user = await findUserById(payload.userId);
   if (!user) return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 });
 
-  // Vérifier achat ou abonnement
-  const hasAccess = db.orders.some(o=>o.userId===payload.userId && o.status==="paid" && o.items.some(i=> (i as any).magazineId===payload.magazineId)) || 
-                    (user.subscription?.status==="active" && new Date(user.subscription.endDate) > new Date()) ||
-                    user.role==="admin" || user.role==="gerant" || user.role==="redacteur_chef";
+  // Vérifier achat ou abonnement dans Supabase
+  const orders = await listOrders(payload.userId);
+  const hasAccess = orders.some((order) => order.status === "paid" && order.items.some((item) => item.magazineId === payload.magazineId)) ||
+                    (user.subscription?.status === "active" && new Date(user.subscription.endDate) > new Date()) ||
+                    ["admin", "gerant", "redacteur_chef"].includes(user.role);
 
   if (!hasAccess) {
     return NextResponse.json({ error: "Accès non autorisé - achat requis" }, { status: 403 });
   }
 
-  // Pour demo, on redirige vers le cover ou on retourne un JSON avec URL sécurisée
-  // En prod, on servirait le fichier PDF/audio depuis S3/Supabase Storage avec stream
-  const magazine = db.magazines.find(m=>m.id===payload.magazineId);
+  // Pour demo, on retourne encore la couverture ; le fichier final devra venir de Storage signé.
+  const magazine = payload.magazineId ? await findMagazineById(payload.magazineId) : null;
   if (!magazine) return NextResponse.json({ error: "Magazine introuvable" }, { status: 404 });
 
   // Génère une URL de téléchargement temporaire (mock)
