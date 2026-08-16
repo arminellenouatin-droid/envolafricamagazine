@@ -16,6 +16,13 @@ const firstLineMenus = [
   { name: "World Africa Business", href: "/wab", icon: "public" },
 ];
 
+function urlBase64ToUint8Array(value: string) {
+  const padding = "=".repeat((4 - (value.length % 4)) % 4);
+  const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = window.atob(base64);
+  return Uint8Array.from([...raw].map((char) => char.charCodeAt(0)));
+}
+
 const sidePanelLinks = [
   { name: "Montage de plan d'affaires", href: "https://envolafrica.net/" },
   { name: "Conseils et externalisation", href: "https://envolafrica.net/" },
@@ -116,6 +123,14 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
     const enabled = permission === "granted";
     setNotificationsEnabled(enabled);
     localStorage.setItem("eam_notifications_enabled", String(enabled));
+    if (enabled && "serviceWorker" in navigator && "PushManager" in window && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
+      try {
+        const registration = await navigator.serviceWorker.register("/sw.js");
+        const existing = await registration.pushManager.getSubscription();
+        const subscription = existing || await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) });
+        await fetch("/api/notifications/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(subscription) });
+      } catch { /* Le consentement navigateur reste valide même si le push serveur est indisponible. */ }
+    }
     setNotificationPrompt(false);
   };
 
