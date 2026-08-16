@@ -378,3 +378,20 @@ export async function listOrders(userId?: string): Promise<Order[]> {
     return { id: String(item.id), userId: String(item.user_id), items: Array.isArray(item.items) ? item.items as Order["items"] : [], total: Number(item.total), currency: String(item.currency ?? "XOF"), status: String(item.status ?? "pending") as Order["status"], paymentId: typeof item.payment_id === "string" ? item.payment_id : undefined, affiliateCode: typeof item.affiliate_code === "string" ? item.affiliate_code : undefined, shippingCountry: typeof item.shipping_country === "string" ? item.shipping_country : undefined, shippingCost: Number(item.shipping_cost ?? 0), createdAt: String(item.created_at), paidAt: item.paid_at ? String(item.paid_at) : undefined };
   });
 }
+
+export async function updateUserFavorites(userId: string, favorites: string[]): Promise<string[]> {
+  const client = getAdminClient();
+  const normalized = Array.from(new Set(favorites.map(String))).slice(0, 500);
+  if (!client) {
+    if (!canUseJsonFallback()) throw new ProductionDatabaseNotConfiguredError();
+    const db = readDB();
+    const user = db.users.find((item) => item.id === userId);
+    if (!user) throw new Error("Utilisateur introuvable");
+    user.favorites = normalized;
+    writeDB(db);
+    return normalized;
+  }
+  const { data, error } = await client.from("users").update({ favorites: normalized }).eq("id", userId).select("favorites").single();
+  if (error) throw error;
+  return Array.isArray(data?.favorites) ? data.favorites.map(String) : normalized;
+}
