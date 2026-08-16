@@ -1,7 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
+
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { getPlatformKey, PLATFORM_CONFIGS, platformOptions, type PlatformConfig } from "@/lib/platforms";
 
 const firstLineMenus = [
   { name: "S'abonner", href: "/abonnement", icon: "stars" },
@@ -12,36 +14,6 @@ const firstLineMenus = [
   { name: "Africa Awards", href: "/africa-awards", icon: "emoji_events" },
   { name: "Salons", href: "/salons", icon: "event_seat" },
   { name: "World Africa Business", href: "/wab", icon: "public" },
-];
-
-const platformMap: Record<string, string> = {
-  "/": "Envol Africa Magazine",
-  "/kiosque": "Kiosque",
-  "/emploi": "Jobs",
-  "/marketplace": "Marketplace",
-  "/financement": "Crowdfunding",
-  "/africa-awards": "Africa Awards",
-  "/salons": "Salons",
-  "/wab": "World Africa Business",
-  "/abonnement": "Envol Africa Magazine",
-  "/article": "Envol Africa Magazine",
-  "/panier": "Kiosque",
-  "/don": "Envol Africa Magazine",
-  "/affiliation": "Envol Africa Magazine",
-  "/service": "Envol Africa Magazine",
-  "/compte": "Envol Africa Magazine",
-  "/admin": "Envol Africa Magazine",
-};
-
-const dropdownMenus = [
-  { name: "Envol Africa Magazine", href: "/" },
-  { name: "Kiosque", href: "/kiosque" },
-  { name: "Jobs", href: "/emploi" },
-  { name: "Marketplace", href: "/marketplace" },
-  { name: "Crowdfunding", href: "/financement" },
-  { name: "Africa Awards", href: "/africa-awards" },
-  { name: "Salons", href: "/salons" },
-  { name: "World Africa Business", href: "/wab" },
 ];
 
 const sidePanelLinks = [
@@ -57,7 +29,35 @@ const sidePanelLinks = [
   { name: "Courtage", href: "https://envolafrica.net/" },
 ];
 
-export default function Header({ user }: { user?: any }) {
+function MegaMenu({ platform, onClose }: { platform: PlatformConfig; onClose: () => void }) {
+  return (
+    <div className="absolute left-1/2 top-full z-[70] mt-3 w-[min(92vw,760px)] -translate-x-1/2 overflow-hidden rounded-2xl border border-[#e5bdbb] bg-white shadow-2xl">
+      <div className="border-b border-slate-100 px-5 py-4" style={{ backgroundColor: platform.accentSoft }}>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: platform.accent }}>{platform.name}</p>
+            <h2 className="mt-1 font-display text-lg font-extrabold text-slate-950">{platform.megaTitle}</h2>
+            <p className="mt-1 text-sm text-slate-600">{platform.megaDescription}</p>
+          </div>
+          <button type="button" aria-label="Fermer le menu" onClick={onClose} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-slate-600 shadow-sm transition hover:text-slate-950">×</button>
+        </div>
+      </div>
+      <div className="grid gap-2 p-4 sm:grid-cols-2">
+        {platform.megaItems.map((item) => (
+          <Link key={item.label} href={item.href} onClick={onClose} className="group flex items-center gap-3 rounded-xl border border-slate-100 px-4 py-3 transition hover:-translate-y-0.5 hover:border-transparent hover:shadow-md" style={{ backgroundColor: `${platform.accentSoft}88` }}>
+            <span className="material-symbols-outlined text-[22px]" style={{ color: platform.accent }}>{item.icon}</span>
+            <span className="flex-1 text-sm font-bold text-slate-800">{item.label}</span>
+            <span className="text-slate-400 transition group-hover:translate-x-0.5" aria-hidden="true">→</span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function Header({ user }: { user?: { id: string; nom?: string; prenom?: string; email?: string; role?: string } }) {
+  const pathname = usePathname();
+  const platform = useMemo(() => PLATFORM_CONFIGS[getPlatformKey(pathname)], [pathname]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
   const [megaMenuOpen, setMegaMenuOpen] = useState(false);
@@ -66,318 +66,148 @@ export default function Header({ user }: { user?: any }) {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [darkMode, setDarkMode] = useState(false);
-  const [cityWeather, setCityWeather] = useState<{ city: string, temp: string, icon: string }>({ city: "Cotonou", temp: "28°C", icon: "⛅" });
-  const pathname = usePathname();
-
-  const getCurrentPlatform = () => {
-    if (pathname.startsWith("/kiosque")) return "Kiosque";
-    if (pathname.startsWith("/emploi")) return "Jobs";
-    if (pathname.startsWith("/marketplace")) return "Marketplace";
-    if (pathname.startsWith("/financement")) return "Crowdfunding";
-    if (pathname.startsWith("/africa-awards")) return "Africa Awards";
-    if (pathname.startsWith("/salons")) return "Salons";
-    if (pathname.startsWith("/wab")) return "World Africa Business";
-    if (pathname.startsWith("/article")) return "Envol Africa Magazine";
-    if (pathname.startsWith("/abonnement")) return "Envol Africa Magazine";
-    if (pathname.startsWith("/panier")) return "Kiosque";
-    if (pathname.startsWith("/don")) return "Envol Africa Magazine";
-    if (pathname.startsWith("/affiliation")) return "Envol Africa Magazine";
-    if (pathname.startsWith("/service")) return "Envol Africa Magazine";
-    if (pathname.startsWith("/compte")) return "Envol Africa Magazine";
-    if (pathname.startsWith("/admin")) return "Envol Africa Magazine";
-    return "Envol Africa Magazine";
-  };
+  const [cityWeather, setCityWeather] = useState({ city: "Cotonou", temp: "28°C", icon: "⛅" });
+  const [notificationPrompt, setNotificationPrompt] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("eam_cart");
-    if (saved) { try { setCartCount(JSON.parse(saved).length); } catch {} }
-    const interval = setInterval(() => {
-      const s = localStorage.getItem("eam_cart");
-      if (s) { try { setCartCount(JSON.parse(s).length); } catch {} }
-    }, 1000);
+    setMegaMenuOpen(false);
+    setDropdownOpen(false);
+  }, [pathname]);
 
-    // Mode sombre/clair
+  useEffect(() => {
+    const readCart = () => {
+      const saved = localStorage.getItem("eam_cart");
+      if (!saved) return setCartCount(0);
+      try { setCartCount(JSON.parse(saved).length); } catch { setCartCount(0); }
+    };
+    readCart();
+    const interval = window.setInterval(readCart, 1000);
     const savedMode = localStorage.getItem("eam_dark_mode");
-    if (savedMode === "dark") {
-      setDarkMode(true);
-      document.documentElement.classList.add("dark");
-    }
+    if (savedMode === "dark") { setDarkMode(true); document.documentElement.classList.add("dark"); }
 
-    // Ville + météo automatique
+    const storedNotifications = localStorage.getItem("eam_notifications_enabled") === "true";
+    setNotificationsEnabled(storedNotifications);
+    const canNotify = "Notification" in window;
+    if (canNotify && Notification.permission === "default" && !localStorage.getItem("eam_notifications_prompted")) setNotificationPrompt(true);
+
     const fetchWeather = async () => {
       try {
-        // Essai IP geolocation via ipapi.co (gratuit)
-        const ipRes = await fetch("https://ipapi.co/json/").then(r=>r.json()).catch(()=>null);
-        if (ipRes && ipRes.city) {
-          setCityWeather({ city: ipRes.city, temp: "28°C", icon: "⛅" });
-          // Optionnel: fetch météo réelle via open-meteo
-          // const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${ipRes.latitude}&longitude=${ipRes.longitude}&current_weather=true`).then(r=>r.json());
-          // if (weatherRes.current_weather) setCityWeather(prev=>({...prev, temp: Math.round(weatherRes.current_weather.temperature)+"°C"}));
-        } else {
-          // Fallback géolocalisation navigateur
-          if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition((pos)=>{
-              setCityWeather({ city: "Cotonou", temp: "28°C", icon: "🌤️" });
-            }, ()=>{});
-          }
-        }
-      } catch {}
+        const response = await fetch("https://ipapi.co/json/", { cache: "no-store" });
+        const data = await response.json();
+        if (data?.city) setCityWeather({ city: data.city, temp: "28°C", icon: "⛅" });
+      } catch { /* La météo reste sur Cotonou en cas d’échec. */ }
     };
     fetchWeather();
-
-    return () => clearInterval(interval);
+    return () => window.clearInterval(interval);
   }, []);
 
   const toggleDarkMode = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    if (newMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("eam_dark_mode", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("eam_dark_mode", "light");
-    }
+    const next = !darkMode;
+    setDarkMode(next);
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("eam_dark_mode", next ? "dark" : "light");
   };
+
+  const requestNotifications = async () => {
+    localStorage.setItem("eam_notifications_prompted", "true");
+    if (!("Notification" in window)) { setNotificationPrompt(false); return; }
+    const permission = await Notification.requestPermission();
+    const enabled = permission === "granted";
+    setNotificationsEnabled(enabled);
+    localStorage.setItem("eam_notifications_enabled", String(enabled));
+    setNotificationPrompt(false);
+  };
+
+  const dismissNotificationPrompt = () => {
+    localStorage.setItem("eam_notifications_prompted", "true");
+    setNotificationPrompt(false);
+  };
+
+  const displayName = user?.prenom || user?.nom || "Mon compte";
 
   return (
     <>
-      {/* ===== DESKTOP HEADER - PREMIÈRE LIGNE - Century Gothic ===== */}
-      <nav className="bg-[#303030] text-white py-2 px-5 lg:px-[64px] hidden md:flex justify-between items-center z-50 border-b border-white/10" style={{ fontFamily: "Century Gothic, Inter, sans-serif" }}>
+      <nav className="hidden items-center justify-between border-b border-white/10 bg-[#303030] px-5 py-2 text-white md:flex lg:px-[64px]" style={{ fontFamily: "Century Gothic, Inter, sans-serif" }}>
         <div className="flex items-center gap-5 text-[12px] font-medium">
-          {firstLineMenus.map(m=>(
-            <Link key={m.name} href={m.href} className="hover:text-[#ffdad8] flex items-center gap-1.5 transition-colors" style={{ fontFamily: "Century Gothic, sans-serif" }}>
-              <span className="material-symbols-outlined text-[16px]">{m.icon}</span> {m.name}
-            </Link>
-          ))}
+          {firstLineMenus.map((item) => <Link key={item.name} href={item.href} className="flex items-center gap-1.5 transition-colors hover:text-[#ffdad8]"><span className="material-symbols-outlined text-[16px]">{item.icon}</span>{item.name}</Link>)}
         </div>
-        <div className="flex items-center gap-3">
-          <button className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center" title="Traduction"><span className="material-symbols-outlined text-[18px]">translate</span></button>
-          <button className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center" title="Devise"><span className="material-symbols-outlined text-[18px]">payments</span></button>
-          <button onClick={toggleDarkMode} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center" title={darkMode?"Mode clair":"Mode sombre"}>
-            <span className="material-symbols-outlined text-[18px]">{darkMode?"light_mode":"dark_mode"}</span>
-          </button>
+        <div className="flex items-center gap-2">
+          <button type="button" className="grid h-8 w-8 place-items-center rounded-full bg-white/10 hover:bg-white/20" title="Traduction"><span className="material-symbols-outlined text-[18px]">translate</span></button>
+          <button type="button" className="grid h-8 w-8 place-items-center rounded-full bg-white/10 hover:bg-white/20" title="Devise"><span className="material-symbols-outlined text-[18px]">payments</span></button>
+          <button type="button" onClick={toggleDarkMode} className="grid h-8 w-8 place-items-center rounded-full bg-white/10 hover:bg-white/20" title={darkMode ? "Mode clair" : "Mode sombre"}><span className="material-symbols-outlined text-[18px]">{darkMode ? "light_mode" : "dark_mode"}</span></button>
         </div>
       </nav>
 
-      {/* DEUXIÈME LIGNE - STICKY - LOGO + DROPDOWN PLATEFORME EN GRAS + MEGA MENU + 5 ICONES + 3 BOUTONS + MENU RÉDUIT */}
-      <header className="bg-[#fcf9f8] sticky top-0 z-40 border-b border-[#e5bdbb] shadow-sm">
-        <div className="max-w-[1280px] mx-auto px-5 lg:px-[64px] flex items-center justify-between h-[76px]">
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2">
-              <img src="/logo-couleur-entete.png" alt="Envol Africa" className="h-[48px] w-auto object-contain hidden lg:block" />
-              <span className="font-black tracking-tighter text-[#9e001f] text-[24px] lg:hidden" style={{ fontFamily: "Montserrat" }}>Envol Africa</span>
+      <header className="sticky top-0 z-40 border-b border-[#e5bdbb] bg-[#fcf9f8] shadow-sm">
+        <div className="mx-auto flex h-[76px] max-w-[1280px] items-center justify-between px-5 lg:px-[64px]">
+          <div className="flex min-w-0 items-center gap-3 lg:gap-6">
+            <Link href={platform.homeHref} aria-label={`Accueil ${platform.name}`} className="flex shrink-0 items-center gap-2">
+              <img src={platform.logoSrc} alt={platform.logoAlt} className="hidden h-[48px] w-auto object-contain lg:block" />
+              <span className="font-display text-[21px] font-black tracking-tight lg:hidden" style={{ color: platform.accent }}>Envol Africa</span>
             </Link>
 
-            {/* Menu déroulant plateforme - affiche nom plateforme en gras au lieu de "menu" */}
             <div className="relative hidden lg:block">
-              <button onClick={()=>setDropdownOpen(!dropdownOpen)} className="flex items-center gap-1 text-[14px] font-black px-3 py-2 rounded hover:bg-[#f0eded] transition-colors" style={{ fontFamily: "Century Gothic, sans-serif" }}>
-                {getCurrentPlatform()} <span className="material-symbols-outlined text-[18px]">expand_more</span>
+              <button type="button" aria-expanded={dropdownOpen} onClick={() => setDropdownOpen((open) => !open)} className="flex items-center gap-1 rounded px-3 py-2 text-[14px] font-black transition-colors hover:bg-[#f0eded]" style={{ fontFamily: "Century Gothic, sans-serif" }}>
+                {platform.name}<span className="material-symbols-outlined text-[18px]">expand_more</span>
               </button>
-              {dropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-[#e5bdbb] rounded-xl shadow-xl p-2 z-50">
-                  {dropdownMenus.map(m=>(
-                    <Link key={m.name} href={m.href} onClick={()=>setDropdownOpen(false)} className={`block px-4 py-2.5 text-[13px] rounded-lg hover:bg-[#f6f3f2] hover:text-[#9e001f] transition-colors ${getCurrentPlatform()===m.name?"bg-[#f0eded] font-bold text-[#9e001f]":""}`}>{m.name}</Link>
-                  ))}
-                </div>
-              )}
+              {dropdownOpen && <div className="absolute left-0 top-full z-50 mt-2 w-72 rounded-xl border border-[#e5bdbb] bg-white p-2 shadow-xl">{platformOptions.map((item) => <Link key={item.key} href={item.href} onClick={() => setDropdownOpen(false)} className={`block rounded-lg px-4 py-2.5 text-[13px] transition-colors hover:bg-[#f6f3f2] hover:text-[#9e001f] ${platform.key === item.key ? "bg-[#f0eded] font-bold text-[#9e001f]" : ""}`}>{item.name}</Link>)}</div>}
             </div>
 
-            {/* Méga menu Nouveau numéro - luxueux */}
             <div className="relative hidden lg:block">
-              <button onClick={()=>setMegaMenuOpen(!megaMenuOpen)} onMouseEnter={()=>setMegaMenuOpen(true)} className="flex items-center gap-1 text-[13px] font-bold px-4 py-2 rounded-full bg-[#9e001f] text-white hover:bg-[#c8102e] transition-colors">
-                Nouveau numéro <span className="material-symbols-outlined text-[18px]">expand_more</span>
+              <button type="button" aria-expanded={megaMenuOpen} onClick={() => setMegaMenuOpen((open) => !open)} onMouseEnter={() => setMegaMenuOpen(true)} className="flex items-center gap-1 rounded-full px-4 py-2 text-[13px] font-bold text-white transition-colors hover:brightness-110" style={{ backgroundColor: platform.accent }}>
+                {platform.megaLabel}<span className="material-symbols-outlined text-[18px]">expand_more</span>
               </button>
-              {megaMenuOpen && (
-                <div onMouseLeave={()=>setMegaMenuOpen(false)} className="absolute top-full left-1/2 -translate-x-1/2 mt-4 w-[960px] bg-white border border-[#e5bdbb] rounded-2xl shadow-2xl z-50 overflow-hidden">
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-bold text-[16px]">Nouveau numéro - N°25 Spécial Investissements 2026</h3>
-                      <button onClick={()=>setMegaMenuOpen(false)} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center">×</button>
-                    </div>
-                    <div className="grid grid-cols-12 gap-6">
-                      <div className="col-span-8">
-                        <div className="grid grid-cols-3 gap-4">
-                          {[1,2,3].map(i=>(
-                            <Link key={i} href="/kiosque" className="group">
-                              <div className="aspect-[4/3] rounded-lg overflow-hidden bg-[#eae7e7]"><img src={`https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=300`} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" /></div>
-                              <div className="mt-2 text-[11px] font-bold uppercase text-[#9e001f]">Économie • Vedette {i}</div>
-                              <div className="text-[13px] font-semibold leading-tight mt-1 line-clamp-2">ZLECAf : le grand tournant {i}</div>
-                            </Link>
-                          ))}
-                        </div>
-                        <div className="mt-6 flex items-center justify-between border-t border-[#e5bdbb] pt-4">
-                          <div className="flex gap-2 text-[11px]"><span className="px-2 py-1 rounded-full bg-[#f0eded]">Economie</span><span className="px-2 py-1 rounded-full bg-[#f0eded]">Finance</span><span className="px-2 py-1 rounded-full bg-[#f0eded]">Tech</span><Link href="/kiosque" className="text-[#9e001f] font-bold hover:underline">Voir plus →</Link></div>
-                          <Link href="/kiosque" className="h-9 px-5 rounded-full bg-[#0A1931] text-white text-[12px] font-bold">Acheter ce numéro →</Link>
-                        </div>
-                      </div>
-                      <div className="col-span-4 space-y-3">
-                        {[1,2,3].map(i=>(
-                          <Link key={i} href="/article" className="flex gap-3 p-2 rounded-lg hover:bg-[#f6f3f2]">
-                            <img src={`https://images.unsplash.com/photo-1497366811353-524cc3f3968e?w=100`} alt="" className="w-16 h-16 rounded object-cover" />
-                            <div><div className="text-[11px] font-bold text-[#9e001f] uppercase">Finance</div><div className="text-[12px] font-semibold leading-tight line-clamp-2">Obligations vertes : Sénégal {i}</div></div>
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {megaMenuOpen && <MegaMenu platform={platform} onClose={() => setMegaMenuOpen(false)} />}
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="hidden lg:flex items-center gap-1 border-r border-[#e5bdbb] pr-3">
-              <Link href="/panier" className="relative w-9 h-9 rounded-full bg-[#f6f3f2] hover:bg-[#e5bdbb] flex items-center justify-center"><span className="material-symbols-outlined text-[20px]">shopping_cart</span></Link>
-              <button className="w-9 h-9 rounded-full bg-[#f6f3f2] hover:bg-[#e5bdbb] flex items-center justify-center"><span className="material-symbols-outlined text-[20px]">notifications</span></button>
-              <Link href="/service" className="w-9 h-9 rounded-full bg-[#f6f3f2] hover:bg-[#e5bdbb] flex items-center justify-center"><span className="material-symbols-outlined text-[20px]">mail</span></Link>
-              <Link href="/compte/favoris" className="w-9 h-9 rounded-full bg-[#f6f3f2] hover:bg-[#e5bdbb] flex items-center justify-center"><span className="material-symbols-outlined text-[20px]">favorite</span></Link>
-              <button onClick={()=>setShowSearch(!showSearch)} className="w-9 h-9 rounded-full bg-[#f6f3f2] hover:bg-[#e5bdbb] flex items-center justify-center"><span className="material-symbols-outlined text-[20px]">search</span></button>
+            <div className="hidden items-center gap-1 border-r border-[#e5bdbb] pr-3 lg:flex">
+              <Link href="/panier" aria-label="Panier" className="relative grid h-9 w-9 place-items-center rounded-full bg-[#f6f3f2] hover:bg-[#e5bdbb]"><span className="material-symbols-outlined text-[20px]">shopping_cart</span>{cartCount > 0 && <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#9e001f] px-1 text-[9px] font-bold text-white">{cartCount}</span>}</Link>
+              <button type="button" onClick={() => setNotificationPrompt(true)} aria-label="Notifications" className={`grid h-9 w-9 place-items-center rounded-full hover:bg-[#e5bdbb] ${notificationsEnabled ? "bg-[#e9f7f5] text-[#087e8b]" : "bg-[#f6f3f2]"}`}><span className="material-symbols-outlined text-[20px]">notifications</span></button>
+              <Link href="/service" aria-label="Messages" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f3f2] hover:bg-[#e5bdbb]"><span className="material-symbols-outlined text-[20px]">mail</span></Link>
+              <Link href="/compte/favoris" aria-label="Favoris" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f3f2] hover:bg-[#e5bdbb]"><span className="material-symbols-outlined text-[20px]">favorite</span></Link>
+              <button type="button" onClick={() => setShowSearch((open) => !open)} aria-label="Rechercher" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f3f2] hover:bg-[#e5bdbb]"><span className="material-symbols-outlined text-[20px]">search</span></button>
             </div>
-
-            <div className="hidden lg:flex items-center gap-2">
-              <Link href="/auth/login" className="text-[12px] font-bold px-4 py-2 bg-[#dc2626] text-white rounded hover:bg-[#b91c1c] transition-colors">Se connecter</Link>
-              <Link href="/abonnement" className="text-[12px] font-bold px-4 py-2 bg-[#303030] text-white rounded hover:bg-black">S'abonner</Link>
-              <Link href="/don" className="text-[12px] font-bold px-4 py-2 bg-[#16a34a] text-white rounded hover:bg-[#15803d] transition-colors">Faire un don</Link>
+            <div className="hidden items-center gap-2 lg:flex">
+              {user ? <Link href="/compte" className="max-w-[130px] truncate rounded bg-[#0A1931] px-4 py-2 text-[12px] font-bold text-white hover:bg-[#152a4d]">{displayName}</Link> : <Link href="/auth/login" className="rounded bg-[#dc2626] px-4 py-2 text-[12px] font-bold text-white hover:bg-[#b91c1c]">Se connecter</Link>}
+              <Link href="/abonnement" className="rounded bg-[#303030] px-4 py-2 text-[12px] font-bold text-white hover:bg-black">S'abonner</Link>
+              <Link href="/don" className="rounded bg-[#16a34a] px-4 py-2 text-[12px] font-bold text-white hover:bg-[#15803d]">Faire un don</Link>
             </div>
-
-            <button onClick={()=>setSideMenuOpen(true)} className="ml-2 w-10 h-10 rounded-full bg-[#303030] text-white flex items-center justify-center hover:bg-black"><span className="material-symbols-outlined">menu</span></button>
+            <button type="button" onClick={() => setSideMenuOpen(true)} aria-label="Ouvrir le menu" className="ml-1 grid h-10 w-10 place-items-center rounded-full bg-[#303030] text-white hover:bg-black"><span className="material-symbols-outlined">menu</span></button>
           </div>
         </div>
 
-        {showSearch && (
-          <div className="border-t border-[#e5bdbb] bg-white p-4">
-            <div className="max-w-[720px] mx-auto flex gap-2">
-              <input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder="Rechercher..." className="flex-1 h-11 rounded-lg border bg-[#f6f3f2] px-4" />
-              <button onClick={()=>setShowSearch(false)} className="h-11 w-11 rounded-full border flex items-center justify-center">×</button>
-            </div>
-          </div>
-        )}
+        {showSearch && <div className="border-t border-[#e5bdbb] bg-white p-4"><form onSubmit={(event) => { event.preventDefault(); if (searchQuery.trim()) window.location.assign(`/recherche?q=${encodeURIComponent(searchQuery.trim())}`); }} className="mx-auto flex max-w-[720px] gap-2"><input autoFocus value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Rechercher..." className="h-11 flex-1 rounded-lg border bg-[#f6f3f2] px-4" /><button type="button" onClick={() => setShowSearch(false)} aria-label="Fermer la recherche" className="grid h-11 w-11 place-items-center rounded-full border">×</button></form></div>}
       </header>
 
-      {/* Troisième ligne - À la Une - fond gris clair + texte noir Century Gothic black + ville météo droite */}
-      <section className="bg-[#f0eded] border-b border-[#e5bdbb] py-2 overflow-hidden hidden md:flex items-center">
-        <div className="px-5 lg:px-[64px] flex items-center w-full">
-          <span className="bg-[#9e001f] text-white text-[12px] px-3 py-1 mr-4 shrink-0 font-bold tracking-wider">À LA UNE</span>
-          <div className="flex-1 overflow-hidden">
-            <p className="scrolling-ticker text-black text-[13px] font-black" style={{ fontFamily: "Century Gothic, sans-serif", fontWeight: 900 }}>
-              • Transition énergétique Nigeria 12M$ • Sommet UA libre-échange • PIB continental prévisions 2025 • Fintech Kenya • ZLECAf 1,3Md • Cacao 50% transformation locale • Wave 20M utilisateurs
-            </p>
-          </div>
-          <div className="ml-4 flex items-center gap-2 text-[12px] font-bold text-black whitespace-nowrap" style={{ fontFamily: "Century Gothic, sans-serif" }}>
-            <span className="material-symbols-outlined text-[16px]">location_on</span> {cityWeather.city} • {cityWeather.temp} {cityWeather.icon}
-          </div>
+      <section className="hidden items-center overflow-hidden border-b border-[#e5bdbb] bg-[#f0eded] py-2 md:flex">
+        <div className="flex w-full items-center px-5 lg:px-[64px]">
+          <span className="mr-4 shrink-0 bg-[#9e001f] px-3 py-1 text-[12px] font-bold tracking-wider text-white">À LA UNE</span>
+          <div className="flex-1 overflow-hidden"><p className="scrolling-ticker text-[13px] font-black text-black" style={{ fontFamily: "Century Gothic, sans-serif" }}>• Transition énergétique Nigeria 12M$ • Sommet UA libre-échange • PIB continental prévisions 2025 • Fintech Kenya • ZLECAf 1,3Md • Cacao 50% transformation locale • Wave 20M utilisateurs</p></div>
+          <div className="ml-4 flex items-center gap-2 whitespace-nowrap text-[12px] font-bold text-black"><span className="material-symbols-outlined text-[16px]">location_on</span>{cityWeather.city} • {cityWeather.temp} {cityWeather.icon}</div>
         </div>
       </section>
 
-      {/* ===== MOBILE HEADER ===== */}
       <div className="md:hidden">
-        {/* Première ligne fixe */}
-        <div className="fixed top-0 inset-x-0 z-50 bg-[#fcf9f8] border-b border-[#e5bdbb] flex items-center justify-around py-2 px-2">
-          {[
-            { icon:"live_tv", label:"Live", href:"/" },
-            { icon:"shopping_cart", label:"Panier", href:"/panier" },
-            { icon:"favorite", label:"Favoris", href:"/compte/favoris" },
-            { icon:"mail", label:"Message", href:"/service" },
-            { icon:"notifications", label:"Notif", href:"/compte" },
-            { icon:"translate", label:"Trad", href:"#" },
-            { icon:"person", label:"Profil", href:"/compte" },
-          ].map(item=>(
-            <Link key={item.label} href={item.href} className="flex flex-col items-center gap-0.5">
-              <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
-              <span className="text-[9px] font-medium">{item.label}</span>
-            </Link>
-          ))}
+        <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-around border-b border-[#e5bdbb] bg-[#fcf9f8] px-2 py-2">
+          {[{ icon: "live_tv", label: "Live", href: "/" }, { icon: "shopping_cart", label: "Panier", href: "/panier" }, { icon: "favorite", label: "Favoris", href: "/compte/favoris" }, { icon: "mail", label: "Message", href: "/service" }, { icon: "notifications", label: "Notif", href: "#notifications" }, { icon: "translate", label: "Trad", href: "#" }, { icon: "person", label: "Profil", href: "/compte" }].map((item) => item.href === "#notifications" ? <button type="button" key={item.label} onClick={() => setNotificationPrompt(true)} className="flex flex-col items-center gap-0.5"><span className="material-symbols-outlined text-[20px]">{item.icon}</span><span className="text-[9px] font-medium">{item.label}</span></button> : <Link key={item.label} href={item.href} className="flex flex-col items-center gap-0.5"><span className="material-symbols-outlined text-[20px]">{item.icon}</span><span className="text-[9px] font-medium">{item.label}</span></Link>)}
         </div>
-
-        {/* Deuxième ligne */}
         <div className="pt-[56px]">
-          <header className="bg-[#fcf9f8] border-b border-[#e5bdbb] flex items-center justify-between px-4 h-[56px]">
-            <div className="flex items-center gap-3">
-              <img src="/logo-couleur-entete.png" alt="EAM" className="h-8 w-auto" />
-              <div className="relative">
-                <button onClick={()=>setDropdownOpen(!dropdownOpen)} className="flex items-center gap-1 text-[13px] font-black" style={{ fontFamily: "Century Gothic, sans-serif" }}>
-                  {getCurrentPlatform()} <span className="material-symbols-outlined text-[16px]">expand_more</span>
-                </button>
-                {dropdownOpen && (
-                  <div className="absolute top-full left-0 mt-2 w-64 bg-white border rounded-xl shadow-xl p-2 z-50">
-                    {dropdownMenus.map(m=><Link key={m.name} href={m.href} onClick={()=>setDropdownOpen(false)} className={`block px-3 py-2 text-[13px] rounded ${getCurrentPlatform()===m.name?"bg-[#f0eded] font-bold text-[#9e001f]":"hover:bg-[#f6f3f2]"}`}>{m.name}</Link>)}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={()=>setShowSearch(!showSearch)} className="w-9 h-9 rounded-full bg-[#f6f3f2] flex items-center justify-center"><span className="material-symbols-outlined">search</span></button>
-              <button onClick={()=>setSideMenuOpen(true)} className="w-9 h-9 rounded-full bg-[#303030] text-white flex items-center justify-center"><span className="material-symbols-outlined">menu</span></button>
-            </div>
+          <header className="flex h-[56px] items-center justify-between border-b border-[#e5bdbb] bg-[#fcf9f8] px-4">
+            <Link href={platform.homeHref} aria-label={`Accueil ${platform.name}`} className="flex min-w-0 items-center gap-3"><img src={platform.logoSrc} alt={platform.logoAlt} className="h-8 w-auto" /><span className="max-w-[160px] truncate text-[13px] font-black" style={{ color: platform.accent }}>{platform.name}</span></Link>
+            <div className="flex items-center gap-2"><button type="button" onClick={() => setMegaMenuOpen((open) => !open)} aria-label="Ouvrir les actions de la plateforme" className="grid h-9 w-9 place-items-center rounded-full text-white" style={{ backgroundColor: platform.accent }}><span className="material-symbols-outlined">{platform.megaLabel === "+" ? "add" : "apps"}</span></button><button type="button" onClick={() => setShowSearch((open) => !open)} aria-label="Rechercher" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f3f2]"><span className="material-symbols-outlined">search</span></button><button type="button" onClick={() => setSideMenuOpen(true)} aria-label="Ouvrir le menu" className="grid h-9 w-9 place-items-center rounded-full bg-[#303030] text-white"><span className="material-symbols-outlined">menu</span></button></div>
           </header>
-
-          {/* Méga menu mobile */}
-          {megaMenuOpen && (
-            <div className="bg-white border-b border-[#e5bdbb] p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold text-[14px]">Nouveau numéro - N°25</h3>
-                <button onClick={()=>setMegaMenuOpen(false)} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center">×</button>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {[1,2,3].map(i=><Link key={i} href="/kiosque" className="group"><div className="aspect-[3/4] rounded bg-[#eae7e7] overflow-hidden"><img src={`https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=200`} alt="" className="w-full h-full object-cover" /></div><div className="text-[11px] font-bold mt-1">Article {i}</div></Link>)}
-              </div>
-              <Link href="/kiosque" className="mt-4 w-full h-10 rounded-full bg-[#0A1931] text-white text-[12px] font-bold flex items-center justify-center">Acheter ce numéro →</Link>
-            </div>
-          )}
-
-          {showSearch && (
-            <div className="bg-white p-4 border-b">
-              <input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder="Rechercher..." className="w-full h-11 rounded-lg border bg-[#f6f3f2] px-4" />
-            </div>
-          )}
+          {megaMenuOpen && <div className="relative z-50"><MegaMenu platform={platform} onClose={() => setMegaMenuOpen(false)} /></div>}
+          {showSearch && <div className="border-b bg-white p-4"><form onSubmit={(event) => { event.preventDefault(); if (searchQuery.trim()) window.location.assign(`/recherche?q=${encodeURIComponent(searchQuery.trim())}`); }}><input autoFocus value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Rechercher..." className="h-11 w-full rounded-lg border bg-[#f6f3f2] px-4" /></form></div>}
         </div>
-
-        {/* Bottom bar fixe */}
-        <div className="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur border-t border-[#e5bdbb] px-2 py-2">
-          <div className="flex items-center justify-around">
-            {[
-              { name:"Accueil", href:"/", icon:"home" },
-              { name:"Kiosque", href:"/kiosque", icon:"menu_book" },
-              { name:"Jobs", href:"/emploi", icon:"work" },
-              { name:"Crowdfunding", href:"/financement", icon:"volunteer_activism" },
-              { name:"Marketplace", href:"/marketplace", icon:"storefront" },
-              { name:"Awards", href:"/africa-awards", icon:"emoji_events" },
-              { name:"WAB", href:"/wab", icon:"public" },
-            ].map(item=>(
-              <Link key={item.name} href={item.href} className={`flex flex-col items-center gap-1 ${pathname===item.href?"text-[#9e001f]":"text-[#5c403f]"}`}>
-                <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
-                <span className="text-[9px] font-medium">{item.name}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e5bdbb] bg-white/95 px-2 py-2 backdrop-blur"><div className="flex items-center justify-around">{[{ name: "Accueil", href: platform.homeHref, icon: "home" }, { name: "Kiosque", href: "/kiosque", icon: "menu_book" }, { name: "Jobs", href: "/emploi", icon: "work" }, { name: "Crowdfunding", href: "/financement", icon: "volunteer_activism" }, { name: "Marketplace", href: "/marketplace", icon: "storefront" }, { name: "Awards", href: "/africa-awards", icon: "emoji_events" }, { name: "WAB", href: "/wab", icon: "public" }].map((item) => <Link key={item.name} href={item.href} className={`flex flex-col items-center gap-1 ${pathname === item.href ? "text-[#9e001f]" : "text-[#5c403f]"}`}><span className="material-symbols-outlined text-[20px]">{item.icon}</span><span className="text-[9px] font-medium">{item.name}</span></Link>)}</div></div>
       </div>
 
-      {/* Menu latéral droit - Desktop + Mobile full screen */}
-      {sideMenuOpen && (
-        <div className="fixed inset-0 z-[100] flex justify-end">
-          <div className="absolute inset-0 bg-black/40" onClick={()=>setSideMenuOpen(false)}></div>
-          <div className="bg-white w-[360px] md:w-[420px] h-full overflow-y-auto shadow-2xl p-6 fixed inset-y-0 right-0 md:relative">
-            <div className="flex items-center justify-between mb-6">
-              <img src="/logo-couleur-entete.png" alt="Envol Africa Magazine" className="h-12 w-auto" />
-              <button onClick={()=>setSideMenuOpen(false)} className="w-9 h-9 rounded-full bg-zinc-100 flex items-center justify-center">×</button>
-            </div>
-            <p className="text-[13px] leading-6 text-[#5c403f]">Une chaine regroupant toutes les valeurs pour votre succès en entreprises. Plus qu'un magazine, c'est le seul outil qui vous apporte tout pour réussir en affaires et prospérer à tout égard.</p>
-            <Link href="/don" onClick={()=>setSideMenuOpen(false)} className="mt-6 w-full h-11 rounded-full bg-[#9e001f] text-white font-bold text-[13px] flex items-center justify-center">Soutenir ENVOL AFRICA</Link>
-            <div className="mt-8 space-y-1">
-              {sidePanelLinks.map(l=>(
-                <a key={l.name} href={l.href} target="_blank" className="block py-2.5 px-3 rounded-lg hover:bg-[#f6f3f2] text-[13px] flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#9e001f]"></span>{l.name}</a>
-              ))}
-            </div>
-            <div className="mt-8 rounded-[16px] bg-[#f0eded] border border-[#e5bdbb] p-5">
-              <h4 className="font-bold text-[16px]" style={{ fontFamily: "Montserrat" }}>Osez la réussite! Lisez Envol Africa Magazine</h4>
-              <p className="text-[13px] text-[#5c403f] mt-2 leading-5">Plus qu'un magazine, c'est le seul outil qui vous apporte tout pour réussir en affaires et prospérer à tout égard</p>
-              <Link href="/abonnement" onClick={()=>setSideMenuOpen(false)} className="mt-4 w-full h-10 rounded-full bg-[#303030] text-white font-bold text-[12px] flex items-center justify-center">S'abonner</Link>
-            </div>
-          </div>
-        </div>
-      )}
+      {notificationPrompt && <div className="fixed bottom-6 left-1/2 z-[120] w-[min(92vw,440px)] -translate-x-1/2 rounded-2xl border border-[#e5bdbb] bg-white p-5 shadow-2xl"><div className="flex items-start gap-3"><span className="material-symbols-outlined mt-0.5 text-[#9e001f]">notifications_active</span><div className="flex-1"><h2 className="font-display text-base font-extrabold">Recevoir les nouvelles publications ?</h2><p className="mt-1 text-sm leading-6 text-slate-600">Autorisez les notifications pour être informé des nouveaux articles, magazines, publications WAB et informations de vos groupes.</p><div className="mt-4 flex justify-end gap-2"><button type="button" onClick={dismissNotificationPrompt} className="rounded-lg px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50">Plus tard</button><button type="button" onClick={requestNotifications} className="rounded-lg bg-[#9e001f] px-4 py-2 text-xs font-bold text-white hover:bg-[#c8102e]">Autoriser</button></div></div></div></div>}
+
+      {sideMenuOpen && <div className="fixed inset-0 z-[100] flex justify-end"><button type="button" aria-label="Fermer le fond du menu" className="absolute inset-0 cursor-default bg-black/40" onClick={() => setSideMenuOpen(false)} /><aside className="relative h-full w-[min(92vw,420px)] overflow-y-auto bg-white p-6 shadow-2xl"><div className="mb-6 flex items-center justify-between"><Link href={platform.homeHref} onClick={() => setSideMenuOpen(false)}><img src={platform.logoSrc} alt={platform.logoAlt} className="h-12 w-auto" /></Link><button type="button" onClick={() => setSideMenuOpen(false)} aria-label="Fermer le menu" className="grid h-9 w-9 place-items-center rounded-full bg-zinc-100">×</button></div><p className="text-[13px] leading-6 text-[#5c403f]">Une chaîne regroupant toutes les valeurs pour votre succès en entreprise. Plus qu'un magazine, Envol Africa accompagne les projets et les talents africains.</p><Link href="/don" onClick={() => setSideMenuOpen(false)} className="mt-6 flex h-11 w-full items-center justify-center rounded-full bg-[#9e001f] text-[13px] font-bold text-white">Soutenir ENVOL AFRICA</Link><div className="mt-8 space-y-1">{sidePanelLinks.map((item) => <a key={item.name} href={item.href} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-[13px] hover:bg-[#f6f3f2]"><span className="h-1.5 w-1.5 rounded-full bg-[#9e001f]" />{item.name}</a>)}</div><div className="mt-8 rounded-2xl border border-[#e5bdbb] bg-[#f0eded] p-5"><h2 className="font-display text-base font-extrabold">{platform.name}</h2><p className="mt-2 text-[13px] leading-5 text-[#5c403f]">Accédez directement à l’espace {platform.name} et retrouvez votre compte partagé.</p><Link href={platform.homeHref} onClick={() => setSideMenuOpen(false)} className="mt-4 flex h-10 w-full items-center justify-center rounded-full bg-[#303030] text-[12px] font-bold text-white">Accéder à l’espace</Link></div></aside></div>}
     </>
   );
 }
