@@ -156,3 +156,25 @@ Ces tickets ne rentrent dans aucun sprint tant que blocage non levé. Statut "en
 - **Réponse:** Laisser Moneroo choisir automatiquement. Le champ `methods` est omis par défaut du payload ; `MONEROO_METHODS` reste une dérogation explicite réservée au diagnostic ou à un besoin métier.
 - **Validateur:** Décision produit Quentin — implémentation Manus AI
 - **Impact:** Le Bénin peut présenter automatiquement les méthodes activées, dont Celtiis, Moov et MTN. Le premier test MTN a échoué côté passerelle FeexPay avec `GATEWAY_TEMPORARILY_UNAVAILABLE`; un nouveau checkout sera requis après déploiement pour vérifier la sélection automatique.
+
+
+## 20. Projet Vercel Gildas confirmé
+
+- **Date:** 2026-08-16
+- **Question:** Quel projet Vercel porte le domaine de validation en ligne ?
+- **Réponse:** `envolafricamagazinegildas.vercel.app` est rattaché au projet `prj_8cLkUvH74Ii3WkkAd6JFPEFspoTO`, déploiement actif `dpl_4JVzPAXZPu8AQGv8GnapfvLvxSBb`.
+- **Impact:** Les validations en ligne et les prochains correctifs doivent cibler ce projet, et non le projet distinct `envolafricamagazine-o4sglwoo`.
+
+## 21. Comptes et données sensibles via Supabase
+
+- **Date:** 2026-08-16
+- **Question:** Quels parcours compte doivent sortir des fichiers JSON locaux ?
+- **Réponse:** Les comptes, favoris, commandes, dons, commentaires et contrôles de téléchargement passent par Supabase côté serveur. Les routes Affiliate et Dons exigent une session et ne prennent plus un `userId` client comme autorité pour lire des données privées.
+- **Impact:** Les tests Gildas ont confirmé inscription HTTP 200, session HTTP 200, favoris HTTP 200 et persistance du compte dans Supabase.
+
+## 22. RLS progressif par module
+
+- **Date:** 2026-08-16
+- **Question:** Faut-il activer globalement RLS sur toutes les tables restantes ?
+- **Réponse:** Non. Les tables cœur et les tables `affiliate_earnings`/`comments` sont verrouillées avec des policies serveur adaptées. Les tables Jobs/WAB/Awards restantes doivent recevoir des policies métier par module après recette, afin de ne pas bloquer les parcours existants.
+- **Impact:** L’audit Supabase reste documenté comme chantier résiduel ; aucune activation aveugle de RLS n’est appliquée.
