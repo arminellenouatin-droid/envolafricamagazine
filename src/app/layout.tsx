@@ -2,9 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { readDB } from "@/lib/db";
-import { cookies } from "next/headers";
-import { verifyToken } from "@/lib/auth";
+import { getCurrentUserFromCookie } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Envol Africa Magazine | Le magazine économique panafricain de référence",
@@ -13,13 +11,7 @@ export const metadata: Metadata = {
 
 async function getUserFromCookie() {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("eam_token")?.value;
-    if (!token) return null;
-    const decoded = verifyToken(token);
-    if (!decoded) return null;
-    const db = readDB();
-    return db.users.find(u=>u.id===decoded.id) || null;
+    return await getCurrentUserFromCookie();
   } catch {
     return null;
   }

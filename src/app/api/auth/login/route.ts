@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readDB } from "@/lib/db";
+import { findUserByEmail, ProductionDatabaseNotConfiguredError } from "@/lib/core-db";
 import { verifyPassword, generateToken, COOKIE_NAME, COOKIE_OPTIONS } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
@@ -8,8 +8,7 @@ export async function POST(req: NextRequest) {
     if (!email || !password) {
       return NextResponse.json({ error: "Email et mot de passe requis" }, { status: 400 });
     }
-    const db = readDB();
-    const user = db.users.find(u=>u.email.toLowerCase()===email.toLowerCase());
+    const user = await findUserByEmail(String(email).trim().toLowerCase());
     if (!user) {
       return NextResponse.json({ error: "Identifiants invalides" }, { status: 401 });
     }
@@ -26,6 +25,9 @@ export async function POST(req: NextRequest) {
     return res;
   } catch (e) {
     console.error(e);
+    if (e instanceof ProductionDatabaseNotConfiguredError) {
+      return NextResponse.json({ error: "Service de connexion temporairement indisponible" }, { status: 503 });
+    }
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

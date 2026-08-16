@@ -1,10 +1,16 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
-import { readDB, User } from './db';
+import { User } from './db';
+import { findUserById } from './core-db';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'envol-africa-super-secret-jwt-2026-change-me';
+const JWT_SECRET = process.env.JWT_SECRET || "";
 const COOKIE_NAME = 'eam_token';
+
+function getJwtSecret() {
+  if (!JWT_SECRET && process.env.NODE_ENV === "production") throw new Error("JWT_SECRET manquant en production");
+  return JWT_SECRET || "local-only-jwt-secret";
+}
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
@@ -17,14 +23,14 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 export function generateToken(user: User): string {
   return jwt.sign(
     { id: user.id, email: user.email, role: user.role },
-    JWT_SECRET,
+    getJwtSecret(),
     { expiresIn: '30d' }
   );
 }
 
 export function verifyToken(token: string): any {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    return jwt.verify(token, getJwtSecret());
   } catch {
     return null;
   }
@@ -37,20 +43,18 @@ export async function getCurrentUserFromCookie(): Promise<User | null> {
     if (!token) return null;
     const decoded = verifyToken(token);
     if (!decoded) return null;
-    const db = readDB();
-    const user = db.users.find(u => u.id === decoded.id);
-    return user || null;
+    if (!decoded || typeof decoded !== "object" || !("id" in decoded) || typeof decoded.id !== "string") return null;
+    return await findUserById(decoded.id);
   } catch {
     return null;
   }
 }
 
-export function getCurrentUserFromToken(token?: string): User | null {
+export async function getCurrentUserFromToken(token?: string): Promise<User | null> {
   if (!token) return null;
   const decoded = verifyToken(token);
-  if (!decoded) return null;
-  const db = readDB();
-  return db.users.find(u => u.id === decoded.id) || null;
+  if (!decoded || typeof decoded !== "object" || !("id" in decoded) || typeof decoded.id !== "string") return null;
+  return await findUserById(decoded.id);
 }
 
 export const COOKIE_OPTIONS = {

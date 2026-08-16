@@ -11,8 +11,11 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          { key: "X-Frame-Options", value: "ALLOWALL" },
-          { key: "Content-Security-Policy", value: "frame-ancestors *;" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self';" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
         ],
       },
     ];
@@ -32,7 +35,7 @@ const nextConfig: NextConfig = {
       { source: "/functions/v1/cart-add-item", destination: "/api/payment/init" },
       { source: "/functions/v1/cart-get", destination: "/api/orders" },
       { source: "/functions/v1/checkout-create-order", destination: "/api/payment/init" },
-      { source: "/functions/v1/webhooks-moneroo", destination: "/api/payment/verify" },
+      { source: "/functions/v1/webhooks-moneroo", destination: "/api/webhooks/moneroo" },
       { source: "/functions/v1/subscription-subscribe", destination: "/api/payment/init" },
       { source: "/functions/v1/donation-create", destination: "/api/payment/init" },
       { source: "/functions/v1/affiliate-generate-link", destination: "/api/affiliate" },

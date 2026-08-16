@@ -1,177 +1,124 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readDB, writeDB } from "@/lib/db";
 import crypto from "crypto";
+import { verifyMonerooPayment } from "@/lib/moneroo";
+import {
+  confirmOrderPayment,
+  findOrderById,
+  findOrderByPaymentId,
+  findUserById,
+  markOrderFailed,
+  ProductionDatabaseNotConfiguredError,
+  recordDonation,
+  updateUserSubscription,
+} from "@/lib/core-db";
 
-export const dynamic = 'force-dynamic'; // Pas de cache pour webhook
+export const dynamic = "force-dynamic";
 
-// NOTE: Cette route doit être exemptée de protection CSRF
-// Dans Next.js, pas de CSRF par défaut sur API routes, donc OK
-// Mais si tu utilises nextjs-csrf ou similaire, ajoute cette route à la liste d'exclusions
+type WebhookData = {
+  id?: string;
+  status?: string;
+  amount?: number | string;
+  currency?: string;
+  metadata?: { order_id?: string; user_id?: string } & Record<string, unknown>;
+};
+
+type WebhookEvent = {
+  event?: string;
+  type?: string;
+  data?: WebhookData;
+};
+
+function validPaymentStatus(status: unknown) {
+  return typeof status === "string" && ["success", "succeeded", "paid", "confirmed"].includes(status.toLowerCase());
+}
+
+function hasValidSignature(payload: string, receivedSignature: string, secret: string) {
+  if (!receivedSignature) return false;
+  const expected = crypto.createHmac("sha256", secret).update(payload).digest("hex");
+  const expectedBuffer = Buffer.from(expected, "utf8");
+  const receivedBuffer = Buffer.from(receivedSignature.trim(), "utf8");
+  return expectedBuffer.length === receivedBuffer.length && crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
+}
+
+async function settleSubscription(orderId: string, alreadyPaid: boolean) {
+  if (alreadyPaid) return;
+  const order = await findOrderById(orderId);
+  if (!order || order.userId === "guest") return;
+  const subscriptionItem = order.items.find((item) => item.type === "subscription");
+  if (!subscriptionItem) return;
+  const user = await findUserById(order.userId);
+  if (!user) return;
+  const now = new Date();
+  const end = new Date(now);
+  if (["mensuel", "entreprise", "chef_entreprise"].includes(subscriptionItem.planId || "")) end.setMonth(end.getMonth() + 1);
+  else end.setFullYear(end.getFullYear() + 1);
+  await updateUserSubscription(order.userId, {
+    planId: subscriptionItem.planId || "",
+    status: "active",
+    startDate: now.toISOString(),
+    endDate: end.toISOString(),
+    firstMonth: true,
+  });
+}
 
 export async function POST(req: NextRequest) {
   try {
     const payload = await req.text();
-    const receivedSignature = req.headers.get("x-moneroo-signature") || req.headers.get("X-Moneroo-Signature") || "";
-
+    const receivedSignature = req.headers.get("x-moneroo-signature") || "";
     const webhookSecret = process.env.MONEROO_WEBHOOK_SECRET || "";
 
-    // 2) Recalculer la signature attendue HMAC-SHA256.
-    // La clé API Moneroo ne doit pas être réutilisée comme secret de webhook.
     if (!webhookSecret) {
-      if (process.env.NODE_ENV === "production") {
-        console.error("webhook: MONEROO_WEBHOOK_SECRET manquant en production");
-        return NextResponse.json({ error: "Webhook non configuré" }, { status: 503 });
-      }
-      console.warn("webhook: MONEROO_WEBHOOK_SECRET manquant - vérification ignorée hors production");
-    } else {
-      if (!receivedSignature) {
-        return NextResponse.json({ error: "Signature manquante" }, { status: 403 });
-      }
-
-      const expectedSignature = crypto.createHmac("sha256", webhookSecret).update(payload).digest("hex");
-      const expectedBuffer = Buffer.from(expectedSignature, "utf8");
-      const receivedBuffer = Buffer.from(receivedSignature.trim(), "utf8");
-      const isValid = expectedBuffer.length === receivedBuffer.length
-        && crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
-
-      if (!isValid) {
-        console.warn("webhook: signature invalide");
-        return NextResponse.json({ error: "Signature invalide" }, { status: 403 });
-      }
+      if (process.env.NODE_ENV === "production") return NextResponse.json({ error: "Webhook non configuré" }, { status: 503 });
+      console.warn("webhook: MONEROO_WEBHOOK_SECRET manquant hors production");
+    } else if (!hasValidSignature(payload, receivedSignature, webhookSecret)) {
+      return NextResponse.json({ error: receivedSignature ? "Signature invalide" : "Signature manquante" }, { status: 403 });
     }
 
-    // 4) Traiter l'événement
-    let event: any;
+    let event: WebhookEvent;
     try {
-      event = JSON.parse(payload);
+      event = JSON.parse(payload) as WebhookEvent;
     } catch {
       return NextResponse.json({ error: "Payload invalide" }, { status: 400 });
     }
 
-    if (!event || !event.event) {
-      if (event.type) event.event = event.type; // compat
-      else return NextResponse.json({ error: "Payload invalide, event manquant" }, { status: 400 });
+    const eventType = event.event || event.type;
+    const data = event.data;
+    if (!eventType || !data?.id) return NextResponse.json({ error: "Payload invalide, event ou id manquant" }, { status: 400 });
+    if (eventType === "payment.initiated" || eventType.startsWith("payout.")) return NextResponse.json({ ok: true }, { status: 200 });
+
+    const order = data.metadata?.order_id ? await findOrderById(data.metadata.order_id) : await findOrderByPaymentId(data.id);
+    if (!order) return NextResponse.json({ error: "Commande introuvable" }, { status: 404 });
+
+    if (eventType === "payment.failed" || eventType === "payment.cancelled") {
+      await markOrderFailed(order.id, data.id);
+      return NextResponse.json({ ok: true }, { status: 200 });
     }
 
-    const type = event.event;
-    const data = event.data || event;
+    if (eventType !== "payment.success") return NextResponse.json({ ok: true }, { status: 200 });
 
-    console.log(`webhook reçu: type=${type} id=${data.id} amount=${data.amount}`);
+    const verification = await verifyMonerooPayment(data.id);
+    if (!validPaymentStatus(verification.status)) return NextResponse.json({ error: "Paiement non confirmé" }, { status: 409 });
 
-    const db = readDB();
-
-    // Fonction pour retrouver commande via metadata.order_id
-    const findAndUpdateOrder = (orderId: string, newStatus: 'paid' | 'failed', paymentData: any) => {
-      let found = false;
-      for (const order of db.orders) {
-        if (order.id === orderId || order.paymentId === paymentData.id) {
-          found = true;
-          if (type === 'payment.success') {
-            order.status = 'paid';
-            (order as any).paidAt = new Date().toISOString();
-            order.paymentId = paymentData.id || order.paymentId;
-
-            // Activation abonnement si présent
-            const subItem = order.items.find(i=>i.type==="subscription");
-            if (subItem && order.userId!=="guest") {
-              const user = db.users.find(u=>u.id===order.userId);
-              if (user) {
-                const now = new Date();
-                const end = new Date();
-                if (['mensuel','entreprise','chef_entreprise'].includes(subItem.planId||'')) {
-                  end.setMonth(end.getMonth()+1);
-                } else {
-                  end.setFullYear(end.getFullYear()+1);
-                }
-                (user as any).subscription = {
-                  planId: subItem.planId,
-                  status: 'active',
-                  startDate: now.toISOString(),
-                  endDate: end.toISOString(),
-                  firstMonth: true,
-                };
-                if (user.role==="user") user.role="subscriber";
-              }
-            }
-
-            // Commission affiliation - taux au moment vente
-            if (order.affiliateCode) {
-              const affUser = db.users.find(u=>u.affiliateCode===order.affiliateCode || u.id===order.affiliateCode);
-              if (affUser && affUser.id!==order.userId) {
-                const isSub = affUser.subscription?.status==="active" && new Date(affUser.subscription.endDate) > new Date();
-                const rate = isSub ? 0.25 : 0.10;
-                const commission = Math.round(order.total * rate);
-                db.affiliateEarnings.push({
-                  id: `earn_${Date.now()}`,
-                  affiliateId: affUser.id,
-                  orderId: order.id,
-                  amount: order.total,
-                  commission,
-                  rate,
-                  status: 'available',
-                  createdAt: new Date().toISOString(),
-                } as any);
-              }
-            }
-
-            // Log paiement immuable
-            if (!(db as any).payments) (db as any).payments = [];
-            (db as any).payments.push({
-              id: `pay_${Date.now()}`,
-              order_id: order.id,
-              provider: 'moneroo',
-              provider_ref: paymentData.id,
-              amount: paymentData.amount || order.total,
-              currency: paymentData.currency || order.currency,
-              status: 'confirme',
-              webhook_signature_verified: true,
-              raw_webhook_payload: paymentData,
-              created_at: new Date().toISOString(),
-            });
-          } else if (type==='payment.failed' || type==='payment.cancelled') {
-            order.status = 'failed';
-          }
-          break;
-        }
-      }
-      if (!found && type==='payment.success') {
-        console.warn(`webhook: commande non trouvée order_id=${orderId} payment_id=${paymentData.id}`);
-      }
-      writeDB(db);
-      return found;
-    };
-
-    if (type === 'payment.success') {
-      // Bonne pratique: re-vérifier via API Moneroo avant de livrer
-      const orderId = data.metadata?.order_id || data.id;
-      findAndUpdateOrder(orderId, 'paid', data);
-    } else if (type === 'payment.failed' || type === 'payment.cancelled') {
-      const orderId = data.metadata?.order_id || data.id;
-      findAndUpdateOrder(orderId, 'failed', data);
-    } else if (type === 'payment.initiated') {
-      console.log(`webhook payment.initiated id=${data.id}`);
-    } else if (type.startsWith('payout.')) {
-      console.log(`webhook payout event ${type}`);
-    }
-
-    // 5) Toujours répondre 200 pour accuser réception (sinon Moneroo relance jusqu'à 3 fois toutes les 10min)
+    const amount = Number(verification.amount ?? data.amount);
+    const currency = String(verification.currency ?? data.currency ?? "").toUpperCase();
+    const alreadyPaid = order.status === "paid";
+    const confirmedOrder = await confirmOrderPayment(order, {
+      providerRef: String(verification.id || data.id),
+      amount,
+      currency,
+      payload: verification as Record<string, unknown>,
+    });
+    await settleSubscription(confirmedOrder.id, alreadyPaid);
+    await recordDonation({ order: confirmedOrder, paymentId: String(verification.id || data.id) });
     return NextResponse.json({ ok: true }, { status: 200 });
-
-  } catch (e) {
-    console.error("webhook erreur", e);
-    // Ne pas renvoyer 500 pour éviter boucle retry infinie, log et 200
-    return NextResponse.json({ ok: true, warning: "Erreur traitée mais 200 pour éviter retry" }, { status: 200 });
+  } catch (error) {
+    console.error("webhook erreur", error);
+    if (error instanceof ProductionDatabaseNotConfiguredError) return NextResponse.json({ error: "Base de données temporairement indisponible" }, { status: 503 });
+    if (error instanceof Error && error.message.includes("ne correspond pas")) return NextResponse.json({ error: error.message }, { status: 422 });
+    return NextResponse.json({ error: "Webhook non traité" }, { status: 500 });
   }
 }
 
-// GET pour tester que route est accessible en HTTPS sans auth (Moneroo ne peut pas se connecter si auth)
 export async function GET() {
-  return NextResponse.json({ 
-    status: "ok", 
-    message: "Webhook Moneroo endpoint - POST avec signature HMAC-SHA256",
-    url: "/api/webhooks/moneroo",
-    method: "POST",
-    headers: ["x-moneroo-signature"],
-    docs: "https://docs.moneroo.io/webhooks"
-  });
+  return NextResponse.json({ status: "ok", message: "Webhook Moneroo endpoint - POST avec signature HMAC-SHA256", url: "/api/webhooks/moneroo", method: "POST", headers: ["x-moneroo-signature"] });
 }

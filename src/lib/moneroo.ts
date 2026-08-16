@@ -1,4 +1,4 @@
-const MONEROO_API_KEY = process.env.MONEROO_API_KEY;
+const MONEROO_API_KEY = process.env.MONEROO_SECRET_KEY || process.env.MONEROO_API_KEY;
 const MONEROO_BASE = "https://api.moneroo.io/v1";
 
 export interface MonerooPaymentData {
@@ -13,12 +13,20 @@ export interface MonerooPaymentData {
   };
   return_url: string;
   methods?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
+}
+
+export class MonerooNotConfiguredError extends Error {
+  constructor() {
+    super("MONEROO_API_KEY n’est pas configurée");
+    this.name = "MonerooNotConfiguredError";
+  }
 }
 
 function getApiKey(): string | null {
   if (!MONEROO_API_KEY) {
-    console.warn("MONEROO_API_KEY manquant - mode mock activé pour dev");
+    if (process.env.NODE_ENV === "production") throw new MonerooNotConfiguredError();
+    console.warn("MONEROO_API_KEY manquant - mode mock activé hors production");
     return null;
   }
   return MONEROO_API_KEY;
@@ -30,7 +38,7 @@ export async function initMonerooPayment(data: MonerooPaymentData) {
     // Mode mock si clé manquante (dev only)
     return {
       id: `mock_${Date.now()}`,
-      checkout_url: `${data.return_url}?mock_success=1&payment_id=mock_${Date.now()}`,
+      checkout_url: `${data.return_url}${data.return_url.includes("?") ? "&" : "?"}mock_success=1&payment_id=mock_${Date.now()}`,
       mock: true,
       warning: "MONEROO_API_KEY manquant - paiement mock",
     };
@@ -49,7 +57,7 @@ export async function initMonerooPayment(data: MonerooPaymentData) {
         description: data.description,
         customer: data.customer,
         return_url: data.return_url,
-        methods: data.methods || ["card", "mtn_bj", "orange_bj", "moov_bj", "mtn_ci", "orange_ci", "wave", "mtn", "orange_sn"],
+        ...(data.methods && data.methods.length > 0 ? { methods: data.methods } : {}),
         metadata: data.metadata,
       }),
     });
@@ -60,7 +68,7 @@ export async function initMonerooPayment(data: MonerooPaymentData) {
       if (process.env.NODE_ENV !== 'production') {
         return {
           id: `mock_${Date.now()}`,
-          checkout_url: `${data.return_url}?mock_success=1&payment_id=mock_${Date.now()}`,
+          checkout_url: `${data.return_url}${data.return_url.includes("?") ? "&" : "?"}mock_success=1&payment_id=mock_${Date.now()}`,
           mock: true,
           raw: result,
         };
@@ -79,7 +87,7 @@ export async function initMonerooPayment(data: MonerooPaymentData) {
     if (process.env.NODE_ENV !== 'production') {
       return {
         id: `mock_${Date.now()}`,
-        checkout_url: `${data.return_url}?mock_success=1&payment_id=mock_${Date.now()}`,
+        checkout_url: `${data.return_url}${data.return_url.includes("?") ? "&" : "?"}mock_success=1&payment_id=mock_${Date.now()}`,
         mock: true,
         error: String(e),
       };
@@ -90,6 +98,7 @@ export async function initMonerooPayment(data: MonerooPaymentData) {
 
 export async function verifyMonerooPayment(paymentId: string) {
   if (paymentId.startsWith("mock_")) {
+    if (process.env.NODE_ENV === "production") return { status: "failed", error: "Paiement mock interdit en production", id: paymentId };
     return { status: "success", amount: 0, mock: true, id: paymentId };
   }
   const apiKey = getApiKey();
@@ -109,7 +118,19 @@ export async function verifyMonerooPayment(paymentId: string) {
       console.error("Verify failed", result);
       return { status: "failed", raw: result };
     }
-    return result.data || result;
+    const payment = result.data || result;
+    const rawCurrency = payment.currency;
+    const currencyCode = typeof rawCurrency === "string"
+      ? rawCurrency.toUpperCase()
+      : rawCurrency && typeof rawCurrency === "object" && typeof rawCurrency.code === "string"
+        ? rawCurrency.code.toUpperCase()
+        : undefined;
+    return {
+      ...payment,
+      status: typeof payment.status === "string" ? payment.status.toLowerCase() : payment.status,
+      amount: typeof payment.amount === "number" ? payment.amount : Number(payment.amount),
+      currency: currencyCode,
+    };
   } catch (e) {
     console.error("Verify exception", e);
     return { status: "failed", error: String(e) };

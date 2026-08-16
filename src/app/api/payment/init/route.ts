@@ -1,90 +1,97 @@
 import { NextRequest, NextResponse } from "next/server";
-import { initMonerooPayment } from "@/lib/moneroo";
-import { readDB, writeDB } from "@/lib/db";
-import { cookies } from "next/headers";
-import { verifyToken, COOKIE_NAME } from "@/lib/auth";
+import { initMonerooPayment, MonerooNotConfiguredError } from "@/lib/moneroo";
+import { createPendingOrder, listMagazines, markOrderFailed, ProductionDatabaseNotConfiguredError } from "@/lib/core-db";
+import { getCurrentUserFromCookie } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
-import { CURRENCIES, SHIPPING_RATES } from "@/lib/constants";
+import { SHIPPING_RATES } from "@/lib/constants";
 
-async function getUser() {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get(COOKIE_NAME)?.value;
-    if (!token) return null;
-    const decoded = verifyToken(token);
-    if (!decoded) return null;
-    const db = readDB();
-    return db.users.find(u=>u.id===decoded.id) || null;
-  } catch { return null; }
+const SUBSCRIPTION_PRICES: Record<string, number> = {
+  mensuel: 2000,
+  annuel: 42000,
+  entreprise: 15000,
+  soutien: 600000,
+};
+
+const FORMAT_PRICES: Record<string, number> = {
+  cd_audio: 5000,
+  numerique: 10000,
+  papier: 16000,
+  audio_pdf: 12000,
+  audio_papier: 18000,
+};
+
+function getMagazinePrice(format: string) {
+  const testPrice = Number(process.env.EAM_TEST_MAGAZINE_PRICE);
+  if (process.env.EAM_PAYMENT_TEST_MODE === "true" && Number.isInteger(testPrice) && testPrice > 0) return testPrice;
+  return FORMAT_PRICES[format] ?? FORMAT_PRICES.numerique;
 }
 
 export async function POST(req: NextRequest) {
+  let createdOrderId: string | undefined;
   try {
     const body = await req.json();
     const { items, currency = "XOF", shippingCountry, affiliateCode, donAmount } = body;
-    
-    const user = await getUser();
-    const db = readDB();
+    const user = await getCurrentUserFromCookie();
+    const magazines = await listMagazines();
 
     let total = 0;
     let description = "Commande Envol Africa Magazine";
-    let orderItems: any[] = [];
+    const orderItems: Array<Record<string, unknown>> = [];
 
-    if (donAmount) {
-      total = donAmount;
-      description = `Don Envol Africa Magazine - ${donAmount} ${currency}`;
-      orderItems = [{ type: 'don', amount: donAmount, price: donAmount }];
-    } else if (items && items.length>0) {
-      // calculate
-      for (const it of items) {
-        if (it.type === 'magazine') {
-          const mag = db.magazines.find(m=>m.id===it.magazineId);
-          if (!mag) continue;
-          // price logic
-          const formatPriceMap: Record<string, number> = { cd_audio:5000, numerique:10000, papier:16000, audio_pdf:12000, audio_papier:18000 };
-          const price = formatPriceMap[it.format] || 10000;
+    if (donAmount !== undefined && donAmount !== null) {
+      const amount = Number(donAmount);
+      if (!Number.isInteger(amount) || amount <= 0) return NextResponse.json({ error: "Montant du don invalide" }, { status: 400 });
+      total = amount;
+      description = `Don Envol Africa Magazine - ${amount} ${currency}`;
+      orderItems.push({ type: "don", amount, price: amount });
+    } else if (Array.isArray(items) && items.length > 0) {
+      for (const item of items) {
+        if (!item || typeof item !== "object") return NextResponse.json({ error: "Ligne de commande invalide" }, { status: 400 });
+        const line = item as { type?: string; magazineId?: string; format?: string; language?: string; planId?: string };
+        if (line.type === "magazine") {
+          const magazine = magazines.find((candidate) => candidate.id === line.magazineId);
+          if (!magazine) return NextResponse.json({ error: "Magazine introuvable" }, { status: 404 });
+          const price = getMagazinePrice(line.format ?? "numerique");
           total += price;
-          orderItems.push({ ...it, price });
-        } else if (it.type === 'subscription') {
-          const planMap: Record<string, number> = { mensuel:2000, annuel:42000, entreprise:15000, soutien:600000 };
-          // first month price logic
-          const price = planMap[it.planId] || 5000;
+          orderItems.push({ type: "magazine", magazineId: magazine.id, format: line.format ?? "numerique", language: line.language ?? "fr", price });
+        } else if (line.type === "subscription") {
+          const price = SUBSCRIPTION_PRICES[line.planId ?? ""];
+          if (!price) return NextResponse.json({ error: "Plan d’abonnement invalide" }, { status: 400 });
           total += price;
-          orderItems.push({ ...it, price });
-          description = `Abonnement ${it.planId} Envol Africa`;
+          orderItems.push({ type: "subscription", planId: line.planId, price });
+          description = `Abonnement ${line.planId} Envol Africa`;
+        } else {
+          return NextResponse.json({ error: "Type de produit invalide" }, { status: 400 });
         }
       }
       if (shippingCountry) {
-        const shipCost = SHIPPING_RATES[shippingCountry] || SHIPPING_RATES.default;
-        const hasPrint = orderItems.some(i=>i.format==='papier' || i.format==='audio_papier');
-        if (hasPrint) total += shipCost;
+        const hasPrint = orderItems.some((item) => item.format === "papier" || item.format === "audio_papier");
+        if (hasPrint) total += SHIPPING_RATES[shippingCountry] || SHIPPING_RATES.default;
       }
     } else {
       return NextResponse.json({ error: "Panier vide" }, { status: 400 });
     }
 
-    // create pending order
+    if (!Number.isInteger(total) || total <= 0) return NextResponse.json({ error: "Montant de commande invalide" }, { status: 400 });
     const orderId = uuidv4();
-    const order = {
+    createdOrderId = orderId;
+    const shippingCost = shippingCountry ? (SHIPPING_RATES[shippingCountry] || SHIPPING_RATES.default) : 0;
+    const order = await createPendingOrder({
       id: orderId,
       userId: user?.id || "guest",
-      items: orderItems,
+      items: orderItems as never,
       total,
-      currency,
-      status: "pending" as const,
-      affiliateCode: affiliateCode || (req.cookies.get("eam_affiliate")?.value),
+      currency: String(currency).toUpperCase(),
+      status: "pending",
+      affiliateCode: affiliateCode || req.cookies.get("eam_affiliate")?.value,
       shippingCountry,
-      shippingCost: shippingCountry ? (SHIPPING_RATES[shippingCountry]||SHIPPING_RATES.default) : 0,
-      createdAt: new Date().toISOString(),
-    };
-    db.orders.push(order);
-    writeDB(db);
+      shippingCost,
+    });
 
-    // moneroo init
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl.origin || "http://localhost:3000";
-    const paymentData = {
-      amount: total,
-      currency,
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl.origin;
+    const payment = await initMonerooPayment({
+      amount: order.total,
+      currency: order.currency,
       description,
       customer: {
         email: user?.email || body.email || "client@envolafrica.com",
@@ -93,23 +100,20 @@ export async function POST(req: NextRequest) {
         phone: user?.phone || body.phone,
       },
       return_url: `${baseUrl}/panier?order_id=${orderId}&verify=1`,
-      methods: ["card", "mtn_bj", "mtn_ci", "orange_ci", "moov_bj", "wave", "mtn", "orange_sn"],
-      metadata: {
-        order_id: orderId,
-        user_id: user?.id || "guest",
-        affiliate: order.affiliateCode,
-      }
-    };
+      ...(process.env.MONEROO_METHODS ? { methods: process.env.MONEROO_METHODS.split(",").map((method) => method.trim()).filter(Boolean) } : {}),
+      metadata: { order_id: orderId, user_id: user?.id || "guest", affiliate: order.affiliateCode },
+    });
 
-    const payment = await initMonerooPayment(paymentData);
-    // update order with paymentId
-    const db2 = readDB();
-    const ord = db2.orders.find(o=>o.id===orderId);
-    if (ord) { ord.paymentId = payment.id; writeDB(db2); }
-
-    return NextResponse.json({ orderId, checkout_url: payment.checkout_url, paymentId: payment.id, total, mock: payment.mock });
-  } catch (e) {
-    console.error(e);
+    const { attachPaymentToOrder } = await import("@/lib/core-db");
+    await attachPaymentToOrder(orderId, payment.id);
+    return NextResponse.json({ orderId, checkout_url: payment.checkout_url, paymentId: payment.id, total: order.total, mock: payment.mock === true });
+  } catch (error) {
+    console.error(error);
+    if (createdOrderId) {
+      try { await markOrderFailed(createdOrderId); } catch (cleanupError) { console.error("Impossible de neutraliser la commande échouée", cleanupError); }
+    }
+    if (error instanceof ProductionDatabaseNotConfiguredError) return NextResponse.json({ error: "Base de données temporairement indisponible" }, { status: 503 });
+    if (error instanceof MonerooNotConfiguredError) return NextResponse.json({ error: "Paiement temporairement indisponible" }, { status: 503 });
     return NextResponse.json({ error: "Erreur paiement" }, { status: 500 });
   }
 }

@@ -148,3 +148,11 @@ Ces tickets ne rentrent dans aucun sprint tant que blocage non levé. Statut "en
 - **Réponse:** Non sans policies métier testées. L’activation progressive est requise pour éviter de bloquer les parcours existants tout en fermant l’exposition publique.
 - **Validateur:** Manus AI — validation finale Quentin/équipe technique
 - **Impact:** Aucune migration de base n’a été appliquée pendant l’audit. Les policies doivent être conçues et testées par domaine.
+
+
+### 19. Sélection automatique des moyens de paiement Moneroo
+- **Date:** 2026-08-16
+- **Question:** EAM doit-il imposer une liste de moyens de paiement ou laisser Moneroo choisir selon le pays ?
+- **Réponse:** Laisser Moneroo choisir automatiquement. Le champ `methods` est omis par défaut du payload ; `MONEROO_METHODS` reste une dérogation explicite réservée au diagnostic ou à un besoin métier.
+- **Validateur:** Décision produit Quentin — implémentation Manus AI
+- **Impact:** Le Bénin peut présenter automatiquement les méthodes activées, dont Celtiis, Moov et MTN. Le premier test MTN a échoué côté passerelle FeexPay avec `GATEWAY_TEMPORARILY_UNAVAILABLE`; un nouveau checkout sera requis après déploiement pour vérifier la sélection automatique.

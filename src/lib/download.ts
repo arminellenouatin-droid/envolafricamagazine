@@ -1,7 +1,11 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'envol-africa-super-secret-jwt-2026-change-me';
-const DOWNLOAD_SECRET = process.env.DOWNLOAD_SECRET || JWT_SECRET + "_download";
+const DOWNLOAD_SECRET = process.env.DOWNLOAD_SECRET || (process.env.NODE_ENV === "production" ? "" : "local-only-download-secret");
+
+function getDownloadSecret() {
+  if (!DOWNLOAD_SECRET && process.env.NODE_ENV === "production") throw new Error("DOWNLOAD_SECRET manquant en production");
+  return DOWNLOAD_SECRET || "local-only-download-secret";
+}
 
 export interface DownloadTokenPayload {
   userId: string;
@@ -14,12 +18,12 @@ export interface DownloadTokenPayload {
 
 export function generateDownloadToken(payload: Omit<DownloadTokenPayload, 'exp'>, expiresInHours = 24): string {
   const exp = Math.floor(Date.now() / 1000) + expiresInHours * 3600;
-  return jwt.sign({ ...payload, exp }, DOWNLOAD_SECRET);
+  return jwt.sign({ ...payload, exp }, getDownloadSecret());
 }
 
 export function verifyDownloadToken(token: string): DownloadTokenPayload | null {
   try {
-    const decoded = jwt.verify(token, DOWNLOAD_SECRET) as DownloadTokenPayload;
+    const decoded = jwt.verify(token, getDownloadSecret()) as DownloadTokenPayload;
     if (decoded.exp < Math.floor(Date.now() / 1000)) return null;
     return decoded;
   } catch {

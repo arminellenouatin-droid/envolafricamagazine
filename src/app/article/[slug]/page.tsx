@@ -1,20 +1,14 @@
-import { readDB } from "@/lib/db";
+import { findArticleBySlug, listPublishedArticles } from "@/lib/core-db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { cookies } from "next/headers";
-import { verifyToken, COOKIE_NAME } from "@/lib/auth";
+import { getCurrentUserFromCookie } from "@/lib/auth";
 import ArticlePaywall from "@/components/ArticlePaywall";
 import ArticleActions from "@/components/ArticleActions";
 
 async function getIsSubscribed() {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get(COOKIE_NAME)?.value;
-    if (!token) return false;
-    const decoded = verifyToken(token);
-    if (!decoded) return false;
-    const db = readDB();
-    const user = db.users.find(u=>u.id===decoded.id);
+    const user = await getCurrentUserFromCookie();
+    if (!user) return false;
     if (!user) return false;
     if (user.role==="admin" || user.role==="gerant" || user.role==="redacteur_chef") return true;
     if (user.subscription?.status==="active") {
@@ -27,8 +21,7 @@ async function getIsSubscribed() {
 
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const db = readDB();
-  const article = db.articles.find(a=>a.slug===slug);
+  const [article, articles] = await Promise.all([findArticleBySlug(slug), listPublishedArticles()]);
   if (!article) return notFound();
   const isSubscriber = await getIsSubscribed();
 
@@ -37,7 +30,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   const blur = words.slice(12*14, 15*14).join(' ');
   const rest = words.slice(15*14).join(' ');
 
-  const related = db.articles.filter(a=>a.category===article.category && a.id!==article.id).slice(0,3);
+  const related = articles.filter(a=>a.category===article.category && a.id!==article.id).slice(0,3);
 
   return (
     <div className="bg-[#fcf9f8] min-h-screen">

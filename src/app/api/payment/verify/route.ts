@@ -1,103 +1,79 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyMonerooPayment } from "@/lib/moneroo";
-import { readDB, writeDB } from "@/lib/db";
-import { v4 as uuidv4 } from "uuid";
+import { confirmOrderPayment, findOrderById, findUserById, recordDonation, updateUserSubscription, ProductionDatabaseNotConfiguredError } from "@/lib/core-db";
+
+function isSuccessStatus(status: unknown) {
+  return typeof status === "string" && ["success", "succeeded", "paid", "confirmed"].includes(status.toLowerCase());
+}
+
+async function verifyAndConfirm(orderId: string, requestedPaymentId?: string) {
+  const order = await findOrderById(orderId);
+  if (!order) return { response: NextResponse.json({ error: "Commande introuvable" }, { status: 404 }) };
+
+  const paymentId = requestedPaymentId || order.paymentId;
+  if (!paymentId) return { response: NextResponse.json({ error: "paymentId manquant" }, { status: 400 }) };
+  if (order.paymentId && paymentId !== order.paymentId) return { response: NextResponse.json({ error: "Paiement non associé à cette commande" }, { status: 403 }) };
+
+  const alreadyPaid = order.status === "paid";
+  const verification = await verifyMonerooPayment(paymentId);
+  if (!isSuccessStatus(verification.status)) {
+    return { response: NextResponse.json({ success: false, order, verification }, { status: 402 }) };
+  }
+
+  const verifiedAmount = verification.mock ? order.total : Number(verification.amount);
+  const verifiedCurrency = verification.mock ? order.currency : String(verification.currency || "").toUpperCase();
+  const providerRef = String(verification.id || paymentId);
+  const confirmedOrder = await confirmOrderPayment(order, {
+    providerRef,
+    amount: verifiedAmount,
+    currency: verifiedCurrency,
+    payload: verification as Record<string, unknown>,
+  });
+
+  const subscriptionItem = confirmedOrder.items.find((item) => item.type === "subscription");
+  if (!alreadyPaid && subscriptionItem && confirmedOrder.userId !== "guest") {
+    const user = await findUserById(confirmedOrder.userId);
+    if (user) {
+      const now = new Date();
+      const end = new Date(now);
+      if (["mensuel", "entreprise", "chef_entreprise"].includes(subscriptionItem.planId || "")) end.setMonth(end.getMonth() + 1);
+      else end.setFullYear(end.getFullYear() + 1);
+      await updateUserSubscription(confirmedOrder.userId, {
+        planId: subscriptionItem.planId || "",
+        status: "active",
+        startDate: now.toISOString(),
+        endDate: end.toISOString(),
+        firstMonth: true,
+      });
+    }
+  }
+
+  await recordDonation({ order: confirmedOrder, paymentId: providerRef });
+  return { response: NextResponse.json({ success: true, order: confirmedOrder, verification }) };
+}
 
 export async function POST(req: NextRequest) {
   try {
     const { orderId, paymentId } = await req.json();
     if (!orderId) return NextResponse.json({ error: "orderId requis" }, { status: 400 });
-    const db = readDB();
-    const order = db.orders.find(o=>o.id===orderId);
-    if (!order) return NextResponse.json({ error: "Commande introuvable" }, { status: 404 });
-
-    const pid = paymentId || order.paymentId;
-    if (!pid) return NextResponse.json({ error: "paymentId manquant" }, { status: 400 });
-
-    const verification: any = await verifyMonerooPayment(pid as string);
-    const status = verification.status || verification.data?.status;
-
-    // mark paid if mock or success - for demo force success
-    const forceSuccess = verification.mock || status==="success" || true;
-    if (forceSuccess) {
-      order.status = "paid";
-      order.paidAt = new Date().toISOString();
-      const subItem = order.items.find(i=>i.type==="subscription");
-      if (subItem && order.userId!=="guest") {
-        const user = db.users.find(u=>u.id===order.userId);
-        if (user) {
-          const now = new Date();
-          const end = new Date();
-          if (subItem.planId==="mensuel" || subItem.planId==="entreprise") {
-            end.setMonth(end.getMonth()+1);
-          } else {
-            end.setFullYear(end.getFullYear()+1);
-          }
-          user.subscription = {
-            planId: subItem.planId as string,
-            status: "active",
-            startDate: now.toISOString(),
-            endDate: end.toISOString(),
-            firstMonth: true,
-          };
-          if (user.role==="user") user.role="subscriber";
-        }
-      }
-      if (order.affiliateCode) {
-        const affiliateUser = db.users.find(u=>u.affiliateCode===order.affiliateCode || u.id===order.affiliateCode);
-        if (affiliateUser && affiliateUser.id!==order.userId) {
-          const isSub = affiliateUser.subscription?.status==="active" && new Date(affiliateUser.subscription.endDate) > new Date();
-          const rate = isSub ? 0.25 : 0.10;
-          const commission = Math.round(order.total * rate);
-          db.affiliateEarnings.push({
-            id: uuidv4(),
-            affiliateId: affiliateUser.id,
-            orderId: order.id,
-            amount: order.total,
-            commission,
-            rate,
-            status: "available",
-            createdAt: new Date().toISOString(),
-          });
-        }
-      }
-      const donItem = order.items.find(i=>i.type==="don");
-      if (donItem) {
-        db.donations.push({
-          id: uuidv4(),
-          userId: order.userId,
-          amount: donItem.amount || donItem.price,
-          currency: order.currency,
-          email: "don@envolafrica.com",
-          status: "paid",
-          createdAt: new Date().toISOString(),
-          paymentId: pid as string,
-        });
-      }
-
-      writeDB(db);
-      return NextResponse.json({ success: true, order, verification });
-    }
-    return NextResponse.json({ success: false, order, verification });
-  } catch (e) {
-    console.error(e);
+    return (await verifyAndConfirm(String(orderId), paymentId ? String(paymentId) : undefined)).response;
+  } catch (error) {
+    console.error(error);
+    if (error instanceof ProductionDatabaseNotConfiguredError) return NextResponse.json({ error: "Base de données temporairement indisponible" }, { status: 503 });
+    if (error instanceof Error && error.message.includes("ne correspond pas")) return NextResponse.json({ error: error.message }, { status: 422 });
     return NextResponse.json({ error: "Erreur verification" }, { status: 500 });
   }
 }
 
 export async function GET(req: NextRequest) {
-  const orderId = req.nextUrl.searchParams.get("order_id");
-  const paymentId = req.nextUrl.searchParams.get("payment_id");
-  if (!orderId) return NextResponse.json({ error: "orderId requis" }, { status: 400 });
-  const db = readDB();
-  const order = db.orders.find(o=>o.id===orderId);
-  if (!order) return NextResponse.json({ error: "not found" }, { status: 404 });
-  if (paymentId?.startsWith("mock_") || req.nextUrl.searchParams.get("mock_success")==="1") {
-    order.status = "paid";
-    order.paidAt = new Date().toISOString();
-    writeDB(db);
-    return NextResponse.json({ success: true, order, mock: true });
+  try {
+    const orderId = req.nextUrl.searchParams.get("order_id");
+    const paymentId = req.nextUrl.searchParams.get("payment_id");
+    if (!orderId) return NextResponse.json({ error: "orderId requis" }, { status: 400 });
+    return (await verifyAndConfirm(orderId, paymentId || undefined)).response;
+  } catch (error) {
+    console.error(error);
+    if (error instanceof ProductionDatabaseNotConfiguredError) return NextResponse.json({ error: "Base de données temporairement indisponible" }, { status: 503 });
+    return NextResponse.json({ error: "Erreur verification" }, { status: 500 });
   }
-  const verification = await verifyMonerooPayment(paymentId || order.paymentId || "");
-  return NextResponse.json({ verification, order });
 }

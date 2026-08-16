@@ -1,12 +1,10 @@
-import { readDB } from "@/lib/db";
+import { listMagazines, listPublishedArticles } from "@/lib/core-db";
 import Link from "next/link";
 import PromoPopup from "@/components/PromoPopup";
 import AvantPremiereCarousel from "@/components/home/AvantPremiereCarousel";
 
-export default function HomePage() {
-  const db = readDB();
-  const articles = db.articles.filter(a=>a.isPublished).sort((a,b)=> new Date(b.publishedAt!).getTime() - new Date(a.publishedAt!).getTime());
-  const magazines = db.magazines.sort((a,b)=> b.numero - a.numero);
+export default async function HomePage() {
+  const [articles, magazines] = await Promise.all([listPublishedArticles(), listMagazines()]);
   const mainFeatured = articles[0];
   const secondary = articles[1];
   const essor = articles[2];

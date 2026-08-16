@@ -211,3 +211,12 @@ La version pourra être considérée comme prête lorsque l’inscription crée 
 [4]: https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data "Google Search Central — Structured data"
 [5]: https://web.dev/articles/vitals "Web.dev — Core Web Vitals"
 [6]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/frame-ancestors "MDN — CSP frame-ancestors"
+
+
+## Mise à jour Moneroo — diagnostic réel complémentaire
+
+Un test réel de **150 XOF** a été initialisé avec succès auprès de Moneroo pour le magazine numérique N°25. La transaction a été créée dans l’environnement `live` avec une référence Moneroo et un montant XOF correct. Le checkout a détecté le Bénin correctement, mais la tentative MTN a échoué côté passerelle avec `GATEWAY_TEMPORARILY_UNAVAILABLE` ; Moneroo a identifié une passerelle FeexPay temporairement indisponible. Aucun succès de paiement ne doit donc être enregistré pour cette transaction.
+
+La liste dynamique Moneroo confirme que `celtiis_bj`, `moov_bj` et `mtn_bj` sont activés pour le Bénin. Le code applicatif a été ajusté pour **ne plus envoyer le champ `methods` par défaut**. Moneroo peut donc sélectionner automatiquement les moyens disponibles selon le pays et la devise. Une restriction explicite reste possible uniquement via `MONEROO_METHODS` pour un besoin de test ou de métier précis.
+
+Cette décision suit la documentation Moneroo : le champ `methods` est optionnel dans l’intégration Standard et les clés secrètes doivent être utilisées côté serveur. La confirmation finale reste conditionnée au statut `success`, à la correspondance du montant et à la correspondance de la devise.
