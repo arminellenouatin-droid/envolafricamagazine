@@ -172,3 +172,46 @@ export async function updateJobsApplicationStatus(applicationId: string, userId:
 }
 
 
+
+
+export async function recordJobsEvent(input: {
+  type: "search" | "offer_view" | "candidate_view";
+  userId?: string;
+  targetId?: string;
+  query?: string;
+  country?: string;
+  city?: string;
+}) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false as const };
+  const { error } = await supabase.from("jobs_events").insert({
+    user_id: input.userId || null,
+    event_type: input.type,
+    target_type: input.type === "offer_view" ? "offer" : input.type === "candidate_view" ? "candidate" : null,
+    target_id: input.targetId || null,
+    query: input.query || null,
+    country_code: input.country?.slice(0, 2) || null,
+    city: input.city?.slice(0, 80) || null,
+  });
+  if (error) return { configured: true as const, error };
+  return { configured: true as const };
+}
+
+export async function incrementJobsOfferView(offerId: string, userId?: string) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false as const, found: false };
+  const { data: offer, error: offerError } = await supabase.from("jobs_offers").select("id,views_count").eq("id", offerId).eq("status", "published").maybeSingle();
+  if (offerError) return { configured: true as const, found: false, error: offerError };
+  if (!offer) return { configured: true as const, found: false };
+  if (userId) {
+    const since = new Date(Date.now() - 1800000).toISOString();
+    const { data: recent, error: recentError } = await supabase.from("jobs_events").select("id").eq("event_type", "offer_view").eq("target_id", offerId).eq("user_id", userId).gte("created_at", since).limit(1);
+    if (recentError) return { configured: true as const, found: true, error: recentError };
+    if (recent && recent.length > 0) return { configured: true as const, found: true, deduplicated: true };
+  }
+  const event = await recordJobsEvent({ type: "offer_view", userId, targetId: offerId });
+  if (event.error) return { configured: true as const, found: true, error: event.error };
+  const { error: updateError } = await supabase.from("jobs_offers").update({ views_count: Number(offer.views_count || 0) + 1 }).eq("id", offerId);
+  if (updateError) return { configured: true as const, found: true, error: updateError };
+  return { configured: true as const, found: true };
+}
