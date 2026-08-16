@@ -24,8 +24,8 @@ export default function LoginPage() {
       if (!res.ok) throw new Error(data.error || "Erreur");
       router.push("/");
       router.refresh();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erreur de connexion");
     } finally {
       setLoading(false);
     }
@@ -66,12 +66,6 @@ export default function LoginPage() {
             Pas encore de compte ? <Link href="/auth/register" className="font-semibold text-[#0A1931] hover:underline">Créer un compte</Link>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-zinc-100">
-            <div className="bg-[#FFFCF5] rounded-[16px] p-4 border border-amber-100">
-              <div className="text-[11px] font-bold uppercase tracking-wide text-[#D4AF37]">Compte administrateur de démonstration</div>
-              <div className="text-[13px] text-zinc-700 mt-1">Email: yekpondafe@gmail.com<br/>Mot de passe: 3NAtiposy@22</div>
-            </div>
-          </div>
         </div>
         <div className="mt-6 text-center text-[11px] text-zinc-400">
           Paiement sécurisé par Moneroo • Aucune donnée bancaire stockée

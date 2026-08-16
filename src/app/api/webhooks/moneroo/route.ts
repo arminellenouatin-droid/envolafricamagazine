@@ -13,30 +13,31 @@ export async function POST(req: NextRequest) {
     const payload = await req.text();
     const receivedSignature = req.headers.get("x-moneroo-signature") || req.headers.get("X-Moneroo-Signature") || "";
 
-    const webhookSecret = process.env.MONEROO_WEBHOOK_SECRET || process.env.MONEROO_SECRET_KEY || "";
+    const webhookSecret = process.env.MONEROO_WEBHOOK_SECRET || "";
 
-    // 2) Recalculer signature attendue HMAC-SHA256
-    let expectedSignature = "";
-    if (webhookSecret) {
-      expectedSignature = crypto.createHmac('sha256', webhookSecret).update(payload).digest('hex');
-    }
+    // 2) Recalculer la signature attendue HMAC-SHA256.
+    // La clé API Moneroo ne doit pas être réutilisée comme secret de webhook.
+    if (!webhookSecret) {
+      if (process.env.NODE_ENV === "production") {
+        console.error("webhook: MONEROO_WEBHOOK_SECRET manquant en production");
+        return NextResponse.json({ error: "Webhook non configuré" }, { status: 503 });
+      }
+      console.warn("webhook: MONEROO_WEBHOOK_SECRET manquant - vérification ignorée hors production");
+    } else {
+      if (!receivedSignature) {
+        return NextResponse.json({ error: "Signature manquante" }, { status: 403 });
+      }
 
-    // 3) Comparer signatures de façon sécurisée
-    if (webhookSecret && receivedSignature) {
-      const isValid = crypto.timingSafeEqual(
-        Buffer.from(expectedSignature, 'utf-8'),
-        Buffer.from(receivedSignature, 'utf-8')
-      );
+      const expectedSignature = crypto.createHmac("sha256", webhookSecret).update(payload).digest("hex");
+      const expectedBuffer = Buffer.from(expectedSignature, "utf8");
+      const receivedBuffer = Buffer.from(receivedSignature.trim(), "utf8");
+      const isValid = expectedBuffer.length === receivedBuffer.length
+        && crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
+
       if (!isValid) {
-        console.error("webhook: signature invalide", { receivedSignature, expectedSignature });
+        console.warn("webhook: signature invalide");
         return NextResponse.json({ error: "Signature invalide" }, { status: 403 });
       }
-    } else if (webhookSecret) {
-      console.warn("webhook: signature manquante mais secret configuré");
-      // En prod, on devrait refuser si secret configuré mais signature manquante
-      // return NextResponse.json({ error: "Signature manquante" }, { status: 403 });
-    } else {
-      console.warn("webhook: MONEROO_WEBHOOK_SECRET manquant - vérif signature ignorée en dev");
     }
 
     // 4) Traiter l'événement

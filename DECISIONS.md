@@ -122,3 +122,29 @@ Ces tickets ne rentrent dans aucun sprint tant que blocage non levé. Statut "en
 
 ## Format futur
 - Toute nouvelle question sera ajoutée ici avec statut en attente/en cours/validé.
+
+
+---
+
+## Audit global du 16 août 2026
+
+### 16. Décision de release après audit global
+- **Date:** 2026-08-16
+- **Question:** Le produit peut-il être déclaré prêt pour un lancement public et des paiements réels ?
+- **Réponse:** Non en l’état. Release bloquée jusqu’à rotation des secrets admin, migration de l’inscription hors `src/data/db.json`, validation HMAC Moneroo, policies RLS Supabase et protection serveur des pages admin.
+- **Validateur:** Audit Manus AI — validation produit à confirmer par Quentin
+- **Impact:** Voir `AUDIT_GLOBAL_2026-08-16.md` et `PRD_2026-08-16.md`. Les modules existants sont conservés ; les correctifs doivent être progressifs et non destructifs.
+
+### 17. Correction sécurité login et webhook Moneroo
+- **Date:** 2026-08-16
+- **Question:** Quelles corrections immédiates appliquer sans modifier les fonctionnalités métier ?
+- **Réponse:** Supprimer les identifiants de démonstration du HTML public de la page login et rejeter les signatures Moneroo absentes ou invalides en production avec HMAC-SHA256 et comparaison résistante aux différences de longueur.
+- **Validateur:** Manus AI — déploiement et revalidation à effectuer
+- **Impact:** `src/app/auth/login/page.tsx` et `src/app/api/webhooks/moneroo/route.ts` modifiés. La variable `MONEROO_WEBHOOK_SECRET` doit être configurée dans Vercel avant déploiement ; la clé API Moneroo n’est pas utilisée comme secret HMAC.
+
+### 18. Règle de non-activation automatique de RLS
+- **Date:** 2026-08-16
+- **Question:** Faut-il activer immédiatement RLS sur les tables Supabase signalées ?
+- **Réponse:** Non sans policies métier testées. L’activation progressive est requise pour éviter de bloquer les parcours existants tout en fermant l’exposition publique.
+- **Validateur:** Manus AI — validation finale Quentin/équipe technique
+- **Impact:** Aucune migration de base n’a été appliquée pendant l’audit. Les policies doivent être conçues et testées par domaine.
