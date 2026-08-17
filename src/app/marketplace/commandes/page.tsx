@@ -1,0 +1,5 @@
+import Link from "next/link";
+
+export default function MarketplaceOrdersPage() {
+  return <main className="min-h-screen bg-[#fcf9f8] px-5 py-12 text-[#2a211a] md:px-10 lg:px-16"><div className="mx-auto max-w-5xl"><Link href="/marketplace" className="text-xs font-bold text-[#9e001f]">← Retour au Marketplace</Link><h1 className="mt-8 font-display text-4xl font-black">Mes commandes Marketplace</h1><p className="mt-3 text-sm leading-6 text-[#725f4d]">Retrouvez les commandes comptant, les paiements échelonnés, les échéances, les pénalités éventuelles et la confirmation de réception.</p><div className="mt-8 rounded-[24px] border border-dashed border-[#cdbb9f] bg-white p-10 text-center"><span className="material-symbols-outlined text-5xl text-[#a36300]">receipt_long</span><h2 className="mt-4 font-display text-xl font-black">Connectez-vous pour voir vos commandes</h2><p className="mt-2 text-sm text-[#806c58]">Le suivi est rattaché à votre compte utilisateur unique EAM.</p><Link href="/auth/login?next=/marketplace/commandes" className="mt-6 inline-flex rounded-full bg-[#9e001f] px-6 py-3 text-xs font-black text-white">Se connecter</Link></div></div></main>;
+}

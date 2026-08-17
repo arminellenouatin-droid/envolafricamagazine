@@ -88,8 +88,10 @@ export const PLATFORM_CONFIGS: Record<PlatformKey, PlatformConfig> = {
     megaDescription: "Présentez vos produits et trouvez des solutions adaptées à vos besoins.",
     megaItems: [
       { label: "Parcourir la marketplace", href: "/marketplace", icon: "storefront" },
-      { label: "Publier un produit", href: "/marketplace#publier", icon: "add_business" },
-      { label: "Gérer ma boutique", href: "/marketplace#boutique", icon: "store" },
+      { label: "Publier un produit", href: "/marketplace/boutique#publier", icon: "add_business" },
+      { label: "Gérer ma boutique", href: "/marketplace/boutique", icon: "store" },
+      { label: "Mes commandes", href: "/marketplace/commandes", icon: "receipt_long" },
+      { label: "Mes messages", href: "/marketplace/messages", icon: "mail" },
     ],
   },
   crowdfunding: {
