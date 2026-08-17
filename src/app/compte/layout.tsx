@@ -1,21 +1,20 @@
 "use client";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { getPlatformContext, PLATFORM_CONTEXTS, type PlatformKey } from "@/lib/platform-context";
 
 export default function CompteLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [user, setUser] = useState<any>(null);
-  const platform = getPlatformContext(searchParams.get("platform"));
+  const [platform, setPlatform] = useState<PlatformKey>("magazine");
   const context = PLATFORM_CONTEXTS[platform];
-  const [role, setRole] = useState(searchParams.get("role") || context.roles[0].id);
+  const [role, setRole] = useState(context.roles[0].id);
   const currentRole = useMemo(() => context.roles.find((item) => item.id === role) ?? context.roles[0], [context.roles, role]);
 
-  useEffect(() => { fetch("/api/auth/me").then((response) => response.json()).then((data) => { if (!data.user) router.push(`/auth/login?next=${encodeURIComponent(`/compte?platform=${platform}&role=${encodeURIComponent(role)}`)}`); else setUser(data.user); }); }, [platform, router]);
-  useEffect(() => { setRole(searchParams.get("role") || context.roles[0].id); }, [platform, context.roles, searchParams]);
+  useEffect(() => { const params = new URLSearchParams(window.location.search); const nextPlatform = getPlatformContext(params.get("platform")); setPlatform(nextPlatform); setRole(params.get("role") || PLATFORM_CONTEXTS[nextPlatform].roles[0].id); fetch("/api/auth/me").then((response) => response.json()).then((data) => { if (!data.user) router.push(`/auth/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`); else setUser(data.user); }); }, [router]);
+  useEffect(() => { setRole(context.roles[0].id); }, [platform, context.roles]);
   const changeRole = (nextRole: string) => { setRole(nextRole); router.push(`/compte?platform=${platform}&role=${encodeURIComponent(nextRole)}`); };
 
   const changePlatform = (next: PlatformKey) => router.push(`/compte?platform=${next}`);

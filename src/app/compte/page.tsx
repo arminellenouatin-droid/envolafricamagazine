@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getPlatformContext, PLATFORM_CONTEXTS } from "@/lib/platform-context";
-import { useSearchParams } from "next/navigation";
+
 
 const roleContent: Record<string, Array<{ label: string; value: string; detail: string; href?: string }>> = {
   "magazine:visitor": [{ label: "Articles accessibles", value: "Public", detail: "Découvrez les contenus ouverts du Magazine." }, { label: "Kiosque", value: "Disponible", detail: "Achetez un numéro ou explorez les éditions." }],
@@ -23,12 +23,12 @@ const roleContent: Record<string, Array<{ label: string; value: string; detail: 
 };
 
 export default function ComptePage() {
-  const searchParams = useSearchParams();
-  const platform = getPlatformContext(searchParams.get("platform"));
+  const [platform, setPlatform] = useState<ReturnType<typeof getPlatformContext>>("magazine");
+  const [role, setRole] = useState("visitor");
   const context = PLATFORM_CONTEXTS[platform];
-  const role = searchParams.get("role") || context.roles[0].id;
   const currentRole = context.roles.find((item) => item.id === role) ?? context.roles[0];
   const cards = roleContent[`${platform}:${currentRole.id}`] ?? [];
+  useEffect(() => { const params = new URLSearchParams(window.location.search); const nextPlatform = getPlatformContext(params.get("platform")); setPlatform(nextPlatform); setRole(params.get("role") || PLATFORM_CONTEXTS[nextPlatform].roles[0].id); }, []);
   const [user, setUser] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [earnings, setEarnings] = useState<any[]>([]);
