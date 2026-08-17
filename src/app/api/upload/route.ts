@@ -34,7 +34,9 @@ export async function POST(req: NextRequest) {
       preview: ["image/jpeg", "image/png", "image/webp"],
       pdf: ["application/pdf"],
       audio: ["audio/mpeg", "audio/wav", "audio/mp3", "audio/ogg", "audio/webm"],
-      general: ["image/jpeg", "image/png", "image/webp", "application/pdf", "audio/mpeg", "audio/wav", "audio/mp3"]
+      video: ["video/mp4", "video/webm", "video/quicktime"],
+      office: ["application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation"],
+      general: ["image/jpeg", "image/png", "image/webp", "application/pdf", "audio/mpeg", "audio/wav", "audio/mp3", "video/mp4", "video/webm", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation"]
     };
 
     const allowed = allowedTypes[type] || allowedTypes.general;
@@ -89,7 +91,9 @@ export async function GET() {
       cover: "image/jpeg, png, webp",
       preview: "image - jusqu'à 10 images pour flipbook",
       pdf: "application/pdf - 3 langues FR/EN/ES",
-      audio: "audio/mpeg, wav, mp3 - 12 langues"
+      office: "doc, docx, xls, xlsx, ppt, pptx",
+      audio: "audio/mpeg, wav, mp3 - 12 langues",
+      video: "video/mp4, webm, quicktime"
     }
   });
 }
