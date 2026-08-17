@@ -40,6 +40,12 @@ function AuthorAvatar({ name, src }: { name: string; src?: string }) {
   return src ? <img src={src} alt={`Photo de profil de ${name}`} className="h-11 w-11 rounded-full border-2 border-white object-cover shadow-sm" /> : <span aria-label={`Avatar de ${name}`} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#8ee0c0] font-display text-sm font-black text-[#082843] shadow-sm">{name.trim().slice(0, 1).toUpperCase()}</span>;
 }
 
+async function readJsonResponse<T>(response: Response): Promise<T> {
+  const raw = await response.text();
+  if (!raw.trim()) throw new Error(`Le serveur a renvoyé une réponse vide (HTTP ${response.status}).`);
+  try { return JSON.parse(raw) as T; } catch { throw new Error(`Réponse serveur invalide (HTTP ${response.status}). Veuillez réessayer.`); }
+}
+
 export default function WabClient() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [content, setContent] = useState("");
@@ -54,7 +60,7 @@ export default function WabClient() {
   const marker = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch("/api/geo").then((response) => response.json()).then((data) => setVisitorCountry(data.country ?? "")).catch(() => undefined);
+    fetch("/api/geo").then((response) => readJsonResponse<{ country?: string }>(response)).then((data) => setVisitorCountry(data.country ?? "")).catch(() => undefined);
   }, []);
 
   const loadFeed = useCallback(async (nextPage: number, reset = false) => {
@@ -62,7 +68,7 @@ export default function WabClient() {
     try {
       const params = new URLSearchParams({ page: String(nextPage) });
       if (visitorCountry) params.set("country", visitorCountry);
-      const data = await fetch(`/api/wab/posts?${params}`).then((response) => response.json());
+      const response = await fetch(`/api/wab/posts?${params}`); const data = await readJsonResponse<{ posts?: Post[]; pagination?: { hasMore?: boolean } }>(response); if (!response.ok) throw new Error((data as { error?: string }).error || `Impossible de charger le fil (HTTP ${response.status}).`);
       setPosts((items) => reset ? data.posts ?? [] : [...items, ...(data.posts ?? [])]);
       setPage(nextPage);
       setHasMore(Boolean(data.pagination?.hasMore));
@@ -76,7 +82,7 @@ export default function WabClient() {
   useEffect(() => {
     const boost = new URLSearchParams(window.location.search).get("boost");
     if (!boost) return;
-    fetch(`/api/wab/boosts/${boost}/verify`, { method: "POST" }).then((response) => response.json()).then((data) => setMessage(data.active ? "Votre campagne WAB est active." : "Votre paiement est en cours de confirmation.")).catch(() => setMessage("Impossible de confirmer le paiement pour le moment."));
+    fetch(`/api/wab/boosts/${boost}/verify`, { method: "POST" }).then((response) => readJsonResponse<{ active?: boolean }>(response)).then((data) => setMessage(data.active ? "Votre campagne WAB est active." : "Votre paiement est en cours de confirmation.")).catch(() => setMessage("Impossible de confirmer le paiement pour le moment."));
   }, []);
 
   useEffect(() => {
@@ -97,15 +103,15 @@ export default function WabClient() {
         const upload = new FormData();
         upload.set("file", selectedFile);
         const uploadResponse = await fetch("/api/wab/upload", { method: "POST", body: upload });
-        const uploadData = await uploadResponse.json();
+        const uploadData = await readJsonResponse<{ error?: string; path?: string; mimeType?: string; name?: string }>(uploadResponse);
         if (!uploadResponse.ok) throw new Error(uploadData.error);
         media = [uploadData];
       }
       const response = await fetch("/api/wab/posts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content, type, tags: [], media }) });
-      const data = await response.json();
+      const data = await readJsonResponse<{ error?: string; post?: Post }>(response);
       if (response.status === 401) { window.location.assign(`/auth/login?next=${encodeURIComponent("/wab")}`); return; }
       if (!response.ok) throw new Error(data.error);
-      setPosts((items) => [data.post, ...items]);
+      if (!data.post) throw new Error("La publication n’a pas été renvoyée par le serveur."); setPosts((items) => [data.post!, ...items]);
       setContent("");
       setSelectedFile(null);
     } catch (error) {
