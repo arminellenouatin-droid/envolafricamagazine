@@ -1,9 +1,11 @@
 "use client";
 
-import Header from "./Header";
+import dynamic from "next/dynamic";
 
 type HeaderUser = { id: string; nom?: string; prenom?: string; email?: string; role?: string };
 
+const InteractiveHeader = dynamic(() => import("./Header"), { ssr: false });
+
 export default function HeaderShell({ user }: { user?: HeaderUser }) {
-  return <Header user={user} />;
+  return <InteractiveHeader user={user} />;
 }

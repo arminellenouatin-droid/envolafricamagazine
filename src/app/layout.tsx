@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/HeaderShell";
-import Footer from "@/components/Footer";
+import Footer from "@/components/FooterShell";
 import { getCurrentUserFromCookie } from "@/lib/auth";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Envol Africa Magazine | Le magazine économique panafricain de référence",
