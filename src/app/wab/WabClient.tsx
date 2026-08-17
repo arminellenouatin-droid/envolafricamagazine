@@ -123,10 +123,13 @@ export default function WabClient() {
   const [loadingFeed, setLoadingFeed] = useState(false);
   const [isBusiness, setIsBusiness] = useState(false);
   const [accountLoaded, setAccountLoaded] = useState(false);
+  const [wabSubscriptionLoading, setWabSubscriptionLoading] = useState(false);
+  const [wabSubscriptionMessage, setWabSubscriptionMessage] = useState("");
   const [commentSignals, setCommentSignals] = useState<Record<string, number>>({});
   const marker = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { fetch("/api/geo").then((response) => readJsonResponse<{ country?: string }>(response)).then((data) => setVisitorCountry(data.country ?? "")).catch(() => undefined); fetch("/api/auth/me").then((response) => response.json()).then((data) => { const subscription = data.user?.subscription; setIsBusiness(Boolean(subscription?.status === "active" && subscription?.planId === "mensuel" && (!subscription?.endDate || new Date(subscription.endDate).getTime() > Date.now()))); }).catch(() => setIsBusiness(false)).finally(() => setAccountLoaded(true)); }, []);
+  useEffect(() => { fetch("/api/geo").then((response) => readJsonResponse<{ country?: string }>(response)).then((data) => setVisitorCountry(data.country ?? "")).catch(() => undefined); fetch("/api/wab/subscription").then((response) => response.json()).then((data) => setIsBusiness(Boolean(data.subscription))).catch(() => setIsBusiness(false)).finally(() => setAccountLoaded(true)); }, []);
+  useEffect(() => { const params = new URLSearchParams(window.location.search); const subscriptionId = params.get("wab_subscription_id"); const paymentId = params.get("payment_id"); if (!subscriptionId || !paymentId || (!params.get("verify") && !params.get("mock_success"))) return; fetch("/api/wab/subscription", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subscriptionId, paymentId }) }).then((response) => response.json().then((data) => ({ response, data }))).then(({ response, data }) => { if (!response.ok) throw new Error(data.error || "Paiement WAB non confirmé."); setIsBusiness(true); setWabSubscriptionMessage("Votre compte Entreprise WAB est actif. Vous pouvez publier des vidéos."); window.history.replaceState({}, "", "/wab"); }).catch((error) => setWabSubscriptionMessage(error instanceof Error ? error.message : "Vérification du paiement WAB impossible.")); }, []);
 
   const loadFeed = useCallback(async (nextPage: number, reset = false) => {
     setLoadingFeed(true);
@@ -152,8 +155,9 @@ export default function WabClient() {
   }, [hasMore, loadingFeed, loadFeed, page]);
 
   function openComments(postId: string) { setCommentSignals((signals) => ({ ...signals, [postId]: (signals[postId] ?? 0) + 1 })); }
-  function chooseType(nextType: string) { if (nextType === "video" && accountLoaded && !isBusiness) { setType("text"); setMessage(`La vidéo est réservée aux comptes Business abonnés à ${WAB_BUSINESS_MONTHLY_PRICE.toLocaleString("fr-FR")} XOF/mois.`); return; } setMessage(""); setType(nextType); }
-  function chooseFile(file: File | null) { if (file?.type.startsWith("video/") && !isBusiness) { setMessage(`La publication vidéo est réservée aux comptes Business abonnés à ${WAB_BUSINESS_MONTHLY_PRICE.toLocaleString("fr-FR")} XOF/mois.`); setSelectedFile(null); return; } setMessage(""); setSelectedFile(file); }
+  function chooseType(nextType: string) { if (nextType === "video" && accountLoaded && !isBusiness) { setType("text"); setMessage(`La vidéo est réservée aux comptes Entreprise WAB abonnés à ${WAB_BUSINESS_MONTHLY_PRICE.toLocaleString("fr-FR")} XOF/mois.`); return; } setMessage(""); setType(nextType); }
+  function chooseFile(file: File | null) { if (file?.type.startsWith("video/") && !isBusiness) { setMessage(`La publication vidéo est réservée aux comptes Entreprise WAB abonnés à ${WAB_BUSINESS_MONTHLY_PRICE.toLocaleString("fr-FR")} XOF/mois.`); setSelectedFile(null); return; } setMessage(""); setSelectedFile(file); }
+  async function startWabSubscription() { setWabSubscriptionLoading(true); setWabSubscriptionMessage(""); try { const response = await fetch("/api/wab/subscription", { method: "POST" }); const data = await response.json(); if (response.status === 401) { window.location.assign(`/auth/login?next=${encodeURIComponent("/wab")}`); return; } if (!response.ok || !data.checkout_url) throw new Error(data.error || "Le paiement WAB est indisponible."); window.location.assign(data.checkout_url); } catch (error) { setWabSubscriptionMessage(error instanceof Error ? error.message : "Activation du compte Entreprise WAB impossible."); } finally { setWabSubscriptionLoading(false); } }
 
   async function publish() {
     if (!content.trim()) return;
@@ -190,7 +194,7 @@ export default function WabClient() {
               <div className="mt-2 flex flex-wrap items-center justify-end gap-2 sm:justify-between">
                 <div className="hidden items-center gap-2 sm:flex"><select value={type} onChange={(event) => chooseType(event.target.value)} aria-label="Type de publication" className="rounded-lg border border-[#c3c6ce] bg-white px-2 py-1 text-xs"><option value="text">Texte</option><option value="opportunity">Opportunité</option><option value="document">Document</option><option value="video">Vidéo</option></select><label className="cursor-pointer text-xs font-semibold text-[#006874]">Joindre un média<input type="file" className="hidden" accept="image/jpeg,image/png,image/webp,video/mp4,application/pdf,.docx,.xlsx,.pptx" onChange={(event) => chooseFile(event.target.files?.[0] ?? null)} /></label></div>
                 <button type="button" disabled={busy || !content.trim()} onClick={publish} className="rounded-lg bg-[#006874] px-4 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">{busy ? "Publication…" : "Publier"}</button>
-                {!isBusiness && <a href="/abonnement" className="w-full text-right text-[11px] font-semibold text-[#875600] sm:w-auto">Vidéo : abonnement Business {WAB_BUSINESS_MONTHLY_PRICE.toLocaleString("fr-FR")} XOF/mois</a>}
+                {!isBusiness && <button type="button" onClick={startWabSubscription} disabled={wabSubscriptionLoading} className="w-full text-right text-[11px] font-semibold text-[#875600] disabled:opacity-60 sm:w-auto">{wabSubscriptionLoading ? "Ouverture du paiement WAB…" : `Vidéo : activer le compte Entreprise WAB (${WAB_BUSINESS_MONTHLY_PRICE.toLocaleString("fr-FR")} XOF/mois)`}</button>}
               </div>
             </div>
           </div>
@@ -219,6 +223,7 @@ export default function WabClient() {
             <div ref={marker} className="flex justify-center py-8"><span className="material-symbols-outlined animate-spin text-3xl text-[#006874]">refresh</span></div>
           </div>
           {message && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{message}</p>}
+          {wabSubscriptionMessage && <p className="rounded-xl bg-[#fff3dc] p-3 text-sm font-semibold text-[#875600]">{wabSubscriptionMessage}</p>}
         </section>
       </div>
     </main>
