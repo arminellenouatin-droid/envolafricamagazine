@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { getPlatformKey, PLATFORM_CONFIGS } from "@/lib/platforms";
+import { internalBrowserHref } from "@/lib/internal-browser";
 
 const siteLinks = [
   { name: "Magazine", href: "/" },
@@ -42,8 +44,13 @@ const contactLinks = [
   { name: "CGU / Confidentialité", href: "https://envolafrica.net/" },
 ];
 
+function ExternalLink({ href, children, className = "" }: { href: string; children: ReactNode; className?: string }) {
+  const internalHref = internalBrowserHref(href);
+  return internalHref ? <Link href={internalHref} className={className}>{children}</Link> : <a href={href} target="_blank" rel="noreferrer" className={className}>{children}</a>;
+}
+
 function FooterLinks({ items }: { items: Array<{ name: string; href: string }> }) {
-  return <ul className="space-y-3 text-[12px] text-[#e4e2e1]">{items.map((item) => item.href.startsWith("http") ? <li key={item.name}><a href={item.href} target="_blank" rel="noreferrer" className="hover:text-white">{item.name}</a></li> : <li key={item.name}><Link href={item.href} className="hover:text-white">{item.name}</Link></li>)}</ul>;
+  return <ul className="space-y-3 text-[12px] text-[#e4e2e1]">{items.map((item) => item.href.startsWith("http") ? <li key={item.name}><ExternalLink href={item.href} className="hover:text-white">{item.name}</ExternalLink></li> : <li key={item.name}><Link href={item.href} className="hover:text-white">{item.name}</Link></li>)}</ul>;
 }
 
 export default function Footer() {
@@ -65,7 +72,7 @@ export default function Footer() {
           <div><h4 className="mb-4 text-[13px] font-bold uppercase tracking-widest text-[#ffdad8]">Publicité & Suivi</h4><FooterLinks items={contactLinks} /></div>
         </div>
       </div>
-      <div className="bg-[#eae7e7] px-5 py-5 md:px-[64px]"><div className="mx-auto flex max-w-[1280px] flex-col items-center justify-between gap-4 md:flex-row"><p className="text-[12px] text-[#1c1b1b]">©2026 <a href="https://envolafrica.net/" target="_blank" rel="noreferrer" className="font-bold hover:text-[#9e001f]">Envol Africa</a> Groupe. Tous droits réservés</p><div className="flex items-center gap-4 text-[12px] text-[#474646]"><a href="https://envolafrica.net/" target="_blank" rel="noreferrer" className="hover:text-[#9e001f]">Terms</a><span className="text-[#e5bdbb]">;</span><a href="https://envolafrica.net/" target="_blank" rel="noreferrer" className="hover:text-[#9e001f]">Privacy</a><span className="text-[#e5bdbb]">;</span><a href="https://envolafrica.net/" target="_blank" rel="noreferrer" className="hover:text-[#9e001f]">Cookies</a><span className="hidden items-center gap-2 md:flex"><span className="h-2 w-2 rounded-full bg-green-600" />Paiement Moneroo sécurisé</span></div></div></div>
+      <div className="bg-[#eae7e7] px-5 py-5 md:px-[64px]"><div className="mx-auto flex max-w-[1280px] flex-col items-center justify-between gap-4 md:flex-row"><p className="text-[12px] text-[#1c1b1b]">©2026 <ExternalLink href="https://envolafrica.net/" className="font-bold hover:text-[#9e001f]">Envol Africa</ExternalLink> Groupe. Tous droits réservés</p><div className="flex items-center gap-4 text-[12px] text-[#474646]"><ExternalLink href="https://envolafrica.net/" className="hover:text-[#9e001f]">Terms</ExternalLink><span className="text-[#e5bdbb]">;</span><ExternalLink href="https://envolafrica.net/" className="hover:text-[#9e001f]">Privacy</ExternalLink><span className="text-[#e5bdbb]">;</span><ExternalLink href="https://envolafrica.net/" className="hover:text-[#9e001f]">Cookies</ExternalLink><span className="hidden items-center gap-2 md:flex"><span className="h-2 w-2 rounded-full bg-green-600" />Paiement Moneroo sécurisé</span></div></div></div>
     </footer>
   );
 }
