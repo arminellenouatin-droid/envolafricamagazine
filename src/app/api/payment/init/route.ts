@@ -88,7 +88,8 @@ export async function POST(req: NextRequest) {
       shippingCost,
     });
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl.origin;
+    // Le retour doit rester sur l’hôte qui a créé le checkout, jamais sur une ancienne URL d’environnement.
+    const baseUrl = req.nextUrl.origin;
     const payment = await initMonerooPayment({
       amount: order.total,
       currency: order.currency,
