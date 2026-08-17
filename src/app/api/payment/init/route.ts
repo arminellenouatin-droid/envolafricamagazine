@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   let createdOrderId: string | undefined;
   try {
     const body = await req.json();
-    const { items, currency = "XOF", shippingCountry, affiliateCode, donAmount, phone } = body;
+    const { items, currency = "XOF", shippingCountry, affiliateCode, donAmount, phone, metadata } = body;
     const user = await getCurrentUserFromCookie();
     const magazines = await listMagazines();
 
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
       return_url: `${baseUrl}/panier?order_id=${orderId}&verify=1`,
       // Moneroo détecte automatiquement le pays et affiche les méthodes disponibles.
       // Aucun code pays ni méthode n’est imposé par EAM.
-      metadata: { order_id: orderId, user_id: user?.id || "guest", affiliate: order.affiliateCode },
+      metadata: { ...(metadata && typeof metadata === "object" ? metadata : {}), order_id: orderId, user_id: user?.id || "guest", affiliate: order.affiliateCode },
     });
 
     const { attachPaymentToOrder } = await import("@/lib/core-db");

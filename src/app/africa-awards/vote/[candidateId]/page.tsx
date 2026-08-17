@@ -33,8 +33,9 @@ export default function VotePage() {
       method: "POST",
       headers: { "Content-Type":"application/json" },
       body: JSON.stringify({
-        items: [{ type:"don", amount, price: amount, title:`Vote ${votes} pour ${candidate?.display_name}` }],
+        donAmount: amount,
         currency: "XOF",
+        metadata: { product: "award_vote", candidate_id: candidateId, competition_id: candidate?.competition_id, points: votes },
         email: "voter@envolafrica.com",
         firstName: "Voter",
         lastName: "Awards",
@@ -42,12 +43,7 @@ export default function VotePage() {
     });
     const data = await res.json();
     if (data.checkout_url) {
-      // Enregistre vote après paiement (mock: on enregistre direct pour MVP, en prod ce serait via webhook)
-      await fetch("/api/awards/votes", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ candidate_id: candidateId, competition_id: candidate?.competition_id, points: votes, payment_id: data.paymentId })
-      });
+      // Le vote sera comptabilisé uniquement par le webhook après confirmation Moneroo.
       window.location.href = data.checkout_url;
     }
     setLoading(false);

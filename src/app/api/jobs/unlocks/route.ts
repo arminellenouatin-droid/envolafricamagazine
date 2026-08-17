@@ -26,7 +26,6 @@ export async function POST(request: NextRequest) {
       amount: 200, currency: "XOF", description: `Décryptage d'offre Jobs : ${offer.title}`,
       customer: { email: user.email, first_name: user.prenom, last_name: user.nom, phone: user.phone },
       return_url: `${origin}/emploi/offres/${offer.id}/decrypter?unlock=${unlockId}&payment_id={payment_id}`,
-      methods: ["card", "mtn_bj", "moov_bj", "mtn_ci", "orange_ci", "wave", "orange_sn"],
       metadata: { product: "jobs_offer_unlock", unlock_id: unlockId, offer_id: offer.id, user_id: user.id },
     });
     const persisted = await createPendingJobsUnlock(user.id, offerId, payment.id);

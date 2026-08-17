@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { initMonerooPayment } from "@/lib/moneroo";
 
 const MONTHLY_PENALTY_RATE = 0.02;
 
@@ -24,12 +25,12 @@ export async function POST(request: NextRequest) {
   const months = body.paymentMode === "installment" ? Math.min(12, Math.max(1, Number(body.months) || 1)) : 1;
   const supabase = getSupabaseAdmin();
   if (!supabase) return NextResponse.json({ error: "Commandes temporairement indisponibles." }, { status: 503 });
-  const { data: product, error: productError } = await supabase.from("marketplace_products").select("id,supplier_id,price_xof,stock_quantity,status,installment_enabled,installment_months_max,reserved_until").eq("id", body.productId).single();
+  const { data: product, error: productError } = await supabase.from("marketplace_products").select("id,supplier_id,price_xof,stock_quantity,status,installment_enabled,installment_months_max,reserved_until,title").eq("id", body.productId).single();
   if (productError || !product || product.status !== "published" || product.stock_quantity < 1) return NextResponse.json({ error: "Produit indisponible." }, { status: 409 });
   if (product.reserved_until && new Date(product.reserved_until) > new Date()) return NextResponse.json({ error: "Produit déjà réservé par une commande active." }, { status: 409 });
   if (body.paymentMode === "installment" && (!product.installment_enabled || months > (product.installment_months_max || 12))) return NextResponse.json({ error: "Ce produit n’accepte pas cet échéancier." }, { status: 400 });
   const now = new Date();
-  const { data: order, error: orderError } = await supabase.from("marketplace_orders").insert({ product_id: product.id, buyer_id: user.id, supplier_id: product.supplier_id, total_xof: product.price_xof, payment_mode: body.paymentMode, status: body.paymentMode === "installment" ? "active_installment" : "pending_payment" }).select("id,product_id,total_xof,payment_mode,status,created_at").single();
+  const { data: order, error: orderError } = await supabase.from("marketplace_orders").insert({ product_id: product.id, buyer_id: user.id, supplier_id: product.supplier_id, total_xof: product.price_xof, payment_mode: body.paymentMode, status: "pending_payment" }).select("id,product_id,total_xof,payment_mode,status,created_at").single();
   if (orderError || !order) return NextResponse.json({ error: "Impossible de créer la commande." }, { status: 502 });
   const principal = Math.ceil(product.price_xof / months);
   const installments = Array.from({ length: months }, (_, index) => ({ order_id: order.id, sequence_no: index + 1, due_at: addMonths(now, index + 1).toISOString(), principal_xof: index === months - 1 ? product.price_xof - principal * (months - 1) : principal, penalty_xof: 0, status: "due" }));
@@ -37,6 +38,27 @@ export async function POST(request: NextRequest) {
   if (installmentError) { await supabase.from("marketplace_orders").update({ status: "cancelled" }).eq("id", order.id); return NextResponse.json({ error: "Impossible de créer l’échéancier." }, { status: 502 }); }
   const reservedUntil = addMonths(now, months).toISOString();
   const { error: reservationError } = await supabase.from("marketplace_products").update({ reserved_until: reservedUntil, updated_at: now.toISOString() }).eq("id", product.id).eq("status", "published").is("reserved_until", null);
-  if (reservationError) return NextResponse.json({ error: "La réservation doit être confirmée avant paiement." }, { status: 409 });
-  return NextResponse.json({ order, installments, reservedUntil, penaltyRateMonthly: MONTHLY_PENALTY_RATE, nextStep: "payment_required", message: "Le paiement doit être confirmé par Moneroo. Le fournisseur ne reçoit pas les fonds avant la réception confirmée." }, { status: 201 });
+  if (reservationError) {
+    await supabase.from("marketplace_orders").update({ status: "cancelled" }).eq("id", order.id);
+    return NextResponse.json({ error: "La réservation doit être confirmée avant paiement." }, { status: 409 });
+  }
+
+  const origin = process.env.NEXT_PUBLIC_BASE_URL || request.nextUrl.origin;
+  try {
+    const payment = await initMonerooPayment({
+      amount: product.price_xof,
+      currency: "XOF",
+      description: `Marketplace Envol Africa — ${product.title || "Commande"}`,
+      customer: { email: user.email, first_name: user.prenom, last_name: user.nom, phone: user.phone },
+      return_url: `${origin}/marketplace?order=${order.id}`,
+      metadata: { product: "marketplace_order", order_id: order.id, product_id: product.id, buyer_id: user.id, payment_mode: body.paymentMode, months },
+    });
+    const { error: paymentLinkError } = await supabase.from("marketplace_orders").update({ provider_payment_id: payment.id, updated_at: new Date().toISOString() }).eq("id", order.id);
+    if (paymentLinkError) throw paymentLinkError;
+    return NextResponse.json({ order, installments, reservedUntil, checkoutUrl: payment.checkout_url, paymentId: payment.id, penaltyRateMonthly: MONTHLY_PENALTY_RATE, nextStep: "payment_required", message: "Le paiement est traité par Moneroo. Le fournisseur ne reçoit les fonds qu’après confirmation de réception." }, { status: 201 });
+  } catch {
+    await supabase.from("marketplace_orders").update({ status: "cancelled", updated_at: new Date().toISOString() }).eq("id", order.id);
+    await supabase.from("marketplace_products").update({ reserved_until: null, updated_at: new Date().toISOString() }).eq("id", product.id).eq("reserved_until", reservedUntil);
+    return NextResponse.json({ error: "Impossible d’initialiser le paiement Moneroo." }, { status: 502 });
+  }
 }

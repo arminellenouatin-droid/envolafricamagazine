@@ -9,6 +9,8 @@ export default function ProjetDetail() {
   const [projet, setProjet] = useState<any>(null);
   const [tab, setTab] = useState<"don"|"prise_part"|"pret">("don");
   const [montant, setMontant] = useState(10000);
+  const [pourcentage, setPourcentage] = useState(1);
+  const [paying, setPaying] = useState(false);
 
   useEffect(()=>{
     fetch(`/api/crowdfunding/projects?id=${id}`).then(r=>r.json()).then(d=>setProjet(d.projet));
@@ -18,6 +20,17 @@ export default function ProjetDetail() {
 
   const pct = Math.round((projet.montantCollecte/projet.montantRecherche)*100);
   const valorisation = projet.valorisation || Math.round(projet.montantRecherche / 0.2);
+
+  const startContribution = async (mode: "don" | "prise_part" | "pret", amount: number, percentage?: number) => {
+    if (!Number.isFinite(amount) || amount <= 0 || paying) return;
+    setPaying(true);
+    try {
+      const response = await fetch("/api/crowdfunding/payments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId: id, mode, amount, percentage }) });
+      const data = await response.json();
+      if (data.checkoutUrl) window.location.href = data.checkoutUrl;
+      else window.alert(data.error || "Paiement indisponible.");
+    } finally { setPaying(false); }
+  };
 
   return (
     <div className="bg-[#fcf9f8] min-h-screen pb-20">
@@ -62,7 +75,7 @@ export default function ProjetDetail() {
                     <p className="text-[12px] text-[#5c403f]">Montant libre ou proposé. Aucun retour financier. Badge Soutien sur profil.</p>
                     <div className="mt-3 flex gap-2"><button onClick={()=>setMontant(5000)} className="flex-1 h-9 rounded-full border bg-[#f6f3f2] text-[12px]">5k F</button><button onClick={()=>setMontant(10000)} className="flex-1 h-9 rounded-full border bg-white text-[12px] font-bold">10k F</button><button onClick={()=>setMontant(50000)} className="flex-1 h-9 rounded-full border bg-[#f6f3f2] text-[12px]">50k F</button></div>
                     <input type="number" value={montant} onChange={e=>setMontant(parseInt(e.target.value)||0)} className="mt-3 w-full h-11 rounded-full border bg-[#f6f3f2] px-4 text-[14px]" placeholder="Montant libre" />
-                    <button className="mt-4 w-full h-11 rounded-full bg-[#9e001f] text-white font-bold text-[13px]">Faire un don de {montant.toLocaleString()} F →</button>
+                    <button onClick={() => startContribution("don", montant)} disabled={paying} className="mt-4 w-full h-11 rounded-full bg-[#9e001f] text-white font-bold text-[13px] disabled:opacity-50">{paying ? "Redirection Moneroo..." : `Faire un don de ${montant.toLocaleString()} F →`}</button>
                   </div>
                 )}
 
@@ -74,8 +87,8 @@ export default function ProjetDetail() {
                       <div className="flex justify-between mt-1"><span>% vendu</span><span>{projet.pourcentageVendu}%</span></div>
                       <div className="flex justify-between mt-1 font-bold border-t pt-2"><span>Prix pour 1%</span><span>{Math.round(valorisation/100).toLocaleString()} F</span></div>
                     </div>
-                    <div className="mt-3"><label className="text-[11px] font-bold">% souhaité</label><input type="range" min="0.1" max="10" step="0.1" defaultValue="1" className="w-full mt-1" /><div className="text-[11px] text-[#5c403f]">1% = {Math.round(valorisation/100).toLocaleString()} F</div></div>
-                    <button className="mt-4 w-full h-11 rounded-full bg-[#9e001f] text-white font-bold text-[13px]">Acheter 1% pour {Math.round(valorisation/100).toLocaleString()} F → Contrat PDF auto</button>
+                    <div className="mt-3"><label className="text-[11px] font-bold">% souhaité</label><input type="range" min="0.1" max="10" step="0.1" value={pourcentage} onChange={(e) => setPourcentage(Number(e.target.value))} className="w-full mt-1" /><div className="text-[11px] text-[#5c403f]">{pourcentage}% = {Math.round(valorisation * pourcentage / 100).toLocaleString()} F</div></div>
+                    <button onClick={() => startContribution("prise_part", Math.round(valorisation * pourcentage / 100), pourcentage)} disabled={paying} className="mt-4 w-full h-11 rounded-full bg-[#9e001f] text-white font-bold text-[13px] disabled:opacity-50">{paying ? "Redirection Moneroo..." : `Acheter ${pourcentage}% pour ${Math.round(valorisation * pourcentage / 100).toLocaleString()} F → Contrat PDF auto`}</button>
                   </div>
                 )}
 
@@ -88,7 +101,7 @@ export default function ProjetDetail() {
                       <div className="mt-2 text-[10px]">Calendrier: chaque mois, part capital + intérêts, date paiement auto</div>
                     </div>
                     <input type="number" value={montant} onChange={e=>setMontant(parseInt(e.target.value)||0)} placeholder="Montant à prêter" className="mt-3 w-full h-11 rounded-full border bg-[#f6f3f2] px-4 text-[14px]" />
-                    <button className="mt-3 w-full h-11 rounded-full bg-[#9e001f] text-white font-bold text-[13px]">Prêter {montant.toLocaleString()} F à {projet.tauxInteret}% →</button>
+                    <button onClick={() => startContribution("pret", montant)} disabled={paying} className="mt-3 w-full h-11 rounded-full bg-[#9e001f] text-white font-bold text-[13px] disabled:opacity-50">{paying ? "Redirection Moneroo..." : `Prêter ${montant.toLocaleString()} F à ${projet.tauxInteret}% →`}</button>
                   </div>
                 )}
               </div>

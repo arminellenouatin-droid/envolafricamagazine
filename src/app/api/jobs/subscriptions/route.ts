@@ -19,7 +19,6 @@ export async function POST(request: NextRequest) {
       amount: plan.price, currency: "XOF", description: `Envol Africa Jobs — ${plan.label}`,
       customer: { email: user.email, first_name: user.prenom, last_name: user.nom, phone: user.phone },
       return_url: `${origin}/emploi/abonnements?subscription=${subscriptionId}`,
-      methods: ["card", "mtn_bj", "moov_bj", "mtn_ci", "orange_ci", "wave", "orange_sn"],
       metadata: { product: "jobs_subscription", subscription_id: subscriptionId, plan_id: plan.id, audience, user_id: user.id },
     });
     const persisted = await createPendingJobsSubscription(user.id, audience, plan.id, plan.price, payment.id);

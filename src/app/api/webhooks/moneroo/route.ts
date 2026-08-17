@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { verifyMonerooPayment } from "@/lib/moneroo";
+import { readAwardsDB, writeAwardsDB } from "@/lib/awards-db";
 import {
   confirmOrderPayment,
   findOrderById,
@@ -38,6 +39,22 @@ function hasValidSignature(payload: string, receivedSignature: string, secret: s
   const expectedBuffer = Buffer.from(expected, "utf8");
   const receivedBuffer = Buffer.from(receivedSignature.trim(), "utf8");
   return expectedBuffer.length === receivedBuffer.length && crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
+}
+
+async function settleAwardVote(metadata: Record<string, unknown>, paymentId: string) {
+  if (metadata.product !== "award_vote") return;
+  const candidateId = String(metadata.candidate_id || "");
+  const competitionId = String(metadata.competition_id || "");
+  const points = Math.max(1, Math.min(1000, Number(metadata.points) || 1));
+  if (!candidateId || !competitionId) throw new Error("Métadonnées de vote Awards invalides");
+  const db = readAwardsDB();
+  if (db.votes.some((vote) => vote.payment_transaction_id === paymentId)) return;
+  db.votes.push({ id: `vote_${paymentId}`, voter_id: String(metadata.user_id || "guest"), candidate_id: candidateId, competition_id: competitionId, points, payment_transaction_id: paymentId, created_at: new Date().toISOString() });
+  const candidate = db.candidates.find((item) => item.id === candidateId);
+  if (candidate) candidate.votes += points;
+  const competition = db.competitions.find((item) => item.id === competitionId);
+  if (competition) competition.votes_count = (competition.votes_count || 0) + points;
+  writeAwardsDB(db);
 }
 
 async function settleSubscription(orderId: string, alreadyPaid: boolean) {
@@ -102,6 +119,8 @@ export async function POST(req: NextRequest) {
     const amount = Number(verification.amount ?? data.amount);
     const currency = String(verification.currency ?? data.currency ?? "").toUpperCase();
     const alreadyPaid = order.status === "paid";
+    const metadata = (data.metadata || {}) as Record<string, unknown>;
+    await settleAwardVote(metadata, String(verification.id || data.id));
     const confirmedOrder = await confirmOrderPayment(order, {
       providerRef: String(verification.id || data.id),
       amount,
