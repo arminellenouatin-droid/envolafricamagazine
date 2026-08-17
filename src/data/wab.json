@@ -61,13 +61,18 @@
       "moderationStatus": "published"
     }
   ],
-  "profiles": [],
+  "profiles": [
+    {"id":"profile-demo-aicha","userId":"demo-wab-aicha","fullName":"Aïcha Bamba","headline":"Fondatrice · Abidjan Green Logistics","about":"Entrepreneure spécialisée dans la logistique urbaine durable et les partenariats régionaux.","companyName":"Abidjan Green Logistics","industry":"Logistique","country":"Côte d’Ivoire","city":"Abidjan","status":"active","createdAt":"2026-08-14T09:00:00.000Z","updatedAt":"2026-08-15T09:00:00.000Z"},
+    {"id":"profile-demo-moussa","userId":"demo-wab-moussa","fullName":"Moussa Diallo","headline":"Consultant finance & stratégie","about":"J’accompagne les PME africaines dans leur structuration financière et leur développement export.","companyName":"Diallo Conseil","industry":"Finance","country":"Sénégal","city":"Dakar","status":"active","createdAt":"2026-08-13T09:00:00.000Z","updatedAt":"2026-08-15T09:00:00.000Z"}
+  ],
   "reactions": [],
   "comments": [],
   "reports": [],
   "views": [],
   "rewards": [],
-  "salons": [],
+  "salons": [
+    {"id":"salon-demo-finance-africa","hostUserId":"demo-wab-moussa","host":"Moussa Diallo","title":"Financer la croissance des PME africaines","description":"Débat professionnel sur les leviers de financement, les paiements transfrontaliers et la préparation à l’export.","startsAt":"2026-08-25T17:00:00.000Z","status":"scheduled","participants":42,"createdAt":"2026-08-15T12:00:00.000Z"}
+  ],
   "salonParticipants": [],
   "salonMessages": [],
   "boosts": [],

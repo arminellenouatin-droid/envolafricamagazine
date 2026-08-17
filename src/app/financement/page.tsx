@@ -36,7 +36,7 @@ export default function CrowdFundingPage() {
           </div>
 
           <div className="mt-8 flex gap-3">
-            <Link href="/financement/creer" className="h-12 px-8 rounded-full bg-[#9e001f] text-white font-bold text-[14px] flex items-center gap-2">Déposer mon projet →</Link>
+            <Link href="/financement/dashboard/porteur" className="h-12 px-8 rounded-full bg-[#9e001f] text-white font-bold text-[14px] flex items-center gap-2">Déposer mon projet →</Link>
             <Link href="#projets" className="h-12 px-8 rounded-full bg-white/10 border border-white/15 text-white font-semibold text-[14px] flex items-center gap-2">Parcourir les projets</Link>
           </div>
         </div>
@@ -92,7 +92,7 @@ export default function CrowdFundingPage() {
           })}
         </div>
 
-        {filtered.length===0 && <div className="text-center py-20 text-[#5c403f]">Aucun projet pour ces filtres - Essayez un autre filtre ou <Link href="/financement/creer" className="text-[#9e001f] font-bold">déposez votre projet</Link></div>}
+        {filtered.length===0 && <div className="text-center py-20 text-[#5c403f]">Aucun projet pour ces filtres - Essayez un autre filtre ou <Link href="/financement/dashboard/porteur" className="text-[#9e001f] font-bold">déposez votre projet</Link></div>}
       </div>
 
       {/* Cagnottes */}

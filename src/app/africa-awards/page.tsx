@@ -68,8 +68,8 @@ export default function AfricaAwardsLanding() {
         <h2 className="text-[32px] font-black">Osez briller !</h2>
         <p className="text-[#A8A6A0] mt-3 max-w-[600px] mx-auto">Devenez candidat, organisateur ou jury. Seul l'Administrateur crée et lance officiellement une compétition pour garantir transparence et équité.</p>
         <div className="mt-8 flex justify-center gap-3">
-          <Link href="/africa-awards/apply" className="h-12 px-8 rounded-full bg-[#D4AF37] text-black font-bold">Devenir candidat</Link>
-          <Link href="/africa-awards/organizer/requests/new" className="h-12 px-8 rounded-full border border-white/15 text-white font-semibold">Organiser une compétition</Link>
+          <Link href="/africa-awards/competitions" className="h-12 px-8 rounded-full bg-[#D4AF37] text-black font-bold">Devenir candidat</Link>
+          <Link href="/africa-awards/organizer/dashboard/requests/new" className="h-12 px-8 rounded-full border border-white/15 text-white font-semibold">Organiser une compétition</Link>
         </div>
       </section>
 

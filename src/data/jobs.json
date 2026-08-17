@@ -118,7 +118,11 @@
       "applications": 25
     }
   ],
-  "candidates": [],
+  "candidates": [
+    {"id":"candidate-demo-bj-finance","firstName":"Aminata","lastName":"Hounkpe","photo":"https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=160","contactEmail":"demo.candidate1@example.com","description":"Professionnelle finance avec expérience en contrôle de gestion et reporting PME.","skills":["Finance","Excel","Reporting"],"desiredRole":"Analyste financière","country":"Bénin","city":"Cotonou","availability":"Disponible immédiatement","status":"published","isBoosted":true,"boostEndsAt":"2026-09-15T00:00:00.000Z","views":342,"createdAt":"2026-08-15T10:00:00.000Z"},
+    {"id":"candidate-demo-ci-product","firstName":"Koffi","lastName":"N’Guessan","photo":"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160","contactEmail":"demo.candidate2@example.com","description":"Product manager orienté fintech, mobile money et expérience utilisateur en Afrique de l’Ouest.","skills":["Product","Fintech","Agile"],"desiredRole":"Product Manager","country":"Côte d’Ivoire","city":"Abidjan","availability":"Sous 30 jours","status":"published","isBoosted":false,"views":218,"createdAt":"2026-08-14T10:00:00.000Z"},
+    {"id":"candidate-demo-ke-data","firstName":"Njeri","lastName":"Wanjiku","photo":"https://images.unsplash.com/photo-1580489944761-15a19d654956?w=160","contactEmail":"demo.candidate3@example.com","description":"Data analyst spécialisée dans les indicateurs d’impact, SQL et visualisation décisionnelle.","skills":["SQL","Power BI","Analyse"],"desiredRole":"Data Analyst","country":"Kenya","city":"Nairobi","availability":"Freelance","status":"published","isBoosted":false,"views":189,"createdAt":"2026-08-13T10:00:00.000Z"}
+  ],
   "unlocks": [],
   "applications": [],
   "subscriptions": [],
