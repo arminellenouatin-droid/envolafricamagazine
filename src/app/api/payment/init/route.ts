@@ -98,11 +98,10 @@ export async function POST(req: NextRequest) {
         first_name: user?.prenom || body.firstName || "Client",
         last_name: user?.nom || body.lastName || "Envol",
         phone: user?.phone || phone || body.phone,
-        country: shippingCountry || undefined,
       },
       return_url: `${baseUrl}/panier?order_id=${orderId}&verify=1`,
-      restrict_country_code: shippingCountry || undefined,
-      // Ne pas forcer une méthode : Moneroo sélectionne les méthodes actives du pays.
+      // Moneroo détecte automatiquement le pays et affiche les méthodes disponibles.
+      // Aucun code pays ni méthode n’est imposé par EAM.
       metadata: { order_id: orderId, user_id: user?.id || "guest", affiliate: order.affiliateCode },
     });
 

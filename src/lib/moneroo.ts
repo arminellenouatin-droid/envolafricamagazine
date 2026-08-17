@@ -14,7 +14,6 @@ export interface MonerooPaymentData {
   };
   return_url: string;
   methods?: string[];
-  restrict_country_code?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -59,8 +58,8 @@ export async function initMonerooPayment(data: MonerooPaymentData) {
         description: data.description,
         customer: data.customer,
         return_url: data.return_url,
+        // methods est volontairement absent par défaut : Moneroo affiche toutes les options disponibles.
         ...(data.methods && data.methods.length > 0 ? { methods: data.methods } : {}),
-        ...(data.restrict_country_code ? { restrict_country_code: data.restrict_country_code } : {}),
         metadata: data.metadata,
       }),
     });

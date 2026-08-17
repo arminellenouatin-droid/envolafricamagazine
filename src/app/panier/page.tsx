@@ -12,7 +12,6 @@ export default function PanierPage() {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [affiliate, setAffiliate] = useState<string>("");
-  const [paymentMethod, setPaymentMethod] = useState<"momo"|"card">("momo");
 
   useEffect(()=>{
     const saved = localStorage.getItem("eam_cart");
@@ -140,25 +139,13 @@ export default function PanierPage() {
                 <div className="pt-2 border-t border-[#e5bdbb] flex justify-between font-bold text-[18px]"><span>NET À PAYER</span><span className="text-[#9e001f]">{total.toLocaleString()} F CFA</span></div>
               </div>
 
-              <div className="space-y-4 mb-6">
-                <p className="text-[12px] font-bold uppercase tracking-wider text-[#5c403f]">Mode de paiement</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <label className={`relative flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all ${paymentMethod==="momo"?"border-[#9e001f] bg-[#9e001f]/5":"border-[#e5bdbb]"}`}>
-                    <input checked={paymentMethod==="momo"} onChange={()=>setPaymentMethod("momo")} className="hidden" name="payment" type="radio" />
-                    <div className="flex flex-col items-center gap-1"><span className="material-symbols-outlined text-[#9e001f]">account_balance_wallet</span><span className="text-[12px] font-bold">Mobile Money</span></div>
-                    {paymentMethod==="momo" && <div className="absolute -top-2 -right-2 bg-[#9e001f] text-white rounded-full w-5 h-5 flex items-center justify-center"><span className="material-symbols-outlined text-[14px]">check</span></div>}
-                  </label>
-                  <label className={`relative flex items-center justify-center p-3 border rounded-lg cursor-pointer ${paymentMethod==="card"?"border-[#9e001f] bg-[#9e001f]/5":"border-[#e5bdbb]"}`}>
-                    <input checked={paymentMethod==="card"} onChange={()=>setPaymentMethod("card")} className="hidden" name="payment" type="radio" />
-                    <div className="flex flex-col items-center gap-1"><span className="material-symbols-outlined text-[#5c403f]">credit_card</span><span className="text-[12px] font-bold">Carte Bancaire</span></div>
-                    {paymentMethod==="card" && <div className="absolute -top-2 -right-2 bg-[#9e001f] text-white rounded-full w-5 h-5 flex items-center justify-center"><span className="material-symbols-outlined text-[14px]">check</span></div>}
-                  </label>
-                </div>
-                <div className="flex justify-center items-center gap-3 pt-2 grayscale opacity-60">
-                  <span className="text-[10px] font-bold border rounded px-2 py-1">MTN</span>
-                  <span className="text-[10px] font-bold border rounded px-2 py-1">Orange</span>
-                  <span className="text-[10px] font-bold border rounded px-2 py-1">Moov</span>
-                  <span className="text-[10px] font-bold border rounded px-2 py-1">Wave</span>
+              <div className="mb-6 rounded-xl border border-[#e5bdbb] bg-white p-4">
+                <div className="flex items-start gap-3">
+                  <span className="material-symbols-outlined text-[#9e001f]">payments</span>
+                  <div>
+                    <p className="text-[12px] font-bold uppercase tracking-wider text-[#5c403f]">Moyens de paiement</p>
+                    <p className="mt-1 text-[12px] leading-5 text-[#5c403f]">Moneroo détecte automatiquement votre pays et affiche les moyens disponibles : carte bancaire, Mobile Money et autres options proposées par ses agrégateurs.</p>
+                  </div>
                 </div>
               </div>
 
