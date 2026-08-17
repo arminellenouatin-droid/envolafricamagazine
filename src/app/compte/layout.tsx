@@ -1,70 +1,50 @@
 "use client";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-
-const menu = [
-  { href: "/compte", label: "Tableau de bord", icon: "⌂" },
-  { href: "/compte/abonnement", label: "Mon abonnement", icon: "★" },
-  { href: "/compte/achats", label: "Mes achats & téléchargements", icon: "◫" },
-  { href: "/compte/parrainage", label: "Parrainage & gains", icon: "💸" },
-  { href: "/compte/favoris", label: "Favoris", icon: "❤️" },
-  { href: "/compte/dons", label: "Mes dons", icon: "🎁" },
-  { href: "/compte/parametres", label: "Paramètres", icon: "⚙" },
-];
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { getPlatformContext, PLATFORM_CONTEXTS, type PlatformKey } from "@/lib/platform-context";
 
 export default function CompteLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [user, setUser] = useState<any>(null);
+  const platform = getPlatformContext(searchParams.get("platform"));
+  const context = PLATFORM_CONTEXTS[platform];
+  const [role, setRole] = useState(searchParams.get("role") || context.roles[0].id);
+  const currentRole = useMemo(() => context.roles.find((item) => item.id === role) ?? context.roles[0], [context.roles, role]);
 
-  useEffect(()=>{
-    fetch("/api/auth/me").then(r=>r.json()).then(d=>{
-      if (!d.user) router.push("/auth/login");
-      else setUser(d.user);
-    });
-  },[]);
+  useEffect(() => { fetch("/api/auth/me").then((response) => response.json()).then((data) => { if (!data.user) router.push(`/auth/login?next=${encodeURIComponent(`/compte?platform=${platform}&role=${encodeURIComponent(role)}`)}`); else setUser(data.user); }); }, [platform, router]);
+  useEffect(() => { setRole(searchParams.get("role") || context.roles[0].id); }, [platform, context.roles, searchParams]);
+  const changeRole = (nextRole: string) => { setRole(nextRole); router.push(`/compte?platform=${platform}&role=${encodeURIComponent(nextRole)}`); };
 
-  const logout = async () => {
-    await fetch("/api/auth/logout", { method:"POST" });
-    router.push("/");
-    router.refresh();
-  };
+  const changePlatform = (next: PlatformKey) => router.push(`/compte?platform=${next}`);
+  const logout = async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); router.refresh(); };
 
-  return (
-    <div className="bg-[#FFFCF5] min-h-screen pb-20">
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 xl:px-8 pt-8 grid lg:grid-cols-[280px_1fr] gap-8">
-        <aside className="lg:sticky lg:top-24 h-fit">
-          <div className="bg-white rounded-[20px] border border-zinc-100 p-5">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-[#0A1931] text-white flex items-center justify-center font-bold">{user ? `${user.prenom?.[0]}${user.nom?.[0]}` : "?"}</div>
-              <div>
-                <div className="font-bold text-[14px] text-[#0A1931]">{user ? `${user.prenom} ${user.nom}` : "Chargement..."}</div>
-                <div className="text-[12px] text-zinc-500">{user?.email}</div>
-              </div>
-            </div>
-            {user?.subscription?.status==="active" && <div className="mt-4 bg-green-50 border border-green-100 rounded-full px-3 py-1.5 text-[11px] font-bold text-green-800 uppercase text-center">✓ Abonné {user.subscription.planId} • jusqu'au {new Date(user.subscription.endDate).toLocaleDateString('fr-FR')}</div>}
-            {!user?.subscription && <div className="mt-4 bg-amber-50 border border-amber-100 rounded-full px-3 py-1.5 text-[11px] font-bold text-amber-800 uppercase text-center">Non abonné • 12 lignes / article</div>}
+  return <div className="min-h-screen bg-[#FFFCF5] pb-20">
+    <div className="mx-auto max-w-[1280px] px-4 pt-8 sm:px-6 xl:px-8">
+      <div className="mb-6 flex flex-wrap items-center gap-2 rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm">
+        <span className="px-3 text-[11px] font-black uppercase tracking-wider text-zinc-500">Espace</span>
+        {(Object.keys(PLATFORM_CONTEXTS) as PlatformKey[]).map((key) => <button key={key} onClick={() => changePlatform(key)} className={`rounded-full px-3 py-2 text-[12px] font-bold transition ${platform === key ? "text-white" : "text-zinc-600 hover:bg-zinc-100"}`} style={platform === key ? { backgroundColor: PLATFORM_CONTEXTS[key].accent } : undefined}>{PLATFORM_CONTEXTS[key].label}</button>)}
+      </div>
+      <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
+        <aside className="h-fit lg:sticky lg:top-24">
+          <div className="rounded-[20px] border border-zinc-100 bg-white p-5">
+            <div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#0A1931] font-bold text-white">{user ? `${user.prenom?.[0]}${user.nom?.[0]}` : "?"}</div><div><div className="text-[14px] font-bold text-[#0A1931]">{user ? `${user.prenom} ${user.nom}` : "Chargement..."}</div><div className="text-[12px] text-zinc-500">{user?.email}</div></div></div>
+            <div className="mt-4 rounded-xl px-3 py-2 text-center text-[11px] font-black uppercase" style={{ backgroundColor: `${context.accent}12`, color: context.accent }}>Dashboard {context.label}</div>
           </div>
-
-          <nav className="mt-4 bg-white rounded-[20px] border border-zinc-100 p-2">
-            {menu.map(m=>(
-              <Link key={m.href} href={m.href} className={`flex items-center gap-3 px-4 py-2.5 rounded-full text-[13px] font-medium transition-colors ${pathname===m.href ? "bg-[#0A1931] text-white" : "text-zinc-700 hover:bg-zinc-50"}`}>
-                <span className="w-6 h-6 rounded-full bg-zinc-100 flex items-center justify-center text-[12px]">{m.icon}</span>{m.label}
-              </Link>
-            ))}
-            <button onClick={logout} className="w-full mt-2 flex items-center gap-3 px-4 py-2.5 rounded-full text-[13px] font-medium text-red-600 hover:bg-red-50"><span className="w-6 h-6 rounded-full bg-red-50 flex items-center justify-center text-[12px]">↪</span>Se déconnecter</button>
+          <nav className="mt-4 rounded-[20px] border border-zinc-100 bg-white p-3">
+            <div className="mb-2 px-3 text-[10px] font-black uppercase tracking-wider text-zinc-400">Rôle dans ce volet</div>
+            <select value={role} onChange={(event) => changeRole(event.target.value)} className="mb-3 h-10 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-xs font-bold text-zinc-700">{context.roles.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
+            <Link href={`/compte?platform=${platform}`} className={`flex items-center gap-3 rounded-full px-4 py-2.5 text-[13px] font-medium ${pathname === "/compte" ? "text-white" : "text-zinc-700 hover:bg-zinc-50"}`} style={pathname === "/compte" ? { backgroundColor: context.accent } : undefined}>⌂ {currentRole.dashboardLabel}</Link>
+            {currentRole.links.map((item) => <Link key={item.href} href={item.href} className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-[13px] font-medium text-zinc-700 hover:bg-zinc-50">→ {item.label}</Link>)}
+            <Link href={`/compte/parrainage?platform=${platform}`} className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-[13px] font-medium text-zinc-700 hover:bg-zinc-50">↗ Affiliation globale</Link>
+            <Link href="/compte/parametres" className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-[13px] font-medium text-zinc-700 hover:bg-zinc-50">⚙ Paramètres du compte</Link>
+            <button onClick={logout} className="mt-2 flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-left text-[13px] font-medium text-red-600 hover:bg-red-50">↪ Se déconnecter</button>
           </nav>
-
-          <div className="mt-4 rounded-[16px] bg-[#0A1931] p-4 text-white">
-            <div className="text-[12px] font-bold uppercase tracking-wide text-[#D4AF37]">Besoin d'aide ?</div>
-            <div className="text-[13px] mt-1 leading-5 text-zinc-300">Support dédié pour abonnés Chef d'entreprise & Soutien.</div>
-            <button className="mt-3 h-9 px-4 rounded-full bg-white text-[#0A1931] text-[12px] font-bold">Contacter le support</button>
-          </div>
         </aside>
-
         <main>{children}</main>
       </div>
     </div>
-  );
+  </div>;
 }

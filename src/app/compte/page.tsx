@@ -1,80 +1,46 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { getPlatformContext, PLATFORM_CONTEXTS } from "@/lib/platform-context";
+import { useSearchParams } from "next/navigation";
+
+const roleContent: Record<string, Array<{ label: string; value: string; detail: string; href?: string }>> = {
+  "magazine:visitor": [{ label: "Articles accessibles", value: "Public", detail: "Découvrez les contenus ouverts du Magazine." }, { label: "Kiosque", value: "Disponible", detail: "Achetez un numéro ou explorez les éditions." }],
+  "magazine:subscriber": [{ label: "Abonnement Magazine", value: "À consulter", detail: "Votre statut et vos avantages éditoriaux." }, { label: "Lectures", value: "Votre bibliothèque", detail: "Retrouvez vos magazines et téléchargements." }],
+  "magazine:admin": [{ label: "Contenus", value: "À piloter", detail: "Articles, magazines et modération éditoriale.", href: "/admin" }, { label: "Commandes", value: "À traiter", detail: "Paiements et commandes du volet Magazine.", href: "/admin/orders" }],
+  "marketplace:buyer": [{ label: "Mes commandes", value: "À suivre", detail: "Paiements, échéances et confirmation de réception.", href: "/marketplace/commandes" }, { label: "Messages vendeurs", value: "Protégés", detail: "Échanges liés à vos produits Marketplace.", href: "/marketplace/messages" }],
+  "marketplace:seller": [{ label: "Ma boutique", value: "À gérer", detail: "Profil fournisseur et catalogue produits.", href: "/marketplace/boutique" }, { label: "Fonds vendeur", value: "Sécurisés", detail: "Transactions bloquées jusqu’à réception confirmée." }, { label: "Commissions", value: "Contextuelles", detail: "Montants nets après validation administrateur." }],
+  "marketplace:admin": [{ label: "Commandes", value: "À contrôler", detail: "Réceptions, litiges et libération des fonds." }, { label: "Vendeurs", value: "À modérer", detail: "Boutiques, produits et certifications." }, { label: "Commissions", value: "Configurables", detail: "Paramètres propres à Marketplace." }],
+  "jobs:candidate": [{ label: "Candidatures", value: "À suivre", detail: "Vos candidatures, accès et profil demandeur.", href: "/emploi/dashboard" }, { label: "Profil candidat", value: "À compléter", detail: "Votre CV et votre visibilité auprès des entreprises.", href: "/emploi/publier-candidature" }],
+  "jobs:employer": [{ label: "Offres", value: "À piloter", detail: "Vos offres, candidats et recrutements.", href: "/emploi/dashboard" }, { label: "Abonnement Jobs", value: "Contextuel", detail: "Les plans et accès du volet Emploi.", href: "/emploi/abonnements" }],
+  "jobs:admin": [{ label: "Offres et candidats", value: "À modérer", detail: "Pilotage du marché de l’emploi.", href: "/emploi/admin" }, { label: "Abonnements Jobs", value: "À suivre", detail: "Plans et accès propres à Jobs." }],
+  "wab:member": [{ label: "Publications", value: "Votre réseau", detail: "Posts, commentaires et relations WAB.", href: "/wab" }, { label: "Notifications", value: "À consulter", detail: "Actualités de votre réseau professionnel." }],
+  "wab:business": [{ label: "Compte Entreprise WAB", value: "À gérer", detail: "Statut du compte Business et accès vidéo.", href: "/wab" }, { label: "Campagnes", value: "À piloter", detail: "Boosts et visibilité professionnelle.", href: "/wab/campagnes" }],
+  "wab:admin": [{ label: "Publications", value: "À modérer", detail: "Signalements et contenus WAB.", href: "/wab/admin" }, { label: "Comptes Business", value: "À contrôler", detail: "Accès vidéo et campagnes WAB." }],
+  "awards:nominee": [{ label: "Candidature", value: "À suivre", detail: "Votre dossier et votre présence dans le concours.", href: "/africa-awards/my-votes" }, { label: "Votes", value: "En direct", detail: "Suivez les votes et les résultats." }],
+  "awards:host": [{ label: "Sessions live", value: "À animer", detail: "Compétitions, candidats et interactions.", href: "/africa-awards/host/dashboard" }, { label: "Compétitions", value: "À gérer", detail: "Vos espaces d’animation Africa Awards." }],
+  "awards:admin": [{ label: "Compétitions", value: "À piloter", detail: "Nominés, jurys, votes et résultats.", href: "/africa-awards/organizer/dashboard" }, { label: "Demandes", value: "À traiter", detail: "Demandes des acteurs du concours.", href: "/africa-awards/organizer/dashboard/requests" }],
+};
 
 export default function ComptePage() {
+  const searchParams = useSearchParams();
+  const platform = getPlatformContext(searchParams.get("platform"));
+  const context = PLATFORM_CONTEXTS[platform];
+  const role = searchParams.get("role") || context.roles[0].id;
+  const currentRole = context.roles.find((item) => item.id === role) ?? context.roles[0];
+  const cards = roleContent[`${platform}:${currentRole.id}`] ?? [];
   const [user, setUser] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [earnings, setEarnings] = useState<any[]>([]);
 
-  useEffect(()=>{
-    fetch("/api/auth/me").then(r=>r.json()).then(d=>{
-      if (d.user) {
-        setUser(d.user);
-        fetch("/api/orders?userId=" + encodeURIComponent(d.user.id)).then(r=>r.ok ? r.json() : { orders: [] }).then(o=>setOrders(o.orders||[])).catch(()=>{});
-        fetch("/api/affiliate").then(r=>r.ok ? r.json() : { earnings: [] }).then(e=>setEarnings(e.earnings||[])).catch(()=>{});
-      }
-    });
-  },[]);
+  useEffect(() => { fetch("/api/auth/me").then((response) => response.json()).then((data) => { if (!data.user) return; setUser(data.user); fetch(`/api/orders?userId=${encodeURIComponent(data.user.id)}`).then((response) => response.ok ? response.json() : { orders: [] }).then((data) => setOrders(data.orders || [])).catch(() => undefined); fetch("/api/affiliate").then((response) => response.ok ? response.json() : { earnings: [] }).then((data) => setEarnings(data.earnings || [])).catch(() => undefined); }).catch(() => undefined); }, []);
+  const isStaff = Boolean(user && ["redacteur", "redacteur_chef", "gerant", "admin"].includes(user.role));
+  const totalGains = earnings.reduce((sum, item) => sum + Number(item.commission || 0), 0);
 
-  const totalGains = earnings.reduce((s,e)=>s+e.commission,0);
-  const isStaff = user && ["redacteur","redacteur_chef","gerant","admin"].includes(user.role);
-
-  return (
-    <div className="space-y-6">
-      {isStaff && (
-        <div className="rounded-[20px] bg-[#9e001f] p-6 text-white relative overflow-hidden">
-          <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-          <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-white text-[#9e001f] flex items-center justify-center font-black text-lg">⚙</div>
-              <div>
-                <div className="font-bold text-[16px]">Accès Administration</div>
-                <div className="text-[13px] text-[#ffdad8] mt-1">Connecté en tant que <strong>{user.role}</strong> • {user.prenom} {user.nom} • Gestion complète du site</div>
-                <div className="text-[11px] text-white/70 mt-1">Articles, magazines, KPIs, abonnements, commentaires, utilisateurs, commandes, affiliation, service, réglages & sécurité</div>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Link href="/admin" className="h-11 px-6 rounded-full bg-white text-[#9e001f] font-bold text-[13px] flex items-center gap-2 hover:bg-[#ffdad8] transition-colors shadow-lg">→ Administration complète</Link>
-              <Link href="/2fa" className="h-11 px-4 rounded-full bg-white/10 border border-white/20 text-white text-[12px] font-medium hover:bg-white/20">2FA {user.twoFactorEnabled?"✓":"⚠"}</Link>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div>
-        <h1 className="font-bold text-[26px] text-[#1b1c1c]" style={{ fontFamily: "Montserrat" }}>Bonjour {user?.prenom} 👋</h1>
-        <p className="text-[14px] text-[#5c403f] mt-1">Bienvenue dans votre espace personnel Envol Africa Magazine.</p>
-      </div>
-
-      <div className="grid md:grid-cols-3 gap-4">
-        <div className="rounded-[18px] bg-white border border-[#e5bdbb] p-5"><div className="text-[11px] font-bold uppercase tracking-wide text-[#5c403f]">Abonnement</div><div className="font-bold text-[16px] mt-2 text-[#1b1c1c]">{user?.subscription?.status==="active" ? `${user.subscription.planId} • Actif` : "Aucun abonnement"}</div><Link href="/abonnement" className="mt-3 inline-block text-[12px] font-bold bg-[#303030] text-white px-3 py-1.5 rounded-full">{user?.subscription?.status==="active" ? "Gérer" : "S'abonner →"}</Link></div>
-        <div className="rounded-[18px] bg-white border border-[#e5bdbb] p-5"><div className="text-[11px] font-bold uppercase tracking-wide text-[#5c403f]">Commandes</div><div className="font-bold text-[16px] mt-2 text-[#1b1c1c]">{orders.length} achats</div><div className="text-[12px] text-[#5c403f] mt-1">{orders.filter(o=>o.status==="paid").length} payées • {orders.filter(o=>o.status==="pending").length} en attente</div></div>
-        <div className="rounded-[18px] bg-[#ffdad8] border border-[#e5bdbb] p-5"><div className="text-[11px] font-bold uppercase tracking-wide text-[#5c403f]">Gains parrainage</div><div className="font-black text-[22px] mt-2 text-[#1b1c1c]">{totalGains.toLocaleString()} F CFA</div><Link href="/compte/parrainage" className="mt-2 inline-block text-[12px] font-bold bg-[#1b1c1c] text-white px-3 py-1.5 rounded-full">Voir détails →</Link></div>
-      </div>
-
-      <div className="bg-white rounded-[20px] border border-[#e5bdbb] p-6">
-        <div className="flex items-center justify-between"><h3 className="font-bold text-[16px] text-[#1b1c1c]" style={{ fontFamily: "Montserrat" }}>Dernières lectures</h3><Link href="/" className="text-[12px] font-medium text-[#9e001f]">Voir tout</Link></div>
-        <div className="mt-4 grid md:grid-cols-2 gap-3">
-          {[1,2].map(i=>(
-            <div key={i} className="rounded-[14px] bg-[#f6f3f2] border border-[#e5bdbb] p-4 flex gap-3"><img src={`https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=200`} alt="" className="w-16 h-16 rounded-[10px] object-cover" /><div><div className="font-bold text-[13px] leading-tight">ZLECAf : le grand tournant</div><div className="text-[11px] text-[#5c403f] mt-1">Lu il y a 2h • 5 min</div></div></div>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-4">
-        <div className="rounded-[18px] bg-[#303030] p-6 text-white">
-          <div className="text-[12px] font-bold uppercase tracking-wide text-[#ffdad8]">Votre lien de parrainage</div>
-          <div className="mt-3 h-11 rounded-full bg-white/10 border border-white/10 px-4 flex items-center text-[12px] font-mono truncate">{user ? `${typeof window!=='undefined' ? window.location.origin : ''}?ref=${user.affiliateCode}` : "..."}</div>
-          <div className="text-[11px] text-white/60 mt-2">10% si non abonné, 25% si abonné • Retrait dès 150k F CFA</div>
-        </div>
-        <div className="rounded-[18px] bg-white border border-[#e5bdbb] p-6">
-          <div className="text-[12px] font-bold uppercase tracking-wide text-[#5c403f]">Préférences & Sécurité</div>
-          <div className="mt-3 flex gap-2"><span className="px-3 py-1.5 rounded-full bg-[#303030] text-white text-[12px]">Langue: {user?.lang?.toUpperCase() || "FR"}</span><span className="px-3 py-1.5 rounded-full border border-[#e5bdbb] text-[12px]">Devise: {user?.currency || "XOF"}</span></div>
-          <div className="mt-3 text-[12px] text-[#5c403f]">Compte sécurisé. 2FA {user?.twoFactorEnabled?"activée ✓":"à activer pour équipe"}.</div>
-          {isStaff && <Link href="/admin" className="mt-3 inline-block text-[12px] font-bold bg-[#9e001f] text-white px-4 py-2 rounded-full">→ Accès administration complète du site</Link>}
-        </div>
-      </div>
-    </div>
-  );
+  return <div className="space-y-6">
+    <div className="rounded-[24px] p-6 text-white" style={{ background: `linear-gradient(135deg, ${context.accent}, #0A1931)` }}><p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/70">Dashboard contextuel</p><h1 className="mt-2 text-3xl font-black">{currentRole.dashboardLabel}</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-white/75">{currentRole.description} Votre compte reste unique sur Envol Africa, mais cet espace affiche uniquement les données de {context.label}.</p>{isStaff && currentRole.id === "admin" && <div className="mt-5 inline-flex rounded-full bg-white/15 px-4 py-2 text-xs font-bold">Accès administrateur limité au volet {context.label}</div>}</div>
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{cards.map((card) => <div key={card.label} className="rounded-[20px] border border-zinc-200 bg-white p-5 shadow-sm"><div className="text-[11px] font-black uppercase tracking-wide text-zinc-500">{card.label}</div><div className="mt-2 text-xl font-black text-[#0A1931]">{card.value}</div><p className="mt-2 text-sm leading-5 text-zinc-600">{card.detail}</p>{card.href && <Link href={card.href} className="mt-4 inline-flex rounded-full px-4 py-2 text-xs font-bold text-white" style={{ backgroundColor: context.accent }}>Ouvrir →</Link>}</div>)}</div>
+    <div className="grid gap-4 md:grid-cols-2"><div className="rounded-[20px] border border-zinc-200 bg-white p-6"><div className="text-[11px] font-black uppercase tracking-wide text-zinc-500">Affiliation globale</div><p className="mt-2 text-2xl font-black text-[#0A1931]">{totalGains.toLocaleString("fr-FR")} XOF</p><p className="mt-1 text-sm text-zinc-600">Le lien fonctionne sur les différentes plateformes, avec une attribution propre au volet concerné.</p><Link href={`/compte/parrainage?platform=${platform}`} className="mt-4 inline-flex rounded-full bg-[#0A1931] px-4 py-2 text-xs font-bold text-white">Voir les gains →</Link></div><div className="rounded-[20px] border border-zinc-200 bg-white p-6"><div className="text-[11px] font-black uppercase tracking-wide text-zinc-500">Identité commune</div><p className="mt-2 text-sm leading-6 text-zinc-700">{user ? `${user.prenom} ${user.nom} · ${user.email}` : "Chargement du compte…"}</p><p className="mt-2 text-xs text-zinc-500">Une seule connexion pour tous les volets. Les rôles, données et outils affichés restent propres à {context.label}.</p></div></div>
+    {platform === "magazine" && <div className="rounded-[20px] border border-zinc-200 bg-white p-6"><h2 className="font-bold text-[#0A1931]">Activité Magazine</h2><p className="mt-2 text-sm text-zinc-600">{orders.length} commande(s) éditoriale(s) rattachée(s) à votre compte global.</p></div>}
+  </div>;
 }
