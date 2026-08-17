@@ -1,11 +1,8 @@
 ﻿"use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import CommentsPanel from "./CommentsPanel";
-import PostActions from "./PostActions";
 import PostMedia from "./PostMedia";
 import PostViewTracker from "./PostViewTracker";
-import StoriesReelsCarousel from "./StoriesReelsCarousel";
 
 type Post = {
   id: string;
@@ -24,26 +21,89 @@ type Post = {
   createdAt: string;
 };
 
-const navItems = [
-  { label: "Fil d’actualité", href: "/wab", icon: "dynamic_feed" },
-  { label: "Mon réseau", href: "/wab/profil", icon: "hub" },
-  { label: "Opportunités", href: "/wab/recherche", icon: "lightbulb" },
-  { label: "Salons", href: "/salons", icon: "event_seat" },
-  { label: "Messages", href: "/wab#messages", icon: "mail" },
+const MODEL_PROFILE = "https://lh3.googleusercontent.com/aida-public/AB6AXuCP8i8YbaB6aZyaZZC63wBgR6VK-jUv8nOXtwZhaB1DeN_-5GvOS00PfYP_toDCPENhRLXZh4kosuIzIiH9_QIPvTnjZ-srpMH5aEPi-2Q5RnrlOBRG9toOU0cbJ-cwLO_A0cU_VBFibitAw5e12jVokum1_sobn7RsIuHbMVLxv1MUCJFOQ1nsbsmOX1l4Q9dxSyOQgSaIURYzeoJ3ZvMulJsfUyJy2_SplFYf7nVZTO-kKCivuN034w";
+const MODEL_USER = "https://lh3.googleusercontent.com/aida-public/AB6AXuDevGRAv98kbAvzNJaUXni8T6-B4DVBhtBl4G_23OuMdTQuw11Wf5JV-MyaSQ9Y7VCve06sx7uH3tf3AxmQ732rXSf11RPthDPRbwF6d14GI8Uw18dirwOOawqIjOFB9uF4FCPWXNMTk-fLmyCpg51IKKgpFAXHA_PHy-fGIlsbYxJmkWEcF6tzreVTmDZtE5dFlgq3fKSYX68tDa9GPNuCXLQmO2hKetRJ_sLkxpzVYcBUO1J6gBmA";
+const MODEL_AUTHOR = "https://lh3.googleusercontent.com/aida-public/AB6AXuASGW7AYP7OUO_aiISVovBkZr-NKHgbZ9NN6Jk3AtudgDFjT6VAYsgos5mEsmqh-PT7G7ousOkRy8-SyKusZmEYRY0PcYTjH0KHfPohNYuasShz-NdTEi92eLCzFTxFP3t9xC0s9wFETOa770YLPLPktuFaumrWRBdyBCH2ZJe-yXw895vJPLOeLwdXRC32x_Ivr6NXFk-AkzzIYknqsS70S143rioteLMU2tR1JUw7312ye7KyXJiVlg";
+const MODEL_COMPANY = "https://lh3.googleusercontent.com/aida-public/AB6AXuCXrXAZUl47x4By1KHD8eBuS7xN_j03DfFIQOeKFbC9hpiYX_WvE808iYSDcLcvENaQ8vCpj3deim5_0dJb3StEv8TznpY5Pd4aNwSXQAGX5s_0Uqzkw2kPzvMrs842AqSybybG1dzfxpmRcfXPUJSY_dNjYcMiUqm6mKaUXYm5GayopwpKrWdj0xXwFBDdLhsFJK3pDPkGS7NVgdc19vqGzEdXX9nA0yktK9FXN6LL6mgB-QYb8p4eyw";
+const MODEL_SPONSORED = "https://lh3.googleusercontent.com/aida-public/AB6AXuAgX3mnaOeU-bTi7JaTw_hF-FCeOQQ92X9YvRRLKfVwXmaNsLgdlV2me8XRW553qwZi-OVGFRpH8PTrLNb_wpcumzbDypy7SHfxxBclxZZAF_SZq_xc8Zb-c7drpTY_YQl3s_VLLBXMq-2SqhDrZdOVN4OMc6fX2RTv1fTDTHRKj-LRVBeohHwQri14xKrojM7mxay36oewplnH9m-XgJ8fji9MFwGYQIaJugs77ej1vifgP8sfgZ9JZw";
+
+const modelNav = [
+  { label: "Feed", href: "/wab", icon: "newspaper" },
+  { label: "Network", href: "/wab/profil", icon: "share_reviews" },
+  { label: "Salons", href: "/salons", icon: "forum" },
+  { label: "Rewards", href: "/wab/createur", icon: "workspace_premium" },
+  { label: "Settings", href: "/compte/parametres", icon: "settings" },
+  { label: "Admin", href: "/wab/admin", icon: "admin_panel_settings" },
 ];
 
-function WabMark() {
-  return <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#8ee0c0] font-display text-lg font-black text-[#082843] shadow-sm">W</div>;
-}
+const mobileModelNav = [
+  { label: "Home", href: "/wab", icon: "home" },
+  { label: "Search", href: "/wab/recherche", icon: "search" },
+  { label: "Post", href: "#publier", icon: "add_box" },
+  { label: "Rooms", href: "/salons", icon: "groups" },
+  { label: "Profile", href: "/wab/profil", icon: "person" },
+];
 
-function AuthorAvatar({ name, src }: { name: string; src?: string }) {
-  return src ? <img src={src} alt={`Photo de profil de ${name}`} className="h-11 w-11 rounded-full border-2 border-white object-cover shadow-sm" /> : <span aria-label={`Avatar de ${name}`} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#8ee0c0] font-display text-sm font-black text-[#082843] shadow-sm">{name.trim().slice(0, 1).toUpperCase()}</span>;
+function ModelAvatar({ src, alt, className }: { src: string; alt: string; className: string }) {
+  return <img src={src} alt={alt} className={className} />;
 }
 
 async function readJsonResponse<T>(response: Response): Promise<T> {
   const raw = await response.text();
   if (!raw.trim()) throw new Error(`Le serveur a renvoyé une réponse vide (HTTP ${response.status}).`);
   try { return JSON.parse(raw) as T; } catch { throw new Error(`Réponse serveur invalide (HTTP ${response.status}). Veuillez réessayer.`); }
+}
+
+function ModelHeader() {
+  return (
+    <header className="sticky top-14 z-40 mx-auto w-full max-w-[1200px] border-b border-[#d1e9e6] bg-[#eefcfa]/95 shadow-sm backdrop-blur md:top-0">
+      <div className="flex h-16 items-center justify-between px-4 md:px-10">
+        <div className="h-8 w-8 overflow-hidden rounded-full">
+          <ModelAvatar src={MODEL_PROFILE} alt="Profil utilisateur" className="h-full w-full object-cover" />
+        </div>
+        <div className="font-display text-3xl font-bold tracking-tight text-[#001325]">WAB</div>
+        <button type="button" aria-label="Rechercher" className="grid h-10 w-10 place-items-center rounded-full text-[#006874] transition hover:bg-[#d7e5e3]">
+          <span className="material-symbols-outlined">search</span>
+        </button>
+      </div>
+      <nav className="flex h-12 items-center justify-around border-t border-[#d1e9e6] bg-[#eefcfa] px-2 md:hidden" aria-label="Navigation WAB mobile">
+        {mobileModelNav.map((item) => (
+          <a key={item.label} href={item.href} className="flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg py-1 text-[#43474d] transition hover:bg-[#d7e5e3]">
+            <span className="material-symbols-outlined text-[19px]">{item.icon}</span>
+            <span className="truncate text-[9px] font-semibold">{item.label}</span>
+          </a>
+        ))}
+      </nav>
+    </header>
+  );
+}
+
+function ModelSidebar() {
+  return (
+    <aside className="hidden w-80 shrink-0 flex-col gap-6 py-4 md:flex md:sticky md:top-16 md:h-[calc(100vh-4rem)]">
+      <div className="mb-2 flex flex-col items-start gap-2 px-4">
+        <div className="h-16 w-16 overflow-hidden rounded-full shadow-sm">
+          <ModelAvatar src={MODEL_PROFILE} alt="Profil de Abebe Bikila" className="h-full w-full object-cover" />
+        </div>
+        <div>
+          <h2 className="font-display text-xl font-semibold text-[#001325]">Abebe Bikila</h2>
+          <p className="text-sm text-[#43474d]">Venture Partner</p>
+          <span className="premium-text mt-1 inline-flex items-center gap-1 text-xs font-medium text-[#a36300]"><span className="material-symbols-outlined text-[14px]">workspace_premium</span>Premium Member</span>
+        </div>
+      </div>
+      <nav className="flex w-full flex-col gap-1 text-sm font-semibold text-[#006874]" aria-label="Navigation principale WAB">
+        {modelNav.map((item, index) => (
+          <a key={item.label} href={item.href} className={`flex items-center gap-3 px-4 py-3 transition ${index === 0 ? "translate-x-1 rounded-lg bg-[#93eefc] font-bold text-[#006d79]" : "text-[#43474d] hover:bg-[#e8f6f4]"}`}>
+            <span className="material-symbols-outlined text-[21px]">{item.icon}</span>{item.label}
+          </a>
+        ))}
+      </nav>
+    </aside>
+  );
+}
+
+function ModelActionButton({ icon, label }: { icon: string; label: string }) {
+  return <button type="button" className="flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold text-[#43474d] transition hover:bg-[#eefcfa] hover:text-[#006874]"><span className="material-symbols-outlined text-[20px]">{icon}</span><span>{label}</span></button>;
 }
 
 export default function WabClient() {
@@ -59,32 +119,23 @@ export default function WabClient() {
   const [loadingFeed, setLoadingFeed] = useState(false);
   const marker = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    fetch("/api/geo").then((response) => readJsonResponse<{ country?: string }>(response)).then((data) => setVisitorCountry(data.country ?? "")).catch(() => undefined);
-  }, []);
+  useEffect(() => { fetch("/api/geo").then((response) => readJsonResponse<{ country?: string }>(response)).then((data) => setVisitorCountry(data.country ?? "")).catch(() => undefined); }, []);
 
   const loadFeed = useCallback(async (nextPage: number, reset = false) => {
     setLoadingFeed(true);
     try {
       const params = new URLSearchParams({ page: String(nextPage) });
       if (visitorCountry) params.set("country", visitorCountry);
-      const response = await fetch(`/api/wab/posts?${params}`); const data = await readJsonResponse<{ posts?: Post[]; pagination?: { hasMore?: boolean } }>(response); if (!response.ok) throw new Error((data as { error?: string }).error || `Impossible de charger le fil (HTTP ${response.status}).`);
+      const response = await fetch(`/api/wab/posts?${params}`);
+      const data = await readJsonResponse<{ posts?: Post[]; pagination?: { hasMore?: boolean } }>(response);
+      if (!response.ok) throw new Error((data as { error?: string }).error || `Impossible de charger le fil (HTTP ${response.status}).`);
       setPosts((items) => reset ? data.posts ?? [] : [...items, ...(data.posts ?? [])]);
       setPage(nextPage);
       setHasMore(Boolean(data.pagination?.hasMore));
-    } finally {
-      setLoadingFeed(false);
-    }
+    } finally { setLoadingFeed(false); }
   }, [visitorCountry]);
 
   useEffect(() => { loadFeed(1, true); }, [loadFeed]);
-
-  useEffect(() => {
-    const boost = new URLSearchParams(window.location.search).get("boost");
-    if (!boost) return;
-    fetch(`/api/wab/boosts/${boost}/verify`, { method: "POST" }).then((response) => readJsonResponse<{ active?: boolean }>(response)).then((data) => setMessage(data.active ? "Votre campagne WAB est active." : "Votre paiement est en cours de confirmation.")).catch(() => setMessage("Impossible de confirmer le paiement pour le moment."));
-  }, []);
-
   useEffect(() => {
     const node = marker.current;
     if (!node || !hasMore || loadingFeed) return;
@@ -95,60 +146,66 @@ export default function WabClient() {
 
   async function publish() {
     if (!content.trim()) return;
-    setBusy(true);
-    setMessage("");
+    setBusy(true); setMessage("");
     try {
       let media: unknown[] = [];
       if (selectedFile) {
-        const upload = new FormData();
-        upload.set("file", selectedFile);
+        const upload = new FormData(); upload.set("file", selectedFile);
         const uploadResponse = await fetch("/api/wab/upload", { method: "POST", body: upload });
         const uploadData = await readJsonResponse<{ error?: string; path?: string; mimeType?: string; name?: string }>(uploadResponse);
-        if (!uploadResponse.ok) throw new Error(uploadData.error);
-        media = [uploadData];
+        if (!uploadResponse.ok) throw new Error(uploadData.error); media = [uploadData];
       }
       const response = await fetch("/api/wab/posts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content, type, tags: [], media }) });
       const data = await readJsonResponse<{ error?: string; post?: Post }>(response);
       if (response.status === 401) { window.location.assign(`/auth/login?next=${encodeURIComponent("/wab")}`); return; }
       if (!response.ok) throw new Error(data.error);
-      if (!data.post) throw new Error("La publication n’a pas été renvoyée par le serveur."); setPosts((items) => [data.post!, ...items]);
-      setContent("");
-      setSelectedFile(null);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Publication impossible.");
-    } finally {
-      setBusy(false);
-    }
+      if (!data.post) throw new Error("La publication n’a pas été renvoyée par le serveur.");
+      setPosts((items) => [data.post!, ...items]); setContent(""); setSelectedFile(null);
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Publication impossible."); }
+    finally { setBusy(false); }
   }
 
   return (
-    <main className="min-h-screen bg-[#e9f7f5] pb-20">
-      <section className="relative overflow-hidden bg-[#082843] text-white">
-        <div className="absolute -right-20 -top-28 h-80 w-80 rounded-full bg-[#087e8b]/30 blur-3xl" />
-        <div className="absolute -bottom-40 left-1/3 h-80 w-80 rounded-full bg-[#8ee0c0]/15 blur-3xl" />
-        <div className="relative mx-auto max-w-6xl px-5 pb-10 pt-20 lg:px-8 lg:pb-14 lg:pt-12">
-          <div className="flex flex-wrap items-center justify-between gap-5">
-            <div className="flex items-center gap-3"><WabMark /><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#8ee0c0]">World Africa Business</p><p className="mt-1 text-sm text-slate-300">Le réseau professionnel africain</p></div></div>
-            <a href="#publier" className="rounded-full border border-white/20 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10">Partager une opportunité <span aria-hidden="true">→</span></a>
+    <main className="min-h-screen bg-[#e9f7f5] pb-20 font-body text-[#111e1d] md:pb-0">
+      <ModelHeader />
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-4 py-3 md:flex-row md:gap-6 md:px-10 md:py-6">
+        <ModelSidebar />
+        <section className="flex w-full max-w-[800px] flex-1 flex-col gap-6">
+          <div id="publier" className="flex items-center gap-3 rounded-3xl border border-[#d1e9e6] bg-white p-4 shadow-[0_2px_8px_rgba(8,40,67,0.08)]">
+            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full"><ModelAvatar src={MODEL_AUTHOR} alt="Avatar de publication" className="h-full w-full object-cover" /></div>
+            <div className="min-w-0 flex-1">
+              <textarea value={content} onChange={(event) => setContent(event.target.value)} rows={1} placeholder="What’s on your mind?" className="w-full resize-none rounded-full border border-transparent bg-[#eefcfa] px-4 py-3 text-sm text-[#111e1d] outline-none transition placeholder:text-[#43474d] focus:border-[#006874]" />
+              <div className="mt-2 flex flex-wrap items-center justify-end gap-2 sm:justify-between">
+                <div className="hidden items-center gap-2 sm:flex"><select value={type} onChange={(event) => setType(event.target.value)} aria-label="Type de publication" className="rounded-lg border border-[#c3c6ce] bg-white px-2 py-1 text-xs"><option value="text">Texte</option><option value="opportunity">Opportunité</option><option value="document">Document</option><option value="video">Vidéo</option></select><label className="cursor-pointer text-xs font-semibold text-[#006874]">Joindre un média<input type="file" className="hidden" accept="image/jpeg,image/png,image/webp,video/mp4,application/pdf,.docx,.xlsx,.pptx" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} /></label></div>
+                <button type="button" disabled={busy || !content.trim()} onClick={publish} className="rounded-lg bg-[#006874] px-4 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">{busy ? "Publication…" : "Publier"}</button>
+              </div>
+            </div>
           </div>
-          <div className="mt-10 max-w-3xl"><h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-5xl">Les idées africaines méritent un réseau à leur hauteur.</h1><p className="mt-4 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">Partagez une expertise, trouvez un partenaire, découvrez une opportunité et construisez des collaborations concrètes sur le continent.</p></div>
-          <nav className="mt-9 hidden gap-2 overflow-x-auto pb-1 md:flex" aria-label="Navigation WAB">{navItems.map((item, index) => <a key={item.label} href={item.href} className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition ${index === 0 ? "bg-[#8ee0c0] text-[#082843]" : "bg-white/10 text-slate-200 hover:bg-white/15"}`}><span className="material-symbols-outlined text-[18px]">{item.icon}</span>{item.label}</a>)}</nav>
-        </div>
-      </section>
 
-      <nav className="fixed inset-x-0 top-[112px] z-30 flex gap-1 overflow-x-auto border-b border-[#c7e5df] bg-[#eefcfa]/95 px-3 py-2 shadow-md backdrop-blur md:hidden" aria-label="Navigation WAB mobile">{navItems.map((item, index) => <a key={item.label} href={item.href} className={`flex min-w-max items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-extrabold transition ${index === 0 ? "bg-[#006874] text-white" : "text-[#082843] hover:bg-[#d7e5e3]"}`}><span className="material-symbols-outlined text-[16px]">{item.icon}</span>{item.label}</a>)}</nav>
+          <div className="flex flex-col gap-6">
+            {posts.map((post, index) => (
+              <article key={post.id} className="relative flex flex-col gap-4 overflow-hidden rounded-3xl border border-[#d1e9e6] bg-white p-5 shadow-[0_2px_8px_rgba(8,40,67,0.08)] transition-shadow hover:shadow-[0_8px_24px_rgba(8,40,67,0.12)]">
+                {index === 0 || post.isBoosted ? <div className="premium-gradient absolute inset-x-0 top-0 h-1" /> : null}
+                {post.isBoosted && <span className="absolute right-5 top-5 rounded-full bg-[#fff0c7] px-2 py-1 text-[10px] font-bold text-[#875600]">Sponsored</span>}
+                {post.id === "model-sponsored" ? null : <PostViewTracker postId={post.id} />}
+                <div className="flex items-start justify-between gap-3 pt-1">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <ModelAvatar src={post.authorAvatarUrl || (index === 0 ? MODEL_COMPANY : MODEL_AUTHOR)} alt={`Photo de ${post.author}`} className={`h-12 w-12 shrink-0 object-cover ${index === 0 ? "rounded-lg" : "rounded-full"}`} />
+                    <div className="min-w-0"><h2 className="truncate text-sm font-bold text-[#001325]">{post.author}</h2><p className="truncate text-xs text-[#43474d]">{post.headline} · {post.location}</p></div>
+                  </div>
+                  <button type="button" aria-label="Plus d’options" className="text-[#43474d]"><span className="material-symbols-outlined">more_horiz</span></button>
+                </div>
+                <div className="text-sm leading-6 text-[#111e1d]"><p className="mb-3 whitespace-pre-line">{post.content}</p><div className="mb-3 flex flex-wrap gap-2">{post.tags.map((tag) => <span key={tag} className="rounded-full bg-[#e6f2f3] px-3 py-1 text-[11px] font-semibold text-[#006874]">#{tag}</span>)}</div>{post.media && <PostMedia postId={post.id} media={post.media} />}</div>
+                <div className="flex items-center gap-1 border-t border-[#001325]/10 pt-3"><ModelActionButton icon="favorite" label="Like" /><ModelActionButton icon="chat_bubble" label="Comment" /><ModelActionButton icon={post.type === "document" ? "share" : "campaign"} label={post.type === "document" ? "Share" : "Promote"} /></div>
 
-      <div className="mx-auto grid max-w-6xl gap-6 px-5 py-8 lg:grid-cols-[220px_minmax(0,1fr)_260px] lg:px-8">
-        <aside className="hidden lg:block"><div className="sticky top-24 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="px-3 pb-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#087e8b]">Votre espace</p><nav className="space-y-1">{navItems.map((item, index) => <a key={item.label} href={item.href} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold ${index === 0 ? "bg-[#e9f7f5] text-[#087e8b]" : "text-slate-600 hover:bg-slate-50"}`}><span className="material-symbols-outlined text-[19px]">{item.icon}</span>{item.label}</a>)}</nav><a href="/wab/profil" className="mt-5 flex items-center justify-center rounded-xl bg-[#082843] px-3 py-3 text-sm font-bold text-white transition hover:bg-[#0d3b62]">Compléter mon profil</a></div></aside>
-
-        <section className="min-w-0">
-          <StoriesReelsCarousel />
-          <div id="publier" className="scroll-mt-24 rounded-3xl border border-[#c7e5df] bg-white p-5 shadow-[0_2px_12px_rgba(8,40,67,0.08)] sm:p-6"><div className="flex gap-3"><WabMark /><div className="min-w-0 flex-1"><p className="font-display text-base font-extrabold text-slate-900">Qu’avez-vous à partager aujourd’hui ?</p><textarea value={content} onChange={(event) => setContent(event.target.value)} rows={3} placeholder="Une idée, une opportunité ou une expertise professionnelle…" className="mt-3 w-full resize-none rounded-xl bg-slate-50 p-3 text-sm leading-6 outline-none ring-[#087e8b]/20 transition focus:ring-2" /></div></div><div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4"><div className="flex flex-wrap items-center gap-2"><select value={type} onChange={(event) => setType(event.target.value)} aria-label="Type de publication" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700"><option value="text">Texte</option><option value="opportunity">Opportunité</option><option value="document">Document</option><option value="video">Vidéo</option></select><label className="cursor-pointer rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 transition hover:border-[#087e8b] hover:text-[#087e8b]">Joindre un média<input type="file" className="hidden" accept="image/jpeg,image/png,image/webp,video/mp4,application/pdf,.docx,.xlsx,.pptx" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} /></label>{selectedFile && <span className="max-w-[180px] truncate text-xs text-slate-500">{selectedFile.name}</span>}</div><button type="button" disabled={busy || !content.trim()} onClick={publish} className="rounded-lg bg-[#087e8b] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#066671] disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Publication…" : "Publier"}</button></div>{message && <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{message}</p>}</div>
-
-          <div className="mt-5 space-y-4">{posts.map((post) => <article key={post.id} className="rounded-3xl border border-[#c7e5df] bg-white p-5 shadow-[0_2px_12px_rgba(8,40,67,0.08)] transition-shadow hover:shadow-[0_8px_24px_rgba(8,40,67,0.12)] sm:p-6">{post.type !== "video" && <PostViewTracker postId={post.id} />}{post.isBoosted && <span className="rounded-full bg-[#fff1c9] px-3 py-1 text-xs font-extrabold text-[#875600]">★ Publication sponsorisée</span>}<div className="mt-3 flex items-start justify-between gap-3"><div className="flex min-w-0 items-center gap-3"><AuthorAvatar name={post.author} src={post.authorAvatarUrl} /><div className="min-w-0"><h2 className="font-display text-base font-extrabold text-slate-900">{post.author}</h2><p className="mt-1 truncate text-sm text-slate-500">{post.headline} · {post.location}</p></div></div><span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500">{post.type}</span></div><p className="mt-4 whitespace-pre-line leading-7 text-slate-700">{post.content}</p>{post.media && <PostMedia postId={post.id} media={post.media} />}<div className="mt-4 flex flex-wrap gap-2">{post.tags.map((tag) => <span key={tag} className="rounded-full bg-[#e9f7f5] px-3 py-1 text-xs font-bold text-[#087e8b]">#{tag}</span>)}</div><PostActions postId={post.id} initialLikes={post.likes} comments={post.comments} /><CommentsPanel postId={post.id} /><p className="mt-3 text-xs text-slate-400">{post.views} vues</p></article>)}{loadingFeed && <p className="py-6 text-center text-sm font-semibold text-slate-500">Chargement du fil professionnel…</p>}{!loadingFeed && posts.length === 0 && <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center"><span className="material-symbols-outlined text-4xl text-[#087e8b]">forum</span><h2 className="mt-3 font-display text-lg font-extrabold">Le réseau se construit avec vous</h2><p className="mt-2 text-sm text-slate-500">Soyez le premier à partager une opportunité ou une expertise.</p></div>}<div ref={marker} /></div>
+              </article>
+            ))}
+            {loadingFeed && <p className="py-8 text-center text-sm font-semibold text-[#43474d]">Chargement du fil professionnel…</p>}
+            {!loadingFeed && posts.length === 0 && <div className="rounded-3xl border border-dashed border-[#c3c6ce] bg-white p-10 text-center"><h2 className="font-display text-lg font-bold">Le réseau se construit avec vous</h2><p className="mt-2 text-sm text-[#43474d]">Soyez le premier à partager une opportunité ou une expertise.</p></div>}
+            <div ref={marker} className="flex justify-center py-8"><span className="material-symbols-outlined animate-spin text-3xl text-[#006874]">refresh</span></div>
+          </div>
+          {message && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{message}</p>}
         </section>
-
-        <aside className="space-y-4"><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-xs font-bold uppercase tracking-wider text-[#087e8b]">Salons</p><h2 className="mt-2 font-display text-lg font-extrabold">Échangez en direct</h2><p className="mt-2 text-sm leading-6 text-slate-600">Débats, formations et rencontres professionnelles pour apprendre et créer des liens.</p><a href="/salons" className="mt-4 inline-flex text-sm font-bold text-[#087e8b]">Voir les Salons <span className="ml-1">→</span></a></div><div className="rounded-2xl bg-[#fff3dc] p-5"><p className="text-xs font-bold uppercase tracking-wider text-[#a36300]">Créateurs</p><p className="mt-2 text-sm leading-6 text-slate-700">Les publications peuvent être éligibles à une rémunération après validation manuelle des vues et du temps vidéo.</p></div><div className="rounded-2xl bg-[#082843] p-5 text-white"><p className="text-xs font-bold uppercase tracking-wider text-[#8ee0c0]">Construire ensemble</p><p className="mt-2 text-sm leading-6 text-slate-300">Une compétence, un contact ou une idée peut devenir la prochaine grande opportunité africaine.</p></div></aside>
       </div>
     </main>
   );
