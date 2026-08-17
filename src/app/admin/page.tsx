@@ -1,17 +1,10 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { verifyToken, COOKIE_NAME } from "@/lib/auth";
+import { getCurrentUserFromCookie } from "@/lib/auth";
 import { readDB } from "@/lib/db";
 import AdminDashboardClient from "./AdminClient";
 
 async function getUser() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  if (!token) return null;
-  const decoded = verifyToken(token);
-  if (!decoded) return null;
-  const db = readDB();
-  return db.users.find(u=>u.id===decoded.id) || null;
+  return getCurrentUserFromCookie();
 }
 
 export default async function AdminPage() {
