@@ -1,6 +1,8 @@
 ﻿"use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import CommentsPanel from "./CommentsPanel";
+import PostActions from "./PostActions";
 import PostMedia from "./PostMedia";
 import PostViewTracker from "./PostViewTracker";
 
@@ -8,6 +10,7 @@ type Post = {
   id: string;
   author: string;
   authorAvatarUrl?: string;
+  authorUserId?: string;
   headline: string;
   location: string;
   content: string;
@@ -117,6 +120,7 @@ export default function WabClient() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingFeed, setLoadingFeed] = useState(false);
+  const [commentSignals, setCommentSignals] = useState<Record<string, number>>({});
   const marker = useRef<HTMLDivElement>(null);
 
   useEffect(() => { fetch("/api/geo").then((response) => readJsonResponse<{ country?: string }>(response)).then((data) => setVisitorCountry(data.country ?? "")).catch(() => undefined); }, []);
@@ -143,6 +147,8 @@ export default function WabClient() {
     observer.observe(node);
     return () => observer.disconnect();
   }, [hasMore, loadingFeed, loadFeed, page]);
+
+  function openComments(postId: string) { setCommentSignals((signals) => ({ ...signals, [postId]: (signals[postId] ?? 0) + 1 })); }
 
   async function publish() {
     if (!content.trim()) return;
@@ -190,13 +196,14 @@ export default function WabClient() {
                 {post.id === "model-sponsored" ? null : <PostViewTracker postId={post.id} />}
                 <div className="flex items-start justify-between gap-3 pt-1">
                   <div className="flex min-w-0 items-center gap-3">
-                    <ModelAvatar src={post.authorAvatarUrl || (index === 0 ? MODEL_COMPANY : MODEL_AUTHOR)} alt={`Photo de ${post.author}`} className={`h-12 w-12 shrink-0 object-cover ${index === 0 ? "rounded-lg" : "rounded-full"}`} />
-                    <div className="min-w-0"><h2 className="truncate text-sm font-bold text-[#001325]">{post.author}</h2><p className="truncate text-xs text-[#43474d]">{post.headline} · {post.location}</p></div>
+                    <a href={`/wab/profil?author=${encodeURIComponent(post.author)}`} aria-label={`Ouvrir le profil de ${post.author}`} className="h-12 w-12 shrink-0 overflow-hidden rounded-full transition hover:scale-105"><ModelAvatar src={post.authorAvatarUrl || (index === 0 ? MODEL_COMPANY : MODEL_AUTHOR)} alt={`Photo de ${post.author}`} className="h-full w-full object-cover" /></a>
+                    <div className="min-w-0"><a href={`/wab/profil?author=${encodeURIComponent(post.author)}`} className="block truncate text-sm font-bold text-[#001325] hover:text-[#006874]">{post.author}</a><p className="truncate text-xs text-[#43474d]">{post.headline} · {post.location}</p></div>
                   </div>
                   <button type="button" aria-label="Plus d’options" className="text-[#43474d]"><span className="material-symbols-outlined">more_horiz</span></button>
                 </div>
                 <div className="text-sm leading-6 text-[#111e1d]"><p className="mb-3 whitespace-pre-line">{post.content}</p><div className="mb-3 flex flex-wrap gap-2">{post.tags.map((tag) => <span key={tag} className="rounded-full bg-[#e6f2f3] px-3 py-1 text-[11px] font-semibold text-[#006874]">#{tag}</span>)}</div>{post.media && <PostMedia postId={post.id} media={post.media} />}</div>
-                <div className="flex items-center gap-1 border-t border-[#001325]/10 pt-3"><ModelActionButton icon="favorite" label="Like" /><ModelActionButton icon="chat_bubble" label="Comment" /><ModelActionButton icon={post.type === "document" ? "share" : "campaign"} label={post.type === "document" ? "Share" : "Promote"} /></div>
+                <PostActions postId={post.id} initialLikes={post.likes} comments={post.comments} onComment={() => openComments(post.id)} />
+                <CommentsPanel postId={post.id} openSignal={commentSignals[post.id] ?? 0} />
 
               </article>
             ))}
