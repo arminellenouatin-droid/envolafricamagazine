@@ -47,6 +47,7 @@
       "location": "Nairobi, Kenya",
       "content": "Retour sur notre étude des parcours de paiement des entrepreneurs africains. Le document présente les usages et recommandations pour les plateformes B2B régionales.",
       "type": "document",
+      "media": [{"path":"https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf","mimeType":"application/pdf","name":"Etude-parcours-paiement.pdf"}],
       "tags": [
         "Fintech",
         "Étude",
@@ -59,6 +60,23 @@
       "isBoosted": false,
       "createdAt": "2026-08-14T18:00:00.000Z",
       "moderationStatus": "published"
+    },
+    {
+      "id": "wab-demo-image",
+      "author": "Aïcha Bamba",
+      "headline": "Fondatrice · Abidjan Green Logistics",
+      "location": "Abidjan, Côte d’Ivoire",
+      "content": "Aperçu de notre hub de logistique durable et de notre nouvelle équipe opérationnelle.",
+      "type": "text",
+      "media": [{"path":"https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1400&auto=format&fit=crop","mimeType":"image/jpeg","name":"hub-logistique.jpg"}],
+      "tags": ["Logistique", "Innovation"],
+      "views": 428,
+      "watchSeconds": 0,
+      "likes": 36,
+      "comments": 5,
+      "isBoosted": false,
+      "createdAt": "2026-08-17T08:45:00.000Z",
+      "moderationStatus": "published"
     }
   ],
   "profiles": [
@@ -70,6 +88,15 @@
   "reports": [],
   "views": [],
   "rewards": [],
+  "stories": [
+    {"id":"story-demo-aicha","author":"Aïcha Bamba","avatarUrl":"https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=160&auto=format&fit=crop","mediaUrl":"https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&auto=format&fit=crop","mimeType":"image/jpeg","caption":"Notre nouvel espace logistique à Abidjan.","createdAt":"2026-08-17T08:00:00.000Z","expiresAt":"2026-08-18T08:00:00.000Z","views":238,"likes":28,"moderationStatus":"published"},
+    {"id":"story-demo-moussa","author":"Moussa Diallo","avatarUrl":"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160&auto=format&fit=crop","mediaUrl":"https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1200&auto=format&fit=crop","mimeType":"image/jpeg","caption":"Session conseil avec les PME exportatrices.","createdAt":"2026-08-17T07:30:00.000Z","expiresAt":"2026-08-18T07:30:00.000Z","views":184,"likes":19,"moderationStatus":"published"},
+    {"id":"story-demo-njeri","author":"Njeri Wanjiku","avatarUrl":"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160&auto=format&fit=crop","mediaUrl":"https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=1200&auto=format&fit=crop","mimeType":"image/jpeg","caption":"Les équipes fintech préparent la rentrée.","createdAt":"2026-08-17T06:45:00.000Z","expiresAt":"2026-08-18T06:45:00.000Z","views":321,"likes":42,"moderationStatus":"published"}
+  ],
+  "reels": [
+    {"id":"reel-demo-1","author":"WAB Business","mediaUrl":"https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4","mimeType":"video/mp4","caption":"Une idée, un partenaire, une opportunité : le réseau WAB en mouvement.","createdAt":"2026-08-17T08:30:00.000Z","views":682,"likes":87,"moderationStatus":"published"},
+    {"id":"reel-demo-2","author":"Abidjan Green Logistics","mediaUrl":"https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4","mimeType":"video/mp4","caption":"Dans les coulisses de la logistique urbaine durable.","createdAt":"2026-08-16T17:00:00.000Z","views":514,"likes":61,"moderationStatus":"published"}
+  ],
   "salons": [
     {"id":"salon-demo-finance-africa","hostUserId":"demo-wab-moussa","host":"Moussa Diallo","title":"Financer la croissance des PME africaines","description":"Débat professionnel sur les leviers de financement, les paiements transfrontaliers et la préparation à l’export.","startsAt":"2026-08-25T17:00:00.000Z","status":"scheduled","participants":42,"createdAt":"2026-08-15T12:00:00.000Z"}
   ],
