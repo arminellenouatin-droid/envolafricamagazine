@@ -126,3 +126,44 @@ h1, h2, h3, h4, .font-display {
 .mobile-secondary-item__icon { display: grid; height: 1.65rem; width: 1.65rem; place-items: center; border-radius: 999px; background: #9e001f; color: white; }
 @media (max-width: 360px) { .mobile-nav-item { font-size: .52rem; } .mobile-secondary-menu { width: 15.5rem; } .mobile-secondary-item { font-size: .5rem; padding-right: .4rem; } }
 @media (prefers-reduced-motion: reduce) { .mobile-nav-item, .mobile-nav-item::after, .mobile-plus-button, .mobile-secondary-item { transition-duration: .01ms !important; } .mobile-secondary-item { transform: none !important; } .mobile-secondary-menu--open .mobile-secondary-item { opacity: 1; } }
+
+/* Editorial Bordeaux landing page: serif-led hierarchy, warm ivory, graphite, restrained bordeaux. */
+.magazine-home { --editorial-bordeaux: #9e001f; --editorial-ink: #2b2525; --editorial-ivory: #fcf9f8; --editorial-line: #d8c3c1; font-family: Montserrat, Arial, sans-serif; }
+.magazine-home .font-serif, .magazine-home .font-serif * { font-family: "Source Serif 4", Georgia, serif; }
+.magazine-home .font-sans, .magazine-home .font-sans * { font-family: Montserrat, Arial, sans-serif; }
+.magazine-display { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; letter-spacing: -0.045em; text-wrap: balance; }
+.magazine-section-title { font-family: "Source Serif 4", Georgia, serif; font-size: clamp(2rem, 3vw, 3rem); font-weight: 600; letter-spacing: -0.035em; line-height: 0.98; text-wrap: balance; }
+.editorial-kicker { color: var(--editorial-bordeaux); font-family: Montserrat, Arial, sans-serif; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.16em; line-height: 1.2; text-transform: uppercase; }
+.editorial-tag { color: var(--editorial-bordeaux); font-family: Montserrat, Arial, sans-serif; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.13em; text-transform: uppercase; }
+.editorial-link { align-items: center; color: var(--editorial-bordeaux); display: inline-flex; font-family: Montserrat, Arial, sans-serif; font-size: 0.68rem; font-weight: 800; gap: 0.45rem; letter-spacing: 0.1em; text-transform: uppercase; transition: gap 180ms cubic-bezier(0.23, 1, 0.32, 1), color 180ms ease; }
+.editorial-link:hover { color: #c8102e; gap: 0.7rem; }
+.editorial-cta { align-items: center; background: var(--editorial-bordeaux); color: white; display: inline-flex; font-family: Montserrat, Arial, sans-serif; font-size: 0.72rem; font-weight: 800; gap: 1.1rem; justify-content: center; letter-spacing: 0.08em; padding: 1rem 1.25rem; text-transform: uppercase; transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 180ms ease, background-color 180ms ease; }
+.editorial-cta:hover { background: #b80d32; box-shadow: 0 12px 25px rgba(158, 0, 31, 0.2); transform: translateY(-2px); }
+.editorial-cta:active { transform: scale(0.97); }
+.hero-story, .editorial-side-story, .magazine-cover, .reading-row, .opportunity-line, .most-read-row { transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1), border-color 180ms ease, box-shadow 220ms ease, color 180ms ease; }
+.editorial-side-story:hover { border-color: #b98b88; box-shadow: 0 16px 30px rgba(66, 28, 34, 0.1); transform: translateY(-3px); }
+.magazine-cover:hover { transform: translateY(-5px); }
+.reading-row:hover { border-color: #b98b88; transform: translateX(4px); }
+.opportunity-line:hover { border-color: rgba(240, 178, 126, 0.8); transform: translateX(3px); }
+.most-read-row:hover { border-color: #b98b88; transform: translateY(-2px); }
+.magazine-rail { scrollbar-color: #b98b88 transparent; scrollbar-width: thin; }
+.magazine-rail::-webkit-scrollbar { height: 5px; }
+.magazine-rail::-webkit-scrollbar-thumb { background: #b98b88; border-radius: 5px; }
+.magazine-home a:focus-visible, .magazine-home button:focus-visible { outline: 3px solid rgba(158, 0, 31, 0.38); outline-offset: 3px; }
+@media (min-width: 1024px) {
+  .magazine-home .hero-story { animation: editorial-rise 520ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+  .magazine-home .editorial-side-story { animation: editorial-rise 520ms cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 80ms; }
+}
+@keyframes editorial-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .magazine-home *, .magazine-home *::before, .magazine-home *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 1ms !important; }
+}
+/* Header polish: desktop gains hierarchy; mobile layout remains unchanged, only icon controls are refined. */
+@media (min-width: 768px) {
+  header.sticky { box-shadow: 0 6px 22px rgba(66, 28, 34, 0.06); }
+  header.sticky .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 430, 'GRAD' 0, 'opsz' 22; }
+}
+@media (max-width: 767px) {
+  header.sticky .material-symbols-outlined, .mobile-bottom-nav .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 430, 'GRAD' 0, 'opsz' 22; }
+  .mobile-bottom-nav__surface { box-shadow: 0 -12px 32px rgba(66, 28, 34, 0.13); }
+}
