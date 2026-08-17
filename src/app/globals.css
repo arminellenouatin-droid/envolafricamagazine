@@ -103,3 +103,26 @@ h1, h2, h3, h4, .font-display {
 
 .custom-scrollbar::-webkit-scrollbar { height: 4px; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #9e001f; border-radius: 10px; }
+
+/* Editorial Burgundy mobile navigation: four destinations visibles, bouton central dominant, éventail réversible et motion accessible. */
+.mobile-bottom-nav__surface { isolation: isolate; }
+.mobile-nav-item { position: relative; z-index: 2; display: flex; min-width: 0; flex: 1 1 0%; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem; padding: 0.2rem 0.1rem 0.1rem; color: #5c403f; font-size: 0.58rem; font-weight: 700; line-height: 1.1; transition: color 180ms cubic-bezier(0.23, 1, 0.32, 1), transform 150ms cubic-bezier(0.23, 1, 0.32, 1); }
+.mobile-nav-item::after { content: ""; position: absolute; bottom: -0.25rem; height: 0.2rem; width: 1.3rem; border-radius: 999px; background: #9e001f; opacity: 0; transform: translateY(0.3rem) scale(.8); transition: opacity 180ms cubic-bezier(0.23, 1, 0.32, 1), transform 180ms cubic-bezier(0.23, 1, 0.32, 1); }
+.mobile-nav-item--active { color: #9e001f; }
+.mobile-nav-item--active::after { opacity: 1; transform: translateY(0) scale(1); }
+.mobile-nav-item:active { transform: scale(.97); }
+.mobile-nav-plus-wrap { position: relative; z-index: 5; display: flex; flex: 1 1 0%; justify-content: center; margin-top: -2.05rem; }
+.mobile-plus-button { display: grid; height: 3.8rem; width: 3.8rem; place-items: center; border: 0.28rem solid #fffdfc; border-radius: 999px; background: #9e001f; color: white; box-shadow: 0 0.7rem 1.5rem rgba(158, 0, 31, .28); transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1), background-color 180ms ease, box-shadow 180ms ease; }
+.mobile-plus-button:active { transform: scale(.97); }
+.mobile-plus-button--open { background: #303030; box-shadow: 0 0.7rem 1.5rem rgba(48, 48, 48, .24); }
+.mobile-secondary-menu { pointer-events: none; position: absolute; bottom: 4.35rem; left: 50%; z-index: 4; height: 7.25rem; width: min(17.5rem, 84vw); transform: translateX(-50%); }
+.mobile-secondary-item { position: absolute; bottom: 0; display: flex; transform: translateY(1rem) scale(.95); transform-origin: 50% 100%; opacity: 0; align-items: center; gap: .35rem; border: 1px solid #e5bdbb; border-radius: 999px; padding: .4rem .55rem .4rem .4rem; background: rgba(255, 253, 252, .98); color: #303030; box-shadow: 0 .7rem 1.5rem rgba(79, 13, 25, .12); font-size: .58rem; font-weight: 800; white-space: nowrap; transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1), opacity 180ms ease; transition-delay: var(--mobile-delay); }
+.mobile-secondary-item:nth-child(1) { left: 0; }
+.mobile-secondary-item:nth-child(2) { left: 50%; translate: -50% 0; }
+.mobile-secondary-item:nth-child(3) { right: 0; }
+.mobile-secondary-menu--open { pointer-events: auto; }
+.mobile-secondary-menu--open .mobile-secondary-item { opacity: 1; transform: translateY(0) scale(1); }
+.mobile-secondary-menu--open .mobile-secondary-item:nth-child(2) { translate: -50% 0; }
+.mobile-secondary-item__icon { display: grid; height: 1.65rem; width: 1.65rem; place-items: center; border-radius: 999px; background: #9e001f; color: white; }
+@media (max-width: 360px) { .mobile-nav-item { font-size: .52rem; } .mobile-secondary-menu { width: 15.5rem; } .mobile-secondary-item { font-size: .5rem; padding-right: .4rem; } }
+@media (prefers-reduced-motion: reduce) { .mobile-nav-item, .mobile-nav-item::after, .mobile-plus-button, .mobile-secondary-item { transition-duration: .01ms !important; } .mobile-secondary-item { transform: none !important; } .mobile-secondary-menu--open .mobile-secondary-item { opacity: 1; } }

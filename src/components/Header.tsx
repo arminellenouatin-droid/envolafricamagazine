@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { getPlatformKey, PLATFORM_CONFIGS, platformOptions, type PlatformConfig } from "@/lib/platforms";
 import { internalBrowserHref } from "@/lib/internal-browser";
 
@@ -15,6 +14,19 @@ const firstLineMenus = [
   { name: "Africa Awards", href: "/africa-awards", icon: "emoji_events" },
   { name: "Salons", href: "/salons", icon: "event_seat" },
   { name: "World Africa Business", href: "/wab", icon: "public" },
+];
+
+const mobilePrimaryNav = [
+  { name: "Magazine", href: "/", icon: "menu_book" },
+  { name: "Kiosque", href: "/kiosque", icon: "storefront" },
+  { name: "Jobs", href: "/emploi", icon: "work" },
+  { name: "WAB", href: "/wab", icon: "public" },
+];
+
+const mobileSecondaryNav = [
+  { name: "Crowdfunding", href: "/financement", icon: "volunteer_activism" },
+  { name: "Marketplace", href: "/marketplace", icon: "shopping_bag" },
+  { name: "Africa Awards", href: "/africa-awards", icon: "emoji_events" },
 ];
 
 function urlBase64ToUint8Array(value: string) {
@@ -64,9 +76,22 @@ function MegaMenu({ platform, onClose }: { platform: PlatformConfig; onClose: ()
 }
 
 export default function Header({ user }: { user?: { id: string; nom?: string; prenom?: string; email?: string; role?: string } }) {
-  const pathname = usePathname();
+  const [pathname, setPathname] = useState("/");
+  useEffect(() => {
+    const syncPathname = () => setPathname(window.location.pathname);
+    const originalPushState = window.history.pushState;
+    const originalReplaceState = window.history.replaceState;
+    const notifyLocationChange = () => window.dispatchEvent(new Event("locationchange"));
+    window.history.pushState = function (...args) { const result = originalPushState.apply(this, args as Parameters<History["pushState"]>); notifyLocationChange(); return result; };
+    window.history.replaceState = function (...args) { const result = originalReplaceState.apply(this, args as Parameters<History["replaceState"]>); notifyLocationChange(); return result; };
+    syncPathname();
+    window.addEventListener("popstate", syncPathname);
+    window.addEventListener("locationchange", syncPathname);
+    return () => { window.history.pushState = originalPushState; window.history.replaceState = originalReplaceState; window.removeEventListener("popstate", syncPathname); window.removeEventListener("locationchange", syncPathname); };
+  }, []);
   const platform = useMemo(() => PLATFORM_CONFIGS[getPlatformKey(pathname)], [pathname]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
   const [megaMenuOpen, setMegaMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -218,7 +243,24 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
           {megaMenuOpen && <div className="relative z-50"><MegaMenu platform={platform} onClose={() => setMegaMenuOpen(false)} /></div>}
           {showSearch && <div className="border-b bg-white p-4"><form onSubmit={(event) => { event.preventDefault(); if (searchQuery.trim()) window.location.assign(`/recherche?q=${encodeURIComponent(searchQuery.trim())}`); }}><input autoFocus value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Rechercher..." className="h-11 w-full rounded-lg border bg-[#f6f3f2] px-4" /></form></div>}
         </div>
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e5bdbb] bg-white/95 px-2 py-2 backdrop-blur"><div className="flex items-center justify-around">{[{ name: "Accueil", href: platform.homeHref, icon: "home" }, { name: "Kiosque", href: "/kiosque", icon: "menu_book" }, { name: "Jobs", href: "/emploi", icon: "work" }, { name: "Crowdfunding", href: "/financement", icon: "volunteer_activism" }, { name: "Marketplace", href: "/marketplace", icon: "storefront" }, { name: "Awards", href: "/africa-awards", icon: "emoji_events" }, { name: "WAB", href: "/wab", icon: "public" }].map((item) => <Link key={item.name} href={item.href} className={`flex flex-col items-center gap-1 ${pathname === item.href ? "text-[#9e001f]" : "text-[#5c403f]"}`}><span className="material-symbols-outlined text-[20px]">{item.icon}</span><span className="text-[9px] font-medium">{item.name}</span></Link>)}</div></div>
+        <div className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.7rem,env(safe-area-inset-bottom))] pt-2">
+          <div className="mobile-bottom-nav__surface relative mx-auto flex max-w-[520px] items-end justify-between gap-1 rounded-[26px] border border-[#e5bdbb] bg-[#fffdfc]/95 px-2 pb-2 pt-4 shadow-[0_-10px_35px_rgba(79,13,25,0.12)] backdrop-blur-xl">
+            {mobilePrimaryNav.slice(0, 2).map((item) => {
+              const active = pathname === item.href;
+              return <Link key={item.name} href={item.href} className={`mobile-nav-item ${active ? "mobile-nav-item--active" : ""}`} aria-current={active ? "page" : undefined}><span className="material-symbols-outlined text-[21px]">{item.icon}</span><span>{item.name}</span></Link>;
+            })}
+            <div className="mobile-nav-plus-wrap">
+              <div className={`mobile-secondary-menu ${mobileNavOpen ? "mobile-secondary-menu--open" : ""}`} aria-hidden={!mobileNavOpen}>
+                {mobileSecondaryNav.map((item, index) => <Link key={item.name} href={item.href} tabIndex={mobileNavOpen ? 0 : -1} style={{ "--mobile-delay": `${index * 45}ms` } as React.CSSProperties} className="mobile-secondary-item"><span className="mobile-secondary-item__icon"><span className="material-symbols-outlined text-[18px]">{item.icon}</span></span><span>{item.name}</span></Link>)}
+              </div>
+              <button type="button" className={`mobile-plus-button ${mobileNavOpen ? "mobile-plus-button--open" : ""}`} onClick={() => setMobileNavOpen((open) => !open)} aria-label={mobileNavOpen ? "Fermer les commandes" : "Afficher les commandes supplémentaires"} aria-expanded={mobileNavOpen}><span className="material-symbols-outlined text-[28px]">{mobileNavOpen ? "close" : "add"}</span></button>
+            </div>
+            {mobilePrimaryNav.slice(2).map((item) => {
+              const active = pathname === item.href;
+              return <Link key={item.name} href={item.href} className={`mobile-nav-item ${active ? "mobile-nav-item--active" : ""}`} aria-current={active ? "page" : undefined}><span className="material-symbols-outlined text-[21px]">{item.icon}</span><span>{item.name}</span></Link>;
+            })}
+          </div>
+        </div>
       </div>
 
       {notificationPrompt && <div className="fixed bottom-20 left-1/2 z-[120] w-[min(92vw,440px)] -translate-x-1/2 rounded-2xl md:bottom-6 border border-[#e5bdbb] bg-white p-5 shadow-2xl"><div className="flex items-start gap-3"><span className="material-symbols-outlined mt-0.5 text-[#9e001f]">notifications_active</span><div className="flex-1"><h2 className="font-display text-base font-extrabold">Recevoir les nouvelles publications ?</h2><p className="mt-1 text-sm leading-6 text-slate-600">Autorisez les notifications pour être informé des nouveaux articles, magazines, publications WAB et informations de vos groupes.</p><div className="mt-4 flex justify-end gap-2"><button type="button" onClick={dismissNotificationPrompt} className="rounded-lg px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50">Plus tard</button><button type="button" onClick={requestNotifications} className="rounded-lg bg-[#9e001f] px-4 py-2 text-xs font-bold text-white hover:bg-[#c8102e]">Autoriser</button></div></div></div></div>}

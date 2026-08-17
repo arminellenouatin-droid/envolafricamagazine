@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Header from "@/components/Header";
+import Header from "@/components/HeaderShell";
 import Footer from "@/components/Footer";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 

@@ -218,7 +218,7 @@ export async function toggleReactionOnPost(postId: string, userId: string) {
   const { count } = await supabase.from("wab_post_reactions").select("*", { count: "exact", head: true }).eq("post_id", postId);
   await supabase.from("wab_posts").update({ likes_count: count || 0 }).eq("id", postId);
 
-  return { configured: true as const, reacted };
+  return { configured: true as const, reacted, likes: count || 0 };
 }
 
 // --- CONNECTIONS (FOLLOWS) ---
