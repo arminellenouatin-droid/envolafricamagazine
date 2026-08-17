@@ -61,12 +61,12 @@ export default function MagazineDetailPage() {
         </nav>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-          <div className="md:col-span-5 lg:col-span-4 sticky top-32">
+          <div className="md:col-span-5 lg:col-span-4 md:sticky md:top-32 md:self-start">
             <div className="relative group">
               <div className="aspect-[3/4] w-full bg-[#eae7e7] rounded-lg overflow-hidden shadow-2xl relative" style={{ boxShadow: "inset 12px 0 15px -10px rgba(0,0,0,0.5)" }}>
                 <img src={magazine.cover} alt={magazine.title} className="w-full h-full object-cover rounded-lg" />
                 <div className="absolute inset-0 bg-black/5 pointer-events-none"></div>
-                <button onClick={()=>alert("Feuilletage: 5 pages gratuites - aperçu limité")} className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/90 backdrop-blur-md text-[#9e001f] px-6 py-3 rounded-full text-[12px] font-bold shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"><span className="material-symbols-outlined">menu_book</span> FEUILLETER L'APERÇU</button>
+                <button onClick={()=>alert("Feuilletage: 5 pages gratuites - aperçu limité")} className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/95 backdrop-blur-md text-[#9e001f] px-5 py-3 rounded-full text-[12px] font-bold shadow-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"><span className="material-symbols-outlined">menu_book</span> FEUILLETER L'APERÇU</button>
               </div>
               <div className="mt-4 flex gap-4 justify-center">
                 {[1,2].map(i=>(
