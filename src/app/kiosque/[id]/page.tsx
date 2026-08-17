@@ -44,7 +44,8 @@ export default function MagazineDetailPage() {
     cart.push({ type:"magazine", magazineId: id, format, language, price: selectedFormat?.price || 10000, title: magazine?.title, cover: magazine?.cover, numero: magazine?.numero });
     localStorage.setItem("eam_cart", JSON.stringify(cart));
     window.dispatchEvent(new Event("storage"));
-    setTimeout(()=>{ setAdding(false); alert("Ajouté au panier !"); }, 400);
+    // L’ajout est immédiat : aucun alert ou clic de confirmation ne bloque le parcours.
+    setTimeout(()=>setAdding(false), 400);
   };
 
   if (loading) return <div className="max-w-[1280px] mx-auto px-6 py-20 text-center">Chargement...</div>;

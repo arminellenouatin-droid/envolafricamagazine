@@ -6,15 +6,31 @@ import { SUBSCRIPTION_PLANS } from "@/lib/constants";
 export default function AbonnementPage() {
   const [billing, setBilling] = useState<"monthly"|"yearly">("monthly");
   const [selected, setSelected] = useState<string>("annuel");
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
-  const addToCart = (planId: string) => {
-    const cart = JSON.parse(localStorage.getItem("eam_cart")||"[]");
+  const startSubscriptionCheckout = async (planId: string) => {
     const plan = SUBSCRIPTION_PLANS.find(p=>p.id===planId);
-    if (!plan) return;
-    cart.push({ type:"subscription", planId, price: (plan as any).firstMonthPrice || plan.price, title: `Abonnement ${plan.name}`, billing });
-    localStorage.setItem("eam_cart", JSON.stringify(cart));
-    window.dispatchEvent(new Event("storage"));
-    window.location.href = "/panier";
+    if (!plan || loadingPlan) return;
+    setSelected(planId);
+    setLoadingPlan(planId);
+    setCheckoutError(null);
+    try {
+      const response = await fetch("/api/payment/init", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currency: "XOF",
+          items: [{ type: "subscription", planId, billing }],
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.checkout_url) throw new Error(data.error || "Le checkout Moneroo est indisponible");
+      window.location.assign(data.checkout_url);
+    } catch (error) {
+      setLoadingPlan(null);
+      setCheckoutError(error instanceof Error ? error.message : "Impossible d’ouvrir le paiement Moneroo");
+    }
   };
 
   return (
@@ -56,12 +72,14 @@ export default function AbonnementPage() {
                     <li key={f} className="flex items-start gap-2 text-[13px] leading-5 text-zinc-700"><span className="w-5 h-5 rounded-full bg-zinc-900 text-white flex items-center justify-center text-[10px] shrink-0 mt-0.5">✓</span>{f}</li>
                   ))}
                 </ul>
-                <button onClick={()=>addToCart(plan.id)} className={`mt-7 w-full h-12 rounded-full font-bold text-[14px] transition-colors ${isPopular ? "bg-[#0A1931] text-white hover:bg-black" : "bg-zinc-900 text-white hover:bg-black"}`}>Choisir {plan.name} →</button>
+                <button onClick={()=>startSubscriptionCheckout(plan.id)} disabled={loadingPlan!==null} className={`mt-7 w-full h-12 rounded-full font-bold text-[14px] transition-colors disabled:opacity-60 ${isPopular ? "bg-[#0A1931] text-white hover:bg-black" : "bg-zinc-900 text-white hover:bg-black"}`}>{loadingPlan===plan.id ? "Ouverture de Moneroo…" : `Choisir ${plan.name} →`}</button>
                 <div className="mt-3 text-center text-[11px] text-zinc-500">Paiement Moneroo • Mobile Money & Carte</div>
               </div>
             );
           })}
         </div>
+
+        {checkoutError && <div role="alert" className="mt-8 max-w-[720px] mx-auto rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-[13px] text-red-800">{checkoutError}</div>}
 
         <div className="mt-16 max-w-[960px] mx-auto grid md:grid-cols-3 gap-4">
           <div className="rounded-[18px] bg-white border border-zinc-100 p-5 flex gap-3"><div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center">🔒</div><div><div className="font-bold text-[13px] text-[#0A1931]">Mur payant inviolable</div><div className="text-[12px] text-zinc-600 mt-1">Le contenu complet n'est jamais envoyé au navigateur sans abonnement. Sécurité serveur.</div></div></div>
