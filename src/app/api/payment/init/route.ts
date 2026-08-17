@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   let createdOrderId: string | undefined;
   try {
     const body = await req.json();
-    const { items, currency = "XOF", shippingCountry, affiliateCode, donAmount } = body;
+    const { items, currency = "XOF", shippingCountry, affiliateCode, donAmount, phone } = body;
     const user = await getCurrentUserFromCookie();
     const magazines = await listMagazines();
 
@@ -97,10 +97,12 @@ export async function POST(req: NextRequest) {
         email: user?.email || body.email || "client@envolafrica.com",
         first_name: user?.prenom || body.firstName || "Client",
         last_name: user?.nom || body.lastName || "Envol",
-        phone: user?.phone || body.phone,
+        phone: user?.phone || phone || body.phone,
+        country: shippingCountry || undefined,
       },
       return_url: `${baseUrl}/panier?order_id=${orderId}&verify=1`,
-      ...(process.env.MONEROO_METHODS ? { methods: process.env.MONEROO_METHODS.split(",").map((method) => method.trim()).filter(Boolean) } : {}),
+      restrict_country_code: shippingCountry || undefined,
+      // Ne pas forcer une méthode : Moneroo sélectionne les méthodes actives du pays.
       metadata: { order_id: orderId, user_id: user?.id || "guest", affiliate: order.affiliateCode },
     });
 

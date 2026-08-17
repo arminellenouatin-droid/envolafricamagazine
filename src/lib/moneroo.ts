@@ -9,10 +9,12 @@ export interface MonerooPaymentData {
     email: string;
     first_name: string;
     last_name: string;
-    phone?: string;
+        phone?: string;
+    country?: string;
   };
   return_url: string;
   methods?: string[];
+  restrict_country_code?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -58,6 +60,7 @@ export async function initMonerooPayment(data: MonerooPaymentData) {
         customer: data.customer,
         return_url: data.return_url,
         ...(data.methods && data.methods.length > 0 ? { methods: data.methods } : {}),
+        ...(data.restrict_country_code ? { restrict_country_code: data.restrict_country_code } : {}),
         metadata: data.metadata,
       }),
     });
