@@ -2,8 +2,12 @@
 import Link from "next/link";
 import { useState } from "react";
 
-export default function ArticlePaywall({ preview, blur, rest, isSubscriber, fullContent, articleId }: { preview: string, blur: string, rest: string, isSubscriber: boolean, fullContent: string, articleId: string }) {
+export default function ArticlePaywall({ preview, blur, rest, isSubscriber, isEncrypted, fullContent, articleId }: { preview: string, blur: string, rest: string, isSubscriber: boolean, isEncrypted: boolean, fullContent: string, articleId: string }) {
   const [liked, setLiked] = useState(false);
+
+  if (!isEncrypted) {
+    return <div className="prose prose-zinc mt-8 max-w-none prose-p:text-[17px] prose-p:leading-[1.8] prose-p:text-zinc-800 prose-headings:font-serif prose-headings:font-bold"><p>{fullContent}</p><div className="mt-8 rounded-[16px] border border-green-100 bg-green-50 p-4 text-[13px] text-green-900">Article librement accessible — merci de soutenir le journalisme panafricain.</div></div>;
+  }
 
   if (isSubscriber) {
     return (

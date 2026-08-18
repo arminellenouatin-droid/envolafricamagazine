@@ -49,6 +49,7 @@ export interface Article {
   image: string;
   images?: string[];
   isPublished: boolean;
+  isEncrypted?: boolean;
   isFeatured: boolean;
   isSentinelle?: boolean;
   isEssor?: boolean;

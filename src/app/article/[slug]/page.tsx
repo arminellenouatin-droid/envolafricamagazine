@@ -84,7 +84,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             </div>
           )}
 
-          <ArticlePaywall preview={preview} blur={blur} rest={isSubscriber ? rest : ""} isSubscriber={isSubscriber} fullContent={isSubscriber ? article.content : ""} articleId={article.id} />
+          <ArticlePaywall preview={preview} blur={blur} rest={isSubscriber ? rest : ""} isSubscriber={isSubscriber} isEncrypted={article.isEncrypted !== false} fullContent={article.isEncrypted === false || isSubscriber ? article.content : ""} articleId={article.id} />
 
           <ArticleActions articleId={article.id} initialLikes={article.likes} />
         </article>

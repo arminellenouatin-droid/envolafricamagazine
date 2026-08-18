@@ -79,6 +79,7 @@ function mapArticle(row: Record<string, unknown>): Article {
     image: String(row.image ?? ""),
     images: Array.isArray(row.images) ? row.images.map(String) : [],
     isPublished: Boolean(row.is_published ?? true),
+    isEncrypted: Boolean(row.is_encrypted ?? true),
     isFeatured: Boolean(row.is_featured ?? false),
     isSentinelle: Boolean(row.is_sentinelle ?? false),
     isEssor: Boolean(row.is_essor ?? false),

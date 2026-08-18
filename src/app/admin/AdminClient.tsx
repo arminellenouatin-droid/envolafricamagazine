@@ -47,6 +47,9 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
   const [editingMag, setEditingMag] = useState<any>(null);
   const [showUserModal, setShowUserModal] = useState<any>(null);
   const [message, setMessage] = useState<string>("");
+  const [savingArticle, setSavingArticle] = useState(false);
+  const [uploadingArticleImage, setUploadingArticleImage] = useState(false);
+  const [articleImage, setArticleImage] = useState("");
 
   const fetchArticles = async () => { const res = await fetch("/api/admin/articles"); if (res.ok) { const d = await res.json(); setArticles(d.articles); } };
   const fetchMagazines = async () => { const res = await fetch("/api/admin/magazines"); if (res.ok) { const d = await res.json(); setMagazines(d.magazines); } };
@@ -70,32 +73,36 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
 
   const handleCreateArticle = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const payload: any = {
-      title: form.get("title"),
-      summary: form.get("summary"),
-      content: form.get("content"),
-      category: form.get("category"),
-      image: form.get("image"),
-      tags: (form.get("tags") as string)?.split(",").map((t:string)=>t.trim()),
-      isPublished: form.get("isPublished")==="on",
-      isFeatured: form.get("isFeatured")==="on",
-      isSentinelle: form.get("isSentinelle")==="on",
-      isEssor: form.get("isEssor")==="on",
-      isOmbreDouce: form.get("isOmbreDouce")==="on",
-    };
-    if (editingArticle) {
-      payload.id = editingArticle.id;
-      const res = await fetch("/api/admin/articles", { method:"PUT", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
-      const data = await res.json();
-      if (res.ok) { setMessage("Article modifié ✅"); fetchArticles(); setShowArticleModal(false); setEditingArticle(null); }
-      else setMessage("Erreur: "+data.error);
-    } else {
-      const res = await fetch("/api/admin/articles", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
-      const data = await res.json();
-      if (res.ok) { setMessage("Article créé ✅"); fetchArticles(); setShowArticleModal(false); }
-      else setMessage("Erreur: "+data.error);
-    }
+    setSavingArticle(true);
+    try {
+      const form = new FormData(e.currentTarget);
+      const payload: any = {
+        title: form.get("title"), summary: form.get("summary"), content: form.get("content"), category: form.get("category"), image: form.get("image") || articleImage,
+        author: form.get("author"), authorId: form.get("authorId"), tags: (form.get("tags") as string)?.split(",").map((t:string)=>t.trim()).filter(Boolean),
+        isEncrypted: form.get("isEncrypted") === "on", isPublished: form.get("isPublished")==="on", isFeatured: form.get("isFeatured")==="on", isSentinelle: form.get("isSentinelle")==="on", isEssor: form.get("isEssor")==="on", isOmbreDouce: form.get("isOmbreDouce")==="on",
+      };
+      if (editingArticle) payload.id = editingArticle.id;
+      const res = await fetch("/api/admin/articles", { method: editingArticle ? "PUT" : "POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
+      const data = await res.json().catch(() => ({ error: "Réponse serveur illisible" }));
+      if (!res.ok) throw new Error(data.error || `Enregistrement impossible (${res.status})`);
+      setMessage(editingArticle ? "Article modifié et enregistré ✅" : "Article créé et enregistré ✅");
+      await fetchArticles();
+      setShowArticleModal(false); setEditingArticle(null); setArticleImage("");
+    } catch (error) {
+      setMessage(`Erreur d’enregistrement : ${error instanceof Error ? error.message : "réessayez"}`);
+    } finally { setSavingArticle(false); }
+  };
+
+  const handleArticleImageUpload = async (file: File) => {
+    setUploadingArticleImage(true);
+    try {
+      const formData = new FormData(); formData.append("file", file); formData.append("type", "cover"); formData.append("magazineId", editingArticle?.id || "article");
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.url) throw new Error(data.error || "Upload impossible");
+      setArticleImage(data.url); setMessage("Image uploadée. Enregistrez l’article pour confirmer ✅");
+    } catch (error) { setMessage(`Erreur upload image : ${error instanceof Error ? error.message : "réessayez"}`); }
+    finally { setUploadingArticleImage(false); }
   };
 
   const handleDeleteArticle = async (id:string) => {
@@ -231,25 +238,28 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
 
         {activeTab==="articles" && (
           <div className="bg-white rounded-[18px] border p-6">
-            <div className="flex items-center justify-between"><h3 className="font-bold text-[18px]">Articles - CRUD complet + KPIs vues/likes - Fil d'info, Sentinelles, Essor, Ombre douce</h3><button onClick={()=>{setEditingArticle(null); setShowArticleModal(true);}} className="h-9 px-4 rounded-full bg-[#0A1931] text-white text-[12px] font-bold">+ Nouvel article</button></div>
+            <div className="flex items-center justify-between"><h3 className="font-bold text-[18px]">Articles - CRUD complet + KPIs vues/likes - Fil d'info, Sentinelles, Essor, Ombre douce</h3><button onClick={()=>{setEditingArticle(null); setArticleImage(""); setShowArticleModal(true);}} className="h-9 px-4 rounded-full bg-[#0A1931] text-white text-[12px] font-bold">+ Nouvel article</button></div>
             <div className="mt-6 overflow-x-auto">
               <table className="w-full text-[12px]"><thead className="text-[10px] uppercase text-zinc-500 border-b"><tr><th className="text-left py-2">Titre</th><th>Cat</th><th>Auteur</th><th>Vues</th><th>Flags</th><th>Statut</th><th>Actions</th></tr></thead>
-                <tbody>{articles.map((a:any)=>(<tr key={a.id} className="border-b"><td className="py-2 max-w-[280px] truncate font-medium">{a.title}</td><td><span className="px-2 py-0.5 bg-zinc-100 rounded-full text-[10px]">{a.category}</span></td><td className="text-[11px]">{a.author}</td><td>{a.views}</td><td className="text-[9px] space-x-1">{a.isFeatured&&"★"}{a.isSentinelle&&"S"}{a.isEssor&&"E"}{a.isOmbreDouce&&"O"}</td><td><span className={`px-2 py-0.5 rounded-full text-[10px] ${a.isPublished?"bg-green-50 text-green-700":"bg-amber-50"}`}>{a.isPublished?"Publié":"Brouillon"}</span></td><td className="flex gap-1 py-1"><button onClick={()=>{setEditingArticle(a); setShowArticleModal(true);}} className="h-6 px-2 rounded-full border text-[10px]">Éditer</button><button onClick={()=>handleTogglePublish(a)} className="h-6 px-2 border rounded-full text-[10px]">{a.isPublished?"Dépub":"Pub"}</button><button onClick={()=>handleDeleteArticle(a.id)} className="h-6 px-2 bg-red-50 text-red-600 border text-[10px]">Suppr</button></td></tr>))}</tbody>
+                <tbody>{articles.map((a:any)=>(<tr key={a.id} className="border-b"><td className="py-2 max-w-[280px] truncate font-medium">{a.title}</td><td><span className="px-2 py-0.5 bg-zinc-100 rounded-full text-[10px]">{a.category}</span></td><td className="text-[11px]">{a.author}</td><td>{a.views}</td><td className="text-[9px] space-x-1">{a.isFeatured&&"★"}{a.isSentinelle&&"S"}{a.isEssor&&"E"}{a.isOmbreDouce&&"O"}</td><td><span className={`px-2 py-0.5 rounded-full text-[10px] ${a.isPublished?"bg-green-50 text-green-700":"bg-amber-50"}`}>{a.isPublished?"Publié":"Brouillon"}</span></td><td className="flex gap-1 py-1"><button onClick={()=>{setEditingArticle(a); setArticleImage(a.image || ""); setShowArticleModal(true);}} className="h-6 px-2 rounded-full border text-[10px]">Éditer</button><button onClick={()=>handleTogglePublish(a)} className="h-6 px-2 border rounded-full text-[10px]">{a.isPublished?"Dépub":"Pub"}</button><button onClick={()=>handleDeleteArticle(a.id)} className="h-6 px-2 bg-red-50 text-red-600 border text-[10px]">Suppr</button></td></tr>))}</tbody>
               </table>
             </div>
             {showArticleModal && (
               <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
                 <form onSubmit={handleCreateArticle} className="bg-white rounded-[20px] p-6 w-full max-w-[760px] max-h-[90vh] overflow-y-auto">
-                  <h3 className="font-bold">{editingArticle?"Modifier":"Nouveau"} article</h3>
+                  <h3 className="font-bold">{editingArticle?"Modifier":"Nouveau"} article</h3><p className="mt-1 text-[11px] text-zinc-500">Les champs marqués sont enregistrés dans le Magazine et contrôlent l’accès public au contenu.</p>
                   <div className="mt-4 grid gap-3">
                     <input name="title" defaultValue={editingArticle?.title} placeholder="Titre" required className="h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" />
                     <input name="summary" defaultValue={editingArticle?.summary} placeholder="Résumé" className="h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" />
                     <textarea name="content" defaultValue={editingArticle?.content} placeholder="Contenu complet - 12 lignes visibles non-abonnés" required rows={8} className="rounded-[16px] border bg-zinc-50 p-4 text-[13px]" />
-                    <div className="grid grid-cols-2 gap-2"><input name="category" defaultValue={editingArticle?.category} placeholder="Catégorie" className="h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" /><input name="image" defaultValue={editingArticle?.image} placeholder="URL image" className="h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" /></div>
-                    <input name="tags" defaultValue={editingArticle?.tags?.join(", ")} placeholder="Tags virgule" className="h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" />
-                    <div className="flex flex-wrap gap-3 text-[12px]"><label><input type="checkbox" name="isPublished" defaultChecked={editingArticle?.isPublished}/> Publié</label><label><input type="checkbox" name="isFeatured" defaultChecked={editingArticle?.isFeatured}/> Vedette</label><label><input type="checkbox" name="isSentinelle" defaultChecked={editingArticle?.isSentinelle}/> Sentinelles</label><label><input type="checkbox" name="isEssor" defaultChecked={editingArticle?.isEssor}/> Essor</label><label><input type="checkbox" name="isOmbreDouce" defaultChecked={editingArticle?.isOmbreDouce}/> Ombre Douce</label></div>
+                    <div className="grid gap-2 md:grid-cols-2"><input name="category" defaultValue={editingArticle?.category} placeholder="Catégorie" className="h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" /><input name="author" defaultValue={editingArticle?.author} placeholder="Nom du rédacteur / auteur" className="h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" /></div>
+                    <input name="authorId" defaultValue={editingArticle?.authorId} placeholder="ID du rédacteur (optionnel)" className="h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" />
+                    <div className="rounded-[16px] border border-dashed border-zinc-300 bg-zinc-50 p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="text-xs font-black text-[#0A1931]">Image principale</div><div className="mt-1 text-[11px] text-zinc-500">Uploadez une image ou utilisez une URL externe.</div></div><label className="inline-flex h-9 cursor-pointer items-center justify-center rounded-full bg-[#0A1931] px-4 text-[11px] font-bold text-white">{uploadingArticleImage ? "Upload en cours…" : "Choisir une image"}<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadingArticleImage} onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleArticleImageUpload(file); }} /></label></div><input name="image" value={articleImage} onChange={(event) => setArticleImage(event.target.value)} placeholder="URL de l’image" className="mt-3 h-10 w-full rounded-full border bg-white px-4 text-[12px]" />{articleImage && <img src={articleImage} alt="Aperçu de l’article" className="mt-3 h-32 w-full rounded-xl object-cover" />}</div>
+                    <input name="tags" defaultValue={editingArticle?.tags?.join(", ")} placeholder="Tags séparés par des virgules" className="h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" />
+                    <div className="rounded-[16px] border border-zinc-200 bg-white p-4"><div className="mb-3 text-xs font-black text-[#0A1931]">Accès au contenu</div><div className="flex flex-wrap gap-4 text-[12px]"><label className="flex items-center gap-2"><input type="checkbox" name="isEncrypted" defaultChecked={editingArticle?.isEncrypted ?? true}/> <span><strong>Article chiffré</strong><span className="ml-1 text-zinc-500">(aperçu + abonnement)</span></span></label><label className="flex items-center gap-2"><input type="checkbox" name="isPublished" defaultChecked={editingArticle?.isPublished}/> Publié</label></div></div>
+                    <div className="flex flex-wrap gap-3 text-[12px]"><label><input type="checkbox" name="isFeatured" defaultChecked={editingArticle?.isFeatured}/> Vedette</label><label><input type="checkbox" name="isSentinelle" defaultChecked={editingArticle?.isSentinelle}/> Sentinelles</label><label><input type="checkbox" name="isEssor" defaultChecked={editingArticle?.isEssor}/> Essor</label><label><input type="checkbox" name="isOmbreDouce" defaultChecked={editingArticle?.isOmbreDouce}/> Ombre Douce</label></div>
                   </div>
-                  <div className="mt-6 flex gap-2"><button type="submit" className="h-10 px-5 rounded-full bg-[#0A1931] text-white text-[13px] font-bold">Enregistrer</button><button type="button" onClick={()=>{setShowArticleModal(false); setEditingArticle(null);}} className="h-10 px-5 rounded-full border text-[13px]">Annuler</button></div>
+                  <div className="mt-6 flex gap-2"><button type="submit" disabled={savingArticle || uploadingArticleImage} className="h-10 px-5 rounded-full bg-[#0A1931] text-white text-[13px] font-bold disabled:cursor-not-allowed disabled:opacity-60">{savingArticle ? "Enregistrement…" : "Enregistrer"}</button><button type="button" onClick={()=>{setShowArticleModal(false); setEditingArticle(null);}} className="h-10 px-5 rounded-full border text-[13px]">Annuler</button></div>
                 </form>
               </div>
             )}
