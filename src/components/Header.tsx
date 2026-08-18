@@ -19,9 +19,9 @@ const firstLineMenus = [
 const mobilePrimaryNav = [
   { name: "Magazine", href: "/", icon: "menu_book" },
   { name: "WAB", href: "/wab", icon: "public" },
-  { name: "Africa Awards", href: "/africa-awards", icon: "emoji_events" },
-  { name: "Marketplace", href: "/marketplace", icon: "shopping_bag" },
-  { name: "Crowdfunding", href: "/financement", icon: "volunteer_activism" },
+  { name: "Awards", href: "/africa-awards", icon: "emoji_events" },
+  { name: "Market", href: "/marketplace", icon: "shopping_bag" },
+  { name: "Finance", href: "/financement", icon: "volunteer_activism" },
 ];
 
 const mobileSecondaryNav = [
@@ -91,6 +91,7 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
     return () => { window.history.pushState = originalPushState; window.history.replaceState = originalReplaceState; window.removeEventListener("popstate", syncPathname); window.removeEventListener("locationchange", syncPathname); };
   }, []);
   const platform = useMemo(() => PLATFORM_CONFIGS[getPlatformKey(pathname)], [pathname]);
+  const mobileSecondaryActive = mobileSecondaryNav.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
@@ -253,17 +254,17 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
           {megaMenuOpen && <div className="relative z-50"><MegaMenu platform={platform} onClose={() => setMegaMenuOpen(false)} /></div>}
           {showSearch && <div className="border-b bg-white p-4"><form onSubmit={(event) => { event.preventDefault(); if (searchQuery.trim()) window.location.assign(`/recherche?q=${encodeURIComponent(searchQuery.trim())}`); }}><input autoFocus value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Rechercher..." className="h-11 w-full rounded-lg border bg-[#f6f3f2] px-4" /></form></div>}
         </div>
-        <div className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.7rem,env(safe-area-inset-bottom))] pt-2">
-          <div className="mobile-bottom-nav__surface relative mx-auto flex max-w-[520px] items-end justify-between gap-1 rounded-[26px] border border-[#e5bdbb] bg-[#fffdfc]/95 px-2 pb-2 pt-4 shadow-[0_-10px_35px_rgba(79,13,25,0.12)] backdrop-blur-xl">
+        <div className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 p-0">
+          <div className="mobile-bottom-nav__surface relative flex w-full max-w-none items-end justify-between gap-1 rounded-none border-x-0 border-b-0 border-t border-[#e5bdbb] bg-[#fffdfc]/95 px-2 pb-[max(0.7rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_35px_rgba(79,13,25,0.12)] backdrop-blur-xl">
             {mobilePrimaryNav.map((item) => {
               const active = pathname === item.href;
-              return <Link key={item.name} href={item.href} className={`mobile-nav-item ${active ? "mobile-nav-item--active" : ""}`} aria-current={active ? "page" : undefined}><span className="material-symbols-outlined text-[20px]">{item.icon}</span><span>{item.name}</span></Link>;
+              return <Link key={item.name} href={item.href} className={`mobile-nav-item ${active ? "mobile-nav-item--active" : ""}`} aria-current={active ? "page" : undefined}><span className="mobile-nav-item__icon"><span className="material-symbols-outlined text-[20px]">{item.icon}</span></span><span className="mobile-nav-item__label">{item.name}</span></Link>;
             })}
-            <div className="mobile-nav-plus-wrap">
+            <div className={`mobile-nav-plus-wrap ${mobileSecondaryActive ? "mobile-nav-plus-wrap--active" : ""}`}>
               <div className={`mobile-secondary-menu ${mobileNavOpen ? "mobile-secondary-menu--open" : ""}`} aria-hidden={!mobileNavOpen}>
                 {mobileSecondaryNav.map((item, index) => <Link key={item.name} href={item.href} tabIndex={mobileNavOpen ? 0 : -1} style={{ "--mobile-delay": `${index * 45}ms` } as React.CSSProperties} className="mobile-secondary-item"><span className="mobile-secondary-item__icon"><span className="material-symbols-outlined text-[18px]">{item.icon}</span></span><span>{item.name}</span></Link>)}
               </div>
-              <button type="button" className={`mobile-plus-button ${mobileNavOpen ? "mobile-plus-button--open" : ""}`} onClick={() => setMobileNavOpen((open) => !open)} aria-label={mobileNavOpen ? "Fermer Jobs, Kiosque et Profil" : "Afficher Jobs, Kiosque et Profil"} aria-expanded={mobileNavOpen}><span className="material-symbols-outlined text-[28px]">{mobileNavOpen ? "close" : "add"}</span></button>
+              <button type="button" className={`mobile-plus-button ${mobileNavOpen ? "mobile-plus-button--open" : ""}`} onClick={() => setMobileNavOpen((open) => !open)} aria-label={mobileNavOpen ? "Fermer Jobs, Kiosque et Profil" : "Afficher Jobs, Kiosque et Profil"} aria-expanded={mobileNavOpen}><span className="mobile-plus-button__icon"><span className="material-symbols-outlined text-[28px]">{mobileNavOpen ? "close" : "add"}</span></span></button>
             </div>
           </div>
         </div>
