@@ -75,7 +75,11 @@ export async function ensureWabPage(ownerUserId: string, input: { name: string; 
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false as const, page: null };
   const { data: existing } = await supabase.from("wab_pages").select("*").eq("slug", input.slug).maybeSingle();
-  if (existing) return { configured: true as const, page: existing as WabPageRow };
+  if (existing) {
+    const updates = { name: input.name, logo_url: input.logoUrl ?? existing.logo_url ?? null, avatar_url: input.avatarUrl ?? input.logoUrl ?? existing.avatar_url ?? existing.logo_url ?? null, cover_url: input.coverUrl ?? existing.cover_url ?? null, description: input.description ?? existing.description ?? null, updated_at: new Date().toISOString() };
+    const { data: refreshed } = await supabase.from("wab_pages").update(updates).eq("id", existing.id).select("*").single();
+    return { configured: true as const, page: (refreshed ?? existing) as WabPageRow };
+  }
   const { data, error } = await supabase.from("wab_pages").insert({ owner_user_id: ownerUserId, name: input.name, slug: input.slug, logo_url: input.logoUrl ?? null, avatar_url: input.avatarUrl ?? input.logoUrl ?? null, cover_url: input.coverUrl ?? null, description: input.description ?? null, status: "active" }).select("*").single();
   if (error) return { configured: true as const, page: null, error };
   return { configured: true as const, page: data as WabPageRow };
