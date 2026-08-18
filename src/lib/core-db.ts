@@ -170,6 +170,22 @@ export async function createUser(input: Omit<User, "id" | "createdAt">): Promise
   return mapUser(data as Record<string, unknown>);
 }
 
+export async function updateUserAvatar(userId: string, avatar: string | null): Promise<User> {
+  const client = getAdminClient();
+  if (!client) {
+    if (!canUseJsonFallback()) throw new ProductionDatabaseNotConfiguredError();
+    const db = readDB();
+    const user = db.users.find((item) => item.id === userId);
+    if (!user) throw new Error("Utilisateur introuvable");
+    user.avatar = avatar || undefined;
+    writeDB(db);
+    return user;
+  }
+  const { data, error } = await client.from("users").update({ avatar: avatar || null }).eq("id", userId).select("*").single();
+  if (error) throw error;
+  return mapUser(data as Record<string, unknown>);
+}
+
 export async function listPublishedArticles(): Promise<Article[]> {
   const client = getPublicClient();
   if (!client) return canUseJsonFallback() ? readDB().articles.filter((article) => article.isPublished) : [];

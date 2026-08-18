@@ -75,7 +75,7 @@ function MegaMenu({ platform, onClose }: { platform: PlatformConfig; onClose: ()
   );
 }
 
-export default function Header({ user }: { user?: { id: string; nom?: string; prenom?: string; email?: string; role?: string } }) {
+export default function Header({ user }: { user?: { id: string; nom?: string; prenom?: string; email?: string; role?: string; avatar?: string } }) {
   const [pathname, setPathname] = useState("/");
   useEffect(() => {
     const syncPathname = () => setPathname(window.location.pathname);
@@ -218,7 +218,7 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
               <button type="button" onClick={() => setShowSearch((open) => !open)} aria-label="Rechercher" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f3f2] hover:bg-[#e5bdbb]"><span className="material-symbols-outlined text-[20px]">search</span></button>
             </div>
             <div className="hidden items-center gap-2 lg:flex">
-              {user ? <Link href="/compte" className="max-w-[130px] truncate rounded bg-[#0A1931] px-4 py-2 text-[12px] font-bold text-white hover:bg-[#152a4d]">{displayName}</Link> : <Link href="/auth/login" className="rounded bg-[#dc2626] px-4 py-2 text-[12px] font-bold text-white hover:bg-[#b91c1c]">Se connecter</Link>}
+              {user ? <Link href="/compte" aria-label="Mon profil" className="flex max-w-[150px] items-center gap-2 truncate rounded bg-[#0A1931] px-3 py-2 text-[12px] font-bold text-white hover:bg-[#152a4d]">{user.avatar ? <img src={user.avatar} alt="" className="h-6 w-6 rounded-full object-cover" /> : <span className="grid h-6 w-6 place-items-center rounded-full bg-white/20 text-[10px]">{`${user.prenom?.[0] || ""}${user.nom?.[0] || ""}`}</span>}<span className="truncate">{displayName}</span></Link> : <Link href="/auth/login" className="rounded bg-[#dc2626] px-4 py-2 text-[12px] font-bold text-white hover:bg-[#b91c1c]">Se connecter</Link>}
               <Link href="/abonnement" className="rounded bg-[#303030] px-4 py-2 text-[12px] font-bold text-white hover:bg-black">S'abonner</Link>
               <Link href="/don" className="rounded bg-[#16a34a] px-4 py-2 text-[12px] font-bold text-white hover:bg-[#15803d]">Faire un don</Link>
             </div>
@@ -239,7 +239,7 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
 
       <div className="md:hidden">
         <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-around border-b border-[#e5bdbb] bg-[#fcf9f8] px-2 py-2">
-          {[{ icon: "podcasts", label: "Live", href: "/" }, { icon: "shopping_cart", label: "Panier", href: "/panier" }, { icon: "favorite_border", label: "Favoris", href: "/compte/favoris" }, { icon: "mail_outline", label: "Message", href: "/service" }, { icon: "notifications_none", label: "Notif", href: "#notifications" }, { icon: "translate", label: "Trad", href: "#" }, { icon: "account_circle", label: "Profil", href: "/compte" }].map((item) => item.href === "#notifications" ? <button type="button" key={item.label} onClick={() => setNotificationPrompt(true)} className="flex flex-col items-center gap-0.5"><span className="material-symbols-outlined text-[20px]">{item.icon}</span><span className="text-[9px] font-medium">{item.label}</span></button> : <Link key={item.label} href={item.href} className="flex flex-col items-center gap-0.5"><span className="relative"><span className="material-symbols-outlined text-[20px]">{item.icon}</span>{item.label === "Panier" && cartCount > 0 && <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-[#9e001f] px-1 text-[9px] font-bold text-white">{cartCount}</span>}</span><span className="text-[9px] font-medium">{item.label}</span></Link>)}
+          {[{ icon: "podcasts", label: "Live", href: "/" }, { icon: "shopping_cart", label: "Panier", href: "/panier" }, { icon: "favorite_border", label: "Favoris", href: "/compte/favoris" }, { icon: "mail_outline", label: "Message", href: "/service" }, { icon: "notifications_none", label: "Notif", href: "#notifications" }, { icon: "translate", label: "Trad", href: "#" }, { icon: "account_circle", label: "Profil", href: "/compte" }].map((item) => item.href === "#notifications" ? <button type="button" key={item.label} onClick={() => setNotificationPrompt(true)} className="flex flex-col items-center gap-0.5"><span className="material-symbols-outlined text-[20px]">{item.icon}</span><span className="text-[9px] font-medium">{item.label}</span></button> : <Link key={item.label} href={item.href} className="flex flex-col items-center gap-0.5"><span className="relative">{item.label === "Profil" && user?.avatar ? <img src={user.avatar} alt="" className="h-5 w-5 rounded-full object-cover" /> : <span className="material-symbols-outlined text-[20px]">{item.icon}</span>}{item.label === "Panier" && cartCount > 0 && <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-[#9e001f] px-1 text-[9px] font-bold text-white">{cartCount}</span>}</span><span className="text-[9px] font-medium">{item.label}</span></Link>)}
         </div>
         <div className="pt-[56px]">
           <header className="flex h-[56px] items-center justify-between border-b border-[#e5bdbb] bg-[#fcf9f8] px-4">

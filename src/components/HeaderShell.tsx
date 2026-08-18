@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 
-type HeaderUser = { id: string; nom?: string; prenom?: string; email?: string; role?: string };
+type HeaderUser = { id: string; nom?: string; prenom?: string; email?: string; role?: string; avatar?: string };
 
 const InteractiveHeader = dynamic(() => import("./Header"), { ssr: false });
 

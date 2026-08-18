@@ -53,7 +53,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         `}</style>
       </head>
       <body className="min-h-full flex flex-col bg-[#fcf9f8]" style={{ fontFamily: "Source Serif 4, Georgia, serif" }}>
-        <Header user={user ? { id: user.id, nom: user.nom, prenom: user.prenom, email: user.email, role: user.role } : undefined} />
+        <Header user={user ? { id: user.id, nom: user.nom, prenom: user.prenom, email: user.email, role: user.role, avatar: user.avatar } : undefined} />
         <main className="flex-1">{children}</main>
         <Footer />
         <script dangerouslySetInnerHTML={{__html: `

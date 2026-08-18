@@ -135,16 +135,6 @@ export default function PanierPage() {
                 <div className="pt-2 border-t border-[#e5bdbb] flex justify-between font-bold text-[18px]"><span>NET À PAYER</span><span className="text-[#9e001f]">{total.toLocaleString()} F CFA</span></div>
               </div>
 
-              <div className="mb-6 rounded-xl border border-[#e5bdbb] bg-white p-4">
-                <div className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-[#9e001f]">payments</span>
-                  <div>
-                    <p className="text-[12px] font-bold uppercase tracking-wider text-[#5c403f]">Moyens de paiement</p>
-                    <p className="mt-1 text-[12px] leading-5 text-[#5c403f]">Moneroo détecte automatiquement votre pays et affiche les moyens disponibles : carte bancaire, Mobile Money et autres options proposées par ses agrégateurs.</p>
-                  </div>
-                </div>
-              </div>
-
               <button onClick={checkout} disabled={loading || cart.length===0} className="w-full bg-[#9e001f] text-white py-4 rounded-lg font-bold text-[16px] hover:brightness-90 transition-all shadow-md active:scale-95 disabled:opacity-50">
                 {loading?"Redirection...":"VALIDER MA COMMANDE"}
               </button>

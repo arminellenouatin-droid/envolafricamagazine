@@ -12,6 +12,7 @@ export async function GET(_req: NextRequest) {
         nom: user.nom,
         prenom: user.prenom,
         role: user.role,
+        avatar: user.avatar,
         affiliateCode: user.affiliateCode,
         subscription: user.subscription,
         favorites: user.favorites,
