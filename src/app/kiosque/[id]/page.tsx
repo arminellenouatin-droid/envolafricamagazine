@@ -4,18 +4,29 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { KIOSQUE_FORMATS, LANGUAGE_LABELS } from "@/lib/constants";
 
+type Magazine = {
+  id: string;
+  numero?: number;
+  title: string;
+  cover: string;
+  date: string;
+  description?: string;
+  year?: number;
+};
+
+type MagazineResponse = { magazine?: Magazine; magazines?: Magazine[] };
+
 export default function MagazineDetailPage() {
   const params = useParams();
   const id = params.id as string;
-  const [magazine, setMagazine] = useState<any>(null);
-  const [format, setFormat] = useState<string>("numerique");
-  const [language, setLanguage] = useState<string>("fr");
+  const [magazine, setMagazine] = useState<Magazine | null>(null);
+  const [selections, setSelections] = useState<Array<{ format: string; language: string }>>([{ format: "numerique", language: "fr" }]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
 
   useEffect(()=>{
-    fetch(`/api/magazines?id=${id}`).then(r=>r.json()).then(data=>{
-      setMagazine(data.magazine || data.magazines?.find((m:any)=>m.id===id));
+    fetch(`/api/magazines?id=${id}`).then((response) => response.json() as Promise<MagazineResponse>).then((data) => {
+      setMagazine(data.magazine ?? data.magazines?.find((item) => item.id === id) ?? null);
       setLoading(false);
     }).catch(()=>{
       setMagazine({
@@ -31,21 +42,46 @@ export default function MagazineDetailPage() {
     });
   },[id]);
 
-  const selectedFormat = KIOSQUE_FORMATS.find(f=>f.id===format);
-  const languagesForFormat = format.includes("audio") || format==="cd_audio" 
-    ? ["fr","en","es","sw","ha","yo","ig","fon","ff","zu","ee","wo"] 
-    : ["fr","en","es"];
+  const formatOptions = [
+    { id: "numerique", label: "Numérique", icon: "tablet_android", desc: "Accès immédiat PDF/Web" },
+    { id: "papier", label: "Papier", icon: "auto_stories", desc: "Livraison à domicile" },
+    { id: "audio_pdf", label: "Audio + PDF", icon: "headphones", desc: "Lecture & écoute" },
+    { id: "cd_audio", label: "CD Audio", icon: "album", desc: "Version collector" },
+    { id: "audio_papier", label: "Audio + Papier", icon: "auto_awesome", desc: "Expérience complète" },
+  ];
+  const prices: Record<string, number> = { numerique: 12.9, papier: 19.5, cd_audio: 24, audio_pdf: 15.5, audio_papier: 29.9 };
+  const formatPriceInXof: Record<string, number> = Object.fromEntries(KIOSQUE_FORMATS.map((item) => [item.id, item.price]));
 
-  const prices: any = { numerique: "12,90 €", papier: "19,50 €", cd_audio: "24,00 €", audio_pdf: "15,50 €", audio_papier: "29,90 €" };
+  const languagesForFormat = (formatId: string) => formatId.includes("audio") || formatId === "cd_audio"
+    ? ["fr", "en", "es", "sw", "ha", "yo", "ig", "fon", "ff", "zu", "ee", "wo"]
+    : ["fr", "en", "es"];
+
+  const total = selections.reduce((sum, selection) => sum + (prices[selection.format] || 0), 0);
+  const formatPrice = (value: number) => `${value.toFixed(2).replace(".", ",")} €`;
+
+  const updateSelection = (index: number, key: "format" | "language", value: string) => {
+    setSelections((current) => current.map((selection, selectionIndex) => {
+      if (selectionIndex !== index) return selection;
+      if (key === "format") {
+        const availableLanguages = languagesForFormat(value);
+        return { format: value, language: availableLanguages.includes(selection.language) ? selection.language : "fr" };
+      }
+      return { ...selection, language: value };
+    }));
+  };
+
+  const addSelection = () => setSelections((current) => [...current, { format: "numerique", language: "fr" }]);
+  const removeSelection = (index: number) => setSelections((current) => current.filter((_, selectionIndex) => selectionIndex !== index));
 
   const addToCart = () => {
     setAdding(true);
-    const cart = JSON.parse(localStorage.getItem("eam_cart")||"[]");
-    cart.push({ type:"magazine", magazineId: id, format, language, price: selectedFormat?.price || 10000, title: magazine?.title, cover: magazine?.cover, numero: magazine?.numero });
+    const cart = JSON.parse(localStorage.getItem("eam_cart") || "[]");
+    selections.forEach(({ format, language }) => {
+      cart.push({ type: "magazine", magazineId: id, format, language, price: formatPriceInXof[format] || 10000, title: magazine?.title, cover: magazine?.cover, numero: magazine?.numero });
+    });
     localStorage.setItem("eam_cart", JSON.stringify(cart));
     window.dispatchEvent(new Event("storage"));
-    // L’ajout est immédiat : aucun alert ou clic de confirmation ne bloque le parcours.
-    setTimeout(()=>setAdding(false), 400);
+    setTimeout(() => setAdding(false), 400);
   };
 
   if (loading) return <div className="max-w-[1280px] mx-auto px-6 py-20 text-center">Chargement...</div>;
@@ -66,7 +102,7 @@ export default function MagazineDetailPage() {
               <div className="aspect-[3/4] w-full bg-[#eae7e7] rounded-lg overflow-hidden shadow-2xl relative" style={{ boxShadow: "inset 12px 0 15px -10px rgba(0,0,0,0.5)" }}>
                 <img src={magazine.cover} alt={magazine.title} className="w-full h-full object-cover rounded-lg" />
                 <div className="absolute inset-0 bg-black/5 pointer-events-none"></div>
-                <button onClick={()=>alert("Feuilletage: 5 pages gratuites - aperçu limité")} className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/95 backdrop-blur-md text-[#9e001f] px-5 py-3 rounded-full text-[12px] font-bold shadow-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"><span className="material-symbols-outlined">menu_book</span> FEUILLETER L'APERÇU</button>
+                <button onClick={()=>alert("Feuilletage : 5 pages gratuites - aperçu limité")} className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/95 backdrop-blur-md text-[#9e001f] px-5 py-3 rounded-full text-[12px] font-bold shadow-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"><span className="material-symbols-outlined">menu_book</span> FEUILLETER L&apos;APERÇU</button>
               </div>
               <div className="mt-4 flex gap-4 justify-center">
                 {[1,2].map(i=>(
@@ -89,60 +125,80 @@ export default function MagazineDetailPage() {
             <section className="p-6 bg-[#f0eded] rounded-xl">
               <h3 className="text-[14px] font-bold uppercase tracking-widest mb-4">Au sommaire de ce numéro</h3>
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[#5c403f] text-[14px]">
-                <li className="flex items-start gap-2"><span className="material-symbols-outlined text-[#9e001f] text-[20px] mt-0.5">check_circle</span><span><strong>Économie :</strong> Les nouveaux corridors commerciaux de l'Est.</span></li>
+                <li className="flex items-start gap-2"><span className="material-symbols-outlined text-[#9e001f] text-[20px] mt-0.5">check_circle</span><span><strong>Économie :</strong> Les nouveaux corridors commerciaux de l&apos;Est.</span></li>
                 <li className="flex items-start gap-2"><span className="material-symbols-outlined text-[#9e001f] text-[20px]">check_circle</span><span><strong>Finance :</strong> Pourquoi les banques misent sur la Fintech.</span></li>
-                <li className="flex items-start gap-2"><span className="material-symbols-outlined text-[#9e001f] text-[20px]">check_circle</span><span><strong>Tech :</strong> L'IA au service de l'agriculture.</span></li>
+                <li className="flex items-start gap-2"><span className="material-symbols-outlined text-[#9e001f] text-[20px]">check_circle</span><span><strong>Tech :</strong> L&apos;IA au service de l&apos;agriculture.</span></li>
                 <li className="flex items-start gap-2"><span className="material-symbols-outlined text-[#9e001f] text-[20px]">check_circle</span><span><strong>Focus :</strong> Portrait de 10 leaders tech africains.</span></li>
               </ul>
             </section>
 
-            <div className="space-y-6">
-              <div>
-                <h4 className="text-[12px] font-bold uppercase tracking-widest mb-3">1. Choisir la version</h4>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                  {[
-                    { id:"numerique", label:"Numérique", icon:"tablet_android", desc:"Accès immédiat PDF/Web" },
-                    { id:"papier", label:"Papier", icon:"auto_stories", desc:"Livraison à domicile" },
-                    { id:"audio_pdf", label:"Audio + PDF", icon:"headphones", desc:"Lecture & écoute" },
-                    { id:"cd_audio", label:"CD Audio", icon:"album", desc:"Version collector" },
-                    { id:"audio_papier", label:"Audio + Papier", icon:"auto_awesome", desc:"Expérience complète" },
-                  ].map(f=>(
-                    <button key={f.id} onClick={()=>setFormat(f.id)} className={`p-4 border-2 rounded-xl text-left hover:border-[#9e001f] transition-all group flex flex-col ${format===f.id?"border-[#9e001f] bg-[#9e001f]/10 text-[#9e001f]":"border-[#e5bdbb]"}`}>
-                      <span className="material-symbols-outlined mb-2 group-hover:scale-110 transition-transform">{f.icon}</span>
-                      <span className="font-bold text-[14px]">{f.label}</span>
-                      <span className="text-[11px] opacity-70">{f.desc}</span>
-                    </button>
-                  ))}
+            <section className="rounded-xl border border-[#e5bdbb] bg-white p-4 sm:p-6" aria-labelledby="purchase-options-title">
+              <div className="mb-5 flex items-end justify-between gap-4 border-b border-[#eadad8] pb-4">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[#9e001f]">Personnalisez votre achat</p>
+                  <h2 id="purchase-options-title" className="mt-1 text-[20px] font-bold text-[#1b1c1c]">Choisissez vos éditions</h2>
+                </div>
+                <div className="text-right">
+                  <span className="block text-[11px] uppercase tracking-wider text-[#5c403f]">Total</span>
+                  <strong className="text-[24px] text-[#9e001f]">{formatPrice(total)}</strong>
                 </div>
               </div>
 
-              <div>
-                <h4 className="text-[12px] font-bold uppercase tracking-widest mb-3">2. Choisir la langue {format.includes("audio")&&"(12 langues)"}</h4>
-                <div className="flex flex-wrap gap-2">
-                  {languagesForFormat.map((code:string)=>(
-                    <button key={code} onClick={()=>setLanguage(code)} className={`px-6 py-2 border-2 rounded-lg text-[14px] font-medium transition-colors ${language===code?"border-[#9e001f] bg-[#9e001f]/10 text-[#9e001f]":"border-[#e5bdbb] hover:border-[#9e001f]"}`}>
-                      {LANGUAGE_LABELS[code]} • {code.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
+              <div className="space-y-3">
+                {selections.map((selection, index) => {
+                  const availableLanguages = languagesForFormat(selection.format);
+                  return (
+                    <div key={`${index}-${selection.format}`} className="rounded-lg border border-[#eadad8] bg-[#fcf9f8] p-3 sm:p-4">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                        <label className="block text-[12px] font-bold text-[#2b2525]">
+                          <span className="mb-1.5 block uppercase tracking-wider text-[#5c403f]">Choix de version</span>
+                          <select value={selection.format} onChange={(event) => updateSelection(index, "format", event.target.value)} className="min-h-11 w-full rounded-md border border-[#cdb7b4] bg-white px-3 text-[14px] text-[#2b2525] outline-none focus:border-[#9e001f] focus:ring-2 focus:ring-[#9e001f]/15">
+                            {formatOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+                          </select>
+                        </label>
+                        <label className="block text-[12px] font-bold text-[#2b2525]">
+                          <span className="mb-1.5 block uppercase tracking-wider text-[#5c403f]">Choix de langue</span>
+                          <select value={selection.language} onChange={(event) => updateSelection(index, "language", event.target.value)} className="min-h-11 w-full rounded-md border border-[#cdb7b4] bg-white px-3 text-[14px] text-[#2b2525] outline-none focus:border-[#9e001f] focus:ring-2 focus:ring-[#9e001f]/15">
+                            {availableLanguages.map((code) => <option key={code} value={code}>{LANGUAGE_LABELS[code]} • {code.toUpperCase()}</option>)}
+                          </select>
+                        </label>
+                        <div className="flex items-center justify-between gap-3 sm:min-w-[116px] sm:justify-end">
+                          <span className="text-[11px] uppercase tracking-wider text-[#746665]">Prix TTC</span>
+                          <strong className="text-[20px] text-[#9e001f]">{formatPrice(prices[selection.format])}</strong>
+                          {selections.length > 1 && <button type="button" onClick={() => removeSelection(index)} className="flex min-h-11 min-w-11 items-center justify-center rounded-md text-[#9e001f] hover:bg-[#ffdad8]/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#9e001f]" aria-label={`Supprimer la combinaison ${index + 1}`}><span className="material-symbols-outlined text-[20px]">delete</span></button>}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
 
-            <div className="pt-6 border-t border-[#e5bdbb] flex flex-col sm:flex-row items-center justify-between gap-6">
-              <div className="text-center sm:text-left">
-                <span className="text-[#5c403f] text-[12px] block">Prix TTC</span>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-[48px] font-bold text-[#9e001f]" style={{ fontFamily: "Montserrat" }}>{prices[format]||"12,90 €"}</span>
-                  <span className="text-[#5c403f] text-[14px] line-through">15,00 €</span>
+              <button type="button" onClick={addSelection} className="mt-4 flex min-h-11 items-center gap-2 text-[13px] font-bold text-[#9e001f] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9e001f]"><span className="material-symbols-outlined">add_circle</span> Ajouter une autre version</button>
+
+              <div className="mt-5 flex flex-col gap-4 border-t border-[#eadad8] pt-5 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <span className="block text-[11px] uppercase tracking-wider text-[#5c403f]">Total de votre sélection</span>
+                  <strong className="text-[36px] font-bold text-[#9e001f]" style={{ fontFamily: "Montserrat" }}>{formatPrice(total)}</strong>
+                </div>
+                <div className="w-full sm:w-auto">
+                  <button onClick={addToCart} disabled={adding} className="flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-[#9e001f] px-8 py-4 text-[15px] font-bold text-white shadow-lg shadow-[#9e001f]/20 transition hover:brightness-110 active:scale-[.98] disabled:opacity-60 sm:w-auto">
+                    <span className="material-symbols-outlined">shopping_cart</span> {adding ? "Ajout..." : "AJOUTER AU PANIER"}
+                  </button>
+                  <p className="mt-2 text-center text-[11px] text-[#5f5e5e]">Livraison offerte Papier en zone CEDEAO • Lien sécurisé 24h</p>
                 </div>
               </div>
-              <div className="flex flex-col w-full sm:w-auto gap-3">
-                <button onClick={addToCart} disabled={adding} className="flex items-center justify-center gap-3 bg-[#9e001f] text-white px-10 py-5 rounded-xl font-bold text-[16px] hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-[#9e001f]/20 disabled:opacity-60">
-                  <span className="material-symbols-outlined">shopping_cart</span> {adding?"Ajout...":"AJOUTER AU PANIER"}
-                </button>
-                <p className="text-center text-[11px] text-[#5f5e5e]">Livraison offerte Papier en zone CEDEAO • Lien sécurisé 24h</p>
+
+              <div className="mt-5 border-t border-[#eadad8] pt-4" aria-label="Options de paiement acceptées">
+                <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-[#5c403f]">Options de paiement</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-[#d8c3c1] bg-white px-3 text-[11px] font-semibold text-[#2b2525]"><span className="material-symbols-outlined text-[17px]">credit_card</span> Carte bancaire</span>
+                  <span className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-[#d8c3c1] bg-white px-3 text-[11px] font-semibold text-[#2b2525]"><span className="material-symbols-outlined text-[17px]">smartphone</span> Mobile Money</span>
+                  <span className="inline-flex min-h-9 items-center rounded-md border border-[#d8c3c1] bg-white px-3 text-[11px] font-semibold text-[#635b5a]">Stripe</span>
+                  <span className="inline-flex min-h-9 items-center rounded-md border border-[#d8c3c1] bg-white px-3 text-[11px] font-semibold text-[#635b5a]">PayPal</span>
+                  <span className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-[#d8c3c1] bg-white px-3 text-[11px] font-semibold text-[#2b2525]"><span className="material-symbols-outlined text-[17px]">currency_bitcoin</span> Crypto</span>
+                </div>
               </div>
-            </div>
+            </section>
 
             <div className="mt-12 border-t border-[#e5bdbb]/30 pt-8">
               <div className="flex gap-8 border-b border-[#e5bdbb]/30 mb-8">
@@ -151,7 +207,7 @@ export default function MagazineDetailPage() {
                 <button className="pb-4 border-b-2 border-transparent text-[#5f5e5e] text-[14px]">Avis (12)</button>
               </div>
               <div className="max-w-3xl">
-                <p className="text-[16px] leading-loose">Ce numéro spécial de {magazine.year} dresse un état des lieux sans concession de la maturité numérique sur le continent. Alors que les câbles sous-marins multiplient les points d'ancrage, comment les entreprises locales s'approprient-elles ces nouvelles capacités ? Nos journalistes ont voyagé de Nairobi à Lagos. Inclus : guide pratique 12 pages sécurisation transactions.</p>
+                <p className="text-[16px] leading-loose">Ce numéro spécial de {magazine.year} dresse un état des lieux sans concession de la maturité numérique sur le continent. Alors que les câbles sous-marins multiplient les points d&apos;ancrage, comment les entreprises locales s&apos;approprient-elles ces nouvelles capacités ? Nos journalistes ont voyagé de Nairobi à Lagos. Inclus : guide pratique 12 pages sécurisation transactions.</p>
               </div>
             </div>
           </div>
