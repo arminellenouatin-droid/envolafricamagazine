@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { createGlobalNotification } from "@/lib/ecosystem-inbox";
 
 export type WabPostRow = {
   id: string;
@@ -367,6 +368,7 @@ export async function notifyWabFollowers(profileId: string, input: { type: strin
   if (!followers?.length) return { configured: true as const, count: 0 };
   const rows = followers.map((item) => ({ user_id: item.follower_user_id, type: input.type, title: input.title, body: input.body.slice(0, 240), href: input.href ?? "/wab", created_at: new Date().toISOString() }));
   const { error } = await supabase.from("wab_notifications").insert(rows);
+  if (!error) await Promise.all(followers.map((item) => createGlobalNotification({ userId: item.follower_user_id, platform: "wab", type: input.type, title: input.title, body: input.body, link: input.href })));
   return { configured: true as const, count: error ? 0 : rows.length, error };
 }
 
@@ -374,6 +376,7 @@ export async function notifyWabUser(userId: string, input: { type: string; title
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false as const };
   const { error } = await supabase.from("wab_notifications").insert({ user_id: userId, type: input.type, title: input.title, body: input.body.slice(0, 240), href: input.href ?? "/wab", created_at: new Date().toISOString() });
+  if (!error) await createGlobalNotification({ userId, platform: "wab", type: input.type, title: input.title, body: input.body, link: input.href });
   return { configured: true as const, error };
 }
 

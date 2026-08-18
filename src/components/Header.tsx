@@ -104,6 +104,25 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
   const [cityWeather, setCityWeather] = useState({ city: "Cotonou", temp: "28°C", icon: "⛅" });
   const [notificationPrompt, setNotificationPrompt] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [messageCount, setMessageCount] = useState(0);
+
+  useEffect(() => {
+    const refreshInboxCounts = async () => {
+      try {
+        const [notificationsResponse, messagesResponse] = await Promise.all([
+          fetch("/api/notifications", { cache: "no-store" }),
+          fetch("/api/messages", { cache: "no-store" }),
+        ]);
+        if (notificationsResponse.ok) setNotificationCount(Number((await notificationsResponse.json()).unreadCount || 0));
+        if (messagesResponse.ok) setMessageCount(Number((await messagesResponse.json()).unreadCount || 0));
+      } catch { /* Les badges restent à zéro si le réseau est indisponible. */ }
+    };
+    refreshInboxCounts();
+    const interval = window.setInterval(refreshInboxCounts, 30000);
+    window.addEventListener("visibilitychange", refreshInboxCounts);
+    return () => { window.clearInterval(interval); window.removeEventListener("visibilitychange", refreshInboxCounts); };
+  }, [user?.id]);
 
   useEffect(() => {
     setMegaMenuOpen(false);
@@ -219,8 +238,8 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
           <div className="flex items-center gap-2">
             <div className="hidden items-center gap-1 border-r border-[#e5bdbb] pr-3 lg:flex">
               <Link href="/panier" aria-label="Panier" className="relative grid h-9 w-9 place-items-center rounded-full bg-[#f6f3f2] hover:bg-[#e5bdbb]"><span className="material-symbols-outlined text-[20px]">shopping_cart</span>{cartCount > 0 && <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#9e001f] px-1 text-[9px] font-bold text-white">{cartCount}</span>}</Link>
-              <button type="button" onClick={() => setNotificationPrompt(true)} aria-label="Notifications" className={`grid h-9 w-9 place-items-center rounded-full hover:bg-[#e5bdbb] ${notificationsEnabled ? "bg-[#e9f7f5] text-[#087e8b]" : "bg-[#f6f3f2]"}`}><span className="material-symbols-outlined text-[20px]">notifications</span></button>
-              <Link href="/service" aria-label="Messages" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f3f2] hover:bg-[#e5bdbb]"><span className="material-symbols-outlined text-[20px]">mail</span></Link>
+              <Link href="/notifications" aria-label={`Notifications${notificationCount ? `, ${notificationCount} non lues` : ""}`} className={`relative grid h-9 w-9 place-items-center rounded-full hover:bg-[#e5bdbb] ${notificationsEnabled ? "bg-[#e9f7f5] text-[#087e8b]" : "bg-[#f6f3f2]"}`}><span className="material-symbols-outlined text-[20px]">notifications</span>{notificationCount > 0 && <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#9e001f] px-1 text-[9px] font-bold text-white">{notificationCount > 99 ? "99+" : notificationCount}</span>}</Link>
+              <Link href="/messages" aria-label={`Messages${messageCount ? `, ${messageCount} non lus` : ""}`} className="relative grid h-9 w-9 place-items-center rounded-full bg-[#f6f3f2] hover:bg-[#e5bdbb]"><span className="material-symbols-outlined text-[20px]">mail</span>{messageCount > 0 && <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#006874] px-1 text-[9px] font-bold text-white">{messageCount > 99 ? "99+" : messageCount}</span>}</Link>
               <Link href="/compte/favoris" aria-label="Favoris" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f3f2] hover:bg-[#e5bdbb]"><span className="material-symbols-outlined text-[20px]">favorite</span></Link>
               <button type="button" onClick={() => setShowSearch((open) => !open)} aria-label="Rechercher" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f3f2] hover:bg-[#e5bdbb]"><span className="material-symbols-outlined text-[20px]">search</span></button>
             </div>
@@ -246,7 +265,7 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
 
       <div className="mobile-header-stack md:hidden">
         <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-around border-b border-[#e5bdbb] bg-[#fcf9f8] px-2 py-2">
-          {[{ icon: "podcasts", label: "Live", href: "/" }, { icon: "shopping_cart", label: "Panier", href: "/panier" }, { icon: "favorite_border", label: "Favoris", href: "/compte/favoris" }, { icon: "mail_outline", label: "Message", href: "/service" }, { icon: "notifications_none", label: "Notif", href: "#notifications" }, { icon: "translate", label: "Trad", href: "#" }, { icon: "account_circle", label: "Profil", href: "/compte" }].map((item) => item.href === "#notifications" ? <button type="button" key={item.label} onClick={() => setNotificationPrompt(true)} className="flex flex-col items-center gap-0.5"><span className="material-symbols-outlined text-[20px]">{item.icon}</span><span className="text-[9px] font-medium">{item.label}</span></button> : <Link key={item.label} href={item.href} className="flex flex-col items-center gap-0.5"><span className="relative">{item.label === "Profil" && user?.avatar ? <img src={user.avatar} alt="" className="h-5 w-5 rounded-full object-cover" /> : <span className="material-symbols-outlined text-[20px]">{item.icon}</span>}{item.label === "Panier" && cartCount > 0 && <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-[#9e001f] px-1 text-[9px] font-bold text-white">{cartCount}</span>}</span><span className="text-[9px] font-medium">{item.label}</span></Link>)}
+          {[{ icon: "podcasts", label: "Live", href: "/" }, { icon: "shopping_cart", label: "Panier", href: "/panier" }, { icon: "favorite_border", label: "Favoris", href: "/compte/favoris" }, { icon: "mail_outline", label: "Message", href: "/messages" }, { icon: "notifications_none", label: "Notif", href: "/notifications" }, { icon: "translate", label: "Trad", href: "#" }, { icon: "account_circle", label: "Profil", href: "/compte" }].map((item) => <Link key={item.label} href={item.href} className="relative flex flex-col items-center gap-0.5"><span className="relative">{item.label === "Profil" && user?.avatar ? <img src={user.avatar} alt="" className="h-5 w-5 rounded-full object-cover" /> : <span className="material-symbols-outlined text-[20px]">{item.icon}</span>}{item.label === "Panier" && cartCount > 0 && <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-[#9e001f] px-1 text-[9px] font-bold text-white">{cartCount}</span>}{item.label === "Notif" && notificationCount > 0 && <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-[#9e001f] px-1 text-[8px] font-bold text-white">{notificationCount > 99 ? "99+" : notificationCount}</span>}{item.label === "Message" && messageCount > 0 && <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-[#006874] px-1 text-[8px] font-bold text-white">{messageCount > 99 ? "99+" : messageCount}</span>}</span><span className="text-[9px] font-medium">{item.label}</span></Link>)}
         </div>
         <div className="pt-[48px]">
           <header className="flex h-[56px] items-center justify-between border-b border-[#e5bdbb] bg-[#fcf9f8] px-4">

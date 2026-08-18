@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { createGlobalNotification } from "@/lib/ecosystem-inbox";
 import { publishBoostedSourceToWab } from "@/lib/wab-boost-sources";
 import { AFRICA_COUNTRIES } from "@/lib/africa-context";
 
@@ -117,14 +118,15 @@ export async function getJobsBoostById(userId: string, id: string) {
 export async function createJobsNotification(userId: string, type: string, title: string, body: string, href?: string) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false as const };
-  await supabase.from("jobs_notifications").insert({
+  const { error } = await supabase.from("jobs_notifications").insert({
     user_id: userId,
     type,
     title,
     body,
     href: href || null
   });
-  return { configured: true as const };
+  if (!error) await createGlobalNotification({ userId, platform: "jobs", type, title, body, link: href });
+  return { configured: true as const, error };
 }
 
 export async function getJobsOfferByIdAndUser(id: string, userId: string) {

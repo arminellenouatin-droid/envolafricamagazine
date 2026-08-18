@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { createGlobalNotification } from "@/lib/ecosystem-inbox";
 
 export async function GET() {
   const user = await getCurrentUserFromCookie();
@@ -35,6 +36,9 @@ export async function POST(request: NextRequest) {
   if (!access) return NextResponse.json({ error: "Conversation non autorisée." }, { status: 403 });
   const { data: message, error } = await supabase.from("wab_messages").insert({ conversation_id: conversationId, sender_id: user.id, body: body.body.trim() }).select("id,conversation_id,sender_id,body,read_at,created_at").single();
   if (error || !message) return NextResponse.json({ error: "Impossible d’envoyer le message." }, { status: 503 });
+  const { data: conversation } = await supabase.from("wab_conversations").select("participant_a,participant_b").eq("id", conversationId).single();
+  const recipientId = conversation && conversation.participant_a === user.id ? conversation.participant_b : conversation?.participant_a;
+  if (recipientId) await createGlobalNotification({ userId: recipientId, platform: "wab", type: "message", title: "Nouveau message WAB", body: body.body.trim(), link: "/wab/messages", entityType: "wab_message", entityId: message.id });
   await supabase.from("wab_conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
   return NextResponse.json({ message }, { status: 201 });
 }

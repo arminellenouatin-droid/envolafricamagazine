@@ -3,6 +3,7 @@ import { getCurrentUserForAdmin } from "@/lib/admin-auth";
 import { writeDB } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 import { publishMagazineToWab } from "@/lib/magazine-republication";
+import { notifyPushSubscribers } from "@/lib/ecosystem-inbox";
 
 export async function GET() {
   const { db, error, status } = await getCurrentUserForAdmin('redacteur');
@@ -52,7 +53,8 @@ export async function POST(req: NextRequest) {
     db!.magazines.push(newMag as any);
     writeDB(db!);
     const republication = await publishMagazineToWab(newMag as any, user?.id || "");
-    return NextResponse.json({ success: true, magazine: newMag, republication });
+    const notifications = await notifyPushSubscribers({ platform: "magazine", type: "new_magazine", title: "Nouveau magazine Envol Africa", body: newMag.title, link: `/kiosque`, entityType: "magazine", entityId: newMag.id, dedupePrefix: `magazine:${newMag.id}` });
+    return NextResponse.json({ success: true, magazine: newMag, republication, notifications });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: "Erreur serveur: " + (e as any).message }, { status: 500 });
