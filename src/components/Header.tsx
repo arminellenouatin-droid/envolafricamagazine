@@ -115,6 +115,8 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
       try { setCartCount(JSON.parse(saved).length); } catch { setCartCount(0); }
     };
     readCart();
+    window.addEventListener("storage", readCart);
+    window.addEventListener("eam-cart-updated", readCart);
     const interval = window.setInterval(readCart, 1000);
     const savedMode = localStorage.getItem("eam_dark_mode");
     if (savedMode === "dark") { setDarkMode(true); document.documentElement.classList.add("dark"); }
@@ -132,7 +134,11 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
       } catch { /* La météo reste sur Cotonou en cas d’échec. */ }
     };
     fetchWeather();
-    return () => window.clearInterval(interval);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("storage", readCart);
+      window.removeEventListener("eam-cart-updated", readCart);
+    };
   }, []);
 
   const toggleDarkMode = () => {
@@ -233,7 +239,7 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
 
       <div className="md:hidden">
         <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-around border-b border-[#e5bdbb] bg-[#fcf9f8] px-2 py-2">
-          {[{ icon: "podcasts", label: "Live", href: "/" }, { icon: "shopping_bag", label: "Panier", href: "/panier" }, { icon: "favorite_border", label: "Favoris", href: "/compte/favoris" }, { icon: "mail_outline", label: "Message", href: "/service" }, { icon: "notifications_none", label: "Notif", href: "#notifications" }, { icon: "translate", label: "Trad", href: "#" }, { icon: "account_circle", label: "Profil", href: "/compte" }].map((item) => item.href === "#notifications" ? <button type="button" key={item.label} onClick={() => setNotificationPrompt(true)} className="flex flex-col items-center gap-0.5"><span className="material-symbols-outlined text-[20px]">{item.icon}</span><span className="text-[9px] font-medium">{item.label}</span></button> : <Link key={item.label} href={item.href} className="flex flex-col items-center gap-0.5"><span className="material-symbols-outlined text-[20px]">{item.icon}</span><span className="text-[9px] font-medium">{item.label}</span></Link>)}
+          {[{ icon: "podcasts", label: "Live", href: "/" }, { icon: "shopping_cart", label: "Panier", href: "/panier" }, { icon: "favorite_border", label: "Favoris", href: "/compte/favoris" }, { icon: "mail_outline", label: "Message", href: "/service" }, { icon: "notifications_none", label: "Notif", href: "#notifications" }, { icon: "translate", label: "Trad", href: "#" }, { icon: "account_circle", label: "Profil", href: "/compte" }].map((item) => item.href === "#notifications" ? <button type="button" key={item.label} onClick={() => setNotificationPrompt(true)} className="flex flex-col items-center gap-0.5"><span className="material-symbols-outlined text-[20px]">{item.icon}</span><span className="text-[9px] font-medium">{item.label}</span></button> : <Link key={item.label} href={item.href} className="flex flex-col items-center gap-0.5"><span className="relative"><span className="material-symbols-outlined text-[20px]">{item.icon}</span>{item.label === "Panier" && cartCount > 0 && <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-[#9e001f] px-1 text-[9px] font-bold text-white">{cartCount}</span>}</span><span className="text-[9px] font-medium">{item.label}</span></Link>)}
         </div>
         <div className="pt-[56px]">
           <header className="flex h-[56px] items-center justify-between border-b border-[#e5bdbb] bg-[#fcf9f8] px-4">

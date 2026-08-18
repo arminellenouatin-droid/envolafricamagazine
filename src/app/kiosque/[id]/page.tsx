@@ -33,6 +33,7 @@ export default function MagazineDetailPage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [currency, setCurrency] = useState("XOF");
   const [countryCode, setCountryCode] = useState("BJ");
+  const [paymentMethods, setPaymentMethods] = useState(() => getAvailablePaymentMethods("BJ", "XOF"));
 
   useEffect(()=>{
     fetch(`/api/magazines?id=${id}`).then((response) => response.json() as Promise<MagazineResponse>).then((data) => {
@@ -85,7 +86,23 @@ export default function MagazineDetailPage() {
 
   const total = selections.reduce((sum, selection) => sum + (prices[selection.format] || 0), 0);
   const recommendedMagazines = allMagazines.filter((item) => item.id !== magazine?.id).slice(0, 6);
-  const paymentMethods = getAvailablePaymentMethods(countryCode, currency);
+  useEffect(() => {
+    const fallback = getAvailablePaymentMethods(countryCode, currency);
+    setPaymentMethods(fallback);
+    fetch(`/api/payment/methods?country=${encodeURIComponent(countryCode)}&currency=${encodeURIComponent(currency)}`)
+      .then((response) => response.json() as Promise<{ methods?: Array<{ code: string; label: string; logo?: string; icon?: string }> }>)
+      .then((data) => {
+        if (!data.methods?.length) return;
+        setPaymentMethods(data.methods.map((method) => ({
+          code: method.code,
+          label: method.label,
+          logo: method.logo,
+          icon: method.icon || "payments",
+          tone: "text-[#1b1c1c]",
+        })));
+      })
+      .catch(() => undefined);
+  }, [countryCode, currency]);
 
   const updateSelection = (index: number, key: "format" | "language", value: string) => {
     setSelections((current) => current.map((selection, selectionIndex) => {
@@ -109,6 +126,7 @@ export default function MagazineDetailPage() {
     });
     localStorage.setItem("eam_cart", JSON.stringify(cart));
     window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("eam-cart-updated"));
     setTimeout(() => setAdding(false), 400);
   };
 
@@ -214,7 +232,7 @@ export default function MagazineDetailPage() {
 
               <div className="mt-5 border-t border-[#eadad8] pt-4" aria-label="Options de paiement acceptées">
                 <div className="flex w-full flex-nowrap items-center justify-between gap-3 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {paymentMethods.map((method) => <span key={method.code} role="img" aria-label={method.label} title={method.label} className={`inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-md border border-[#d8c3c1] bg-white px-2 ${method.tone}`}><span className="material-symbols-outlined text-[23px]" aria-hidden="true">{method.icon}</span></span>)}
+                  {paymentMethods.map((method) => <span key={method.code} role="img" aria-label={method.label} title={method.label} className={`inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-md border border-[#d8c3c1] bg-white px-2 ${method.tone}`}>{method.logo ? <img src={method.logo} alt="" className="max-h-7 max-w-14 object-contain" /> : <span className="material-symbols-outlined text-[23px]" aria-hidden="true">{method.icon}</span>}</span>)}
                 </div>
               </div>
             </section>

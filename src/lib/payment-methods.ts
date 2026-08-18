@@ -1,10 +1,9 @@
-export type PaymentMethodCode = "card_xof" | "mtn_bj" | "moov_bj" | "crypto_xof";
-
 export interface PaymentMethodDisplay {
-  code: PaymentMethodCode;
+  code: string;
   label: string;
   icon: string;
   tone: string;
+  logo?: string;
 }
 
 const BENIN_XOF_METHODS: PaymentMethodDisplay[] = [
