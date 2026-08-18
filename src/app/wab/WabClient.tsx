@@ -206,7 +206,7 @@ export default function WabClient() {
                 <div className="flex items-start justify-between gap-3 pt-1">
                   <div className="flex min-w-0 items-center gap-3">
                     <a href={`/wab/profil?author=${encodeURIComponent(post.author)}`} aria-label={`Ouvrir le profil de ${post.author}`} className="h-12 w-12 shrink-0 overflow-hidden rounded-full transition hover:scale-105"><ModelAvatar src={post.authorAvatarUrl || (index === 0 ? MODEL_COMPANY : MODEL_AUTHOR)} alt={`Photo de ${post.author}`} className="h-full w-full object-cover" /></a>
-                    <div className="min-w-0"><div className="flex items-center truncate"><a href={`/wab/profil?author=${encodeURIComponent(post.author)}`} className="truncate text-sm font-bold text-[#001325] hover:text-[#006874]">{post.author}</a><FollowButton userId={post.authorUserId} /></div><p className="truncate text-xs text-[#43474d]">{post.headline} · {post.location}</p></div>
+                    <div className="min-w-0"><div className="flex items-center truncate"><a href={`/wab/profil?author=${encodeURIComponent(post.author)}`} className="truncate text-sm font-bold text-[#001325] hover:text-[#006874]">{post.author}</a>{post.authorUserId && post.authorUserId !== currentUser?.id && <FollowButton userId={post.authorUserId} />}</div><p className="truncate text-xs text-[#43474d]">{post.headline} · {post.location}</p></div>
                   </div>
                   <button type="button" aria-label="Plus d’options" className="text-[#43474d]"><span className="material-symbols-outlined">more_horiz</span></button>
                 </div>
