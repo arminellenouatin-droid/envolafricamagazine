@@ -8,6 +8,7 @@ type Profile = { id: string; userId: string; fullName: string; headline: string;
 
 type PublicPost = { id: string; content: string; createdAt: string; likes: number; comments: number; views: number; isBoosted: boolean; media?: Array<{ path: string; mimeType: string; name: string }> };
 type PublicData = { profile: Profile | null; author?: string; avatarUrl?: string; postCount?: number; posts?: PublicPost[]; followers?: Array<{ id: string; userId: string; fullName: string; avatarUrl?: string }> };
+type WabPage = { id: string; name: string; slug: string; logo_url?: string | null; logoUrl?: string; description?: string | null };
 
 export default function ProfileClient() {
   const [form, setForm] = useState({ headline: "", about: "", companyName: "", industry: "", country: "", city: "" });
@@ -15,6 +16,11 @@ export default function ProfileClient() {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [publicMode, setPublicMode] = useState(false);
+  const [pages, setPages] = useState<WabPage[]>([]);
+  const [pageName, setPageName] = useState("");
+  const [pageDescription, setPageDescription] = useState("");
+  const [pageMessage, setPageMessage] = useState("");
+  const [pageBusy, setPageBusy] = useState(false);
 
   useEffect(() => {
     const author = new URLSearchParams(window.location.search).get("author");
@@ -24,6 +30,7 @@ export default function ProfileClient() {
       return;
     }
     fetch("/api/wab/profile").then((response) => response.json()).then((data) => data.profile && setForm({ headline: data.profile.headline ?? "", about: data.profile.about ?? "", companyName: data.profile.companyName ?? "", industry: data.profile.industry ?? "", country: data.profile.country ?? "", city: data.profile.city ?? "" }));
+    fetch("/api/wab/pages").then((response) => response.json()).then((data) => setPages(data.pages ?? [])).catch(() => setPages([]));
   }, []);
 
   async function save(event: React.FormEvent) {
@@ -38,6 +45,11 @@ export default function ProfileClient() {
     finally { setBusy(false); }
   }
 
+  async function createPage(event: React.FormEvent) {
+    event.preventDefault(); setPageBusy(true); setPageMessage("");
+    try { const response = await fetch("/api/wab/pages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: pageName, description: pageDescription }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error); setPages((items) => [...items, data.page]); setPageName(""); setPageDescription(""); setPageMessage("Page créée avec succès."); } catch (error) { setPageMessage(error instanceof Error ? error.message : "Création impossible."); } finally { setPageBusy(false); }
+  }
+
   if (publicMode) {
     const profile = publicData?.profile;
     const name = profile?.fullName ?? publicData?.author ?? "Profil WAB";
@@ -45,5 +57,5 @@ export default function ProfileClient() {
   }
 
   const field = "mt-1 w-full rounded-xl border border-slate-200 px-3 py-3 outline-none focus:border-[#087e8b]";
-  return <main className="min-h-screen bg-[#f4f7f8] py-10"><div className="mx-auto max-w-3xl px-5"><p className="text-xs font-bold uppercase tracking-widest text-[#087e8b]">World Africa Business</p><h1 className="mt-2 font-display text-3xl font-extrabold text-[#082843]">Mon profil professionnel</h1><p className="mt-3 text-slate-600">Ce profil est propre à WAB. Une mesure de modération WAB n’impactera pas vos autres espaces Envol Africa.</p><form onSubmit={save} className="mt-7 rounded-3xl bg-white p-6 shadow-sm sm:p-8"><div className="grid gap-5 sm:grid-cols-2"><label>Fonction / accroche<input value={form.headline} onChange={(e) => setForm({ ...form, headline: e.target.value })} required className={field} placeholder="Ex. Fondatrice · AgriTech" /></label><label>Entreprise<input value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} className={field} /></label><label>Secteur<input value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })} className={field} placeholder="Ex. Finance, Agro, Tech" /></label><label>Pays<select value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} required className={field}><option value="">Choisir</option>{AFRICA_COUNTRIES.map((country) => <option key={country.code}>{country.name}</option>)}</select></label><label>Ville<input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className={field} /></label></div><label className="mt-5 block">Présentation professionnelle<textarea value={form.about} onChange={(e) => setForm({ ...form, about: e.target.value })} required rows={7} className={field} placeholder="Votre expertise, votre activité et les opportunités que vous recherchez…" /></label>{message && <p className="mt-5 rounded-xl bg-[#e9f7f5] p-4 text-sm font-bold text-[#087e8b]">{message}</p>}<button disabled={busy} className="mt-6 rounded-xl bg-[#087e8b] px-6 py-3 font-bold text-white disabled:opacity-50">{busy ? "Enregistrement…" : "Enregistrer mon profil"}</button></form></div></main>;
+  return <main className="min-h-screen bg-[#f4f7f8] py-10"><div className="mx-auto max-w-3xl px-5"><p className="text-xs font-bold uppercase tracking-widest text-[#087e8b]">World Africa Business</p><h1 className="mt-2 font-display text-3xl font-extrabold text-[#082843]">Mon profil professionnel</h1><p className="mt-3 text-slate-600">Ce profil est propre à WAB. Une mesure de modération WAB n’impactera pas vos autres espaces Envol Africa.</p><form onSubmit={save} className="mt-7 rounded-3xl bg-white p-6 shadow-sm sm:p-8"><div className="grid gap-5 sm:grid-cols-2"><label>Fonction / accroche<input value={form.headline} onChange={(e) => setForm({ ...form, headline: e.target.value })} required className={field} placeholder="Ex. Fondatrice · AgriTech" /></label><label>Entreprise<input value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} className={field} /></label><label>Secteur<input value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })} className={field} placeholder="Ex. Finance, Agro, Tech" /></label><label>Pays<select value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} required className={field}><option value="">Choisir</option>{AFRICA_COUNTRIES.map((country) => <option key={country.code}>{country.name}</option>)}</select></label><label>Ville<input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className={field} /></label></div><label className="mt-5 block">Présentation professionnelle<textarea value={form.about} onChange={(e) => setForm({ ...form, about: e.target.value })} required rows={7} className={field} placeholder="Votre expertise, votre activité et les opportunités que vous recherchez…" /></label>{message && <p className="mt-5 rounded-xl bg-[#e9f7f5] p-4 text-sm font-bold text-[#087e8b]">{message}</p>}<button disabled={busy} className="mt-6 rounded-xl bg-[#087e8b] px-6 py-3 font-bold text-white disabled:opacity-50">{busy ? "Enregistrement…" : "Enregistrer mon profil"}</button></form><section className="mt-7 rounded-3xl bg-white p-6 shadow-sm sm:p-8"><p className="text-xs font-bold uppercase tracking-widest text-[#087e8b]">Pages WAB</p><h2 className="mt-2 font-display text-2xl font-extrabold text-[#082843]">Créer une page</h2><p className="mt-2 text-sm text-slate-600">Une page représente une marque, une entreprise ou un projet. Les contenus Magazine republiés sont publiés automatiquement dans la page ENVOL AFRICA.</p><div className="mt-5 grid gap-3 sm:grid-cols-2">{pages.map((page) => <div key={page.id} className="flex items-center gap-3 rounded-2xl border border-[#d1e9e6] bg-[#eefcfa] p-3"><img src={page.logo_url || page.logoUrl || "/logo-couleur-entete.png"} alt="" className="h-12 w-12 rounded-xl bg-white object-contain p-1"/><div><p className="font-bold text-[#082843]">{page.name}</p><p className="text-xs text-slate-500">Page active</p></div></div>)}</div><form onSubmit={createPage} className="mt-5 grid gap-3 sm:grid-cols-[1fr_1fr_auto]"><input value={pageName} onChange={(e) => setPageName(e.target.value)} required placeholder="Nom de la page" className={field}/><input value={pageDescription} onChange={(e) => setPageDescription(e.target.value)} placeholder="Description courte" className={field}/><button disabled={pageBusy} className="rounded-xl bg-[#006874] px-5 py-3 font-bold text-white disabled:opacity-50">{pageBusy ? "Création…" : "Créer"}</button></form>{pageMessage && <p className="mt-3 rounded-xl bg-[#e9f7f5] p-3 text-sm font-bold text-[#087e8b]">{pageMessage}</p>}</section></div></main>;
 }

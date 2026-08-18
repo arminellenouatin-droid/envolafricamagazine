@@ -1,7 +1,7 @@
 import type { Magazine } from "@/lib/db";
 import type { MarketplaceProduct } from "@/lib/marketplace-seed";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-import { getWabProfileByUserId, upsertWabProfile } from "@/lib/wab-supabase";
+import { ensureWabPage, getWabProfileByUserId, upsertWabProfile } from "@/lib/wab-supabase";
 
 export const MAGAZINE_MARKETPLACE_CATEGORY = "Magazines & médias";
 export const MAGAZINE_MARKETPLACE_PREFIX = "magazine-";
@@ -53,10 +53,12 @@ export async function publishMagazineToWab(magazine: Magazine, authorUserId: str
   }
   if (!profile) return { configured: true as const, published: false as const, reason: "profile_not_found" as const };
 
+  const pageResult = await ensureWabPage(authorUserId, { name: "ENVOL AFRICA", slug: "envol-africa", logoUrl: "/logo-couleur-entete.png", description: "La page officielle d’Envol Africa dans le réseau WAB." });
   const sourceUrl = `/kiosque/${magazine.id}`;
   const sourceTitle = magazine.title || `Envol Africa Magazine N°${magazine.numero}`;
   const payload = {
     author_id: profile.id,
+    page_id: pageResult.page?.id ?? null,
     content: `Nouveau numéro disponible : ${sourceTitle}\n\n${magazine.description || "Découvrez les analyses, enquêtes et opportunités du nouveau numéro."}\n\nAcheter et feuilleter : ${sourceUrl}`,
     content_type: "document",
     media: magazine.cover ? [{ path: magazine.cover, mimeType: "image/*", name: sourceTitle }] : [],

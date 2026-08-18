@@ -23,6 +23,8 @@ export type WabPostRow = {
   source_id?: string | null;
   source_url?: string | null;
   source_title?: string | null;
+  page_id?: string | null;
+  wab_pages?: { id: string; name: string; slug: string; logo_url: string | null; owner_user_id: string };
   wab_profiles?: {
     id: string;
     fullName?: string;
@@ -31,8 +33,11 @@ export type WabPostRow = {
     avatar_url: string | null;
     city: string | null;
     country_code: string | null;
+    users?: { prenom?: string | null; nom?: string | null; full_name?: string | null };
   };
 };
+
+export type WabPageRow = { id: string; owner_user_id: string; name: string; slug: string; logo_url: string | null; description: string | null; status: string; created_at: string; updated_at: string };
 
 export type WabProfileRow = {
   id: string;
@@ -48,6 +53,33 @@ export type WabProfileRow = {
   created_at: string;
   updated_at: string;
 };
+
+// --- PAGES ---
+export async function listWabPages(ownerUserId: string) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false as const, pages: null };
+  const { data, error } = await supabase.from("wab_pages").select("*").eq("owner_user_id", ownerUserId).eq("status", "active").order("created_at", { ascending: true });
+  if (error) return { configured: true as const, pages: null, error };
+  return { configured: true as const, pages: data as WabPageRow[] };
+}
+
+export async function ensureWabPage(ownerUserId: string, input: { name: string; slug: string; logoUrl?: string; description?: string }) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false as const, page: null };
+  const { data: existing } = await supabase.from("wab_pages").select("*").eq("owner_user_id", ownerUserId).eq("slug", input.slug).maybeSingle();
+  if (existing) return { configured: true as const, page: existing as WabPageRow };
+  const { data, error } = await supabase.from("wab_pages").insert({ owner_user_id: ownerUserId, name: input.name, slug: input.slug, logo_url: input.logoUrl ?? null, description: input.description ?? null, status: "active" }).select("*").single();
+  if (error) return { configured: true as const, page: null, error };
+  return { configured: true as const, page: data as WabPageRow };
+}
+
+export async function createWabPage(ownerUserId: string, input: { name: string; slug: string; logoUrl?: string; description?: string }) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false as const, page: null };
+  const { data, error } = await supabase.from("wab_pages").insert({ owner_user_id: ownerUserId, name: input.name, slug: input.slug, logo_url: input.logoUrl ?? null, description: input.description ?? null, status: "active" }).select("*").single();
+  if (error) return { configured: true as const, page: null, error };
+  return { configured: true as const, page: data as WabPageRow };
+}
 
 // --- PROFILES ---
 export async function getWabProfileByUserId(userId: string) {
@@ -104,7 +136,7 @@ export async function listWabPosts(page: number, limit: number, filters: { count
   // RÃ©cupÃ©rer les posts avec les profils associÃ©s
   let query = supabase
     .from("wab_posts")
-    .select("*, wab_profiles:author_id(id, user_id, headline, avatar_url, city, country_code)")
+    .select("*, wab_pages:page_id(id, name, slug, logo_url, owner_user_id), wab_profiles:author_id(id, user_id, headline, avatar_url, city, country_code, users:user_id(prenom, nom, full_name))")
     .eq("moderation_status", "published");
 
   // Tri par boost puis par date
@@ -134,6 +166,7 @@ export async function createWabPostInSupabase(profileId: string, input: {
   type: string;
   media?: Array<{ path: string; mimeType: string; name: string }>;
   tags?: string[];
+  pageId?: string;
 }) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false as const, post: null };
@@ -151,7 +184,8 @@ export async function createWabPostInSupabase(profileId: string, input: {
       views_count: 0,
       likes_count: 0,
       comments_count: 0,
-      shares_count: 0
+      shares_count: 0,
+      page_id: input.pageId ?? null
     })
     .select()
     .single();

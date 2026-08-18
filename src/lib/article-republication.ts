@@ -1,6 +1,6 @@
 import type { Article } from "@/lib/db";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-import { getWabProfileByUserId, upsertWabProfile } from "@/lib/wab-supabase";
+import { ensureWabPage, getWabProfileByUserId, upsertWabProfile } from "@/lib/wab-supabase";
 
 export async function publishArticleToWab(article: Article, authorUserId: string) {
   const supabase = getSupabaseAdmin();
@@ -19,10 +19,12 @@ export async function publishArticleToWab(article: Article, authorUserId: string
   }
   if (!profile) return { configured: true as const, published: false as const, reason: "profile_not_found" as const };
 
+  const pageResult = await ensureWabPage(authorUserId, { name: "ENVOL AFRICA", slug: "envol-africa", logoUrl: "/logo-couleur-entete.png", description: "La page officielle d’Envol Africa dans le réseau WAB." });
   const sourceUrl = `/article/${article.slug}`;
   const sourceTitle = article.title;
   const payload = {
     author_id: profile.id,
+    page_id: pageResult.page?.id ?? null,
     content: `${sourceTitle}\n\n${article.summary || article.content.slice(0, 280)}\n\nLire l’article complet :\n${sourceUrl}`,
     content_type: "document",
     media: article.image ? [{ path: article.image, mimeType: "image/*", name: sourceTitle }] : [],
