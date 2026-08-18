@@ -8,7 +8,8 @@ export async function GET(request: NextRequest) {
   if (author) {
     const profile = db.profiles.find((item) => item.status === "active" && item.fullName.toLocaleLowerCase() === author.toLocaleLowerCase()) ?? null;
     const post = db.posts.find((item) => item.author.toLocaleLowerCase() === author.toLocaleLowerCase());
-    return NextResponse.json({ profile, author, avatarUrl: post?.authorAvatarUrl, postCount: db.posts.filter((item) => item.author.toLocaleLowerCase() === author.toLocaleLowerCase()).length });
+    const posts = db.posts.filter((item) => item.author.toLocaleLowerCase() === author.toLocaleLowerCase() && item.moderationStatus === "published").sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+    return NextResponse.json({ profile, author, avatarUrl: post?.authorAvatarUrl, postCount: posts.length, posts });
   }
   const user = await getCurrentUserFromCookie();
   if (!user) return NextResponse.json({ profile: null });

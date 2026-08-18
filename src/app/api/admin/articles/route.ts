@@ -2,10 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserForAdmin } from "@/lib/admin-auth";
 import { writeDB } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 export async function GET() {
   const { user, db, error, status } = await getCurrentUserForAdmin('redacteur');
   if (error) return NextResponse.json({ error }, { status });
+  const client = getSupabaseAdmin();
+  if (client) {
+    const { data, error: queryError } = await client.from("articles").select("*").order("created_at", { ascending: false });
+    if (queryError) return NextResponse.json({ error: "Impossible de charger les articles." }, { status: 503 });
+    return NextResponse.json({ articles: data ?? [] });
+  }
   return NextResponse.json({ articles: db!.articles.sort((a,b)=> new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) });
 }
 
@@ -16,7 +23,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { title, summary, content, category, author, image, isPublished, isFeatured, isSentinelle, isEssor, isOmbreDouce, tags } = body;
     if (!title || !content) return NextResponse.json({ error: "Titre et contenu requis" }, { status: 400 });
-    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') + "-" + Date.now().toString().slice(-4);
+    const slug = title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') + "-" + Date.now().toString().slice(-4);
+    const client = getSupabaseAdmin();
     const newArticle = {
       id: uuidv4(),
       slug,
@@ -43,8 +51,12 @@ export async function POST(req: NextRequest) {
       audioUrl: "/audio/sample.mp3",
       readingTime: Math.ceil(content.split(' ').length / 200),
     };
-    db!.articles.push(newArticle as any);
-    writeDB(db!);
+    if (client) {
+      const { data: article, error: insertError } = await client.from("articles").insert({ id: newArticle.id, slug: newArticle.slug, title: newArticle.title, summary: newArticle.summary, content: newArticle.content, preview_lines: newArticle.previewLines, category: newArticle.category, tags: newArticle.tags, author: newArticle.author, author_id: newArticle.authorId, image: newArticle.image, is_published: newArticle.isPublished, is_featured: newArticle.isFeatured, is_sentinelle: newArticle.isSentinelle, is_essor: newArticle.isEssor, is_ombre_douce: newArticle.isOmbreDouce, views: 0, likes: 0, created_at: newArticle.createdAt, published_at: newArticle.publishedAt ?? null, language: newArticle.language, has_audio: newArticle.hasAudio, audio_url: newArticle.audioUrl, reading_time: newArticle.readingTime }).select("*").single();
+      if (insertError) return NextResponse.json({ error: "Impossible d’enregistrer l’article dans Supabase." }, { status: 503 });
+      return NextResponse.json({ success: true, article });
+    }
+    db!.articles.push(newArticle as any); writeDB(db!);
     return NextResponse.json({ success: true, article: newArticle });
   } catch (e) {
     console.error(e);
