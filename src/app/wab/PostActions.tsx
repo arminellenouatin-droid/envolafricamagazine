@@ -43,8 +43,13 @@ export default function PostActions({ postId, initialLikes, initialComments, ini
     } else if (destination === "friend" && typeof navigator.share === "function") {
       try { await navigator.share({ title: "Publication WAB", text: "Découvrez cette publication sur WAB", url }); } catch { return; }
       setNotice("Publication partagée avec votre ami.");
+    } else if (destination === "feed") {
+      const feedResponse = await fetch("/api/wab/posts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: `Je partage cette publication WAB : ${url}`, type: "text", tags: ["Partage"] }) });
+      const feedData = await readJson(feedResponse);
+      if (!feedResponse.ok) { setNotice(String(feedData.error || "Publication dans le fil impossible.")); return; }
+      setNotice("Publication repartagée dans le fil WAB.");
     } else {
-      try { await navigator.clipboard.writeText(url); setNotice("Lien de la publication copié pour le fil WAB."); } catch { window.prompt("Copiez le lien de la publication", url); }
+      try { await navigator.clipboard.writeText(url); setNotice("Lien copié pour le partager avec un ami."); } catch { window.prompt("Copiez le lien de la publication", url); }
     }
     const response = await fetch(`/api/wab/posts/${postId}/share`, { method: "POST" });
     const data = await readJson(response);
