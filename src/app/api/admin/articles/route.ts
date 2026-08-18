@@ -14,9 +14,9 @@ export async function GET() {
   if (error) return NextResponse.json({ error }, { status });
   const client = getSupabaseAdmin();
   if (client) {
-    const { data, error: queryError } = await client.from("articles").select("*").order("created_at", { ascending: false });
+    const { data, error: queryError } = await client.from("articles").select("*, article_categories(category_id, categories(id,label)), editorial_authors!articles_author_profile_id_fkey(id,name,photo_url,bio,role_label)").order("created_at", { ascending: false });
     if (queryError) return NextResponse.json({ error: "Impossible de charger les articles." }, { status: 503 });
-    const articles = (data ?? []).map((row: any) => ({ ...row, isPublished: Boolean(row.is_published), isEncrypted: Boolean(row.is_encrypted ?? true), isFeatured: Boolean(row.is_featured), isSentinelle: Boolean(row.is_sentinelle), isEssor: Boolean(row.is_essor), isOmbreDouce: Boolean(row.is_ombre_douce), authorId: row.author_id, authorProfileId: row.author_profile_id, categoryId: row.category_id, publishedAt: row.published_at, createdAt: row.created_at }));
+    const articles = (data ?? []).map((row: any) => ({ ...row, categories: Array.isArray(row.article_categories) ? row.article_categories.map((item: any) => item.categories?.label).filter(Boolean) : [row.category].filter(Boolean), categoryIds: Array.isArray(row.article_categories) ? row.article_categories.map((item: any) => item.category_id).filter(Boolean) : [], isPublished: Boolean(row.is_published), isEncrypted: Boolean(row.is_encrypted ?? true), isFeatured: Boolean(row.is_featured), isSentinelle: Boolean(row.is_sentinelle), isEssor: Boolean(row.is_essor), isOmbreDouce: Boolean(row.is_ombre_douce), authorId: row.author_id, authorProfileId: row.author_profile_id, authorProfile: row.editorial_authors || null, categoryId: row.category_id, publishedAt: row.published_at, createdAt: row.created_at }));
     return NextResponse.json({ articles });
   }
   return NextResponse.json({ articles: db!.articles.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) });
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error }, { status });
   try {
     const body = await req.json();
-    const { title, summary, content, category, categoryId, author, authorId, authorProfileId, image, isEncrypted, isPublished, isFeatured, isSentinelle, isEssor, isOmbreDouce, tags } = body;
+    const { title, summary, content, category, categoryId, categoryIds, author, authorId, authorProfileId, image, isEncrypted, isPublished, isFeatured, isSentinelle, isEssor, isOmbreDouce, tags } = body;
     if (!title || !content) return NextResponse.json({ error: "Titre et contenu requis" }, { status: 400 });
     const createdAt = new Date().toISOString();
     const published = Boolean(isPublished);
@@ -41,6 +41,8 @@ export async function POST(req: NextRequest) {
     if (client) {
       const { data: article, error: insertError } = await client.from("articles").insert({ id: newArticle.id, slug: newArticle.slug, title: newArticle.title, summary: newArticle.summary, content: newArticle.content, preview_lines: newArticle.previewLines, category: newArticle.category, tags: newArticle.tags, author: newArticle.author, author_id: newArticle.authorId, image: newArticle.image, author_profile_id: authorProfileId || null, category_id: categoryId || null, is_published: newArticle.isPublished, is_encrypted: newArticle.isEncrypted, is_featured: newArticle.isFeatured, is_sentinelle: newArticle.isSentinelle, is_essor: newArticle.isEssor, is_ombre_douce: newArticle.isOmbreDouce, views: 0, likes: 0, created_at: newArticle.createdAt, published_at: newArticle.publishedAt ?? null, language: newArticle.language, has_audio: newArticle.hasAudio, audio_url: newArticle.audioUrl, reading_time: newArticle.readingTime }).select("*").single();
       if (insertError) return NextResponse.json({ error: `Impossible d’enregistrer l’article : ${insertError.message}` }, { status: 503 });
+      const relationIds = Array.isArray(categoryIds) ? categoryIds.filter(Boolean) : (categoryId ? [categoryId] : []);
+      if (relationIds.length) await client.from("article_categories").insert(relationIds.map((category_id: string, index: number) => ({ article_id: newArticle.id, category_id, is_primary: index === 0 })));
       const republication = newArticle.isPublished ? await publishArticleToWab(newArticle, user!.id) : { published: false, reason: "article_draft" };
       return NextResponse.json({ success: true, article, republication });
     }
@@ -80,6 +82,7 @@ export async function PUT(req: NextRequest) {
       if (publishedAt) patch.published_at = publishedAt;
       const result = await client.from("articles").update(patch).eq("id", id).select("*").single();
       if (result.error) return NextResponse.json({ error: `Impossible d’enregistrer l’article : ${result.error.message}` }, { status: 503 });
+      if (Object.prototype.hasOwnProperty.call(updates, "categoryIds") || Object.prototype.hasOwnProperty.call(updates, "categoryId")) { await client.from("article_categories").delete().eq("article_id", id); const relationIds = Array.isArray(updates.categoryIds) ? updates.categoryIds.filter(Boolean) : (updates.categoryId ? [updates.categoryId] : []); if (relationIds.length) await client.from("article_categories").insert(relationIds.map((category_id: string, index: number) => ({ article_id: id, category_id, is_primary: index === 0 }))); }
       const article = result.data ? { ...result.data, isPublished: Boolean(result.data.is_published), isEncrypted: Boolean(result.data.is_encrypted ?? true), isFeatured: Boolean(result.data.is_featured), isSentinelle: Boolean(result.data.is_sentinelle), isEssor: Boolean(result.data.is_essor), isOmbreDouce: Boolean(result.data.is_ombre_douce), authorId: result.data.author_id, publishedAt: result.data.published_at, createdAt: result.data.created_at } : result.data;
       return NextResponse.json({ success: true, article });
     }

@@ -73,11 +73,16 @@ function mapArticle(row: Record<string, unknown>): Article {
     content: String(row.content ?? ""),
     previewLines: Number(row.preview_lines ?? 12),
     category: String(row.category ?? ""),
+    categories: Array.isArray(row.article_categories) ? row.article_categories.map((item: any) => String(item.categories?.label || item.category?.label || "")).filter(Boolean) : [String(row.category ?? "")].filter(Boolean),
+    categoryIds: Array.isArray(row.article_categories) ? row.article_categories.map((item: any) => String(item.category_id || "")).filter(Boolean) : (typeof row.category_id === "string" ? [row.category_id] : []),
     categoryId: typeof row.category_id === "string" ? row.category_id : undefined,
     tags: Array.isArray(row.tags) ? row.tags.map(String) : [],
     author: String(row.author ?? ""),
     authorId: String(row.author_id ?? ""),
     authorProfileId: typeof row.author_profile_id === "string" ? row.author_profile_id : undefined,
+    authorProfilePhoto: typeof (row.editorial_authors as any)?.photo_url === "string" ? (row.editorial_authors as any).photo_url : undefined,
+    authorProfileBio: typeof (row.editorial_authors as any)?.bio === "string" ? (row.editorial_authors as any).bio : undefined,
+    authorProfileRole: typeof (row.editorial_authors as any)?.role_label === "string" ? (row.editorial_authors as any).role_label : undefined,
     image: String(row.image ?? ""),
     images: Array.isArray(row.images) ? row.images.map(String) : [],
     isPublished: Boolean(row.is_published ?? true),
@@ -203,7 +208,7 @@ export async function findEditorialAuthorById(id?: string): Promise<{ id: string
 export async function listPublishedArticles(): Promise<Article[]> {
   const client = getPublicClient();
   if (!client) return canUseJsonFallback() ? readDB().articles.filter((article) => article.isPublished) : [];
-  const { data, error } = await client.from("articles").select("*").eq("is_published", true).order("published_at", { ascending: false });
+  const { data, error } = await client.from("articles").select("*, article_categories(category_id, categories(id,label)), editorial_authors!articles_author_profile_id_fkey(id,name,photo_url,bio,role_label)").eq("is_published", true).order("published_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map((row) => mapArticle(row as Record<string, unknown>));
 }
@@ -211,7 +216,7 @@ export async function listPublishedArticles(): Promise<Article[]> {
 export async function findArticleBySlug(slug: string): Promise<Article | null> {
   const client = getPublicClient();
   if (!client) return canUseJsonFallback() ? getJsonArticleBySlug(slug) ?? null : null;
-  const { data, error } = await client.from("articles").select("*").eq("slug", slug).maybeSingle();
+  const { data, error } = await client.from("articles").select("*, article_categories(category_id, categories(id,label)), editorial_authors!articles_author_profile_id_fkey(id,name,photo_url,bio,role_label)").eq("slug", slug).maybeSingle();
   if (error) throw error;
   return data ? mapArticle(data as Record<string, unknown>) : null;
 }

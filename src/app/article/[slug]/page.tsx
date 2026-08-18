@@ -25,12 +25,8 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   if (!article) return notFound();
   const [editorialAuthor, isSubscriber] = await Promise.all([findEditorialAuthorById(article.authorProfileId), getIsSubscribed()]);
 
-  const words = article.content.split(/\s+/);
-  const preview = words.slice(0, 12*14).join(' ');
-  const blur = words.slice(12*14, 15*14).join(' ');
-  const rest = words.slice(15*14).join(' ');
-
-  const related = articles.filter(a=>a.category===article.category && a.id!==article.id).slice(0,3);
+  const articleCategorySet = new Set(article.categories?.length ? article.categories : [article.category]);
+  const related = articles.filter((a) => a.id !== article.id && (a.categories || [a.category]).some((category) => articleCategorySet.has(category))).slice(0, 3);
 
   return (
     <div className="bg-[#fcf9f8] min-h-screen">
@@ -47,10 +43,11 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           <div className="min-w-0">
           <header className="mb-8">
             <div className="flex gap-2 mb-4">
-              <span className="bg-[#9e001f]/10 text-[#9e001f] px-3 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold">{article.category}</span>
+              {(article.categories?.length ? article.categories : [article.category]).map((category) => <span key={category} className="bg-[#9e001f]/10 text-[#9e001f] px-3 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold">{category}</span>)}
               <span className="bg-[#5f5e5e]/10 text-[#5f5e5e] px-3 py-1 rounded-full text-[11px] uppercase tracking-wider">Exclusif</span>
             </div>
-            <h1 className="text-[32px] md:text-[40px] leading-tight font-bold text-[#1b1c1c] mb-6" style={{ fontFamily: "Montserrat" }}>{article.title}</h1>
+            <h1 className="text-[32px] md:text-[40px] leading-tight font-bold text-[#1b1c1c] mb-4" style={{ fontFamily: "Montserrat" }}>{article.title}</h1>
+            <div className="mb-6 flex items-center gap-3 lg:hidden"><img src={editorialAuthor?.photoUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100"} alt={editorialAuthor?.name || article.author} className="h-9 w-9 rounded-full object-cover"/><div><p className="text-[12px] font-bold text-[#1b1c1c]">{editorialAuthor?.name || article.author}</p><p className="text-[10px] text-[#9e001f]">{editorialAuthor?.roleLabel || "Rédacteur"}</p></div></div>
             <p className="text-[18px] text-[#5c403f] mb-8 italic leading-[1.6]" style={{ fontFamily: "Source Serif 4" }}>{article.summary}</p>
 
             <div className="flex items-center justify-between py-6 border-y border-[#e5bdbb]">
@@ -87,7 +84,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             </div>
           )}
 
-          <ArticlePaywall preview={preview} blur={blur} rest={isSubscriber ? rest : ""} isSubscriber={isSubscriber} isEncrypted={article.isEncrypted !== false} fullContent={article.isEncrypted === false || isSubscriber ? article.content : ""} articleId={article.id} />
+          <ArticlePaywall summary={article.summary} isSubscriber={isSubscriber} isEncrypted={article.isEncrypted !== false} fullContent={article.content} />
 
           <ArticleActions articleId={article.id} initialLikes={article.likes} />
           </div>
