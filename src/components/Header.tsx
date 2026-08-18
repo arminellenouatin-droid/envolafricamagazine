@@ -172,19 +172,21 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
   };
 
   const displayName = user?.prenom || user?.nom || "Mon compte";
+  const isMagazineExperience = platform.key === "magazine" || platform.key === "kiosque";
+  const firstLineActive = (href: string) => href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
     <>
-      <nav className="hidden items-center justify-between border-b border-white/10 bg-[#303030] px-5 py-2 text-white md:flex lg:px-[64px]" style={{ fontFamily: "Century Gothic, Inter, sans-serif" }}>
+      {isMagazineExperience && <nav className="hidden items-center justify-between border-b border-[#d8c3c1] bg-white px-5 py-2 text-black lg:flex lg:px-[64px]" style={{ fontFamily: "Century Gothic, Inter, sans-serif" }}>
         <div className="flex items-center gap-5 text-[12px] font-medium">
-          {firstLineMenus.map((item) => <Link key={item.name} href={item.href} className="flex items-center gap-1.5 transition-colors hover:text-[#ffdad8]"><span className="material-symbols-outlined text-[16px]">{item.icon}</span>{item.name}</Link>)}
+          {firstLineMenus.map((item) => <Link key={item.name} href={item.href} className={`flex items-center gap-1.5 transition-colors hover:text-[#9e001f] ${firstLineActive(item.href) ? "font-bold text-[#9e001f]" : ""}`}><span className="material-symbols-outlined text-[16px]">{item.icon}</span>{item.name}</Link>)}
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" className="grid h-8 w-8 place-items-center rounded-full bg-white/10 hover:bg-white/20" title="Traduction"><span className="material-symbols-outlined text-[18px]">translate</span></button>
-          <button type="button" className="grid h-8 w-8 place-items-center rounded-full bg-white/10 hover:bg-white/20" title="Devise"><span className="material-symbols-outlined text-[18px]">payments</span></button>
-          <button type="button" onClick={toggleDarkMode} className="grid h-8 w-8 place-items-center rounded-full bg-white/10 hover:bg-white/20" title={darkMode ? "Mode clair" : "Mode sombre"}><span className="material-symbols-outlined text-[18px]">{darkMode ? "light_mode" : "dark_mode"}</span></button>
+          <button type="button" className="grid h-8 w-8 place-items-center text-black transition-colors hover:text-[#9e001f]" title="Traduction"><span className="material-symbols-outlined text-[18px]">translate</span></button>
+          <button type="button" className="grid h-8 w-8 place-items-center text-black transition-colors hover:text-[#9e001f]" title="Devise"><span className="material-symbols-outlined text-[18px]">payments</span></button>
+          <button type="button" onClick={toggleDarkMode} className="grid h-8 w-8 place-items-center text-black transition-colors hover:text-[#9e001f]" title={darkMode ? "Mode clair" : "Mode sombre"}><span className="material-symbols-outlined text-[18px]">{darkMode ? "light_mode" : "dark_mode"}</span></button>
         </div>
-      </nav>
+      </nav>}
 
       <header className="sticky top-0 z-40 border-b border-[#e5bdbb] bg-[#fcf9f8] shadow-sm">
         <div className="mx-auto flex h-[76px] max-w-[1280px] items-center justify-between px-5 lg:px-[64px]">
@@ -201,8 +203,8 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
               {dropdownOpen && <div className="absolute left-0 top-full z-50 mt-2 w-72 rounded-xl border border-[#e5bdbb] bg-white p-2 shadow-xl">{platformOptions.map((item) => <Link key={item.key} href={item.href} onClick={() => setDropdownOpen(false)} className={`block rounded-lg px-4 py-2.5 text-[13px] transition-colors hover:bg-[#f6f3f2] hover:text-[#9e001f] ${platform.key === item.key ? "bg-[#f0eded] font-bold text-[#9e001f]" : ""}`}>{item.name}</Link>)}</div>}
             </div>
 
-            <div className="relative hidden lg:block">
-              <button type="button" aria-expanded={megaMenuOpen} onClick={() => setMegaMenuOpen((open) => !open)} onMouseEnter={() => setMegaMenuOpen(true)} className="flex items-center gap-1 rounded-full px-4 py-2 text-[13px] font-bold text-white transition-colors hover:brightness-110" style={{ backgroundColor: platform.accent }}>
+            <div className="relative hidden lg:block" onMouseEnter={() => setMegaMenuOpen(true)} onMouseLeave={() => setMegaMenuOpen(false)}>
+              <button type="button" aria-expanded={megaMenuOpen} onClick={() => setMegaMenuOpen((open) => !open)} className="flex items-center gap-1 rounded-full px-4 py-2 text-[13px] font-bold text-white transition-colors hover:brightness-110" style={{ backgroundColor: platform.accent }}>
                 {platform.megaLabel}<span className="material-symbols-outlined text-[18px]">expand_more</span>
               </button>
               {megaMenuOpen && <MegaMenu platform={platform} onClose={() => setMegaMenuOpen(false)} />}
@@ -218,24 +220,24 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
               <button type="button" onClick={() => setShowSearch((open) => !open)} aria-label="Rechercher" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f3f2] hover:bg-[#e5bdbb]"><span className="material-symbols-outlined text-[20px]">search</span></button>
             </div>
             <div className="hidden items-center gap-2 lg:flex">
-              {user ? <Link href="/compte" aria-label="Mon profil" className="flex max-w-[150px] items-center gap-2 truncate rounded bg-[#0A1931] px-3 py-2 text-[12px] font-bold text-white hover:bg-[#152a4d]">{user.avatar ? <img src={user.avatar} alt="" className="h-6 w-6 rounded-full object-cover" /> : <span className="grid h-6 w-6 place-items-center rounded-full bg-white/20 text-[10px]">{`${user.prenom?.[0] || ""}${user.nom?.[0] || ""}`}</span>}<span className="truncate">{displayName}</span></Link> : <Link href="/auth/login" className="rounded bg-[#dc2626] px-4 py-2 text-[12px] font-bold text-white hover:bg-[#b91c1c]">Se connecter</Link>}
+              {user ? <Link href="/compte" aria-label={`Mon profil : ${displayName}`} title={displayName} className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-[#d8c3c1] bg-white text-[11px] font-bold text-[#9e001f] transition-colors hover:border-[#9e001f]">{user.avatar ? <img src={user.avatar} alt={`Photo de profil de ${displayName}`} className="h-full w-full object-cover" /> : `${user.prenom?.[0] || ""}${user.nom?.[0] || ""}` || "M"}</Link> : <Link href="/auth/login" className="rounded bg-[#dc2626] px-4 py-2 text-[12px] font-bold text-white hover:bg-[#b91c1c]">Se connecter</Link>}
               <Link href="/abonnement" className="rounded bg-[#303030] px-4 py-2 text-[12px] font-bold text-white hover:bg-black">S'abonner</Link>
               <Link href="/don" className="rounded bg-[#16a34a] px-4 py-2 text-[12px] font-bold text-white hover:bg-[#15803d]">Faire un don</Link>
             </div>
-            <button type="button" onClick={() => setSideMenuOpen(true)} aria-label="Ouvrir le menu" className="ml-1 grid h-10 w-10 place-items-center rounded-full bg-[#303030] text-white hover:bg-black"><span className="material-symbols-outlined">menu</span></button>
+            <button type="button" onClick={() => setSideMenuOpen(true)} aria-label="Ouvrir le menu" className="ml-1 grid h-10 w-10 place-items-center text-black transition-colors hover:text-[#9e001f]"><span className="material-symbols-outlined">menu</span></button>
           </div>
         </div>
 
         {showSearch && <div className="border-t border-[#e5bdbb] bg-white p-4"><form onSubmit={(event) => { event.preventDefault(); if (searchQuery.trim()) window.location.assign(`/recherche?q=${encodeURIComponent(searchQuery.trim())}`); }} className="mx-auto flex max-w-[720px] gap-2"><input autoFocus value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Rechercher..." className="h-11 flex-1 rounded-lg border bg-[#f6f3f2] px-4" /><button type="button" onClick={() => setShowSearch(false)} aria-label="Fermer la recherche" className="grid h-11 w-11 place-items-center rounded-full border">×</button></form></div>}
       </header>
 
-      <section className="hidden items-center overflow-hidden border-b border-[#e5bdbb] bg-[#f0eded] py-2 md:flex">
+      {isMagazineExperience && <section className="hidden items-center overflow-hidden border-b border-black bg-black py-2 lg:flex">
         <div className="flex w-full items-center px-5 lg:px-[64px]">
           <span className="mr-4 shrink-0 bg-[#9e001f] px-3 py-1 text-[12px] font-bold tracking-wider text-white">À LA UNE</span>
-          <div className="flex-1 overflow-hidden"><p className="scrolling-ticker text-[13px] font-black text-black" style={{ fontFamily: "Century Gothic, sans-serif" }}>• Transition énergétique Nigeria 12M$ • Sommet UA libre-échange • PIB continental prévisions 2025 • Fintech Kenya • ZLECAf 1,3Md • Cacao 50% transformation locale • Wave 20M utilisateurs</p></div>
-          <div className="ml-4 flex items-center gap-2 whitespace-nowrap text-[12px] font-bold text-black"><span className="material-symbols-outlined text-[16px]">location_on</span>{cityWeather.city} • {cityWeather.temp} {cityWeather.icon}</div>
+          <div className="flex-1 overflow-hidden"><p className="scrolling-ticker text-[13px] font-black text-white" style={{ fontFamily: "Century Gothic, sans-serif" }}>• Transition énergétique Nigeria 12M$ • Sommet UA libre-échange • PIB continental prévisions 2025 • Fintech Kenya • ZLECAf 1,3Md • Cacao 50% transformation locale • Wave 20M utilisateurs</p></div>
+          <div className="ml-4 flex items-center gap-2 whitespace-nowrap text-[12px] font-bold text-white"><span className="material-symbols-outlined text-[16px]">location_on</span>{cityWeather.city} • {cityWeather.temp} {cityWeather.icon}</div>
         </div>
-      </section>
+      </section>}
 
       <div className="md:hidden">
         <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-around border-b border-[#e5bdbb] bg-[#fcf9f8] px-2 py-2">
