@@ -30,17 +30,23 @@ export async function POST(req: NextRequest) {
   if (body.type === "author") {
     const name = String(body.name || "").trim();
     if (!name) return NextResponse.json({ error: "Le nom du rédacteur est obligatoire" }, { status: 400 });
-    const slug = slugify(name) || `redacteur-${Date.now()}`;
+    const baseSlug = slugify(name) || "redacteur";
+    let slug = baseSlug;
+    const existing = await client.from("editorial_authors").select("id").eq("slug", slug).limit(1);
+    if (existing.data?.length) slug = `${baseSlug}-${Date.now().toString(36)}`;
     const { data, error } = await client.from("editorial_authors").insert({ name, slug, photo_url: body.photoUrl || null, bio: body.bio || null, role_label: body.roleLabel || "Rédacteur", is_active: body.isActive !== false }).select("*").single();
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return NextResponse.json({ error: error.code === "23505" ? "Un rédacteur portant ce nom existe déjà. Utilisez une fiche différente." : error.message }, { status: 400 });
     return NextResponse.json({ author: data });
   }
   if (body.type === "category") {
     const label = String(body.label || "").trim();
     if (!label) return NextResponse.json({ error: "Le nom de la catégorie est obligatoire" }, { status: 400 });
-    const slug = slugify(label) || `categorie-${Date.now()}`;
+    const baseSlug = slugify(label) || "categorie";
+    let slug = baseSlug;
+    const existing = await client.from("categories").select("id").eq("slug", slug).limit(1);
+    if (existing.data?.length) slug = `${baseSlug}-${Date.now().toString(36)}`;
     const { data, error } = await client.from("categories").insert({ label, slug, color_hex: body.colorHex || "#9e001f", is_active: body.isActive !== false }).select("*").single();
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return NextResponse.json({ error: error.code === "23505" ? "Cette catégorie existe déjà." : error.message }, { status: 400 });
     return NextResponse.json({ category: data });
   }
   return NextResponse.json({ error: "Type éditorial invalide" }, { status: 400 });
@@ -67,4 +73,22 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ category: data });
   }
   return NextResponse.json({ error: "Type éditorial invalide" }, { status: 400 });
+}
+
+export async function DELETE(req: NextRequest) {
+  const auth = await getCurrentUserForAdmin("redacteur_chef");
+  if ((auth as any).error) return NextResponse.json({ error: (auth as any).error }, { status: (auth as any).status || 401 });
+  const client = getSupabaseAdmin();
+  if (!client) return NextResponse.json({ error: "Base de production non configurée" }, { status: 503 });
+  const url = new URL(req.url);
+  const type = url.searchParams.get("type");
+  const id = url.searchParams.get("id");
+  if (!type || !id || !["author", "category"].includes(type)) return NextResponse.json({ error: "Type ou identifiant invalide" }, { status: 400 });
+  const relationColumn = type === "author" ? "author_profile_id" : "category_id";
+  const linked = await client.from("articles").select("id", { count: "exact", head: true }).eq(relationColumn, id);
+  if ((linked.count || 0) > 0) return NextResponse.json({ error: "Impossible de supprimer cet élément car des articles lui sont encore liés. Désactivez-le plutôt." }, { status: 409 });
+  const table = type === "author" ? "editorial_authors" : "categories";
+  const result = await client.from(table).delete().eq("id", id);
+  if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
+  return NextResponse.json({ success: true });
 }
