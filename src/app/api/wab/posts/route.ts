@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) { const user = await getCurrent
   if (supabaseProfile.configured) {
     let wabProfile = supabaseProfile.profile;
     if (!wabProfile) {
-      const createdProfile = await upsertWabProfile(user.id, { headline: user.company || "Membre du réseau WAB", about: "", companyName: user.company || "", countryCode: user.country || "", avatarUrl: typeof (user as { avatarUrl?: unknown }).avatarUrl === "string" ? (user as unknown as { avatarUrl: string }).avatarUrl : undefined });
+      const createdProfile = await upsertWabProfile(user.id, { headline: user.company || "Membre du réseau WAB", about: "", companyName: user.company || "", countryCode: user.country || "", avatarUrl: user.avatar || undefined });
       wabProfile = createdProfile.profile;
     }
     if (!wabProfile) return NextResponse.json({ error: "Impossible d’initialiser votre profil WAB." }, { status: 503 });

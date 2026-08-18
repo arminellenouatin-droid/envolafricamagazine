@@ -67,12 +67,13 @@ async function readJsonResponse<T>(response: Response): Promise<T> {
   try { return JSON.parse(raw) as T; } catch { throw new Error(`Réponse serveur invalide (HTTP ${response.status}). Veuillez réessayer.`); }
 }
 
-function ModelHeader() {
+function ModelHeader({ user }: { user: { id: string; nom?: string; prenom?: string; avatar?: string } | null }) {
+  const displayName = [user?.prenom, user?.nom].filter(Boolean).join(" ") || "Mon compte";
   return (
     <header className="sticky top-14 z-40 mx-auto w-full max-w-[1200px] border-b border-[#d1e9e6] bg-[#eefcfa]/95 shadow-sm backdrop-blur md:top-0">
       <div className="flex h-16 items-center justify-between px-4 md:px-10">
         <div className="h-8 w-8 overflow-hidden rounded-full">
-          <ModelAvatar src={MODEL_PROFILE} alt="Profil utilisateur" className="h-full w-full object-cover" />
+          {user?.avatar ? <ModelAvatar src={user.avatar} alt={`Photo de profil de ${displayName}`} className="h-full w-full object-cover" /> : <span className="grid h-full w-full place-items-center text-xs font-bold text-[#006874]">{displayName.slice(0, 1).toUpperCase()}</span>}
         </div>
         <div className="font-display text-3xl font-bold tracking-tight text-[#001325]">WAB</div>
         <button type="button" aria-label="Rechercher" className="grid h-10 w-10 place-items-center rounded-full text-[#006874] transition hover:bg-[#d7e5e3]">
@@ -91,16 +92,18 @@ function ModelHeader() {
   );
 }
 
-function ModelSidebar() {
+function ModelSidebar({ user }: { user: { id: string; nom?: string; prenom?: string; avatar?: string } | null }) {
+  const displayName = [user?.prenom, user?.nom].filter(Boolean).join(" ") || "Mon compte";
+  const initials = displayName.split(/\s+/).filter(Boolean).map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "W";
   return (
     <aside className="hidden w-80 shrink-0 flex-col gap-6 py-4 md:flex md:sticky md:top-16 md:h-[calc(100vh-4rem)]">
       <div className="mb-2 flex flex-col items-start gap-2 px-4">
-        <div className="h-16 w-16 overflow-hidden rounded-full shadow-sm">
-          <ModelAvatar src={MODEL_PROFILE} alt="Profil de Abebe Bikila" className="h-full w-full object-cover" />
-        </div>
-        <div>
-          <h2 className="font-display text-xl font-semibold text-[#001325]">Abebe Bikila</h2>
-          <p className="text-sm text-[#43474d]">Venture Partner</p>
+          <div className="h-16 w-16 overflow-hidden rounded-full bg-[#d7e5e3] shadow-sm">
+            {user?.avatar ? <ModelAvatar src={user.avatar} alt={`Photo de profil de ${displayName}`} className="h-full w-full object-cover" /> : <span className="grid h-full w-full place-items-center text-lg font-bold text-[#006874]">{initials}</span>}
+          </div>
+          <div>
+            <h2 className="font-display text-xl font-semibold text-[#001325]">{displayName}</h2>
+            <p className="text-sm text-[#43474d]">{user ? "Membre Envol Africa" : "Visiteur WAB"}</p>
           <span className="premium-text mt-1 inline-flex items-center gap-1 text-xs font-medium text-[#a36300]"><span className="material-symbols-outlined text-[14px]">workspace_premium</span>Premium Member</span>
         </div>
       </div>
@@ -197,10 +200,10 @@ export default function WabClient() {
   return (
     <><WabSocialHeader avatar={currentUser?.avatar} /><main className="min-h-screen bg-[#e9f7f5] pb-20 font-body text-[#111e1d] md:pb-0">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-4 py-3 md:flex-row md:gap-6 md:px-10 md:py-6">
-        <ModelSidebar />
+        <ModelSidebar user={currentUser} />
         <section className="flex w-full max-w-[800px] flex-1 flex-col gap-6">
           <StoriesReelsCarousel />
-          <div id="publier" className="flex items-center gap-3 rounded-3xl border border-[#d1e9e6] bg-white p-4 shadow-[0_2px_8px_rgba(8,40,67,0.08)]"><div className="h-10 w-10 shrink-0 overflow-hidden rounded-full">{currentUser?.avatar ? <img src={currentUser.avatar} alt="Votre photo de profil" className="h-full w-full object-cover" /> : <ModelAvatar src={MODEL_AUTHOR} alt="Avatar de publication" className="h-full w-full object-cover" />}</div><button type="button" onClick={() => setPublishOpen(true)} className="min-w-0 flex-1 rounded-full bg-[#eefcfa] px-4 py-3 text-left text-sm text-[#43474d] hover:border-[#006874]">What’s on your mind?</button></div>
+          <div id="publier" className="flex items-center gap-3 rounded-3xl border border-[#d1e9e6] bg-white p-4 shadow-[0_2px_8px_rgba(8,40,67,0.08)]"><div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[#d7e5e3]">{currentUser?.avatar ? <img src={currentUser.avatar} alt="Votre photo de profil" className="h-full w-full object-cover" /> : <span className="grid h-full w-full place-items-center text-sm font-bold text-[#006874]">{[currentUser?.prenom, currentUser?.nom].filter(Boolean).map((part) => part![0]).join("").slice(0, 2).toUpperCase() || "W"}</span>}</div><button type="button" onClick={() => setPublishOpen(true)} className="min-w-0 flex-1 rounded-full bg-[#eefcfa] px-4 py-3 text-left text-sm text-[#43474d] hover:border-[#006874]">What’s on your mind?</button></div>
           {publishOpen && <div className="fixed inset-0 z-[70] grid place-items-center bg-[#001325]/60 p-4" role="dialog" aria-modal="true" aria-label="Créer une publication"><div className="w-full max-w-2xl rounded-3xl bg-white p-5 shadow-2xl"><div className="flex items-center justify-between"><h2 className="font-display text-xl font-extrabold text-[#082843]">Créer une publication</h2><button type="button" onClick={() => setPublishOpen(false)} className="grid h-9 w-9 place-items-center rounded-full bg-[#eefcfa] text-[#006874]" aria-label="Fermer"><span className="material-symbols-outlined">close</span></button></div><textarea autoFocus value={content} onChange={(event) => setContent(event.target.value)} rows={6} placeholder="Que souhaitez-vous partager ?" className="mt-4 w-full resize-none rounded-2xl border border-[#d1e9e6] bg-[#eefcfa] p-4 text-sm outline-none focus:border-[#006874]" /><div className="mt-4 flex items-center justify-between gap-3"><label className="grid h-11 w-11 cursor-pointer place-items-center rounded-full bg-[#e9f7f5] text-[#006874]" aria-label="Ajouter des pièces jointes"><span className="material-symbols-outlined">attach_file</span><input type="file" multiple className="hidden" accept="image/jpeg,image/png,image/webp,video/mp4,audio/mpeg,audio/wav,audio/ogg,application/pdf,.docx,.xlsx,.pptx" onChange={(event) => chooseFiles(event.target.files)} /></label><span className="min-w-0 flex-1 truncate text-xs text-slate-500">{selectedFiles.length ? `${selectedFiles.length} pièce(s) jointe(s)` : "Ajouter fichier, photo, son ou vidéo"}</span><select value={type} onChange={(event) => chooseType(event.target.value)} aria-label="Type de publication" className="rounded-lg border border-[#c3c6ce] bg-white px-2 py-2 text-xs"><option value="text">Texte</option><option value="opportunity">Opportunité</option><option value="document">Document</option><option value="video">Vidéo</option></select><button type="button" disabled={busy || !content.trim()} onClick={publish} className="rounded-xl bg-[#006874] px-4 py-3 text-xs font-bold text-white disabled:opacity-40">{busy ? "Publication…" : "Publier"}</button></div>{message && <p className="mt-3 rounded-xl bg-red-50 p-3 text-xs text-red-700">{message}</p>}</div></div>}
 
           <div className="flex flex-col gap-6">
