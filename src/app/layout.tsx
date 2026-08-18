@@ -23,6 +23,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const user = await getUserFromCookie();
   return (
     <html lang="fr" className="h-full antialiased">
+      <script dangerouslySetInnerHTML={{ __html: `
+        (function(){
+          try {
+            const saved = localStorage.getItem('eam_dark_mode');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (saved === 'dark' || (!saved && prefersDark)) document.documentElement.classList.add('dark');
+          } catch {}
+        })();
+      ` }} />
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

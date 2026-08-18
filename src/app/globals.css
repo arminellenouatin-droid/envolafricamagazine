@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #fcf9f8;
   --foreground: #1b1c1c;
@@ -28,7 +30,40 @@
   --tertiary-container: #845e00;
   --error: #ba1a1a;
   --gold: #D4AF37;
+  color-scheme: light;
 }
+
+.dark {
+  --background: #151617;
+  --foreground: #f1efed;
+  --surface: #151617;
+  --surface-container: #222426;
+  --surface-container-low: #1b1d1f;
+  --surface-container-high: #2a2c2e;
+  --surface-container-highest: #333638;
+  --surface-container-lowest: #1c1e20;
+  --surface-bright: #252729;
+  --surface-dim: #101112;
+  --on-surface: #f1efed;
+  --on-surface-variant: #c8b8b6;
+  --outline: #b59693;
+  --outline-variant: #55403e;
+  --secondary: #c3bdbc;
+  --secondary-container: #3a3939;
+  --inverse-surface: #f1efed;
+  --inverse-on-surface: #303030;
+  color-scheme: dark;
+}
+
+html { background: var(--background); }
+body { transition: background-color 180ms ease, color 180ms ease; }
+.dark body { background: var(--background); color: var(--foreground); }
+.dark header.sticky, .dark nav { background-color: var(--surface-container-low) !important; border-color: var(--outline-variant) !important; }
+.dark .bg-white, .dark .bg-\[\#fff\], .dark .bg-\[\#fcf9f8\] { background-color: var(--surface-container-lowest) !important; }
+.dark .bg-zinc-50, .dark .bg-\[\#f6f3f2\] { background-color: var(--surface-container) !important; }
+.dark .text-black, .dark .text-slate-950, .dark .text-slate-900, .dark .text-slate-800, .dark .text-zinc-800 { color: var(--on-surface) !important; }
+.dark .text-zinc-500, .dark .text-zinc-600, .dark .text-slate-600, .dark .text-slate-500 { color: var(--on-surface-variant) !important; }
+.dark input, .dark textarea, .dark select { color: var(--on-surface); background-color: var(--surface-container) !important; border-color: var(--outline-variant); }
 
 @theme inline {
   --color-background: var(--background);

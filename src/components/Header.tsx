@@ -122,7 +122,9 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
     window.addEventListener("eam-cart-updated", readCart);
     const interval = window.setInterval(readCart, 1000);
     const savedMode = localStorage.getItem("eam_dark_mode");
-    if (savedMode === "dark") { setDarkMode(true); document.documentElement.classList.add("dark"); }
+    const shouldUseDark = savedMode === "dark" || (!savedMode && document.documentElement.classList.contains("dark"));
+    setDarkMode(shouldUseDark);
+    document.documentElement.classList.toggle("dark", shouldUseDark);
 
     const storedNotifications = localStorage.getItem("eam_notifications_enabled") === "true";
     setNotificationsEnabled(storedNotifications);
