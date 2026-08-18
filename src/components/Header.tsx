@@ -18,15 +18,16 @@ const firstLineMenus = [
 
 const mobilePrimaryNav = [
   { name: "Magazine", href: "/", icon: "menu_book" },
-  { name: "Kiosque", href: "/kiosque", icon: "storefront" },
-  { name: "Jobs", href: "/emploi", icon: "work" },
   { name: "WAB", href: "/wab", icon: "public" },
+  { name: "Africa Awards", href: "/africa-awards", icon: "emoji_events" },
+  { name: "Marketplace", href: "/marketplace", icon: "shopping_bag" },
+  { name: "Crowdfunding", href: "/financement", icon: "volunteer_activism" },
 ];
 
 const mobileSecondaryNav = [
-  { name: "Crowdfunding", href: "/financement", icon: "volunteer_activism" },
-  { name: "Marketplace", href: "/marketplace", icon: "shopping_bag" },
-  { name: "Africa Awards", href: "/africa-awards", icon: "emoji_events" },
+  { name: "Jobs", href: "/emploi", icon: "work" },
+  { name: "Kiosque", href: "/kiosque", icon: "storefront" },
+  { name: "Profil", href: "/compte", icon: "account_circle" },
 ];
 
 function urlBase64ToUint8Array(value: string) {
@@ -106,6 +107,7 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
   useEffect(() => {
     setMegaMenuOpen(false);
     setDropdownOpen(false);
+    setMobileNavOpen(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -253,20 +255,16 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
         </div>
         <div className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.7rem,env(safe-area-inset-bottom))] pt-2">
           <div className="mobile-bottom-nav__surface relative mx-auto flex max-w-[520px] items-end justify-between gap-1 rounded-[26px] border border-[#e5bdbb] bg-[#fffdfc]/95 px-2 pb-2 pt-4 shadow-[0_-10px_35px_rgba(79,13,25,0.12)] backdrop-blur-xl">
-            {mobilePrimaryNav.slice(0, 2).map((item) => {
+            {mobilePrimaryNav.map((item) => {
               const active = pathname === item.href;
-              return <Link key={item.name} href={item.href} className={`mobile-nav-item ${active ? "mobile-nav-item--active" : ""}`} aria-current={active ? "page" : undefined}><span className="material-symbols-outlined text-[21px]">{item.icon}</span><span>{item.name}</span></Link>;
+              return <Link key={item.name} href={item.href} className={`mobile-nav-item ${active ? "mobile-nav-item--active" : ""}`} aria-current={active ? "page" : undefined}><span className="material-symbols-outlined text-[20px]">{item.icon}</span><span>{item.name}</span></Link>;
             })}
             <div className="mobile-nav-plus-wrap">
               <div className={`mobile-secondary-menu ${mobileNavOpen ? "mobile-secondary-menu--open" : ""}`} aria-hidden={!mobileNavOpen}>
                 {mobileSecondaryNav.map((item, index) => <Link key={item.name} href={item.href} tabIndex={mobileNavOpen ? 0 : -1} style={{ "--mobile-delay": `${index * 45}ms` } as React.CSSProperties} className="mobile-secondary-item"><span className="mobile-secondary-item__icon"><span className="material-symbols-outlined text-[18px]">{item.icon}</span></span><span>{item.name}</span></Link>)}
               </div>
-              <button type="button" className={`mobile-plus-button ${mobileNavOpen ? "mobile-plus-button--open" : ""}`} onClick={() => setMobileNavOpen((open) => !open)} aria-label={mobileNavOpen ? "Fermer les commandes" : "Afficher les commandes supplémentaires"} aria-expanded={mobileNavOpen}><span className="material-symbols-outlined text-[28px]">{mobileNavOpen ? "close" : "add"}</span></button>
+              <button type="button" className={`mobile-plus-button ${mobileNavOpen ? "mobile-plus-button--open" : ""}`} onClick={() => setMobileNavOpen((open) => !open)} aria-label={mobileNavOpen ? "Fermer Jobs, Kiosque et Profil" : "Afficher Jobs, Kiosque et Profil"} aria-expanded={mobileNavOpen}><span className="material-symbols-outlined text-[28px]">{mobileNavOpen ? "close" : "add"}</span></button>
             </div>
-            {mobilePrimaryNav.slice(2).map((item) => {
-              const active = pathname === item.href;
-              return <Link key={item.name} href={item.href} className={`mobile-nav-item ${active ? "mobile-nav-item--active" : ""}`} aria-current={active ? "page" : undefined}><span className="material-symbols-outlined text-[21px]">{item.icon}</span><span>{item.name}</span></Link>;
-            })}
           </div>
         </div>
       </div>
