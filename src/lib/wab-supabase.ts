@@ -312,3 +312,28 @@ export async function incrementPostViews(postId: string, viewerUserId?: string, 
   }
   return { configured: true as const };
 }
+
+export async function notifyWabFollowers(profileId: string, input: { type: string; title: string; body: string; href?: string }) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false as const };
+  const { data: followers } = await supabase.from("wab_connections").select("follower_user_id").eq("profile_id", profileId).limit(500);
+  if (!followers?.length) return { configured: true as const, count: 0 };
+  const rows = followers.map((item) => ({ user_id: item.follower_user_id, type: input.type, title: input.title, body: input.body.slice(0, 240), href: input.href ?? "/wab", created_at: new Date().toISOString() }));
+  const { error } = await supabase.from("wab_notifications").insert(rows);
+  return { configured: true as const, count: error ? 0 : rows.length, error };
+}
+
+export async function notifyWabUser(userId: string, input: { type: string; title: string; body: string; href?: string }) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false as const };
+  const { error } = await supabase.from("wab_notifications").insert({ user_id: userId, type: input.type, title: input.title, body: input.body.slice(0, 240), href: input.href ?? "/wab", created_at: new Date().toISOString() });
+  return { configured: true as const, error };
+}
+
+export async function notifyWabPostFollowers(postId: string, input: { type: string; title: string; body: string; href?: string }) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false as const };
+  const { data: post } = await supabase.from("wab_posts").select("author_id").eq("id", postId).maybeSingle();
+  if (!post?.author_id) return { configured: true as const, count: 0 };
+  return notifyWabFollowers(post.author_id, input);
+}

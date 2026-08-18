@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin, isProductionRuntime } from "@/lib/supabase-admin";
 import { readWabDB, writeWabDB } from "@/lib/wab-db";
+import { notifyWabPostFollowers } from "@/lib/wab-supabase";
 
 const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
@@ -21,6 +22,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     const shares = Number(post.shares_count || 0) + 1;
     const { error: updateError } = await supabase.from("wab_posts").update({ shares_count: shares }).eq("id", id);
     if (updateError) return NextResponse.json({ error: "Impossible d’enregistrer le partage." }, { status: 500 });
+    await notifyWabPostFollowers(id, { type: "post_share", title: "Votre publication a été partagée", body: "Un membre a partagé votre publication WAB.", href: "/wab" });
     return NextResponse.json({ shared: true, shares });
   }
   if (isProductionRuntime()) return NextResponse.json({ error: "WAB non configuré." }, { status: 503 });

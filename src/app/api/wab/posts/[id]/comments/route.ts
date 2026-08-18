@@ -3,7 +3,7 @@ import { v4 as uuid } from "uuid";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { readWabDB, writeWabDB } from "@/lib/wab-db";
-import { addCommentToPost, getCommentsForPost, getWabProfileByUserId } from "@/lib/wab-supabase";
+import { addCommentToPost, getCommentsForPost, getWabProfileByUserId, notifyWabPostFollowers } from "@/lib/wab-supabase";
 
 const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const profile = await getWabProfileByUserId(user.id);
   if (profile.configured && profile.profile) {
     const result = await addCommentToPost(id, profile.profile.id, content);
-    if (result.configured && !result.error && result.comment) return NextResponse.json({ comment: result.comment }, { status: 201 });
+    if (result.configured && !result.error && result.comment) { await notifyWabPostFollowers(id, { type: "post_comment", title: "Votre publication a reçu un commentaire", body: `${user.prenom} ${user.nom} a commenté votre publication WAB.`, href: "/wab" }); return NextResponse.json({ comment: result.comment }, { status: 201 }); }
   }
   const db = readWabDB();
   const post = db.posts.find((item) => item.id === id && item.moderationStatus === "published");

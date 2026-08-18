@@ -6,6 +6,8 @@ import PostActions from "./PostActions";
 import PostMedia from "./PostMedia";
 import PostViewTracker from "./PostViewTracker";
 import StoriesReelsCarousel from "./StoriesReelsCarousel";
+import WabSocialHeader from "./WabSocialHeader";
+import FollowButton from "./FollowButton";
 import { WAB_BUSINESS_MONTHLY_PRICE } from "@/lib/wab-access";
 
 type Post = {
@@ -186,7 +188,7 @@ export default function WabClient() {
   }
 
   return (
-    <main className="min-h-screen bg-[#e9f7f5] pb-20 font-body text-[#111e1d] md:pb-0">
+    <><WabSocialHeader avatar={currentUser?.avatar} /><main className="min-h-screen bg-[#e9f7f5] pb-20 font-body text-[#111e1d] md:pb-0">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-4 py-3 md:flex-row md:gap-6 md:px-10 md:py-6">
         <ModelSidebar />
         <section className="flex w-full max-w-[800px] flex-1 flex-col gap-6">
@@ -212,7 +214,7 @@ export default function WabClient() {
                 <div className="flex items-start justify-between gap-3 pt-1">
                   <div className="flex min-w-0 items-center gap-3">
                     <a href={`/wab/profil?author=${encodeURIComponent(post.author)}`} aria-label={`Ouvrir le profil de ${post.author}`} className="h-12 w-12 shrink-0 overflow-hidden rounded-full transition hover:scale-105"><ModelAvatar src={post.authorAvatarUrl || (index === 0 ? MODEL_COMPANY : MODEL_AUTHOR)} alt={`Photo de ${post.author}`} className="h-full w-full object-cover" /></a>
-                    <div className="min-w-0"><a href={`/wab/profil?author=${encodeURIComponent(post.author)}`} className="block truncate text-sm font-bold text-[#001325] hover:text-[#006874]">{post.author}</a><p className="truncate text-xs text-[#43474d]">{post.headline} · {post.location}</p></div>
+                    <div className="min-w-0"><div className="flex items-center truncate"><a href={`/wab/profil?author=${encodeURIComponent(post.author)}`} className="truncate text-sm font-bold text-[#001325] hover:text-[#006874]">{post.author}</a><FollowButton userId={post.authorUserId} /></div><p className="truncate text-xs text-[#43474d]">{post.headline} · {post.location}</p></div>
                   </div>
                   <button type="button" aria-label="Plus d’options" className="text-[#43474d]"><span className="material-symbols-outlined">more_horiz</span></button>
                 </div>
@@ -230,6 +232,6 @@ export default function WabClient() {
           {wabSubscriptionMessage && <p className="rounded-xl bg-[#fff3dc] p-3 text-sm font-semibold text-[#875600]">{wabSubscriptionMessage}</p>}
         </section>
       </div>
-    </main>
+    </main></>
   );
 }

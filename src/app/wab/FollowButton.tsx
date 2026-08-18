@@ -1,0 +1,3 @@
+"use client";
+import { useState } from "react";
+export default function FollowButton({ userId }: { userId?: string }) { const [following, setFollowing] = useState(false); const [busy, setBusy] = useState(false); if (!userId) return null; async function toggle() { setBusy(true); const response = await fetch("/api/wab/connections", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId }) }); const data = await response.json().catch(() => ({})); if (response.ok) setFollowing(Boolean(data.following)); setBusy(false); } return <button type="button" onClick={() => void toggle()} disabled={busy} className="ml-1 text-xs font-extrabold text-[#c1121f] hover:underline disabled:opacity-50">{following ? "abonné" : "s’abonner"}</button>; }
