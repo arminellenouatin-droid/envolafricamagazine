@@ -25,6 +25,7 @@ export default function MagazineDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const [magazine, setMagazine] = useState<Magazine | null>(null);
+  const [allMagazines, setAllMagazines] = useState<Magazine[]>([]);
   const [selections, setSelections] = useState<Array<{ format: string; language: string }>>([{ format: "numerique", language: "fr" }]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
@@ -49,6 +50,12 @@ export default function MagazineDetailPage() {
       setLoading(false);
     });
   },[id]);
+
+  useEffect(() => {
+    fetch("/api/magazines").then((response) => response.json() as Promise<MagazineResponse>).then((data) => {
+      setAllMagazines(data.magazines || []);
+    }).catch(() => setAllMagazines([]));
+  }, []);
 
   useEffect(() => {
     fetch("/api/geo").then((response) => response.json()).then((data: { currency?: string; countryCode?: string }) => {
@@ -76,6 +83,7 @@ export default function MagazineDetailPage() {
     : ["fr", "en", "es"];
 
   const total = selections.reduce((sum, selection) => sum + (prices[selection.format] || 0), 0);
+  const recommendedMagazines = allMagazines.filter((item) => item.id !== magazine?.id).slice(0, 6);
 
   const updateSelection = (index: number, key: "format" | "language", value: string) => {
     setSelections((current) => current.map((selection, selectionIndex) => {
@@ -225,6 +233,26 @@ export default function MagazineDetailPage() {
             </div>
           </div>
         </div>
+
+        {recommendedMagazines.length > 0 && <section className="mt-16 border-t border-[#e5bdbb]/40 pt-10" aria-labelledby="recommended-magazines-title">
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[#9e001f]">À découvrir aussi</p>
+              <h2 id="recommended-magazines-title" className="mt-2 font-serif text-3xl leading-tight text-[#2b2525] md:text-4xl">Complétez votre collection</h2>
+            </div>
+            <Link href="/kiosque" className="hidden text-[11px] font-bold uppercase tracking-[.12em] text-[#9e001f] hover:underline sm:block">Voir tous les numéros ↗</Link>
+          </div>
+          <div className="flex snap-x gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {recommendedMagazines.map((item) => <Link key={item.id} href={`/kiosque/${item.id}`} aria-label={`Découvrir ${item.title}`} className="group w-[138px] shrink-0 snap-start sm:w-[160px]">
+              <div className="aspect-[3/4] overflow-hidden rounded-lg bg-[#eae7e7] shadow-[0_10px_24px_rgba(66,28,34,0.12)]">
+                <img src={item.cover} alt={item.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+              </div>
+              <p className="mt-3 line-clamp-2 font-serif text-[15px] leading-tight text-[#2b2525] transition-colors group-hover:text-[#9e001f]">{item.title}</p>
+              <span className="mt-1 block text-[10px] font-bold uppercase tracking-[.12em] text-[#746665]">N° {item.numero}</span>
+            </Link>)}
+          </div>
+          <Link href="/kiosque" className="mt-2 block text-center text-[11px] font-bold uppercase tracking-[.12em] text-[#9e001f] hover:underline sm:hidden">Voir tous les numéros ↗</Link>
+        </section>}
       </main>
       {previewOpen && <PreviewFlipbook title={magazine.title} cover={magazine.cover} pages={magazine.previewImages} onClose={() => setPreviewOpen(false)} onPurchase={() => { setPreviewOpen(false); document.getElementById("purchase-options-title")?.scrollIntoView({ behavior: "smooth", block: "center" }); }} />}
     </div>
