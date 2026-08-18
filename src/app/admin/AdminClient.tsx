@@ -4,7 +4,36 @@ import Link from "next/link";
 import { SUBSCRIPTION_PLANS } from "@/lib/constants";
 import MagazineModal from "./MagazineModal";
 
+type AdminPlatform = "magazine" | "jobs" | "wab" | "marketplace" | "financement" | "awards";
+
+const adminPlatforms: Array<{ id: AdminPlatform; label: string; accent: string; description: string; href: string; modules: string[] }> = [
+  { id: "magazine", label: "Magazine", accent: "#9e001f", description: "Articles, éditions, abonnements, commandes et KPI éditoriaux.", href: "/admin", modules: ["Articles", "Magazines", "Abonnements", "Commandes", "Affiliation", "KPI"] },
+  { id: "jobs", label: "Jobs", accent: "#087e8b", description: "Offres, candidats, entreprises, abonnements et modération.", href: "/emploi/admin", modules: ["Offres", "Candidats", "Entreprises", "Abonnements", "Modération"] },
+  { id: "wab", label: "WAB", accent: "#006874", description: "Publications, signalements, comptes Business, campagnes et récompenses.", href: "/wab/admin", modules: ["Publications", "Signalements", "Profils", "Campagnes", "Récompenses"] },
+  { id: "marketplace", label: "Marketplace", accent: "#7c3aed", description: "Vendeurs, produits, commandes, commissions, litiges et versements.", href: "/marketplace/admin", modules: ["Vendeurs", "Produits", "Commandes", "Commissions", "Litiges", "Versements"] },
+  { id: "financement", label: "Crowdfunding", accent: "#b45309", description: "Projets, investisseurs, documents, paiements et remboursements.", href: "/financement/dashboard", modules: ["Projets", "Investisseurs", "Documents", "Paiements", "Remboursements"] },
+  { id: "awards", label: "Africa Awards", accent: "#b5832f", description: "Compétitions, candidats, jurys, votes, animateurs et demandes.", href: "/africa-awards/organizer/dashboard", modules: ["Compétitions", "Candidats", "Jurys", "Votes", "Demandes"] },
+];
+
+function PlatformAdminLanding({ platform, user }: { platform: AdminPlatform; user: any }) {
+  const config = adminPlatforms.find((item) => item.id === platform) ?? adminPlatforms[0];
+  return (
+    <div className="space-y-6">
+      <section className="overflow-hidden rounded-[24px] p-7 text-white shadow-lg" style={{ background: `linear-gradient(135deg, ${config.accent}, #0A1931)` }}>
+        <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+          <div><p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/70">Projet administré</p><h1 className="mt-2 text-3xl font-black">Administration {config.label}</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-white/80">{config.description} Cette vue est préparée pour {user?.prenom || "l’équipe"} et son niveau de permission <strong>{user?.role || "staff"}</strong>.</p></div>
+          <Link href={config.href} className="inline-flex h-11 items-center justify-center rounded-full bg-white px-5 text-xs font-black text-[#0A1931] shadow-sm">Ouvrir le module opérationnel →</Link>
+        </div>
+      </section>
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {config.modules.map((module, index) => <div key={module} className="rounded-[18px] border border-zinc-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Module {String(index + 1).padStart(2, "0")}</span><span className="grid h-8 w-8 place-items-center rounded-full text-xs font-black text-white" style={{ backgroundColor: config.accent }}>{index + 1}</span></div><h2 className="mt-4 text-base font-black text-[#0A1931]">{module}</h2><p className="mt-2 text-xs leading-5 text-zinc-600">Espace de pilotage prévu dans la verticale {config.label}, avec contrôle des droits et traçabilité des actions.</p><span className="mt-4 inline-flex rounded-full bg-zinc-100 px-3 py-1 text-[10px] font-bold text-zinc-500">À connecter / vérifier</span></div>)}
+      </section>
+    </div>
+  );
+}
+
 export default function AdminDashboardClient({ user, stats, db }: { user: any, stats: any, db: any }) {
+  const [activePlatform, setActivePlatform] = useState<AdminPlatform>("magazine");
   const [activeTab, setActiveTab] = useState<"overview"|"articles"|"magazines"|"users"|"orders"|"affiliate"|"abonnements"|"commentaires"|"service"|"settings">("overview");
   const [articles, setArticles] = useState<any[]>(db.articles);
   const [magazines, setMagazines] = useState<any[]>(db.magazines);
@@ -25,13 +54,14 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
   const fetchOrders = async () => { const res = await fetch("/api/admin/orders"); if (res.ok) { const d = await res.json(); setOrders(d.orders); } };
   const fetchComments = async () => { const res = await fetch("/api/comments"); if (res.ok) { const d = await res.json(); setComments(d.comments); } };
 
-  useEffect(()=>{ 
-    if(activeTab==="articles") fetchArticles(); 
-    if(activeTab==="magazines") fetchMagazines(); 
-    if(activeTab==="users") fetchUsers(); 
+  useEffect(()=>{
+    if (activePlatform !== "magazine") return;
+    if(activeTab==="articles") fetchArticles();
+    if(activeTab==="magazines") fetchMagazines();
+    if(activeTab==="users") fetchUsers();
     if(activeTab==="orders") fetchOrders();
     if(activeTab==="commentaires") fetchComments();
-  },[activeTab]);
+  },[activePlatform, activeTab]);
 
   const handleCreateArticle = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -134,7 +164,13 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
             <div className="w-9 h-9 rounded-full bg-[#D4AF37] text-[#0A1931] flex items-center justify-center font-bold text-sm">{user.prenom[0]}</div>
           </div>
         </div>
-        <div className="max-w-[1440px] mx-auto px-6 xl:px-8 pb-0 flex gap-1 overflow-x-auto">
+        <div className="border-t border-white/10 bg-black/10">
+          <div className="mx-auto flex max-w-[1440px] gap-1 overflow-x-auto px-6 py-2 xl:px-8">
+            <span className="mr-2 flex shrink-0 items-center text-[10px] font-black uppercase tracking-wider text-zinc-400">Projet :</span>
+            {adminPlatforms.map((item) => <button key={item.id} type="button" onClick={() => { setActivePlatform(item.id); setActiveTab("overview"); }} className={`shrink-0 rounded-full px-4 py-2 text-[11px] font-black transition ${activePlatform === item.id ? "text-white shadow-sm" : "text-zinc-400 hover:bg-white/10 hover:text-white"}`} style={activePlatform === item.id ? { backgroundColor: item.accent } : undefined}>{item.label}</button>)}
+          </div>
+        </div>
+        {activePlatform === "magazine" && <div className="max-w-[1440px] mx-auto px-6 xl:px-8 pb-0 flex gap-1 overflow-x-auto">
           {[
             { id:"overview", label:"KPIs" },
             { id:"articles", label:`Articles (${articles.length})` },
@@ -149,12 +185,13 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
           ].map(t=>(
             <button key={t.id} onClick={()=>setActiveTab(t.id as any)} className={`px-3 py-3 text-[11px] font-bold uppercase tracking-wider border-b-2 whitespace-nowrap ${activeTab===t.id ? "border-[#D4AF37] text-white" : "border-transparent text-zinc-400 hover:text-white"}`}>{t.label}</button>
           ))}
-        </div>
+        </div>}
       </div>
 
       {message && <div className="max-w-[1440px] mx-auto px-6 xl:px-8 pt-4"><div className="bg-green-600 text-white text-sm rounded-full px-4 py-2 inline-block">{message} <button onClick={()=>setMessage("")} className="ml-2 font-bold">×</button></div></div>}
 
       <div className="max-w-[1440px] mx-auto px-6 xl:px-8 pt-6">
+        {activePlatform !== "magazine" ? <PlatformAdminLanding platform={activePlatform} user={user} /> : <>
         {activeTab==="overview" && (
           <div className="space-y-6">
             <div className="grid md:grid-cols-4 gap-4">
@@ -358,6 +395,7 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
             </div>
           </div>
         )}
+        </>}
       </div>
     </div>
   );
