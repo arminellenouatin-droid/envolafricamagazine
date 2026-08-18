@@ -28,7 +28,7 @@ export default function CompteLayout({ children }: { children: React.ReactNode }
       <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
         <aside className="h-fit lg:sticky lg:top-24">
           <div className="rounded-[20px] border border-zinc-100 bg-white p-5">
-            <div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#0A1931] font-bold text-white">{user ? `${user.prenom?.[0]}${user.nom?.[0]}` : "?"}</div><div><div className="text-[14px] font-bold text-[#0A1931]">{user ? `${user.prenom} ${user.nom}` : "Chargement..."}</div><div className="text-[12px] text-zinc-500">{user?.email}</div></div></div>
+            <div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-[#0A1931] font-bold text-white">{user?.avatar ? <img src={user.avatar} alt="" className="h-full w-full object-cover" /> : user ? `${user.prenom?.[0]}${user.nom?.[0]}` : "?"}</div><div><div className="text-[14px] font-bold text-[#0A1931]">{user ? `${user.prenom} ${user.nom}` : "Chargement..."}</div><div className="text-[12px] text-zinc-500">{user?.email}</div></div></div>
             <div className="mt-4 rounded-xl px-3 py-2 text-center text-[11px] font-black uppercase" style={{ backgroundColor: `${context.accent}12`, color: context.accent }}>Dashboard {context.label}</div>
           </div>
           <nav className="mt-4 rounded-[20px] border border-zinc-100 bg-white p-3">
@@ -37,7 +37,7 @@ export default function CompteLayout({ children }: { children: React.ReactNode }
             <Link href={`/compte?platform=${platform}`} className={`flex items-center gap-3 rounded-full px-4 py-2.5 text-[13px] font-medium ${pathname === "/compte" ? "text-white" : "text-zinc-700 hover:bg-zinc-50"}`} style={pathname === "/compte" ? { backgroundColor: context.accent } : undefined}>⌂ {currentRole.dashboardLabel}</Link>
             {currentRole.id === "admin" && <Link href={platform === "magazine" ? "/admin" : platform === "marketplace" ? "/marketplace/admin" : platform === "jobs" ? "/emploi/admin" : platform === "wab" ? "/wab/admin" : "/africa-awards/organizer/dashboard"} className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-[13px] font-black text-white" style={{ backgroundColor: context.accent }}>⚙ Administration</Link>}
             {currentRole.links.map((item) => <Link key={item.href} href={item.href} className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-[13px] font-medium text-zinc-700 hover:bg-zinc-50">→ {item.label}</Link>)}
-            <Link href={`/compte/parrainage?platform=${platform}`} className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-[13px] font-medium text-zinc-700 hover:bg-zinc-50">↗ Affiliation globale</Link>
+            <Link href="/affiliation" className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-[13px] font-medium text-zinc-700 hover:bg-zinc-50">↗ Affiliation</Link>
             <Link href="/compte/parametres" className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-[13px] font-medium text-zinc-700 hover:bg-zinc-50">⚙ Paramètres du compte</Link>
             <button onClick={logout} className="mt-2 flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-left text-[13px] font-medium text-red-600 hover:bg-red-50">↪ Se déconnecter</button>
           </nav>

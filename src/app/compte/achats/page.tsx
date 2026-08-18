@@ -1,29 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
 
-export default function AchatsPage(){
-  const [orders,setOrders]=useState<any[]>([]);
-  useEffect(()=>{
-    fetch("/api/auth/me").then(r=>r.json()).then(d=>{
-      if (d.user) fetch("/api/orders?userId=" + encodeURIComponent(d.user.id)).then(r=>r.ok ? r.json() : { orders: [] }).then(o=>setOrders(o.orders||[]));
-    });
-  },[]);
-  return (
-    <div className="space-y-6">
-      <h1 className="font-serif font-black text-[24px] text-[#0A1931]">Mes achats & téléchargements</h1>
-      <div className="bg-white rounded-[20px] border border-zinc-100 p-6">
-        {orders.length===0 ? <div className="text-center py-12 text-zinc-500 text-sm">Aucun achat • Votre historique apparaîtra ici</div> : (
-          <div className="space-y-3">
-            {orders.map((o:any)=>(
-              <div key={o.id} className="rounded-[14px] bg-zinc-50 border border-zinc-100 p-4 flex justify-between">
-                <div><div className="font-bold text-[13px]">{o.items.map((i:any)=>i.title||i.type).join(', ')}</div><div className="text-[11px] text-zinc-500 mt-1">{new Date(o.createdAt).toLocaleDateString('fr-FR')} • {o.total.toLocaleString()} {o.currency} • {o.status}</div></div>
-                <div className="flex gap-2"><button disabled={o.status!=="paid"} className="h-8 px-3 rounded-full bg-[#0A1931] text-white text-[11px] font-bold disabled:opacity-40">Télécharger</button><button className="h-8 px-3 rounded-full border text-[11px]">Facture</button></div>
-              </div>
-            ))}
-          </div>
-        )}
-        <div className="mt-6 rounded-[12px] bg-amber-50 border border-amber-100 p-4 text-[12px] text-amber-900">🔒 Liens sécurisés expirant en 24h • Si votre lien a expiré, générez un nouveau lien depuis cette page.</div>
-      </div>
-    </div>
-  );
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+
+export default function AchatsPage() {
+  const [orders, setOrders] = useState<any[]>([]);
+  useEffect(() => { fetch("/api/auth/me").then((r) => r.json()).then((d) => { if (d.user) fetch(`/api/orders?userId=${encodeURIComponent(d.user.id)}`).then((r) => r.ok ? r.json() : { orders: [] }).then((data) => setOrders(data.orders || [])); }); }, []);
+  const magazines = useMemo(() => orders.filter((order) => order.status === "paid").flatMap((order) => (order.items || []).filter((item: any) => item.type === "magazine" && ["numerique", "digital", "numérique"].includes(String(item.format || "").toLowerCase())).map((item: any) => ({ ...item, orderId: order.id, purchasedAt: order.paidAt || order.createdAt, currency: order.currency }))).filter((item: any, index: number, all: any[]) => all.findIndex((other) => other.magazineId === item.magazineId && other.language === item.language) === index), [orders]);
+  return <div className="space-y-6"><div><p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#D4AF37]">Bibliothèque personnelle</p><h1 className="mt-2 font-serif text-3xl font-black text-[#0A1931]">Mes magazines</h1><p className="mt-2 text-sm text-zinc-600">Les éditions numériques achetées et encore accessibles depuis votre compte.</p></div>{magazines.length === 0 ? <section className="rounded-[22px] border border-zinc-100 bg-white p-10 text-center shadow-sm"><h2 className="text-xl font-black text-[#0A1931]">Votre bibliothèque est vide</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-600">Vos magazines numériques apparaîtront ici après confirmation du paiement.</p><Link href="/kiosque" className="mt-6 inline-flex rounded-full bg-[#0A1931] px-5 py-3 text-sm font-bold text-white">Découvrir le kiosque</Link></section> : <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{magazines.map((item: any) => <article key={`${item.magazineId}-${item.language}`} className="overflow-hidden rounded-[22px] border border-zinc-100 bg-white shadow-sm"><div className="grid h-48 place-items-center bg-zinc-100"><span className="material-symbols-outlined text-5xl text-zinc-400">menu_book</span></div><div className="p-5"><p className="text-[11px] font-black uppercase tracking-wider text-[#D4AF37]">Magazine numérique</p><h2 className="mt-1 text-lg font-black text-[#0A1931]">{item.title || item.name || `Numéro ${item.numero || ""}`}</h2><p className="mt-2 text-xs text-zinc-500">Acheté le {new Date(item.purchasedAt).toLocaleDateString("fr-FR")} · Langue : {item.language || "FR"}</p><Link href={`/lecteur-document?magazineId=${encodeURIComponent(item.magazineId || "")}`} className="mt-4 inline-flex w-full items-center justify-center rounded-full bg-[#0A1931] px-4 py-3 text-sm font-bold text-white">Lire le magazine</Link></div></article>)}</section>}</div>;
 }
