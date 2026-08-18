@@ -16,7 +16,7 @@ export async function GET() {
   if (client) {
     const { data, error: queryError } = await client.from("articles").select("*").order("created_at", { ascending: false });
     if (queryError) return NextResponse.json({ error: "Impossible de charger les articles." }, { status: 503 });
-    const articles = (data ?? []).map((row: any) => ({ ...row, isPublished: Boolean(row.is_published), isEncrypted: Boolean(row.is_encrypted ?? true), isFeatured: Boolean(row.is_featured), isSentinelle: Boolean(row.is_sentinelle), isEssor: Boolean(row.is_essor), isOmbreDouce: Boolean(row.is_ombre_douce), authorId: row.author_id, publishedAt: row.published_at, createdAt: row.created_at }));
+    const articles = (data ?? []).map((row: any) => ({ ...row, isPublished: Boolean(row.is_published), isEncrypted: Boolean(row.is_encrypted ?? true), isFeatured: Boolean(row.is_featured), isSentinelle: Boolean(row.is_sentinelle), isEssor: Boolean(row.is_essor), isOmbreDouce: Boolean(row.is_ombre_douce), authorId: row.author_id, authorProfileId: row.author_profile_id, categoryId: row.category_id, publishedAt: row.published_at, createdAt: row.created_at }));
     return NextResponse.json({ articles });
   }
   return NextResponse.json({ articles: db!.articles.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) });
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error }, { status });
   try {
     const body = await req.json();
-    const { title, summary, content, category, author, authorId, image, isEncrypted, isPublished, isFeatured, isSentinelle, isEssor, isOmbreDouce, tags } = body;
+    const { title, summary, content, category, categoryId, author, authorId, authorProfileId, image, isEncrypted, isPublished, isFeatured, isSentinelle, isEssor, isOmbreDouce, tags } = body;
     if (!title || !content) return NextResponse.json({ error: "Titre et contenu requis" }, { status: 400 });
     const createdAt = new Date().toISOString();
     const published = Boolean(isPublished);
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     };
     const client = getSupabaseAdmin();
     if (client) {
-      const { data: article, error: insertError } = await client.from("articles").insert({ id: newArticle.id, slug: newArticle.slug, title: newArticle.title, summary: newArticle.summary, content: newArticle.content, preview_lines: newArticle.previewLines, category: newArticle.category, tags: newArticle.tags, author: newArticle.author, author_id: newArticle.authorId, image: newArticle.image, is_published: newArticle.isPublished, is_encrypted: newArticle.isEncrypted, is_featured: newArticle.isFeatured, is_sentinelle: newArticle.isSentinelle, is_essor: newArticle.isEssor, is_ombre_douce: newArticle.isOmbreDouce, views: 0, likes: 0, created_at: newArticle.createdAt, published_at: newArticle.publishedAt ?? null, language: newArticle.language, has_audio: newArticle.hasAudio, audio_url: newArticle.audioUrl, reading_time: newArticle.readingTime }).select("*").single();
+      const { data: article, error: insertError } = await client.from("articles").insert({ id: newArticle.id, slug: newArticle.slug, title: newArticle.title, summary: newArticle.summary, content: newArticle.content, preview_lines: newArticle.previewLines, category: newArticle.category, tags: newArticle.tags, author: newArticle.author, author_id: newArticle.authorId, image: newArticle.image, author_profile_id: authorProfileId || null, category_id: categoryId || null, is_published: newArticle.isPublished, is_encrypted: newArticle.isEncrypted, is_featured: newArticle.isFeatured, is_sentinelle: newArticle.isSentinelle, is_essor: newArticle.isEssor, is_ombre_douce: newArticle.isOmbreDouce, views: 0, likes: 0, created_at: newArticle.createdAt, published_at: newArticle.publishedAt ?? null, language: newArticle.language, has_audio: newArticle.hasAudio, audio_url: newArticle.audioUrl, reading_time: newArticle.readingTime }).select("*").single();
       if (insertError) return NextResponse.json({ error: `Impossible d’enregistrer l’article : ${insertError.message}` }, { status: 503 });
       const republication = newArticle.isPublished ? await publishArticleToWab(newArticle, user!.id) : { published: false, reason: "article_draft" };
       return NextResponse.json({ success: true, article, republication });
@@ -75,7 +75,7 @@ export async function PUT(req: NextRequest) {
     const publishedAt = isPublishing ? new Date().toISOString() : undefined;
     if (client) {
       const patch: Record<string, unknown> = {};
-      const fields: Record<string, string> = { title: "title", summary: "summary", content: "content", category: "category", author: "author", authorId: "author_id", image: "image", tags: "tags", isPublished: "is_published", isEncrypted: "is_encrypted", isFeatured: "is_featured", isSentinelle: "is_sentinelle", isEssor: "is_essor", isOmbreDouce: "is_ombre_douce" };
+      const fields: Record<string, string> = { title: "title", summary: "summary", content: "content", category: "category", categoryId: "category_id", author: "author", authorId: "author_id", authorProfileId: "author_profile_id", image: "image", tags: "tags", isPublished: "is_published", isEncrypted: "is_encrypted", isFeatured: "is_featured", isSentinelle: "is_sentinelle", isEssor: "is_essor", isOmbreDouce: "is_ombre_douce" };
       for (const [key, column] of Object.entries(fields)) if (Object.prototype.hasOwnProperty.call(updates, key)) patch[column] = updates[key];
       if (publishedAt) patch.published_at = publishedAt;
       const result = await client.from("articles").update(patch).eq("id", id).select("*").single();

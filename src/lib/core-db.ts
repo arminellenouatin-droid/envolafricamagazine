@@ -73,9 +73,11 @@ function mapArticle(row: Record<string, unknown>): Article {
     content: String(row.content ?? ""),
     previewLines: Number(row.preview_lines ?? 12),
     category: String(row.category ?? ""),
+    categoryId: typeof row.category_id === "string" ? row.category_id : undefined,
     tags: Array.isArray(row.tags) ? row.tags.map(String) : [],
     author: String(row.author ?? ""),
     authorId: String(row.author_id ?? ""),
+    authorProfileId: typeof row.author_profile_id === "string" ? row.author_profile_id : undefined,
     image: String(row.image ?? ""),
     images: Array.isArray(row.images) ? row.images.map(String) : [],
     isPublished: Boolean(row.is_published ?? true),
@@ -187,6 +189,15 @@ export async function updateUserAvatar(userId: string, avatar: string | null): P
   const { data, error } = await client.from("users").update({ avatar: avatar || null }).eq("id", userId).select("*").single();
   if (error) throw error;
   return mapUser(data as Record<string, unknown>);
+}
+
+export async function findEditorialAuthorById(id?: string): Promise<{ id: string; name: string; photoUrl?: string; bio?: string; roleLabel?: string } | null> {
+  if (!id) return null;
+  const client = getPublicClient();
+  if (!client) return null;
+  const { data, error } = await client.from("editorial_authors").select("id,name,photo_url,bio,role_label").eq("id", id).eq("is_active", true).maybeSingle();
+  if (error || !data) return null;
+  return { id: String(data.id), name: String(data.name), photoUrl: typeof data.photo_url === "string" ? data.photo_url : undefined, bio: typeof data.bio === "string" ? data.bio : undefined, roleLabel: typeof data.role_label === "string" ? data.role_label : undefined };
 }
 
 export async function listPublishedArticles(): Promise<Article[]> {

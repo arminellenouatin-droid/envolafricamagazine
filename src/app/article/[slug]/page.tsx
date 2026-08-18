@@ -1,7 +1,7 @@
-import { findArticleBySlug, listPublishedArticles } from "@/lib/core-db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUserFromCookie } from "@/lib/auth";
+import { findArticleBySlug, findEditorialAuthorById, listPublishedArticles } from "@/lib/core-db";
 import ArticlePaywall from "@/components/ArticlePaywall";
 import ArticleActions from "@/components/ArticleActions";
 
@@ -23,7 +23,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   const { slug } = await params;
   const [article, articles] = await Promise.all([findArticleBySlug(slug), listPublishedArticles()]);
   if (!article) return notFound();
-  const isSubscriber = await getIsSubscribed();
+  const [editorialAuthor, isSubscriber] = await Promise.all([findEditorialAuthorById(article.authorProfileId), getIsSubscribed()]);
 
   const words = article.content.split(/\s+/);
   const preview = words.slice(0, 12*14).join(' ');
@@ -35,7 +35,16 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   return (
     <div className="bg-[#fcf9f8] min-h-screen">
       <main className="max-w-[1280px] mx-auto px-5 md:px-[64px] py-12">
-        <article className="max-w-[720px] mx-auto">
+        <article className="mx-auto grid max-w-[980px] items-start gap-8 lg:grid-cols-[190px_minmax(0,720px)] lg:gap-10">
+          <aside className="hidden lg:sticky lg:top-28 lg:block">
+            <div className="border-t-4 border-[#9e001f] pt-4">
+              <img src={editorialAuthor?.photoUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=320"} alt={editorialAuthor?.name || article.author} className="aspect-[3/4] w-full rounded-xl object-cover shadow-md" />
+              <p className="mt-4 text-[15px] font-bold leading-tight text-[#1b1c1c]">{editorialAuthor?.name || article.author}</p>
+              <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-[#9e001f]">{editorialAuthor?.roleLabel || "Rédacteur"}</p>
+              <p className="mt-3 text-[12px] leading-5 text-[#5f5e5e]">{editorialAuthor?.bio || "Rédacteur de la rédaction Envol Africa."}</p>
+            </div>
+          </aside>
+          <div className="min-w-0">
           <header className="mb-8">
             <div className="flex gap-2 mb-4">
               <span className="bg-[#9e001f]/10 text-[#9e001f] px-3 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold">{article.category}</span>
@@ -45,14 +54,8 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             <p className="text-[18px] text-[#5c403f] mb-8 italic leading-[1.6]" style={{ fontFamily: "Source Serif 4" }}>{article.summary}</p>
 
             <div className="flex items-center justify-between py-6 border-y border-[#e5bdbb]">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-cover bg-center overflow-hidden" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100')` }}></div>
-                <div>
-                  <p className="text-[14px] font-bold text-[#1b1c1c]">{article.author}</p>
-                  <p className="text-[12px] text-[#5f5e5e]">Éditorialiste Économique</p>
-                </div>
-              </div>
-              <div className="text-right">
+              <div className="hidden text-[12px] text-[#5f5e5e] sm:block">Par {editorialAuthor?.name || article.author}</div>
+              <div className="ml-auto text-right">
                 <p className="text-[11px] text-[#5c403f] uppercase">{new Date(article.publishedAt!).toLocaleDateString('fr-FR',{day:'numeric', month:'short', year:'numeric'})}</p>
                 <p className="text-[11px] text-[#5f5e5e] flex items-center justify-end gap-1"><span className="material-symbols-outlined text-[14px]">schedule</span> {article.readingTime} min • {article.language.toUpperCase()} {article.hasAudio&&"• 🔊"}</p>
               </div>
@@ -87,6 +90,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           <ArticlePaywall preview={preview} blur={blur} rest={isSubscriber ? rest : ""} isSubscriber={isSubscriber} isEncrypted={article.isEncrypted !== false} fullContent={article.isEncrypted === false || isSubscriber ? article.content : ""} articleId={article.id} />
 
           <ArticleActions articleId={article.id} initialLikes={article.likes} />
+          </div>
         </article>
 
         <section className="mt-[80px] pt-[80px] border-t border-[#e5bdbb]">

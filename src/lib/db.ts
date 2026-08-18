@@ -43,9 +43,11 @@ export interface Article {
   content: string; // full
   previewLines: number; // 12
   category: string;
+  categoryId?: string;
   tags: string[];
   author: string;
   authorId: string;
+  authorProfileId?: string;
   image: string;
   images?: string[];
   isPublished: boolean;
