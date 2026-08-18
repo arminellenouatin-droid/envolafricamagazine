@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { KIOSQUE_FORMATS, LANGUAGE_LABELS } from "@/lib/constants";
+import PreviewFlipbook from "@/components/kiosque/PreviewFlipbook";
 
 type Magazine = {
   id: string;
@@ -12,6 +13,10 @@ type Magazine = {
   date: string;
   description?: string;
   year?: number;
+  previewImages?: string[];
+  pdfs?: Record<string, string>;
+  prices?: Record<string, number>;
+  priceOverrides?: Record<string, number>;
 };
 
 type MagazineResponse = { magazine?: Magazine; magazines?: Magazine[] };
@@ -23,6 +28,9 @@ export default function MagazineDetailPage() {
   const [selections, setSelections] = useState<Array<{ format: string; language: string }>>([{ format: "numerique", language: "fr" }]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [currency, setCurrency] = useState("XOF");
+  const [countryCode, setCountryCode] = useState("BJ");
 
   useEffect(()=>{
     fetch(`/api/magazines?id=${id}`).then((response) => response.json() as Promise<MagazineResponse>).then((data) => {
@@ -33,7 +41,7 @@ export default function MagazineDetailPage() {
         id,
         numero: 25,
         title: `Envol Africa N°25 - Spécial Investissements 2026`,
-        cover: "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600",
+        cover: "/covers/envol-africa-cover-01.jpg",
         date: "2026-01-01",
         description: "Notre grand dossier investissements, 40 pages d'analyses exclusives.",
         year: 2026,
@@ -42,6 +50,13 @@ export default function MagazineDetailPage() {
     });
   },[id]);
 
+  useEffect(() => {
+    fetch("/api/geo").then((response) => response.json()).then((data: { currency?: string; countryCode?: string }) => {
+      setCurrency(data.currency || "XOF");
+      setCountryCode(data.countryCode || "BJ");
+    }).catch(() => { setCurrency("XOF"); setCountryCode("BJ"); });
+  }, []);
+
   const formatOptions = [
     { id: "numerique", label: "Numérique", icon: "tablet_android", desc: "Accès immédiat PDF/Web" },
     { id: "papier", label: "Papier", icon: "auto_stories", desc: "Livraison à domicile" },
@@ -49,15 +64,18 @@ export default function MagazineDetailPage() {
     { id: "cd_audio", label: "CD Audio", icon: "album", desc: "Version collector" },
     { id: "audio_papier", label: "Audio + Papier", icon: "auto_awesome", desc: "Expérience complète" },
   ];
-  const prices: Record<string, number> = { numerique: 12.9, papier: 19.5, cd_audio: 24, audio_pdf: 15.5, audio_papier: 29.9 };
   const formatPriceInXof: Record<string, number> = Object.fromEntries(KIOSQUE_FORMATS.map((item) => [item.id, item.price]));
+  const prices: Record<string, number> = { ...formatPriceInXof, ...(magazine?.prices || {}), ...(magazine?.priceOverrides || {}) };
+  const currencyRates: Record<string, number> = { XOF: 1, EUR: 0.00152, USD: 0.00165, NGN: 2.5, GHS: 0.025 };
+  const formatPrice = (value: number) => currency === "XOF"
+    ? `${Math.round(value).toLocaleString("fr-FR")} F CFA`
+    : `${new Intl.NumberFormat("fr-FR", { style: "currency", currency, maximumFractionDigits: 2 }).format(value * (currencyRates[currency] || 1))}`;
 
   const languagesForFormat = (formatId: string) => formatId.includes("audio") || formatId === "cd_audio"
     ? ["fr", "en", "es", "sw", "ha", "yo", "ig", "fon", "ff", "zu", "ee", "wo"]
     : ["fr", "en", "es"];
 
   const total = selections.reduce((sum, selection) => sum + (prices[selection.format] || 0), 0);
-  const formatPrice = (value: number) => `${value.toFixed(2).replace(".", ",")} €`;
 
   const updateSelection = (index: number, key: "format" | "language", value: string) => {
     setSelections((current) => current.map((selection, selectionIndex) => {
@@ -102,12 +120,7 @@ export default function MagazineDetailPage() {
               <div className="aspect-[3/4] w-full bg-[#eae7e7] rounded-lg overflow-hidden shadow-2xl relative" style={{ boxShadow: "inset 12px 0 15px -10px rgba(0,0,0,0.5)" }}>
                 <img src={magazine.cover} alt={magazine.title} className="w-full h-full object-cover rounded-lg" />
                 <div className="absolute inset-0 bg-black/5 pointer-events-none"></div>
-                <button onClick={()=>alert("Feuilletage : 5 pages gratuites - aperçu limité")} className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/95 backdrop-blur-md text-[#9e001f] px-5 py-3 rounded-full text-[12px] font-bold shadow-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"><span className="material-symbols-outlined">menu_book</span> FEUILLETER L&apos;APERÇU</button>
-              </div>
-              <div className="mt-4 flex gap-4 justify-center">
-                {[1,2].map(i=>(
-                  <div key={i} className="w-16 h-20 bg-[#f6f3f2] rounded border border-[#e5bdbb]/30 overflow-hidden"><img src={magazine.cover} alt="" className="w-full h-full object-cover" /></div>
-                ))}
+                <button type="button" onClick={() => setPreviewOpen(true)} className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full bg-white/95 px-5 py-3 text-[12px] font-bold text-[#9e001f] shadow-lg backdrop-blur-md opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"><span className="material-symbols-outlined">menu_book</span> FEUILLETER L&apos;APERÇU</button>
               </div>
             </div>
           </div>
@@ -133,6 +146,7 @@ export default function MagazineDetailPage() {
             </section>
 
             <section className="rounded-xl border border-[#e5bdbb] bg-white p-4 sm:p-6" aria-labelledby="purchase-options-title">
+              <p className="mb-4 text-right text-[11px] text-[#746665]">Pays détecté : {countryCode} · Devise : {currency}</p>
               <div className="mb-5 flex items-end justify-between gap-4 border-b border-[#eadad8] pb-4">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[#9e001f]">Personnalisez votre achat</p>
@@ -212,6 +226,7 @@ export default function MagazineDetailPage() {
           </div>
         </div>
       </main>
+      {previewOpen && <PreviewFlipbook title={magazine.title} cover={magazine.cover} pages={magazine.previewImages} onClose={() => setPreviewOpen(false)} onPurchase={() => { setPreviewOpen(false); document.getElementById("purchase-options-title")?.scrollIntoView({ behavior: "smooth", block: "center" }); }} />}
     </div>
   );
 }
