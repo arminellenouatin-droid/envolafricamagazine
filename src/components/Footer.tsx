@@ -133,7 +133,7 @@ export default function Footer() {
     <footer>
       <div className="border-b border-white/10 bg-[#1b1c1c] px-5 py-10 md:px-[64px]">
         <div className="mx-auto flex max-w-[1280px] flex-col items-start gap-6 md:flex-row">
-          <Link href={platform.homeHref} aria-label={`Accueil ${platform.name}`}><img src="/logo-blanc-footer.png" alt={platform.logoAlt} className="h-[56px] w-auto object-contain" /></Link>
+          <Link href={platform.homeHref} aria-label={`Accueil ${platform.name}`}><img src="/envolafrica-footer-new.png" alt={platform.logoAlt} className="h-[56px] w-auto object-contain" /></Link>
           <div><p className="max-w-[720px] text-[13px] leading-6 text-white">Une chaîne regroupant toutes les valeurs pour votre succès en entreprise. Plus qu&apos;un magazine, Envol Africa accompagne les projets et les talents africains.</p><p className="mt-2 text-[11px] font-bold uppercase tracking-[0.15em] text-[#ffdad8]">Espace actuel : {platform.name}</p></div>
         </div>
       </div>
