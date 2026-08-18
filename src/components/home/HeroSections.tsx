@@ -90,7 +90,7 @@ export function MagazineCarousel({ magazines }: { magazines: any[] }) {
         </div>
         <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
           {magazines.slice(0,8).map(m=>(
-            <Link key={m.id} href={`/kiosque/${m.id}`} className="shrink-0 group">
+            <Link key={m.id} href={`/kiosque/${m.id}`} aria-label={`Voir la fiche produit de ${m.title}`} className="shrink-0 group cursor-pointer">
               <div className="w-[160px] md:w-[190px] aspect-[3/4] rounded-[16px] overflow-hidden magazine-shadow bg-zinc-100 relative">
                 <img src={m.cover} alt={m.title} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" />
                 <div className="absolute top-2 left-2 bg-white/90 backdrop-blur text-[10px] font-bold px-2 py-1 rounded-full">N°{m.numero}</div>
