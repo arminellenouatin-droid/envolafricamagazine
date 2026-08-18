@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 type Comment = { id: string; author: string; content: string; createdAt: string };
 
-export default function CommentsPanel({ postId, openSignal = 0 }: { postId: string; openSignal?: number }) {
+export default function CommentsPanel({ postId, openSignal = 0, onCountChange }: { postId: string; openSignal?: number; onCountChange?: (count: number) => void }) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Comment[]>([]);
   const [content, setContent] = useState("");
@@ -22,7 +22,7 @@ export default function CommentsPanel({ postId, openSignal = 0 }: { postId: stri
       const data = await response.json();
       if (response.status === 401) { window.location.assign(`/auth/login?next=${encodeURIComponent("/wab")}`); return; }
       if (!response.ok) throw new Error(data.error);
-      setItems((values) => [...values, data.comment]); setContent("");
+      setItems((values) => { const next = [...values, data.comment]; onCountChange?.(next.length); return next; }); setContent("");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Commentaire impossible."); }
     finally { setBusy(false); }
   }

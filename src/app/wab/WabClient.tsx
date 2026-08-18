@@ -21,6 +21,7 @@ type Post = {
   views: number;
   likes: number;
   comments: number;
+  shares: number;
   isBoosted: boolean;
   createdAt: string;
 };
@@ -213,8 +214,8 @@ export default function WabClient() {
                   <button type="button" aria-label="Plus d’options" className="text-[#43474d]"><span className="material-symbols-outlined">more_horiz</span></button>
                 </div>
                 <div className="text-sm leading-6 text-[#111e1d]"><p className="mb-3 whitespace-pre-line">{post.content}</p><div className="mb-3 flex flex-wrap gap-2">{post.tags.map((tag) => <span key={tag} className="rounded-full bg-[#e6f2f3] px-3 py-1 text-[11px] font-semibold text-[#006874]">#{tag}</span>)}</div>{post.media && <PostMedia postId={post.id} media={post.media} />}</div>
-                <PostActions postId={post.id} initialLikes={post.likes} comments={post.comments} onComment={() => openComments(post.id)} />
-                <CommentsPanel postId={post.id} openSignal={commentSignals[post.id] ?? 0} />
+                <PostActions postId={post.id} initialLikes={post.likes} initialComments={post.comments} initialShares={post.shares} views={post.views} onComment={() => openComments(post.id)} />
+                <CommentsPanel postId={post.id} openSignal={commentSignals[post.id] ?? 0} onCountChange={(count) => setPosts((items) => items.map((item) => item.id === post.id ? { ...item, comments: count } : item))} />
 
               </article>
             ))}

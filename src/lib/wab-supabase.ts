@@ -16,6 +16,7 @@ export type WabPostRow = {
   watch_seconds: number;
   likes_count: number;
   comments_count: number;
+  shares_count: number;
   created_at: string;
   updated_at: string;
   wab_profiles?: {
@@ -145,7 +146,8 @@ export async function createWabPostInSupabase(profileId: string, input: {
       moderation_status: moderationStatus,
       views_count: 0,
       likes_count: 0,
-      comments_count: 0
+      comments_count: 0,
+      shares_count: 0
     })
     .select()
     .single();
