@@ -26,9 +26,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <script dangerouslySetInnerHTML={{ __html: `
         (function(){
           try {
-            const saved = localStorage.getItem('eam_dark_mode');
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            if (saved === 'dark' || (!saved && prefersDark)) document.documentElement.classList.add('dark');
+            if (localStorage.getItem('eam_dark_mode') === 'dark') document.documentElement.classList.add('dark');
           } catch {}
         })();
       ` }} />
