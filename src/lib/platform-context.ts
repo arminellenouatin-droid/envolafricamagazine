@@ -39,3 +39,10 @@ export const PLATFORM_CONTEXTS: Record<PlatformKey, { label: string; accent: str
 export function getPlatformContext(value: string | null | undefined): PlatformKey {
   return value && value in PLATFORM_CONTEXTS ? value as PlatformKey : "magazine";
 }
+
+export function resolvePlatformRole(platform: PlatformKey, userRole?: string | null): string {
+  const availableRoles = PLATFORM_CONTEXTS[platform].roles;
+  if (userRole === "admin" || userRole === "gerant" || userRole === "redacteur_chef") return "admin";
+  if (userRole && availableRoles.some((role) => role.id === userRole)) return userRole;
+  return availableRoles[0]?.id ?? "visitor";
+}

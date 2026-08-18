@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { getPlatformContext, PLATFORM_CONTEXTS, type PlatformKey } from "@/lib/platform-context";
+import { getPlatformContext, PLATFORM_CONTEXTS, resolvePlatformRole, type PlatformKey } from "@/lib/platform-context";
 
 export default function CompteLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -13,7 +13,7 @@ export default function CompteLayout({ children }: { children: React.ReactNode }
   const [role, setRole] = useState(context.roles[0].id);
   const currentRole = useMemo(() => context.roles.find((item) => item.id === role) ?? context.roles[0], [context.roles, role]);
 
-  useEffect(() => { const params = new URLSearchParams(window.location.search); const nextPlatform = getPlatformContext(params.get("platform")); setPlatform(nextPlatform); setRole(params.get("role") || PLATFORM_CONTEXTS[nextPlatform].roles[0].id); fetch("/api/auth/me").then((response) => response.json()).then((data) => { if (!data.user) router.push(`/auth/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`); else setUser(data.user); }); }, [router]);
+  useEffect(() => { const params = new URLSearchParams(window.location.search); const nextPlatform = getPlatformContext(params.get("platform")); setPlatform(nextPlatform); const requestedRole = params.get("role"); setRole(requestedRole || PLATFORM_CONTEXTS[nextPlatform].roles[0].id); fetch("/api/auth/me").then((response) => response.json()).then((data) => { if (!data.user) router.push(`/auth/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`); else { setUser(data.user); setRole(resolvePlatformRole(nextPlatform, data.user.role)); } }); }, [router]);
   const changePlatform = (next: PlatformKey) => router.push(`/compte?platform=${next}`);
   const logout = async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); router.refresh(); };
 

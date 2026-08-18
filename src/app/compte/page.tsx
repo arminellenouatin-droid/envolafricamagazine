@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { getPlatformContext, PLATFORM_CONTEXTS } from "@/lib/platform-context";
+import { getPlatformContext, PLATFORM_CONTEXTS, resolvePlatformRole } from "@/lib/platform-context";
 
 
 const roleContent: Record<string, Array<{ label: string; value: string; detail: string; href?: string }>> = {
@@ -28,12 +28,12 @@ export default function ComptePage() {
   const context = PLATFORM_CONTEXTS[platform];
   const currentRole = context.roles.find((item) => item.id === role) ?? context.roles[0];
   const cards = roleContent[`${platform}:${currentRole.id}`] ?? [];
-  useEffect(() => { const params = new URLSearchParams(window.location.search); const nextPlatform = getPlatformContext(params.get("platform")); setPlatform(nextPlatform); setRole(params.get("role") || PLATFORM_CONTEXTS[nextPlatform].roles[0].id); }, []);
+  useEffect(() => { const params = new URLSearchParams(window.location.search); const nextPlatform = getPlatformContext(params.get("platform")); setPlatform(nextPlatform); const requestedRole = params.get("role"); setRole(requestedRole || PLATFORM_CONTEXTS[nextPlatform].roles[0].id); }, []);
   const [user, setUser] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [earnings, setEarnings] = useState<any[]>([]);
 
-  useEffect(() => { fetch("/api/auth/me").then((response) => response.json()).then((data) => { if (!data.user) return; setUser(data.user); fetch(`/api/orders?userId=${encodeURIComponent(data.user.id)}`).then((response) => response.ok ? response.json() : { orders: [] }).then((data) => setOrders(data.orders || [])).catch(() => undefined); fetch("/api/affiliate").then((response) => response.ok ? response.json() : { earnings: [] }).then((data) => setEarnings(data.earnings || [])).catch(() => undefined); }).catch(() => undefined); }, []);
+  useEffect(() => { fetch("/api/auth/me").then((response) => response.json()).then((data) => { if (!data.user) return; setUser(data.user); setRole((currentRole) => currentRole === "visitor" ? resolvePlatformRole(platform, data.user.role) : currentRole); fetch(`/api/orders?userId=${encodeURIComponent(data.user.id)}`).then((response) => response.ok ? response.json() : { orders: [] }).then((data) => setOrders(data.orders || [])).catch(() => undefined); fetch("/api/affiliate").then((response) => response.ok ? response.json() : { earnings: [] }).then((data) => setEarnings(data.earnings || [])).catch(() => undefined); }).catch(() => undefined); }, [platform]);
   const isStaff = Boolean(user && ["redacteur", "redacteur_chef", "gerant", "admin"].includes(user.role));
   const totalGains = earnings.reduce((sum, item) => sum + Number(item.commission || 0), 0);
 
