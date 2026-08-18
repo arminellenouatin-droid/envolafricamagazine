@@ -6,10 +6,6 @@ import { SHIPPING_RATES } from "@/lib/constants";
 export default function PanierPage() {
   const [cart, setCart] = useState<any[]>([]);
   const [country, setCountry] = useState<string>("BJ");
-  const [email, setEmail] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [affiliate, setAffiliate] = useState<string>("");
 
@@ -53,7 +49,7 @@ export default function PanierPage() {
       const res = await fetch("/api/payment/init", {
         method: "POST",
         headers: { "Content-Type":"application/json" },
-        body: JSON.stringify({ items: cart, currency: "XOF", shippingCountry: country, affiliateCode: affiliate, email, firstName, lastName, phone }),
+        body: JSON.stringify({ items: cart, currency: "XOF", shippingCountry: country, affiliateCode: affiliate }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erreur paiement");
@@ -147,15 +143,6 @@ export default function PanierPage() {
                     <p className="mt-1 text-[12px] leading-5 text-[#5c403f]">Moneroo détecte automatiquement votre pays et affiche les moyens disponibles : carte bancaire, Mobile Money et autres options proposées par ses agrégateurs.</p>
                   </div>
                 </div>
-              </div>
-
-              <div className="space-y-3 mb-6">
-                <input placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full h-11 rounded-lg border border-[#e5bdbb] bg-white px-4 text-[13px]" />
-                <div className="grid grid-cols-2 gap-2">
-                  <input placeholder="Prénom" value={firstName} onChange={e=>setFirstName(e.target.value)} className="w-full h-11 rounded-lg border px-4 text-[13px]" />
-                  <input placeholder="Nom" value={lastName} onChange={e=>setLastName(e.target.value)} className="w-full h-11 rounded-lg border px-4 text-[13px]" />
-                </div>
-                <input placeholder="Téléphone Mobile Money (ex. +229...)" value={phone} onChange={e=>setPhone(e.target.value)} className="w-full h-11 rounded-lg border border-[#e5bdbb] bg-white px-4 text-[13px]" />
               </div>
 
               <button onClick={checkout} disabled={loading || cart.length===0} className="w-full bg-[#9e001f] text-white py-4 rounded-lg font-bold text-[16px] hover:brightness-90 transition-all shadow-md active:scale-95 disabled:opacity-50">
