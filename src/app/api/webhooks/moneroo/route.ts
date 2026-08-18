@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { verifyMonerooPayment } from "@/lib/moneroo";
 import { readAwardsDB, writeAwardsDB } from "@/lib/awards-db";
+import { activateJobsBoostByPayment } from "@/lib/jobs-supabase";
+import { activateCrowdfundingBoostByPayment, activateMarketplaceBoostByPayment } from "@/lib/wab-boost-sources";
 import {
   confirmOrderPayment,
   findOrderById,
@@ -103,6 +105,24 @@ export async function POST(req: NextRequest) {
     if (!eventType || !data?.id) return NextResponse.json({ error: "Payload invalide, event ou id manquant" }, { status: 400 });
     if (eventType === "payment.initiated" || eventType.startsWith("payout.")) return NextResponse.json({ ok: true }, { status: 200 });
 
+    const metadata = (data.metadata || {}) as Record<string, unknown>;
+    if (eventType === "payment.success" && (metadata.product === "marketplace_boost" || metadata.product === "crowdfunding_boost" || metadata.product === "jobs_boost")) {
+      const verification = await verifyMonerooPayment(data.id);
+      if (!validPaymentStatus(verification.status)) return NextResponse.json({ error: "Paiement non confirmé" }, { status: 409 });
+      if (metadata.product === "marketplace_boost") {
+        const result = await activateMarketplaceBoostByPayment(data.id);
+        return NextResponse.json({ ok: true, boost: result }, { status: result.activated ? 200 : 409 });
+      }
+      if (metadata.product === "crowdfunding_boost") {
+        const result = await activateCrowdfundingBoostByPayment(data.id);
+        return NextResponse.json({ ok: true, boost: result }, { status: result.activated ? 200 : 409 });
+      }
+      if (metadata.user_id) {
+        const result = await activateJobsBoostByPayment(String(metadata.user_id), data.id);
+        return NextResponse.json({ ok: true, boost: result }, { status: result.activated ? 200 : 409 });
+      }
+    }
+
     const order = data.metadata?.order_id ? await findOrderById(data.metadata.order_id) : await findOrderByPaymentId(data.id);
     if (!order) return NextResponse.json({ error: "Commande introuvable" }, { status: 404 });
 
@@ -112,14 +132,11 @@ export async function POST(req: NextRequest) {
     }
 
     if (eventType !== "payment.success") return NextResponse.json({ ok: true }, { status: 200 });
-
     const verification = await verifyMonerooPayment(data.id);
     if (!validPaymentStatus(verification.status)) return NextResponse.json({ error: "Paiement non confirmé" }, { status: 409 });
-
     const amount = Number(verification.amount ?? data.amount);
     const currency = String(verification.currency ?? data.currency ?? "").toUpperCase();
     const alreadyPaid = order.status === "paid";
-    const metadata = (data.metadata || {}) as Record<string, unknown>;
     await settleAwardVote(metadata, String(verification.id || data.id));
     const confirmedOrder = await confirmOrderPayment(order, {
       providerRef: String(verification.id || data.id),

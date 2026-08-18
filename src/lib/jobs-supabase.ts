@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { publishBoostedSourceToWab } from "@/lib/wab-boost-sources";
 import { AFRICA_COUNTRIES } from "@/lib/africa-context";
 
 export type JobsOfferRow = {
@@ -96,8 +97,10 @@ export async function activateJobsBoostByPayment(userId: string, paymentId: stri
 
   if (boost.target_type === "offer") {
     await supabase.from("jobs_offers").update({ is_boosted: true, boost_ends_at: endsAtReal.toISOString() }).eq("id", boost.target_id);
+    await publishBoostedSourceToWab({ sourceType: "jobs_offer", sourceId: boost.target_id, userId, boostEndsAt: endsAtReal.toISOString() });
   } else if (boost.target_type === "candidate") {
     await supabase.from("jobs_candidates").update({ is_boosted: true, boost_ends_at: endsAtReal.toISOString() }).eq("id", boost.target_id);
+    await publishBoostedSourceToWab({ sourceType: "jobs_candidate", sourceId: boost.target_id, userId, boostEndsAt: endsAtReal.toISOString() });
   }
 
   return { configured: true as const, activated: true, boost };

@@ -3,7 +3,7 @@ import path from "path";
 import { v4 as uuid } from "uuid";
 
 const FILE = path.join(process.cwd(), "src", "data", "wab.json");
-export type WabPost = { id: string; author: string; authorAvatarUrl?: string; authorUserId?: string; headline: string; location: string; content: string; type: "text" | "opportunity" | "document" | "video"; media?: Array<{ path: string; mimeType: string; name: string }>; tags: string[]; views: number; watchSeconds: number; likes: number; comments: number; isBoosted: boolean; createdAt: string; moderationStatus: "published" | "pending_review" | "hidden"; };
+export type WabPost = { id: string; author: string; authorAvatarUrl?: string; authorUserId?: string; headline: string; location: string; content: string; type: "text" | "opportunity" | "document" | "video" | "marketplace_product"; media?: Array<{ path: string; mimeType: string; name: string }>; tags: string[]; views: number; watchSeconds: number; likes: number; comments: number; isBoosted: boolean; boostEndsAt?: string; sourceType?: "jobs_offer" | "jobs_candidate" | "crowdfunding_project" | "marketplace_product"; sourceId?: string; sourceUrl?: string; sourceTitle?: string; createdAt: string; moderationStatus: "published" | "pending_review" | "hidden"; };
 export type WabProfile = { id: string; userId: string; fullName: string; headline: string; about: string; companyName?: string; industry?: string; country: string; city?: string; status: "active" | "silent" | "banned"; createdAt: string; updatedAt: string; };
 export type WabReaction = { postId: string; userId: string; createdAt: string };
 export type WabComment = { id: string; postId: string; userId: string; author: string; content: string; status: "published" | "hidden"; createdAt: string };
