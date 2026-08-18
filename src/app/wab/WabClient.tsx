@@ -120,7 +120,8 @@ export default function WabClient() {
   const [type, setType] = useState("text");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [publishOpen, setPublishOpen] = useState(false);
   const [visitorCountry, setVisitorCountry] = useState("");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -162,7 +163,7 @@ export default function WabClient() {
 
   function openComments(postId: string) { setCommentSignals((signals) => ({ ...signals, [postId]: (signals[postId] ?? 0) + 1 })); }
   function chooseType(nextType: string) { if (nextType === "video" && accountLoaded && !isBusiness) { setType("text"); setMessage(`La vidéo est réservée aux comptes Entreprise WAB abonnés à ${WAB_BUSINESS_MONTHLY_PRICE.toLocaleString("fr-FR")} XOF/mois.`); return; } setMessage(""); setType(nextType); }
-  function chooseFile(file: File | null) { if (file?.type.startsWith("video/") && !isBusiness) { setMessage(`La publication vidéo est réservée aux comptes Entreprise WAB abonnés à ${WAB_BUSINESS_MONTHLY_PRICE.toLocaleString("fr-FR")} XOF/mois.`); setSelectedFile(null); return; } setMessage(""); setSelectedFile(file); }
+  function chooseFiles(files: FileList | null) { const next = Array.from(files ?? []).slice(0, 10); if (next.some((file) => file.type.startsWith("video/") && !isBusiness)) { setMessage(`La publication vidéo est réservée aux comptes Entreprise WAB abonnés à ${WAB_BUSINESS_MONTHLY_PRICE.toLocaleString("fr-FR")} XOF/mois.`); return; } setMessage(""); setSelectedFiles(next); }
   async function startWabSubscription() { setWabSubscriptionLoading(true); setWabSubscriptionMessage(""); try { const response = await fetch("/api/wab/subscription", { method: "POST" }); const data = await response.json(); if (response.status === 401) { window.location.assign(`/auth/login?next=${encodeURIComponent("/wab")}`); return; } if (!response.ok || !data.checkout_url) throw new Error(data.error || "Le paiement WAB est indisponible."); window.location.assign(data.checkout_url); } catch (error) { setWabSubscriptionMessage(error instanceof Error ? error.message : "Activation du compte Entreprise WAB impossible."); } finally { setWabSubscriptionLoading(false); } }
 
   async function publish() {
@@ -170,11 +171,11 @@ export default function WabClient() {
     setBusy(true); setMessage("");
     try {
       let media: unknown[] = [];
-      if (selectedFile) {
-        const upload = new FormData(); upload.set("file", selectedFile);
+      for (const file of selectedFiles) {
+        const upload = new FormData(); upload.set("file", file);
         const uploadResponse = await fetch("/api/wab/upload", { method: "POST", body: upload });
         const uploadData = await readJsonResponse<{ error?: string; path?: string; mimeType?: string; name?: string }>(uploadResponse);
-        if (!uploadResponse.ok) throw new Error(uploadData.error); media = [uploadData];
+        if (!uploadResponse.ok) throw new Error(uploadData.error); media.push(uploadData);
       }
       const response = await fetch("/api/wab/posts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content, type, tags: [], media }) });
       const data = await readJsonResponse<{ error?: string; upgradeUrl?: string; post?: Post }>(response);
@@ -182,7 +183,7 @@ export default function WabClient() {
       if (response.status === 403 && data.upgradeUrl) { setMessage(data.error || "Un abonnement Business est requis pour publier une vidéo."); return; }
       if (!response.ok) throw new Error(data.error);
       if (!data.post) throw new Error("La publication n’a pas été renvoyée par le serveur.");
-      setPosts((items) => [data.post!, ...items]); setContent(""); setSelectedFile(null);
+      setPosts((items) => [data.post!, ...items]); setContent(""); setSelectedFiles([]); setPublishOpen(false);
     } catch (error) { setMessage(error instanceof Error ? error.message : "Publication impossible."); }
     finally { setBusy(false); }
   }
@@ -193,17 +194,8 @@ export default function WabClient() {
         <ModelSidebar />
         <section className="flex w-full max-w-[800px] flex-1 flex-col gap-6">
           <StoriesReelsCarousel />
-          <div id="publier" className="flex items-center gap-3 rounded-3xl border border-[#d1e9e6] bg-white p-4 shadow-[0_2px_8px_rgba(8,40,67,0.08)]">
-            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full">{currentUser?.avatar ? <img src={currentUser.avatar} alt="Votre photo de profil" className="h-full w-full object-cover" /> : <ModelAvatar src={MODEL_AUTHOR} alt="Avatar de publication" className="h-full w-full object-cover" />}</div>
-            <div className="min-w-0 flex-1">
-              <textarea value={content} onChange={(event) => setContent(event.target.value)} rows={1} placeholder="What’s on your mind?" className="w-full resize-none rounded-full border border-transparent bg-[#eefcfa] px-4 py-3 text-sm text-[#111e1d] outline-none transition placeholder:text-[#43474d] focus:border-[#006874]" />
-              <div className="mt-2 flex flex-wrap items-center justify-end gap-2 sm:justify-between">
-                <div className="hidden items-center gap-2 sm:flex"><select value={type} onChange={(event) => chooseType(event.target.value)} aria-label="Type de publication" className="rounded-lg border border-[#c3c6ce] bg-white px-2 py-1 text-xs"><option value="text">Texte</option><option value="opportunity">Opportunité</option><option value="document">Document</option><option value="video">Vidéo</option></select><label className="cursor-pointer text-xs font-semibold text-[#006874]">Joindre un média<input type="file" className="hidden" accept="image/jpeg,image/png,image/webp,video/mp4,application/pdf,.docx,.xlsx,.pptx" onChange={(event) => chooseFile(event.target.files?.[0] ?? null)} /></label></div>
-                <button type="button" disabled={busy || !content.trim()} onClick={publish} className="rounded-lg bg-[#006874] px-4 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">{busy ? "Publication…" : "Publier"}</button>
-                {!isBusiness && <button type="button" onClick={startWabSubscription} disabled={wabSubscriptionLoading} className="w-full text-right text-[11px] font-semibold text-[#875600] disabled:opacity-60 sm:w-auto">{wabSubscriptionLoading ? "Ouverture du paiement WAB…" : `Vidéo : activer le compte Entreprise WAB (${WAB_BUSINESS_MONTHLY_PRICE.toLocaleString("fr-FR")} XOF/mois)`}</button>}
-              </div>
-            </div>
-          </div>
+          <div id="publier" className="flex items-center gap-3 rounded-3xl border border-[#d1e9e6] bg-white p-4 shadow-[0_2px_8px_rgba(8,40,67,0.08)]"><div className="h-10 w-10 shrink-0 overflow-hidden rounded-full">{currentUser?.avatar ? <img src={currentUser.avatar} alt="Votre photo de profil" className="h-full w-full object-cover" /> : <ModelAvatar src={MODEL_AUTHOR} alt="Avatar de publication" className="h-full w-full object-cover" />}</div><button type="button" onClick={() => setPublishOpen(true)} className="min-w-0 flex-1 rounded-full bg-[#eefcfa] px-4 py-3 text-left text-sm text-[#43474d] hover:border-[#006874]">What’s on your mind?</button></div>
+          {publishOpen && <div className="fixed inset-0 z-[70] grid place-items-center bg-[#001325]/60 p-4" role="dialog" aria-modal="true" aria-label="Créer une publication"><div className="w-full max-w-2xl rounded-3xl bg-white p-5 shadow-2xl"><div className="flex items-center justify-between"><h2 className="font-display text-xl font-extrabold text-[#082843]">Créer une publication</h2><button type="button" onClick={() => setPublishOpen(false)} className="grid h-9 w-9 place-items-center rounded-full bg-[#eefcfa] text-[#006874]" aria-label="Fermer"><span className="material-symbols-outlined">close</span></button></div><textarea autoFocus value={content} onChange={(event) => setContent(event.target.value)} rows={6} placeholder="Que souhaitez-vous partager ?" className="mt-4 w-full resize-none rounded-2xl border border-[#d1e9e6] bg-[#eefcfa] p-4 text-sm outline-none focus:border-[#006874]" /><div className="mt-4 flex items-center justify-between gap-3"><label className="grid h-11 w-11 cursor-pointer place-items-center rounded-full bg-[#e9f7f5] text-[#006874]" aria-label="Ajouter des pièces jointes"><span className="material-symbols-outlined">attach_file</span><input type="file" multiple className="hidden" accept="image/jpeg,image/png,image/webp,video/mp4,audio/mpeg,audio/wav,audio/ogg,application/pdf,.docx,.xlsx,.pptx" onChange={(event) => chooseFiles(event.target.files)} /></label><span className="min-w-0 flex-1 truncate text-xs text-slate-500">{selectedFiles.length ? `${selectedFiles.length} pièce(s) jointe(s)` : "Ajouter fichier, photo, son ou vidéo"}</span><select value={type} onChange={(event) => chooseType(event.target.value)} aria-label="Type de publication" className="rounded-lg border border-[#c3c6ce] bg-white px-2 py-2 text-xs"><option value="text">Texte</option><option value="opportunity">Opportunité</option><option value="document">Document</option><option value="video">Vidéo</option></select><button type="button" disabled={busy || !content.trim()} onClick={publish} className="rounded-xl bg-[#006874] px-4 py-3 text-xs font-bold text-white disabled:opacity-40">{busy ? "Publication…" : "Publier"}</button></div>{message && <p className="mt-3 rounded-xl bg-red-50 p-3 text-xs text-red-700">{message}</p>}</div></div>}
 
           <div className="flex flex-col gap-6">
             {posts.map((post, index) => (
