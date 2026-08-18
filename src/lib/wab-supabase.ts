@@ -6,7 +6,7 @@ export type WabPostRow = {
   content: string;
   media: Array<{ path: string; mimeType: string; name: string; size?: number }> | null;
   content_type: string;
-  visibility: string;
+  visibility: "public" | "community" | "group";
   moderation_status: string;
   moderation_reason: string | null;
   is_boosted: boolean;
@@ -24,12 +24,17 @@ export type WabPostRow = {
   source_url?: string | null;
   source_title?: string | null;
   page_id?: string | null;
+  group_id?: string | null;
+
+  audience?: { countries?: string[]; industries?: string[] } | null;
   wab_pages?: { id: string; name: string; slug: string; logo_url: string | null; owner_user_id: string };
+  wab_groups?: { id: string; name: string; slug: string; logo_url: string | null; owner_user_id: string };
   wab_profiles?: {
     id: string;
     fullName?: string;
     user_id: string;
     headline: string | null;
+    industry: string | null;
     avatar_url: string | null;
     city: string | null;
     country_code: string | null;
@@ -38,6 +43,8 @@ export type WabPostRow = {
 };
 
 export type WabPageRow = { id: string; owner_user_id: string; name: string; slug: string; logo_url: string | null; description: string | null; status: string; created_at: string; updated_at: string };
+export type WabGroupRow = { id: string; owner_user_id: string; name: string; slug: string; description: string | null; logo_url: string | null; privacy: "community" | "private"; status: string; created_at: string; updated_at: string };
+export type WabGroupMemberRow = { group_id: string; user_id: string; role: "owner" | "moderator" | "member"; status: "active" | "pending" | "blocked"; created_at: string };
 
 export type WabProfileRow = {
   id: string;
@@ -66,7 +73,7 @@ export async function listWabPages(ownerUserId: string) {
 export async function ensureWabPage(ownerUserId: string, input: { name: string; slug: string; logoUrl?: string; description?: string }) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false as const, page: null };
-  const { data: existing } = await supabase.from("wab_pages").select("*").eq("owner_user_id", ownerUserId).eq("slug", input.slug).maybeSingle();
+  const { data: existing } = await supabase.from("wab_pages").select("*").eq("slug", input.slug).maybeSingle();
   if (existing) return { configured: true as const, page: existing as WabPageRow };
   const { data, error } = await supabase.from("wab_pages").insert({ owner_user_id: ownerUserId, name: input.name, slug: input.slug, logo_url: input.logoUrl ?? null, description: input.description ?? null, status: "active" }).select("*").single();
   if (error) return { configured: true as const, page: null, error };
@@ -126,39 +133,35 @@ export async function upsertWabProfile(userId: string, input: {
 }
 
 // --- POSTS ---
-export async function listWabPosts(page: number, limit: number, filters: { country?: string; industry?: string } = {}) {
+export async function listWabPosts(page: number, limit: number, filters: { country?: string; industry?: string } = {}, viewerUserId?: string) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false as const, posts: null };
 
-  const start = (page - 1) * limit;
-  const end = start + limit - 1;
+  const { data: memberships } = viewerUserId ? await supabase.from("wab_group_members").select("group_id").eq("user_id", viewerUserId).eq("status", "active").limit(500) : { data: [] };
+  const groupIds = (memberships ?? []).map((item) => item.group_id);
+  const { data: connections } = viewerUserId ? await supabase.from("wab_connections").select("profile_id").eq("follower_user_id", viewerUserId).limit(500) : { data: [] };
+  const profileIds = (connections ?? []).map((item) => item.profile_id);
+  const { data: followedProfiles } = profileIds.length ? await supabase.from("wab_profiles").select("user_id").in("id", profileIds).limit(500) : { data: [] };
+  const followedUserIds = new Set([...(viewerUserId ? [viewerUserId] : []), ...(followedProfiles ?? []).map((item) => item.user_id)]);
 
-  // RÃ©cupÃ©rer les posts avec les profils associÃ©s
-  let query = supabase
+  const { data, error } = await supabase
     .from("wab_posts")
-    .select("*, wab_pages:page_id(id, name, slug, logo_url, owner_user_id), wab_profiles:author_id(id, user_id, headline, avatar_url, city, country_code, users:user_id(prenom, nom, full_name))")
-    .eq("moderation_status", "published");
-
-  // Tri par boost puis par date
-  query = query.order("is_boosted", { ascending: false }).order("created_at", { ascending: false });
-  query = query.range(start, end);
-
-  const { data, error } = await query;
+    .select("*, wab_pages:page_id(id, name, slug, logo_url, owner_user_id), wab_groups:group_id(id, name, slug, logo_url, owner_user_id), wab_profiles:author_id(id, user_id, headline, avatar_url, city, country_code, users:user_id(prenom, nom, full_name))")
+    .eq("moderation_status", "published")
+    .order("is_boosted", { ascending: false })
+    .order("created_at", { ascending: false })
+    .range(0, 199);
   if (error) return { configured: true as const, posts: null, error };
 
-  // Filtrer cÃ´tÃ© serveur (ou via structure SQL si plus complexe)
-  let filteredData = data as WabPostRow[];
-  if (filters.country) {
-    filteredData = filteredData.filter(post => 
-      post.wab_profiles?.country_code?.toLowerCase() === filters.country?.toLowerCase()
-    );
-  }
-
-  return { 
-    configured: true as const, 
-    posts: filteredData,
-    pagination: { hasMore: data.length === limit }
-  };
+  let filteredData = (data as WabPostRow[]).filter((post) => {
+    if (post.visibility === "public" || post.is_boosted) return true;
+    if (post.visibility === "group") return Boolean(viewerUserId && post.group_id && groupIds.includes(post.group_id));
+    return Boolean(viewerUserId && post.wab_profiles?.user_id && followedUserIds.has(post.wab_profiles.user_id));
+  });
+  if (filters.country) filteredData = filteredData.filter((post) => post.wab_profiles?.country_code?.toLowerCase() === filters.country?.toLowerCase());
+  if (filters.industry) filteredData = filteredData.filter((post) => post.wab_profiles?.industry?.toLowerCase() === filters.industry?.toLowerCase());
+  const start = (page - 1) * limit;
+  return { configured: true as const, posts: filteredData.slice(start, start + limit), pagination: { hasMore: start + limit < filteredData.length } };
 }
 
 export async function createWabPostInSupabase(profileId: string, input: {
@@ -167,6 +170,9 @@ export async function createWabPostInSupabase(profileId: string, input: {
   media?: Array<{ path: string; mimeType: string; name: string; size?: number }>;
   tags?: string[];
   pageId?: string;
+  groupId?: string;
+  visibility?: "public" | "community" | "group";
+  audience?: { countries?: string[]; industries?: string[] };
 }) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false as const, post: null };
@@ -185,7 +191,10 @@ export async function createWabPostInSupabase(profileId: string, input: {
       likes_count: 0,
       comments_count: 0,
       shares_count: 0,
-      page_id: input.pageId ?? null
+      page_id: input.pageId ?? null,
+      group_id: input.groupId ?? null,
+      visibility: input.visibility ?? "community",
+      audience: input.audience ?? {}
     })
     .select()
     .single();
@@ -374,4 +383,72 @@ export async function notifyWabPostFollowers(postId: string, input: { type: stri
   const { data: post } = await supabase.from("wab_posts").select("author_id").eq("id", postId).maybeSingle();
   if (!post?.author_id) return { configured: true as const, count: 0 };
   return notifyWabFollowers(post.author_id, input);
+}
+
+
+export async function findWabPageBySlug(slug: string) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false as const, page: null };
+  const { data, error } = await supabase.from("wab_pages").select("*").eq("slug", slug).eq("status", "active").maybeSingle();
+  if (error) return { configured: true as const, page: null, error };
+  return { configured: true as const, page: data as WabPageRow | null };
+}
+
+export async function listWabGroups(userId: string) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false as const, groups: null, memberships: null };
+  const { data: memberships, error: membershipError } = await supabase.from("wab_group_members").select("*").eq("user_id", userId).eq("status", "active");
+  if (membershipError) return { configured: true as const, groups: null, memberships: null, error: membershipError };
+  const groupIds = (memberships ?? []).map((item) => item.group_id);
+  const { data: owned, error: ownedError } = await supabase.from("wab_groups").select("*").eq("owner_user_id", userId).eq("status", "active");
+  if (ownedError) return { configured: true as const, groups: null, memberships: memberships as WabGroupMemberRow[] };
+  const { data: joined } = groupIds.length ? await supabase.from("wab_groups").select("*").in("id", groupIds).eq("status", "active") : { data: [] };
+  const byId = new Map<string, WabGroupRow>();
+  [...(owned ?? []), ...(joined ?? [])].forEach((group) => byId.set(group.id, group as WabGroupRow));
+  return { configured: true as const, groups: Array.from(byId.values()), memberships: memberships as WabGroupMemberRow[] };
+}
+
+export async function createWabGroup(ownerUserId: string, input: { name: string; slug: string; description?: string; logoUrl?: string; privacy?: "community" | "private" }) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false as const, group: null };
+  const { data: group, error } = await supabase.from("wab_groups").insert({ owner_user_id: ownerUserId, name: input.name, slug: input.slug, description: input.description ?? null, logo_url: input.logoUrl ?? null, privacy: input.privacy ?? "community", status: "active" }).select("*").single();
+  if (error || !group) return { configured: true as const, group: null, error };
+  await supabase.from("wab_group_members").insert({ group_id: group.id, user_id: ownerUserId, role: "owner", status: "active" });
+  return { configured: true as const, group: group as WabGroupRow };
+}
+
+export async function joinWabGroup(userId: string, groupId: string) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false as const, membership: null };
+  const { data: group } = await supabase.from("wab_groups").select("privacy,status").eq("id", groupId).eq("status", "active").maybeSingle();
+  if (!group) return { configured: true as const, membership: null, error: new Error("Groupe introuvable.") };
+  const status = group.privacy === "private" ? "pending" : "active";
+  const { data, error } = await supabase.from("wab_group_members").upsert({ group_id: groupId, user_id: userId, role: "member", status }, { onConflict: "group_id,user_id" }).select("*").single();
+  return { configured: true as const, membership: data as WabGroupMemberRow | null, error };
+}
+
+export async function canPublishToWabGroup(userId: string, groupId: string) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false as const, allowed: true };
+  const { data: group } = await supabase.from("wab_groups").select("owner_user_id,status").eq("id", groupId).eq("status", "active").maybeSingle();
+  if (!group) return { configured: true as const, allowed: false, reason: "Groupe introuvable." };
+  if (group.owner_user_id === userId) return { configured: true as const, allowed: true };
+  const { data: member } = await supabase.from("wab_group_members").select("status").eq("group_id", groupId).eq("user_id", userId).maybeSingle();
+  return member?.status === "active" ? { configured: true as const, allowed: true } : { configured: true as const, allowed: false, reason: "Vous devez être membre actif de ce groupe pour publier." };
+}
+
+export async function isWabPremiumUser(userId: string) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return false;
+  const { data } = await supabase.from("users").select("role,subscription").eq("id", userId).maybeSingle();
+  const subscription = data?.subscription as { status?: string; planId?: string } | null;
+  return data?.role === "admin" || subscription?.status === "active" || subscription?.planId?.toLowerCase().includes("premium") === true;
+}
+
+
+export async function canPublishToWabPage(userId: string, pageId: string) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false as const, allowed: true };
+  const { data: page } = await supabase.from("wab_pages").select("owner_user_id,status").eq("id", pageId).eq("status", "active").maybeSingle();
+  return page?.owner_user_id === userId ? { configured: true as const, allowed: true } : { configured: true as const, allowed: false, reason: "Seul le propriétaire de la page peut y publier." };
 }

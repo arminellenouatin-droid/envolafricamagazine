@@ -3,7 +3,7 @@ import { getCurrentUserFromCookie } from "@/lib/auth";
 import { readWabDB, writeWabDB } from "@/lib/wab-db";
 import { createWabPage, ensureWabPage, listWabPages } from "@/lib/wab-supabase";
 
-const ENVOL_PAGE = { name: "ENVOL AFRICA", slug: "envol-africa", logoUrl: "/logo-couleur-entete.png", description: "La page officielle d’Envol Africa dans le réseau WAB." };
+const ENVOL_PAGE = { name: "ENVOL AFRICA", slug: "envol-africa", logoUrl: "https://drive.google.com/uc?export=download&id=1gzbeBDh79_cQUinL12_nb_fmQCjUKxYI", description: "La page officielle d’Envol Africa dans le réseau WAB." };
 
 function slugify(value: string) { return value.toLocaleLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 80); }
 
@@ -13,12 +13,12 @@ export async function GET() {
   const supabase = await listWabPages(user.id);
   if (supabase.configured) {
     let pages = supabase.pages ?? [];
-    if (!pages.some((page) => page.slug === ENVOL_PAGE.slug)) { const ensured = await ensureWabPage(user.id, ENVOL_PAGE); if (ensured.page) pages = [...pages, ensured.page]; }
+    if (user.role === "admin" && !pages.some((page) => page.slug === ENVOL_PAGE.slug)) { const ensured = await ensureWabPage(user.id, ENVOL_PAGE); if (ensured.page) pages = [...pages, ensured.page]; }
     return NextResponse.json({ pages });
   }
   const db = readWabDB();
   let page = db.pages.find((item) => item.ownerUserId === user.id && item.slug === ENVOL_PAGE.slug);
-  if (!page) { const now = new Date().toISOString(); page = { id: crypto.randomUUID(), ownerUserId: user.id, ...ENVOL_PAGE, status: "active", createdAt: now, updatedAt: now }; db.pages.push(page); writeWabDB(db); }
+  if (user.role === "admin" && !page) { const now = new Date().toISOString(); page = { id: crypto.randomUUID(), ownerUserId: user.id, ...ENVOL_PAGE, status: "active", createdAt: now, updatedAt: now }; db.pages.push(page); writeWabDB(db); }
   return NextResponse.json({ pages: db.pages.filter((item) => item.ownerUserId === user.id && item.status === "active") });
 }
 

@@ -19,7 +19,7 @@ export async function publishArticleToWab(article: Article, authorUserId: string
   }
   if (!profile) return { configured: true as const, published: false as const, reason: "profile_not_found" as const };
 
-  const pageResult = await ensureWabPage(authorUserId, { name: "ENVOL AFRICA", slug: "envol-africa", logoUrl: "/logo-couleur-entete.webp", description: "La page officielle d’Envol Africa dans le réseau WAB." });
+  const pageResult = await ensureWabPage(authorUserId, { name: "ENVOL AFRICA", slug: "envol-africa", logoUrl: "https://drive.google.com/uc?export=download&id=1gzbeBDh79_cQUinL12_nb_fmQCjUKxYI", description: "La page officielle d’Envol Africa dans le réseau WAB." });
   const sourceUrl = `/article/${article.slug}`;
   const sourceTitle = article.title;
   const payload = {
