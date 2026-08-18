@@ -189,13 +189,12 @@ export default function MagazineDetailPage() {
               </div>
 
               <div className="mt-5 border-t border-[#eadad8] pt-4" aria-label="Options de paiement acceptées">
-                <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-[#5c403f]">Options de paiement</p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-[#d8c3c1] bg-white px-3 text-[11px] font-semibold text-[#2b2525]"><span className="material-symbols-outlined text-[17px]">credit_card</span> Carte bancaire</span>
-                  <span className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-[#d8c3c1] bg-white px-3 text-[11px] font-semibold text-[#2b2525]"><span className="material-symbols-outlined text-[17px]">smartphone</span> Mobile Money</span>
-                  <span className="inline-flex min-h-9 items-center rounded-md border border-[#d8c3c1] bg-white px-3 text-[11px] font-semibold text-[#635b5a]">Stripe</span>
-                  <span className="inline-flex min-h-9 items-center rounded-md border border-[#d8c3c1] bg-white px-3 text-[11px] font-semibold text-[#635b5a]">PayPal</span>
-                  <span className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-[#d8c3c1] bg-white px-3 text-[11px] font-semibold text-[#2b2525]"><span className="material-symbols-outlined text-[17px]">currency_bitcoin</span> Crypto</span>
+                <div className="flex w-full flex-nowrap items-center justify-between gap-3 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <span role="img" aria-label="Carte bancaire" title="Carte bancaire" className="inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-md border border-[#d8c3c1] bg-white px-2 text-[#1b1c1c]"><span className="material-symbols-outlined text-[23px]" aria-hidden="true">credit_card</span></span>
+                  <span role="img" aria-label="Mobile Money" title="Mobile Money" className="inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-md border border-[#d8c3c1] bg-white px-2 text-[#1b1c1c]"><span className="material-symbols-outlined text-[23px]" aria-hidden="true">smartphone</span></span>
+                  <span role="img" aria-label="Stripe" title="Stripe" className="inline-flex h-10 shrink-0 items-center justify-center rounded-md border border-[#d8c3c1] bg-white px-3 text-[17px] font-bold tracking-[-.04em] text-[#635b5a]">stripe</span>
+                  <span role="img" aria-label="PayPal" title="PayPal" className="inline-flex h-10 shrink-0 items-center justify-center rounded-md border border-[#d8c3c1] bg-white px-3 text-[17px] font-bold tracking-[-.04em] text-[#003087]">PayPal</span>
+                  <span role="img" aria-label="Crypto" title="Crypto" className="inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-md border border-[#d8c3c1] bg-white px-2 text-[#f7931a]"><span className="material-symbols-outlined text-[23px]" aria-hidden="true">currency_bitcoin</span></span>
                 </div>
               </div>
             </section>
