@@ -53,7 +53,7 @@ export async function publishMagazineToWab(magazine: Magazine, authorUserId: str
   }
   if (!profile) return { configured: true as const, published: false as const, reason: "profile_not_found" as const };
 
-  const pageResult = await ensureWabPage(authorUserId, { name: "ENVOL AFRICA", slug: "envol-africa", logoUrl: "/logo-couleur-entete.png", description: "La page officielle d’Envol Africa dans le réseau WAB." });
+  const pageResult = await ensureWabPage(authorUserId, { name: "ENVOL AFRICA", slug: "envol-africa", logoUrl: "/logo-couleur-entete.webp", description: "La page officielle d’Envol Africa dans le réseau WAB." });
   const sourceUrl = `/kiosque/${magazine.id}`;
   const sourceTitle = magazine.title || `Envol Africa Magazine N°${magazine.numero}`;
   const payload = {

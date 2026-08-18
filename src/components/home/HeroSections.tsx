@@ -14,7 +14,7 @@ export function SentinellesSection({ articles }: { articles: any[] }) {
       <div className="grid md:grid-cols-3 gap-5 md:gap-6">
         {items.map((a, i)=>(
           <Link key={a.id} href={`/article/${a.slug}`} className={`group relative overflow-hidden rounded-[22px] bg-white border border-zinc-100 ${i===0 ? "md:row-span-2 md:col-span-1 h-[360px] md:h-full min-h-[420px]" : "h-[260px]"}`}>
-            <img src={a.image} alt={a.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700" />
+            <img src={a.image} alt={a.title} loading={i === 0 ? "eager" : "lazy"} decoding="async" className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700" />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
             <div className="absolute inset-0 p-6 flex flex-col justify-end">
               <div className="flex items-center gap-2 mb-3">
@@ -47,7 +47,7 @@ export function EssorOmbreSection({ articles }: { articles: any[] }) {
         <div className="space-y-5">
           {essor.map(a=>(
             <Link key={a.id} href={`/article/${a.slug}`} className="flex gap-4 group">
-              <img src={a.image} className="w-[96px] h-[96px] rounded-[14px] object-cover group-hover:scale-[1.02] transition-transform" alt="" />
+              <img src={a.image} loading="lazy" decoding="async" className="w-[96px] h-[96px] rounded-[14px] object-cover group-hover:scale-[1.02] transition-transform" alt="" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 text-[11px] text-zinc-500 uppercase tracking-wide font-semibold"><span className="text-[#D4AF37]">●</span>{a.category}</div>
                 <h4 className="font-serif font-bold text-[16px] leading-[1.25] text-zinc-900 group-hover:text-[#0A1931] line-clamp-2 mt-1">{a.title}</h4>
@@ -92,7 +92,7 @@ export function MagazineCarousel({ magazines }: { magazines: any[] }) {
           {magazines.slice(0,8).map(m=>(
             <Link key={m.id} href={`/kiosque/${m.id}`} aria-label={`Voir la fiche produit de ${m.title}`} className="shrink-0 group cursor-pointer">
               <div className="w-[160px] md:w-[190px] aspect-[3/4] rounded-[16px] overflow-hidden magazine-shadow bg-zinc-100 relative">
-                <img src={m.cover} alt={m.title} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" />
+                <img src={m.cover} alt={m.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" />
                 <div className="absolute top-2 left-2 bg-white/90 backdrop-blur text-[10px] font-bold px-2 py-1 rounded-full">N°{m.numero}</div>
                 {m.featured && <div className="absolute bottom-2 left-2 right-2 bg-[#0A1931] text-white text-[10px] font-bold px-2 py-1 rounded-full text-center">À LA UNE</div>}
               </div>
@@ -149,7 +149,7 @@ export function FilInfoManager({ articles }: { articles: any[] }) {
               <div className="text-[13px] font-semibold -mt-0.5">Sélection de la rédaction</div>
             </div>
           </div>
-          <img src={manager.image} alt={manager.name} className="w-24 h-24 rounded-[18px] object-cover border-2 border-white/20" />
+          <img src={manager.image} alt={manager.name} loading="lazy" decoding="async" className="w-24 h-24 rounded-[18px] object-cover border-2 border-white/20" />
           <h3 className="font-serif font-bold text-[20px] mt-4 leading-tight">{manager.name}</h3>
           <div className="text-[#D4AF37] text-[12px] font-semibold uppercase tracking-wide mt-1">{manager.role}</div>
           <p className="text-[13px] leading-6 text-zinc-300 mt-4 italic">"{manager.quote}"</p>

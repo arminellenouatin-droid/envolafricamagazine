@@ -279,7 +279,7 @@ export function seedIfEmpty() {
 
     const images = [
       "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800",
-      "https://images.unsplash.com/photo-1497366811353-524cc3f3968e?w=800",
+      "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=800",
       "https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?w=800",
       "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800",
       "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800",

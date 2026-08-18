@@ -10,7 +10,7 @@ const dateLabel = (value?: string | Date | null) => value ? new Date(value).toLo
 const imageFallbacks = [
   "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800",
   "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800",
-  "https://images.unsplash.com/photo-1497366811353-524cc3f3968e?w=800",
+  "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=800",
   "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800",
   "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800",
 ];
