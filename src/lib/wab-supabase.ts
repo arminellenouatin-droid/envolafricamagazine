@@ -171,7 +171,7 @@ export async function createWabPostInSupabase(profileId: string, input: {
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false as const, post: null };
 
-  const moderationStatus = input.media && input.media.length > 0 ? "pending_review" : "published";
+  const moderationStatus = "published";
 
   const { data, error } = await supabase
     .from("wab_posts")
