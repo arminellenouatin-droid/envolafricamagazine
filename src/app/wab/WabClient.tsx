@@ -6,7 +6,6 @@ import PostActions from "./PostActions";
 import PostMedia from "./PostMedia";
 import PostViewTracker from "./PostViewTracker";
 import StoriesReelsCarousel from "./StoriesReelsCarousel";
-import WabSocialHeader from "./WabSocialHeader";
 import FollowButton from "./FollowButton";
 import { WAB_BUSINESS_MONTHLY_PRICE } from "@/lib/wab-access";
 
@@ -202,7 +201,7 @@ export default function WabClient() {
   }
 
   return (
-    <><div className="md:hidden"><WabSocialHeader avatar={currentUser?.avatar} /></div><main className="min-h-screen bg-[#e9f7f5] pb-20 font-body text-[#111e1d] md:pb-0">
+    <><main className="min-h-screen bg-[#e9f7f5] pb-20 font-body text-[#111e1d] md:pb-0">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-4 py-3 md:flex-row md:gap-6 md:px-10 md:py-6">
         <ModelSidebar user={currentUser} />
         <section className="flex w-full max-w-[800px] flex-1 flex-col gap-6">
