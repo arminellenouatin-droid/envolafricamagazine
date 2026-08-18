@@ -4,6 +4,8 @@ import PromoPopup from "@/components/PromoPopup";
 import AvantPremiereCarousel from "@/components/home/AvantPremiereCarousel";
 import EditorialCarousel from "@/components/home/EditorialCarousel";
 
+export const revalidate = 60;
+
 // Editorial Bordeaux: tous les blocs métiers restent présents, avec une hiérarchie plus éditoriale,
 // des rails horizontaux et des animations courtes. Les emplacements publicitaires restent identifiés.
 const dateLabel = (value?: string | Date | null) => value ? new Date(value).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }) : "À la une";
