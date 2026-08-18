@@ -2,98 +2,66 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { getCurrentUserForAdmin } from "@/lib/admin-auth";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
+
+const MAX_SIZE = 50 * 1024 * 1024;
+const ALLOWED_TYPES: Record<string, string[]> = {
+  cover: ["image/jpeg", "image/png", "image/webp"],
+  preview: ["image/jpeg", "image/png", "image/webp"],
+  pdf: ["application/pdf"],
+  audio: ["audio/mpeg", "audio/wav", "audio/mp3", "audio/ogg", "audio/webm"],
+  video: ["video/mp4", "video/webm", "video/quicktime"],
+  general: ["image/jpeg", "image/png", "image/webp", "application/pdf", "audio/mpeg", "audio/wav", "audio/mp3", "video/mp4", "video/webm"],
+};
+
+function safeFileName(name: string) {
+  return name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9.-]/g, "_").slice(-120);
+}
 
 export async function POST(req: NextRequest) {
-  // Vérif auth admin/redacteur_chef+
-  const auth = await getCurrentUserForAdmin('redacteur_chef');
-  if ((auth as any).error) {
-    return NextResponse.json({ error: (auth as any).error }, { status: (auth as any).status || 401 });
-  }
+  const auth = await getCurrentUserForAdmin("redacteur_chef");
+  if ((auth as any).error) return NextResponse.json({ error: (auth as any).error }, { status: (auth as any).status || 401 });
 
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
-    const type = formData.get("type") as string || "general"; // cover, preview, pdf, audio
-    const magazineId = formData.get("magazineId") as string || "temp";
-    const lang = formData.get("lang") as string || "";
+    const type = String(formData.get("type") || "general");
+    const entityId = String(formData.get("magazineId") || "article");
+    const lang = String(formData.get("lang") || "");
+    if (!file) return NextResponse.json({ error: "Aucun fichier fourni" }, { status: 400 });
+    if (file.size > MAX_SIZE) return NextResponse.json({ error: "Fichier trop volumineux (max 50MB)" }, { status: 400 });
 
-    if (!file) {
-      return NextResponse.json({ error: "Aucun fichier fourni" }, { status: 400 });
+    const allowed = ALLOWED_TYPES[type] || ALLOWED_TYPES.general;
+    if (!allowed.includes(file.type) && !(type === "cover" || type === "preview") || ((type === "cover" || type === "preview") && !file.type.startsWith("image/"))) {
+      return NextResponse.json({ error: `Type non autorisé pour ${type}: ${file.type}` }, { status: 400 });
     }
 
-    // Validation taille et type
-    const maxSize = 50 * 1024 * 1024; // 50MB max pour PDF/audio
-    if (file.size > maxSize) {
-      return NextResponse.json({ error: "Fichier trop volumineux (max 50MB)" }, { status: 400 });
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const fileName = `${Date.now()}_${safeFileName(file.name)}`;
+    const storagePath = `${type}/${lang ? `${entityId}_${lang}` : entityId}/${fileName}`;
+    const supabase = getSupabaseAdmin();
+
+    if (supabase) {
+      const { error: uploadError } = await supabase.storage.from("article-media").upload(storagePath, buffer, { contentType: file.type, upsert: false });
+      if (uploadError) return NextResponse.json({ error: `Stockage image indisponible : ${uploadError.message}` }, { status: 503 });
+      const { data } = supabase.storage.from("article-media").getPublicUrl(storagePath);
+      return NextResponse.json({ success: true, url: data.publicUrl, fileName, type, lang, size: file.size, mimeType: file.type, storage: "supabase" });
     }
 
-    const allowedTypes: Record<string, string[]> = {
-      cover: ["image/jpeg", "image/png", "image/webp"],
-      preview: ["image/jpeg", "image/png", "image/webp"],
-      pdf: ["application/pdf"],
-      audio: ["audio/mpeg", "audio/wav", "audio/mp3", "audio/ogg", "audio/webm"],
-      video: ["video/mp4", "video/webm", "video/quicktime"],
-      office: ["application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation"],
-      general: ["image/jpeg", "image/png", "image/webp", "application/pdf", "audio/mpeg", "audio/wav", "audio/mp3", "video/mp4", "video/webm", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation"]
-    };
-
-    const allowed = allowedTypes[type] || allowedTypes.general;
-    if (!allowed.includes(file.type) && !file.type.startsWith("image/") && type !== "general") {
-      // On autorise quand même images pour cover/preview même si type mime légèrement différent
-      if (type === "cover" || type === "preview") {
-        if (!file.type.startsWith("image/")) {
-          return NextResponse.json({ error: `Type non autorisé pour ${type}: ${file.type}` }, { status: 400 });
-        }
-      }
-    }
-
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Génère nom unique
-    const ext = path.extname(file.name) || (file.type === "application/pdf" ? ".pdf" : file.type.startsWith("audio/") ? ".mp3" : ".jpg");
-    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const fileName = `${Date.now()}_${safeName}`;
-    
-    // Dossiers par type
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "magazines", type, lang ? `${magazineId}_${lang}` : magazineId);
+    // Fallback uniquement hors production, pour le développement local.
+    if (process.env.NODE_ENV === "production") return NextResponse.json({ error: "Stockage de production non configuré" }, { status: 503 });
+    const uploadDir = path.join(process.cwd(), "public", "uploads", "magazines", type, lang ? `${entityId}_${lang}` : entityId);
     await mkdir(uploadDir, { recursive: true });
-
-    const filePath = path.join(uploadDir, fileName);
-    await writeFile(filePath, buffer);
-
-    // URL publique
-    const publicUrl = `/uploads/magazines/${type}/${lang ? `${magazineId}_${lang}` : magazineId}/${fileName}`;
-
-    return NextResponse.json({ 
-      success: true, 
-      url: publicUrl,
-      fileName,
-      type,
-      lang,
-      size: file.size,
-      mimeType: file.type
-    });
-
-  } catch (e) {
-    console.error("Upload error", e);
-    return NextResponse.json({ error: "Erreur upload: " + (e as any).message }, { status: 500 });
+    await writeFile(path.join(uploadDir, fileName), buffer);
+    return NextResponse.json({ success: true, url: `/uploads/magazines/${type}/${lang ? `${entityId}_${lang}` : entityId}/${fileName}`, fileName, type, lang, size: file.size, mimeType: file.type, storage: "local-dev" });
+  } catch (error) {
+    console.error("Upload error", error);
+    return NextResponse.json({ error: `Erreur upload : ${error instanceof Error ? error.message : "erreur inconnue"}` }, { status: 500 });
   }
 }
 
 export async function GET() {
-  return NextResponse.json({ 
-    message: "Upload endpoint - POST multipart/form-data avec fields: file, type (cover|preview|pdf|audio), magazineId, lang",
-    maxSize: "50MB",
-    allowedTypes: {
-      cover: "image/jpeg, png, webp",
-      preview: "image - jusqu'à 10 images pour flipbook",
-      pdf: "application/pdf - 3 langues FR/EN/ES",
-      office: "doc, docx, xls, xlsx, ppt, pptx",
-      audio: "audio/mpeg, wav, mp3 - 12 langues",
-      video: "video/mp4, webm, quicktime"
-    }
-  });
+  return NextResponse.json({ message: "Upload endpoint", maxSize: "50MB", storage: "Supabase Storage en production" });
 }
