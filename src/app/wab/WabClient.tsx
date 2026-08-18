@@ -9,6 +9,7 @@ import StoriesReelsCarousel from "./StoriesReelsCarousel";
 import FollowButton from "./FollowButton";
 import MediaInteractions from "./MediaInteractions";
 import { WAB_BUSINESS_MONTHLY_PRICE } from "@/lib/wab-access";
+import { optimizeSelectedImages } from "@/lib/client-image-optimizer";
 
 type Reel = { id: string; author: string; mediaUrl: string; mimeType: string; caption: string; views: number; likes: number };
 type PublishPage = { id: string; name: string; logoUrl?: string; logo_url?: string };
@@ -201,7 +202,23 @@ export default function WabClient() {
 
   function openComments(postId: string) { setCommentSignals((signals) => ({ ...signals, [postId]: (signals[postId] ?? 0) + 1 })); }
   function chooseType(nextType: string) { setMessage(""); setType(nextType); }
-  function chooseFiles(files: FileList | null) { const next = Array.from(files ?? []).slice(0, 10); setMessage(""); setSelectedFiles(next); if (next.some((file) => file.type.startsWith("video/"))) setType("video"); else if (next.some((file) => !file.type.startsWith("image/") && !file.type.startsWith("audio/"))) setType("document"); else setType("text"); }
+  async function chooseFiles(files: FileList | null) {
+    const picked = Array.from(files ?? []).slice(0, 10);
+    if (!picked.length) return;
+    setMessage("Optimisation des images en cours…");
+    try {
+      const result = await optimizeSelectedImages(picked);
+      setSelectedFiles(result.files);
+      if (result.savedBytes > 0) setMessage(`Images optimisées avant publication : ${(result.savedBytes / 1024 / 1024).toFixed(1)} Mo économisés.`);
+      else setMessage("");
+      if (result.files.some((file) => file.type.startsWith("video/"))) setType("video");
+      else if (result.files.some((file) => !file.type.startsWith("image/") && !file.type.startsWith("audio/"))) setType("document");
+      else setType("text");
+    } catch {
+      setSelectedFiles(picked);
+      setMessage("Une image n’a pas pu être optimisée ; le fichier original sera utilisé.");
+    }
+  }
   function removeFile(index: number) { setSelectedFiles((files) => files.filter((_, fileIndex) => fileIndex !== index)); }
   async function startWabSubscription() { sessionStorage.setItem("wab-publish-draft", JSON.stringify({ content, type })); setWabSubscriptionLoading(true); setWabSubscriptionMessage(""); try { const response = await fetch("/api/wab/subscription", { method: "POST" }); const data = await response.json(); if (response.status === 401) { window.location.assign(`/auth/login?next=${encodeURIComponent("/wab")}`); return; } if (!response.ok || !data.checkout_url) throw new Error(data.error || "Le paiement WAB est indisponible."); window.location.assign(data.checkout_url); } catch (error) { setWabSubscriptionMessage(error instanceof Error ? error.message : "Activation du compte Entreprise WAB impossible."); } finally { setWabSubscriptionLoading(false); } }
 
