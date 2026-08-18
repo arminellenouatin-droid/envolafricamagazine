@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readCrowdDB, writeCrowdDB } from "@/lib/crowdfunding-db";
 import { v4 as uuidv4 } from "uuid";
+import { getCurrentUserFromCookie } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -31,6 +32,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const user = await getCurrentUserFromCookie();
+    if (!user) return NextResponse.json({ error: "Connexion requise pour créer un projet." }, { status: 401 });
     const body = await req.json();
     const { nom, secteur, description, montantRecherche, niveauRisque, dureeJours, typesFinancement, pays, tauxInteret } = body;
     if (!nom || !secteur || !description || !montantRecherche) {
@@ -51,7 +54,7 @@ export async function POST(req: NextRequest) {
       dureeJours: parseInt(dureeJours)||30,
       typesFinancement: typesFinancement||["don"],
       statut: "en_attente_validation" as const,
-      porteurId: body.porteurId||"anon",
+      porteurId: user.id,
       pays: pays||"BJ",
       tauxInteret: tauxInteret||8,
       pourcentageVendu: 20,

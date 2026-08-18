@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { readAwardsDB } from "@/lib/awards-db";
 
-export default function CompetitionsPage() {
+export default async function CompetitionsPage({ searchParams }: { searchParams: Promise<{ filter?: string }> }) {
   const db = readAwardsDB();
-  const comps = db.competitions.sort((a,b)=> new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const filter = (await searchParams).filter || "all";
+  const allComps = db.competitions.sort((a,b)=> new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const comps = filter === "live" ? allComps.filter(c => c.status === "live_running") : filter === "voting" ? allComps.filter(c => c.status === "voting_open") : filter === "upcoming" ? allComps.filter(c => ["published", "registrations_open", "live_scheduled"].includes(c.status)) : filter === "finished" ? allComps.filter(c => ["finished", "archived"].includes(c.status)) : allComps;
   const live = comps.filter(c=>c.status==="live_running");
   const voting = comps.filter(c=>c.status==="voting_open");
   const upcoming = comps.filter(c=>["published","registrations_open","live_scheduled"].includes(c.status));
@@ -17,8 +19,8 @@ export default function CompetitionsPage() {
         <p className="text-[#A8A6A0] mt-3 max-w-[640px]">Découvrez les compétitions en direct, à venir et terminées. Filtrez par catégorie et statut.</p>
 
         <div className="mt-8 flex gap-2 overflow-x-auto">
-          {["Toutes","En direct","Votes ouverts","À venir","Terminées"].map(t=>(
-            <button key={t} className={`px-5 py-2 rounded-full text-[12px] font-bold whitespace-nowrap ${t==="Toutes"?"bg-[#D4AF37] text-black":"bg-white/10 border border-white/10 text-white hover:bg-white/15"}`}>{t}</button>
+          {[['Toutes','all'],['En direct','live'],['Votes ouverts','voting'],['À venir','upcoming'],['Terminées','finished']].map(([label, value])=>(
+            <Link key={value} href={`/africa-awards/competitions${value === "all" ? "" : `?filter=${value}`}`} className={`px-5 py-2 rounded-full text-[12px] font-bold whitespace-nowrap ${filter === value ? "bg-[#D4AF37] text-black" : "bg-white/10 border border-white/10 text-white hover:bg-white/15"}`}>{label}</Link>
           ))}
         </div>
 

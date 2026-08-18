@@ -11,9 +11,13 @@ export default function ProjetDetail() {
   const [montant, setMontant] = useState(10000);
   const [pourcentage, setPourcentage] = useState(1);
   const [paying, setPaying] = useState(false);
+  const [daysRemaining, setDaysRemaining] = useState(0);
 
   useEffect(()=>{
-    fetch(`/api/crowdfunding/projects?id=${id}`).then(r=>r.json()).then(d=>setProjet(d.projet));
+    fetch(`/api/crowdfunding/projects?id=${id}`).then(r=>r.json()).then(d=>{
+      setProjet(d.projet);
+      setDaysRemaining(Math.max(0, Math.ceil((new Date(d.projet.dateFin).getTime() - Date.now()) / 86400000)));
+    });
   },[id]);
 
   if (!projet) return <div className="p-10 text-center">Chargement projet...</div>;
@@ -60,7 +64,7 @@ export default function ProjetDetail() {
               <div className="flex justify-between text-[11px] mb-1"><span>Progression</span><span className="font-bold">{pct}%</span></div>
               <div className="h-2 bg-[#f0eded] rounded-full overflow-hidden"><div className="h-full bg-[#9e001f]" style={{ width: `${Math.min(100,pct)}%` }}></div></div>
               <div className="flex justify-between text-[12px] mt-2"><span className="font-bold">{projet.montantCollecte.toLocaleString()} F</span><span className="text-[#5c403f]">sur {projet.montantRecherche.toLocaleString()} F</span></div>
-              <div className="flex justify-between text-[11px] mt-3 text-[#5c403f]"><span>{projet.investisseurs} investisseurs</span><span>{Math.ceil((new Date(projet.dateFin).getTime()-Date.now())/86400000)}j restants</span></div>
+              <div className="flex justify-between text-[11px] mt-3 text-[#5c403f]"><span>{projet.investisseurs} investisseurs</span><span>{daysRemaining}j restants</span></div>
 
               <div className="mt-6 border-t border-[#e5bdbb]/30 pt-6">
                 <h4 className="font-bold text-[14px]">3 façons d'aider</h4>
@@ -109,7 +113,7 @@ export default function ProjetDetail() {
               <div className="mt-6 p-4 rounded-xl bg-[#f6f3f2] border">
                 <h4 className="font-bold text-[12px]">Messagerie directe avec investisseurs</h4>
                 <p className="text-[11px] text-[#5c403f] mt-1">Discutez avec porteur projet - Suivi demandes retrait - Rapports mensuels/trimestriels + docs justificatifs</p>
-                <button className="mt-3 w-full h-9 rounded-full bg-white border text-[11px] font-bold">💬 Contacter porteur</button>
+                <Link href={`/financement/dashboard/investisseur?projetId=${encodeURIComponent(id)}#messages`} className="mt-3 flex h-9 w-full items-center justify-center rounded-full border bg-white text-[11px] font-bold">💬 Contacter porteur</Link>
               </div>
             </div>
           </div>

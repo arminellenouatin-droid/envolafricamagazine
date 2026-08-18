@@ -17,6 +17,20 @@ function normalizeProduct(product: ApiProduct): MarketplaceProduct {
 function formatXof(value: number) { return new Intl.NumberFormat("fr-FR").format(value) + " XOF"; }
 
 function ProductCard({ product }: { product: MarketplaceProduct & { isMagazine?: boolean; magazineId?: string; magazineNumero?: number } }) {
+  const [favorite, setFavorite] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const favorites = JSON.parse(localStorage.getItem("eam_marketplace_favorites") || "[]") as string[];
+      setFavorite(favorites.includes(product.id));
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [product.id]);
+  const toggleFavorite = () => {
+    const favorites = JSON.parse(localStorage.getItem("eam_marketplace_favorites") || "[]") as string[];
+    const next = favorites.includes(product.id) ? favorites.filter((id) => id !== product.id) : [...favorites, product.id];
+    localStorage.setItem("eam_marketplace_favorites", JSON.stringify(next));
+    setFavorite(next.includes(product.id));
+  };
   const addMagazineToCart = () => {
     if (!product.isMagazine || !product.magazineId) return;
     const cart = JSON.parse(localStorage.getItem("eam_cart") || "[]");
@@ -29,7 +43,7 @@ function ProductCard({ product }: { product: MarketplaceProduct & { isMagazine?:
     <div className="relative aspect-[4/3] overflow-hidden" style={{ background: `linear-gradient(135deg, ${product.accent}55, #f6eee2)` }}>
       {product.image ? <img src={product.image} alt={product.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center text-5xl" aria-hidden="true">✦</div>}
       <div className="absolute left-3 top-3 flex gap-2">{product.boosted && <span className="rounded-full bg-[#ffca63] px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[#513000]">Boosté</span>}{product.certified && <span className="rounded-full bg-[#e9f7f5] px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[#087e8b]">Certifié</span>}</div>
-      <button type="button" aria-label={`Ajouter ${product.title} aux favoris`} className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-[#6d5541] shadow-sm transition hover:bg-white hover:text-[#9e001f]"><span className="material-symbols-outlined text-[19px]">favorite</span></button>
+      <button type="button" onClick={toggleFavorite} aria-pressed={favorite} aria-label={`${favorite ? "Retirer" : "Ajouter"} ${product.title} ${favorite ? "des" : "aux"} favoris`} className={`absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/90 shadow-sm transition hover:bg-white ${favorite ? "text-[#9e001f]" : "text-[#6d5541] hover:text-[#9e001f]"}`}><span className="material-symbols-outlined text-[19px]">{favorite ? "favorite" : "favorite_border"}</span></button>
     </div>
     <div className="p-4">
       <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#a36300]">{product.category}</p><h3 className="mt-1 line-clamp-2 min-h-[44px] font-display text-[15px] font-extrabold leading-5 text-[#2a211a]">{product.title}</h3></div></div>

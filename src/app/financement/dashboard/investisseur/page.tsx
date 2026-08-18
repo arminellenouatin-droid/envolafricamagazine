@@ -7,25 +7,26 @@ export default function InvestisseurDashboard() {
   const [repayments, setRepayments] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState("");
 
   useEffect(()=>{
-    // Mock contributions + real repayments from API
-    setContribs([
-      { id:"1", projet:"AgroBio Bénin", projetId:"proj1", type:"don", montant:10000, date:"2026-08-01", statut:"confirmé", contrat:"/contrats/don_1.pdf" },
-      { id:"2", projet:"TechVillage Lagos", projetId:"proj2", type:"prise_part", montant:500000, pourcentage:2.5, valorisation:20000000, contrat:"/contrats/part_2.pdf", statut:"confirmé" },
-      { id:"3", projet:"Solar Power Sahel", projetId:"proj3", type:"pret", montant:200000, taux:10, statut:"en_cours" },
-    ]);
+    const params = new URLSearchParams(window.location.search);
+    setSelectedProjectId(params.get("projetId") || "");
+    fetch("/api/auth/me").then(r=>r.json()).then(d=>setCurrentUser(d.user || null)).catch(()=>{});
+    fetch("/api/crowdfunding/contributions").then(r=>r.ok ? r.json() : { contributions: [] }).then(d=>setContribs(d.contributions || [])).catch(()=>setContribs([]));
     fetch("/api/crowdfunding/repayments").then(r=>r.json()).then(d=>setRepayments(d.repayments||[])).catch(()=>{});
   },[]);
 
   useEffect(()=>{
-    // Fetch messages for first project
-    fetch("/api/crowdfunding/messages?projetId=proj1").then(r=>r.json()).then(d=>setMessages(d.messages||[])).catch(()=>{});
-  },[]);
+    if (!selectedProjectId) return;
+    fetch(`/api/crowdfunding/messages?projetId=${encodeURIComponent(selectedProjectId)}`).then(r=>r.json()).then(d=>setMessages(d.messages||[])).catch(()=>setMessages([]));
+  },[selectedProjectId]);
 
   const sendMessage = async () => {
     if (!newMessage.trim()) return;
-    const res = await fetch("/api/crowdfunding/messages", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ projetId:"proj1", fromId:"investisseur_demo", fromNom:"Investisseur", toId:"porteur_demo", toNom:"Porteur", content: newMessage }) });
+    if (!selectedProjectId || !currentUser) return;
+    const res = await fetch("/api/crowdfunding/messages", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ projetId: selectedProjectId, fromId: currentUser.id, fromNom: `${currentUser.prenom || ""} ${currentUser.nom || ""}`.trim() || currentUser.email, toId: "porteur", toNom: "Porteur", content: newMessage }) });
     const data = await res.json();
     if (res.ok) {
       setMessages([...messages, data.message]);
@@ -53,7 +54,7 @@ export default function InvestisseurDashboard() {
             <div className="mt-4 space-y-3">
               {contribs.map((c:any)=>(
                 <div key={c.id} className="border rounded-xl p-4 flex justify-between gap-4">
-                  <div className="flex-1"><div className="font-bold text-[14px]">{c.projet} • {c.type.replace("_"," ")}</div><div className="text-[11px] text-[#5c403f] mt-1">{new Date(c.date||Date.now()).toLocaleDateString()} • {c.montant.toLocaleString()} F {c.pourcentage?`• ${c.pourcentage}%`:""} {c.taux?`• ${c.taux}%`:""} • {c.statut}</div>
+                  <div className="flex-1"><div className="font-bold text-[14px]">{c.projet} • {c.type.replace("_"," ")}</div><div className="text-[11px] text-[#5c403f] mt-1">{new Date(c.createdAt||Date.now()).toLocaleDateString()} • {c.montant.toLocaleString()} F {c.pourcentage?`• ${c.pourcentage}%`:""} {c.taux?`• ${c.taux}%`:""} • {c.statut}</div>
                     {c.type==="pret" && (
                       <div className="mt-3">
                         <div className="font-bold text-[11px]">Calendrier remboursement - Fréquence mensuelle, capital+intérêts, date paiement</div>
@@ -77,10 +78,10 @@ export default function InvestisseurDashboard() {
             <div className="bg-white border rounded-xl p-5">
               <h4 className="font-bold text-[14px]">Messagerie porteurs - Directe</h4>
               <div className="mt-3 h-[200px] overflow-y-auto border rounded-lg bg-[#f6f3f2] p-3 space-y-2">
-                {messages.map((m:any)=><div key={m.id} className={`p-2 rounded-lg text-[12px] ${m.fromId==="investisseur_demo"?"bg-[#9e001f] text-white ml-8":"bg-white border mr-8"}`}><div className="font-bold text-[10px]">{m.fromNom}</div><div>{m.content}</div><div className="text-[9px] opacity-70 mt-1">{new Date(m.createdAt).toLocaleTimeString()}</div></div>)}
+                {messages.map((m:any)=><div key={m.id} className={`p-2 rounded-lg text-[12px] ${m.fromId===currentUser?.id?"bg-[#9e001f] text-white ml-8":"bg-white border mr-8"}`}><div className="font-bold text-[10px]">{m.fromNom}</div><div>{m.content}</div><div className="text-[9px] opacity-70 mt-1">{new Date(m.createdAt).toLocaleTimeString()}</div></div>)}
                 {messages.length===0 && <div className="text-[11px] text-[#5c403f] text-center py-10">Discutez directement avec porteurs projets par messagerie - Temps réel</div>}
               </div>
-              <div className="mt-3 flex gap-2"><input value={newMessage} onChange={e=>setNewMessage(e.target.value)} placeholder="Message au porteur..." className="flex-1 h-9 rounded-full border bg-[#f6f3f2] px-4 text-[12px]" /><button onClick={sendMessage} className="h-9 px-4 rounded-full bg-[#9e001f] text-white text-[11px] font-bold">Envoyer</button></div>
+              <div className="mt-3 flex gap-2"><input value={newMessage} onChange={e=>setNewMessage(e.target.value)} placeholder={selectedProjectId ? "Message au porteur..." : "Ouvrez un projet pour écrire au porteur"} disabled={!selectedProjectId || !currentUser} className="flex-1 rounded-full border bg-[#f6f3f2] px-4 text-[12px] disabled:opacity-60" /><button onClick={sendMessage} disabled={!selectedProjectId || !currentUser} className="h-9 rounded-full bg-[#9e001f] px-4 text-[11px] font-bold text-white disabled:opacity-50">Envoyer</button></div>
             </div>
 
             <div className="bg-white border rounded-xl p-5">

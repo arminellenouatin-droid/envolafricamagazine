@@ -1,0 +1,286 @@
+{
+  "projets": [
+    {
+      "id": "5e9fe3eb-5962-4446-af2b-bf43fe2b0b56",
+      "nom": "Projet AgroBio - Agroalimentaire",
+      "secteur": "Agroalimentaire",
+      "description": "Projet innovant dans le secteur Agroalimentaire au BJ. Objectif: 500,000 F CFA. Porteur de projet passionné avec plan d'affaires solide, vidéos d'explication et documents justificatifs.",
+      "videos": [],
+      "images": [
+        "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600"
+      ],
+      "pdf": "",
+      "montantRecherche": 500000,
+      "montantCollecte": 299651,
+      "niveauRisque": "faible",
+      "dureeJours": 30,
+      "typesFinancement": [
+        "don",
+        "prise_part",
+        "pret"
+      ],
+      "statut": "en_cours",
+      "porteurId": "porteur_0",
+      "pays": "BJ",
+      "tauxInteret": 8,
+      "pourcentageVendu": 10,
+      "valorisation": 5000000,
+      "createdAt": "2026-08-18T12:11:06.339Z",
+      "dateFin": "2026-09-17T12:11:06.339Z",
+      "vues": 109,
+      "investisseurs": 36,
+      "repartition": {
+        "dons": 0,
+        "prise_part": 18,
+        "pret": 33
+      }
+    },
+    {
+      "id": "71f9999e-b985-445d-bbd6-ea83d216dd66",
+      "nom": "Projet TechVillage - Tech",
+      "secteur": "Tech",
+      "description": "Projet innovant dans le secteur Tech au CI. Objectif: 2,000,000 F CFA. Porteur de projet passionné avec plan d'affaires solide, vidéos d'explication et documents justificatifs.",
+      "videos": [],
+      "images": [
+        "https://images.unsplash.com/photo-1486406146927-c627a92ad1ab?w=600"
+      ],
+      "pdf": "",
+      "montantRecherche": 2000000,
+      "montantCollecte": 1530193,
+      "niveauRisque": "moyen",
+      "dureeJours": 35,
+      "typesFinancement": [
+        "don",
+        "pret"
+      ],
+      "statut": "objectif_atteint",
+      "porteurId": "porteur_1",
+      "pays": "CI",
+      "tauxInteret": 9,
+      "pourcentageVendu": 15,
+      "valorisation": 13333333,
+      "createdAt": "2026-08-15T12:11:06.339Z",
+      "dateFin": "2026-09-22T12:11:06.339Z",
+      "vues": 2094,
+      "investisseurs": 11,
+      "repartition": {
+        "dons": 17,
+        "prise_part": 33,
+        "pret": 3
+      }
+    },
+    {
+      "id": "1276d63b-ef3d-44d6-b418-cd66a513666d",
+      "nom": "Projet Solar Power - Énergie",
+      "secteur": "Énergie",
+      "description": "Projet innovant dans le secteur Énergie au SN. Objectif: 10,000,000 F CFA. Porteur de projet passionné avec plan d'affaires solide, vidéos d'explication et documents justificatifs.",
+      "videos": [],
+      "images": [
+        "https://images.unsplash.com/photo-1486406146928-c627a92ad1ab?w=600"
+      ],
+      "pdf": "",
+      "montantRecherche": 10000000,
+      "montantCollecte": 10451370,
+      "niveauRisque": "élevé",
+      "dureeJours": 40,
+      "typesFinancement": [
+        "don",
+        "prise_part"
+      ],
+      "statut": "en_cours",
+      "porteurId": "porteur_2",
+      "pays": "SN",
+      "tauxInteret": 10,
+      "pourcentageVendu": 20,
+      "valorisation": 50000000,
+      "createdAt": "2026-08-12T12:11:06.340Z",
+      "dateFin": "2026-09-27T12:11:06.340Z",
+      "vues": 823,
+      "investisseurs": 51,
+      "repartition": {
+        "dons": 27,
+        "prise_part": 16,
+        "pret": 10
+      }
+    },
+    {
+      "id": "8053ec98-6eb7-4642-8f30-fccc287c7fec",
+      "nom": "Projet EduKids - Éducation",
+      "secteur": "Éducation",
+      "description": "Projet innovant dans le secteur Éducation au NG. Objectif: 5,000,000 F CFA. Porteur de projet passionné avec plan d'affaires solide, vidéos d'explication et documents justificatifs.",
+      "videos": [],
+      "images": [
+        "https://images.unsplash.com/photo-1486406146929-c627a92ad1ab?w=600"
+      ],
+      "pdf": "",
+      "montantRecherche": 5000000,
+      "montantCollecte": 4966131,
+      "niveauRisque": "faible",
+      "dureeJours": 45,
+      "typesFinancement": [
+        "don",
+        "prise_part",
+        "pret"
+      ],
+      "statut": "objectif_depasse",
+      "porteurId": "porteur_3",
+      "pays": "NG",
+      "tauxInteret": 11,
+      "pourcentageVendu": 25,
+      "valorisation": 20000000,
+      "createdAt": "2026-08-09T12:11:06.340Z",
+      "dateFin": "2026-10-02T12:11:06.340Z",
+      "vues": 863,
+      "investisseurs": 48,
+      "repartition": {
+        "dons": 17,
+        "prise_part": 20,
+        "pret": 24
+      }
+    },
+    {
+      "id": "b02eb0b3-e736-4aba-a7c8-2dd4b88300bd",
+      "nom": "Projet MediCare - Santé",
+      "secteur": "Santé",
+      "description": "Projet innovant dans le secteur Santé au GH. Objectif: 3,000,000 F CFA. Porteur de projet passionné avec plan d'affaires solide, vidéos d'explication et documents justificatifs.",
+      "videos": [],
+      "images": [
+        "https://images.unsplash.com/photo-1486406146930-c627a92ad1ab?w=600"
+      ],
+      "pdf": "",
+      "montantRecherche": 3000000,
+      "montantCollecte": 2261608,
+      "niveauRisque": "moyen",
+      "dureeJours": 50,
+      "typesFinancement": [
+        "don",
+        "pret"
+      ],
+      "statut": "en_cours",
+      "porteurId": "porteur_4",
+      "pays": "GH",
+      "tauxInteret": 12,
+      "pourcentageVendu": 30,
+      "valorisation": 10000000,
+      "createdAt": "2026-08-06T12:11:06.340Z",
+      "dateFin": "2026-10-07T12:11:06.340Z",
+      "vues": 2023,
+      "investisseurs": 19,
+      "repartition": {
+        "dons": 9,
+        "prise_part": 8,
+        "pret": 34
+      }
+    },
+    {
+      "id": "17aef3d7-90e1-449f-aad3-6019c9279747",
+      "nom": "Projet Artisanat d'Art - Artisanat",
+      "secteur": "Artisanat",
+      "description": "Projet innovant dans le secteur Artisanat au CM. Objectif: 1,500,000 F CFA. Porteur de projet passionné avec plan d'affaires solide, vidéos d'explication et documents justificatifs.",
+      "videos": [],
+      "images": [
+        "https://images.unsplash.com/photo-1486406146931-c627a92ad1ab?w=600"
+      ],
+      "pdf": "",
+      "montantRecherche": 1500000,
+      "montantCollecte": 1181748,
+      "niveauRisque": "élevé",
+      "dureeJours": 55,
+      "typesFinancement": [
+        "don",
+        "prise_part"
+      ],
+      "statut": "termine_sans_objectif",
+      "porteurId": "porteur_5",
+      "pays": "CM",
+      "tauxInteret": 13,
+      "pourcentageVendu": 35,
+      "valorisation": 4285714,
+      "createdAt": "2026-08-03T12:11:06.340Z",
+      "dateFin": "2026-10-12T12:11:06.340Z",
+      "vues": 658,
+      "investisseurs": 12,
+      "repartition": {
+        "dons": 1,
+        "prise_part": 30,
+        "pret": 26
+      }
+    },
+    {
+      "id": "58fd5520-c24c-4947-a25f-340c085d127c",
+      "nom": "Projet Green Future - Environnement",
+      "secteur": "Environnement",
+      "description": "Projet innovant dans le secteur Environnement au RW. Objectif: 8,000,000 F CFA. Porteur de projet passionné avec plan d'affaires solide, vidéos d'explication et documents justificatifs.",
+      "videos": [],
+      "images": [
+        "https://images.unsplash.com/photo-1486406146932-c627a92ad1ab?w=600"
+      ],
+      "pdf": "",
+      "montantRecherche": 8000000,
+      "montantCollecte": 3005461,
+      "niveauRisque": "faible",
+      "dureeJours": 60,
+      "typesFinancement": [
+        "don",
+        "prise_part",
+        "pret"
+      ],
+      "statut": "en_cours",
+      "porteurId": "porteur_6",
+      "pays": "RW",
+      "tauxInteret": 14,
+      "pourcentageVendu": 40,
+      "valorisation": 20000000,
+      "createdAt": "2026-07-31T12:11:06.340Z",
+      "dateFin": "2026-10-17T12:11:06.340Z",
+      "vues": 1564,
+      "investisseurs": 50,
+      "repartition": {
+        "dons": 3,
+        "prise_part": 39,
+        "pret": 28
+      }
+    },
+    {
+      "id": "0b462c46-c6bd-4545-a775-a98593079ee2",
+      "nom": "Projet MarketPlace - Commerce",
+      "secteur": "Commerce",
+      "description": "Projet innovant dans le secteur Commerce au KE. Objectif: 1,200,000 F CFA. Porteur de projet passionné avec plan d'affaires solide, vidéos d'explication et documents justificatifs.",
+      "videos": [],
+      "images": [
+        "https://images.unsplash.com/photo-1486406146933-c627a92ad1ab?w=600"
+      ],
+      "pdf": "",
+      "montantRecherche": 1200000,
+      "montantCollecte": 1224308,
+      "niveauRisque": "moyen",
+      "dureeJours": 65,
+      "typesFinancement": [
+        "don",
+        "pret"
+      ],
+      "statut": "en_attente_validation",
+      "porteurId": "porteur_7",
+      "pays": "KE",
+      "tauxInteret": 15,
+      "pourcentageVendu": 45,
+      "valorisation": 2666667,
+      "createdAt": "2026-07-28T12:11:06.340Z",
+      "dateFin": "2026-10-22T12:11:06.340Z",
+      "vues": 135,
+      "investisseurs": 32,
+      "repartition": {
+        "dons": 34,
+        "prise_part": 0,
+        "pret": 1
+      }
+    }
+  ],
+  "contributions": [],
+  "documents": [],
+  "messages": [],
+  "repayments": [],
+  "retraits": [],
+  "cagnottes": [],
+  "rapports": []
+}

@@ -4,7 +4,7 @@ export type WabPostRow = {
   id: string;
   author_id: string;
   content: string;
-  media: Array<{ path: string; mimeType: string; name: string }> | null;
+  media: Array<{ path: string; mimeType: string; name: string; size?: number }> | null;
   content_type: string;
   visibility: string;
   moderation_status: string;
@@ -164,7 +164,7 @@ export async function listWabPosts(page: number, limit: number, filters: { count
 export async function createWabPostInSupabase(profileId: string, input: {
   content: string;
   type: string;
-  media?: Array<{ path: string; mimeType: string; name: string }>;
+  media?: Array<{ path: string; mimeType: string; name: string; size?: number }>;
   tags?: string[];
   pageId?: string;
 }) {
