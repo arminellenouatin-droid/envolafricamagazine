@@ -39,7 +39,7 @@ export type WabPostRow = {
     avatar_url: string | null;
     city: string | null;
     country_code: string | null;
-    users?: { prenom?: string | null; nom?: string | null; full_name?: string | null };
+    users?: { prenom?: string | null; nom?: string | null; full_name?: string | null; avatar?: string | null };
   };
 };
 
@@ -151,7 +151,7 @@ export async function listWabPosts(page: number, limit: number, filters: { count
 
   const { data, error } = await supabase
     .from("wab_posts")
-    .select("*, wab_pages:page_id(id, name, slug, logo_url, owner_user_id), wab_groups:group_id(id, name, slug, logo_url, owner_user_id), wab_profiles:author_id(id, user_id, headline, avatar_url, city, country_code, users:user_id(prenom, nom, full_name))")
+    .select("*, wab_pages:page_id(id, name, slug, logo_url, owner_user_id), wab_groups:group_id(id, name, slug, logo_url, owner_user_id), wab_profiles:author_id(id, user_id, headline, avatar_url, city, country_code, users:user_id(prenom, nom, full_name, avatar))")
     .eq("moderation_status", "published")
     .order("is_boosted", { ascending: false })
     .order("created_at", { ascending: false })
