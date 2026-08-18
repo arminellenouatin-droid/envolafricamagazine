@@ -4,6 +4,7 @@ import { createPendingOrder, listMagazines, markOrderFailed, ProductionDatabaseN
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 import { SHIPPING_RATES } from "@/lib/constants";
+import { getMonerooMethodCodes } from "@/lib/payment-methods";
 
 const SUBSCRIPTION_PRICES: Record<string, number> = {
   mensuel: 2000,
@@ -31,6 +32,9 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { items, currency = "XOF", shippingCountry, affiliateCode, donAmount, phone, metadata } = body;
+    const paymentCurrency = String(currency).toUpperCase();
+    const paymentCountry = String(shippingCountry || body.country || "BJ").toUpperCase();
+    const paymentMethods = getMonerooMethodCodes(paymentCountry, paymentCurrency);
     const user = await getCurrentUserFromCookie();
     const magazines = await listMagazines();
 
@@ -81,7 +85,7 @@ export async function POST(req: NextRequest) {
       userId: user?.id || "guest",
       items: orderItems as never,
       total,
-      currency: String(currency).toUpperCase(),
+      currency: paymentCurrency,
       status: "pending",
       affiliateCode: affiliateCode || req.cookies.get("eam_affiliate")?.value,
       shippingCountry,
@@ -99,10 +103,10 @@ export async function POST(req: NextRequest) {
         first_name: user?.prenom || body.firstName || "Client",
         last_name: user?.nom || body.lastName || "Envol",
         phone: user?.phone || phone || body.phone,
+        country: paymentCountry,
       },
       return_url: `${baseUrl}/panier?order_id=${orderId}&verify=1`,
-      // Moneroo détecte automatiquement le pays et affiche les méthodes disponibles.
-      // Aucun code pays ni méthode n’est imposé par EAM.
+      ...(paymentMethods.length > 0 ? { methods: paymentMethods } : {}),
       metadata: { ...(metadata && typeof metadata === "object" ? metadata : {}), order_id: orderId, user_id: user?.id || "guest", affiliate: order.affiliateCode },
     });
 

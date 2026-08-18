@@ -1,5 +1,6 @@
 const MONEROO_API_KEY = process.env.MONEROO_SECRET_KEY || process.env.MONEROO_API_KEY;
 const MONEROO_BASE = "https://api.moneroo.io/v1";
+import { getMonerooMethodCodes } from "@/lib/payment-methods";
 
 export interface MonerooPaymentData {
   amount: number;
@@ -9,7 +10,7 @@ export interface MonerooPaymentData {
     email: string;
     first_name: string;
     last_name: string;
-        phone?: string;
+    phone?: string;
     country?: string;
   };
   return_url: string;

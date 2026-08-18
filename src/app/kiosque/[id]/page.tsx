@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { KIOSQUE_FORMATS, LANGUAGE_LABELS } from "@/lib/constants";
+import { getAvailablePaymentMethods } from "@/lib/payment-methods";
 import PreviewFlipbook from "@/components/kiosque/PreviewFlipbook";
 
 type Magazine = {
@@ -84,6 +85,7 @@ export default function MagazineDetailPage() {
 
   const total = selections.reduce((sum, selection) => sum + (prices[selection.format] || 0), 0);
   const recommendedMagazines = allMagazines.filter((item) => item.id !== magazine?.id).slice(0, 6);
+  const paymentMethods = getAvailablePaymentMethods(countryCode, currency);
 
   const updateSelection = (index: number, key: "format" | "language", value: string) => {
     setSelections((current) => current.map((selection, selectionIndex) => {
@@ -212,11 +214,7 @@ export default function MagazineDetailPage() {
 
               <div className="mt-5 border-t border-[#eadad8] pt-4" aria-label="Options de paiement acceptées">
                 <div className="flex w-full flex-nowrap items-center justify-between gap-3 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  <span role="img" aria-label="Carte bancaire" title="Carte bancaire" className="inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-md border border-[#d8c3c1] bg-white px-2 text-[#1b1c1c]"><span className="material-symbols-outlined text-[23px]" aria-hidden="true">credit_card</span></span>
-                  <span role="img" aria-label="Mobile Money" title="Mobile Money" className="inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-md border border-[#d8c3c1] bg-white px-2 text-[#1b1c1c]"><span className="material-symbols-outlined text-[23px]" aria-hidden="true">smartphone</span></span>
-                  <span role="img" aria-label="Stripe" title="Stripe" className="inline-flex h-10 shrink-0 items-center justify-center rounded-md border border-[#d8c3c1] bg-white px-3 text-[17px] font-bold tracking-[-.04em] text-[#635b5a]">stripe</span>
-                  <span role="img" aria-label="PayPal" title="PayPal" className="inline-flex h-10 shrink-0 items-center justify-center rounded-md border border-[#d8c3c1] bg-white px-3 text-[17px] font-bold tracking-[-.04em] text-[#003087]">PayPal</span>
-                  <span role="img" aria-label="Crypto" title="Crypto" className="inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-md border border-[#d8c3c1] bg-white px-2 text-[#f7931a]"><span className="material-symbols-outlined text-[23px]" aria-hidden="true">currency_bitcoin</span></span>
+                  {paymentMethods.map((method) => <span key={method.code} role="img" aria-label={method.label} title={method.label} className={`inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-md border border-[#d8c3c1] bg-white px-2 ${method.tone}`}><span className="material-symbols-outlined text-[23px]" aria-hidden="true">{method.icon}</span></span>)}
                 </div>
               </div>
             </section>
