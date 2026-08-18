@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserForAdmin } from "@/lib/admin-auth";
-import { writeDB } from "@/lib/db";
+import { writeDB, type Article } from "@/lib/db";
+import { publishArticleToWab } from "@/lib/article-republication";
 import { v4 as uuidv4 } from "uuid";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
@@ -54,10 +55,12 @@ export async function POST(req: NextRequest) {
     if (client) {
       const { data: article, error: insertError } = await client.from("articles").insert({ id: newArticle.id, slug: newArticle.slug, title: newArticle.title, summary: newArticle.summary, content: newArticle.content, preview_lines: newArticle.previewLines, category: newArticle.category, tags: newArticle.tags, author: newArticle.author, author_id: newArticle.authorId, image: newArticle.image, is_published: newArticle.isPublished, is_featured: newArticle.isFeatured, is_sentinelle: newArticle.isSentinelle, is_essor: newArticle.isEssor, is_ombre_douce: newArticle.isOmbreDouce, views: 0, likes: 0, created_at: newArticle.createdAt, published_at: newArticle.publishedAt ?? null, language: newArticle.language, has_audio: newArticle.hasAudio, audio_url: newArticle.audioUrl, reading_time: newArticle.readingTime }).select("*").single();
       if (insertError) return NextResponse.json({ error: "Impossible d’enregistrer l’article dans Supabase." }, { status: 503 });
-      return NextResponse.json({ success: true, article });
+      const republication = newArticle.isPublished ? await publishArticleToWab(newArticle as Article, user!.id) : { published: false, reason: "article_draft" };
+      return NextResponse.json({ success: true, article, republication });
     }
     db!.articles.push(newArticle as any); writeDB(db!);
-    return NextResponse.json({ success: true, article: newArticle });
+    const republication = newArticle.isPublished ? await publishArticleToWab(newArticle as Article, user!.id) : { published: false, reason: "article_draft" };
+    return NextResponse.json({ success: true, article: newArticle, republication });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

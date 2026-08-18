@@ -19,6 +19,10 @@ export type WabPostRow = {
   shares_count: number;
   created_at: string;
   updated_at: string;
+  source_type?: string | null;
+  source_id?: string | null;
+  source_url?: string | null;
+  source_title?: string | null;
   wab_profiles?: {
     id: string;
     fullName?: string;
