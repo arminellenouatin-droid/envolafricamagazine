@@ -6,7 +6,8 @@ import { Suspense } from "react";
 
 function MerciContent() {
   const searchParams = useSearchParams();
-  const transactionId = searchParams.get("transaction_id") || searchParams.get("payment_id");
+  const transactionId = searchParams.get("paymentId") || searchParams.get("payment_id") || searchParams.get("transaction_id");
+  const paymentStatus = searchParams.get("paymentStatus") || searchParams.get("payment_status");
   const orderId = searchParams.get("order_id");
   const mockSuccess = searchParams.get("mock_success");
 
@@ -21,6 +22,11 @@ function MerciContent() {
       if (orderId) {
         fetch("/api/payment/verify", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ orderId, paymentId: transactionId }) }).catch(()=>{});
       }
+      return;
+    }
+    if (paymentStatus === "failed" || paymentStatus === "cancelled") {
+      setStatus("failed");
+      setMessage(`Statut Moneroo : ${paymentStatus}`);
       return;
     }
     if (!transactionId) {
@@ -43,7 +49,7 @@ function MerciContent() {
         setStatus("failed");
         setMessage("Impossible de vérifier le paiement");
       });
-  },[transactionId, orderId, mockSuccess]);
+  },[transactionId, orderId, mockSuccess, paymentStatus]);
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center bg-[#fcf9f8] p-6">

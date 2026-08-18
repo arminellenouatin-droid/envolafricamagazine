@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { verifyMonerooPayment } from "@/lib/moneroo";
 import { readAwardsDB, writeAwardsDB } from "@/lib/awards-db";
 import { activateJobsBoostByPayment } from "@/lib/jobs-supabase";
+import { activateMonerooEntitlements } from "@/lib/moneroo-entitlements";
 import { activateCrowdfundingBoostByPayment, activateMarketplaceBoostByPayment } from "@/lib/wab-boost-sources";
 import {
   confirmOrderPayment,
@@ -32,7 +33,7 @@ type WebhookEvent = {
 };
 
 function validPaymentStatus(status: unknown) {
-  return typeof status === "string" && ["success", "succeeded", "paid", "confirmed"].includes(status.toLowerCase());
+  return typeof status === "string" && ["success", "succeeded", "paid", "confirmed", "completed"].includes(status.toLowerCase());
 }
 
 function hasValidSignature(payload: string, receivedSignature: string, secret: string) {
@@ -123,8 +124,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (eventType === "payment.success" && metadata.product === "award_vote") {
+      await settleAwardVote(metadata, data.id);
+      return NextResponse.json({ ok: true }, { status: 200 });
+    }
     const order = data.metadata?.order_id ? await findOrderById(data.metadata.order_id) : await findOrderByPaymentId(data.id);
-    if (!order) return NextResponse.json({ error: "Commande introuvable" }, { status: 404 });
+    if (!order) {
+      await activateMonerooEntitlements(data.id);
+      return NextResponse.json({ ok: true, pending: true }, { status: 200 });
+    }
 
     if (eventType === "payment.failed" || eventType === "payment.cancelled") {
       await markOrderFailed(order.id, data.id);
@@ -146,6 +154,7 @@ export async function POST(req: NextRequest) {
     });
     await settleSubscription(confirmedOrder.id, alreadyPaid);
     await recordDonation({ order: confirmedOrder, paymentId: String(verification.id || data.id) });
+    await activateMonerooEntitlements(String(verification.id || data.id));
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (error) {
     console.error("webhook erreur", error);

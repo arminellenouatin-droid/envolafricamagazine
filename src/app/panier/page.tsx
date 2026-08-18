@@ -8,6 +8,7 @@ export default function PanierPage() {
   const [country, setCountry] = useState<string>("BJ");
   const [loading, setLoading] = useState(false);
   const [affiliate, setAffiliate] = useState<string>("");
+  const [paymentMessage, setPaymentMessage] = useState<string>("");
 
   useEffect(()=>{
     const saved = localStorage.getItem("eam_cart");
@@ -18,15 +19,20 @@ export default function PanierPage() {
     const oid = params.get("order_id");
     const verify = params.get("verify");
     const mock = params.get("mock_success");
-    if (oid && (verify || mock)) {
-      fetch("/api/payment/verify", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ orderId: oid, paymentId: params.get("payment_id") }) })
-        .then(r=>r.json()).then(data=>{
+    const paymentId = params.get("paymentId") || params.get("payment_id");
+    const paymentStatus = params.get("paymentStatus") || params.get("payment_status");
+    if (oid && (verify || mock || paymentId || paymentStatus)) {
+      fetch("/api/payment/verify", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ orderId: oid, paymentId }) })
+        .then(async (response) => ({ ok: response.ok, data: await response.json() }))
+        .then(({ ok, data })=>{
           if (data.success) {
-            alert("Paiement confirmé ! Merci pour votre commande.");
+            setPaymentMessage("Paiement confirmé. Merci pour votre commande.");
             localStorage.removeItem("eam_cart");
             setCart([]);
+          } else if (!ok || paymentStatus === "failed" || paymentStatus === "cancelled") {
+            setPaymentMessage(data.verification?.error || "Le paiement n’a pas abouti. Vous pouvez réessayer sans perdre votre panier.");
           }
-        });
+        }).catch(() => setPaymentMessage("Vérification du paiement impossible pour le moment. Votre panier est conservé."));
     }
   },[]);
 
@@ -63,7 +69,7 @@ export default function PanierPage() {
 
   return (
     <div className="bg-[#fcf9f8] min-h-screen">
-      <main className="max-w-[1280px] mx-auto px-5 md:px-[64px] py-[80px]">
+      <main className="max-w-[1280px] mx-auto px-5 md:px-[64px] py-[80px]">{paymentMessage && <div className="mb-6 rounded-xl border border-[#e5bdbb] bg-white p-4 text-sm font-semibold text-[#9e001f]">{paymentMessage}</div>}
         <div className="grid grid-cols-12 gap-6 items-start">
           {/* Cart List 8 cols */}
           <div className="col-span-12 lg:col-span-8 space-y-6">

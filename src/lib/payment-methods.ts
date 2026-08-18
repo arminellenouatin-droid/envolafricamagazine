@@ -10,7 +10,6 @@ const BENIN_XOF_METHODS: PaymentMethodDisplay[] = [
   { code: "card_xof", label: "Carte bancaire", icon: "credit_card", tone: "text-[#1b1c1c]" },
   { code: "mtn_bj", label: "MTN MoMo", icon: "smartphone", tone: "text-[#7b6200]" },
   { code: "moov_bj", label: "Moov Money", icon: "smartphone", tone: "text-[#087443]" },
-  { code: "crypto_xof", label: "Crypto", icon: "currency_bitcoin", tone: "text-[#f7931a]" },
 ];
 
 export function getAvailablePaymentMethods(countryCode: string, currency: string): PaymentMethodDisplay[] {

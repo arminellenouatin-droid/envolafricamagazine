@@ -335,7 +335,7 @@ export async function confirmOrderPayment(order: Order, confirmation: PaymentCon
     return current;
   }
 
-  const { data: existingPayment, error: paymentLookupError } = await client.from("payments").select("id,order_id,status").eq("provider_ref", confirmation.providerRef).maybeSingle();
+  const { data: existingPayment, error: paymentLookupError } = await client.from("payments").select("id,order_id,status").eq("provider_ref", confirmation.providerRef).order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (paymentLookupError) throw paymentLookupError;
   if (existingPayment?.status === "confirme") return { ...order, status: "paid", paymentId: confirmation.providerRef, paidAt };
 
@@ -362,7 +362,7 @@ export async function recordDonation(input: { order: Order; paymentId: string; e
     }
     return;
   }
-  const { data: existing } = await client.from("donations").select("id").eq("payment_id", input.paymentId).maybeSingle();
+  const { data: existing } = await client.from("donations").select("id").eq("payment_id", input.paymentId).order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (existing) return;
   const { error } = await client.from("donations").insert({ id: uuidv4(), user_id: input.order.userId === "guest" ? null : input.order.userId, amount: donItem.amount ?? donItem.price, currency: input.order.currency, email: input.email ?? null, status: "paid", payment_id: input.paymentId });
   if (error) throw error;

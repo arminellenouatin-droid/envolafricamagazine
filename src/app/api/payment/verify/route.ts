@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { activateMonerooEntitlements } from "@/lib/moneroo-entitlements";
 import { verifyMonerooPayment } from "@/lib/moneroo";
 import { confirmOrderPayment, findOrderById, findUserById, recordDonation, updateUserSubscription, ProductionDatabaseNotConfiguredError } from "@/lib/core-db";
 
 function isSuccessStatus(status: unknown) {
-  return typeof status === "string" && ["success", "succeeded", "paid", "confirmed"].includes(status.toLowerCase());
+  return typeof status === "string" && ["success", "succeeded", "paid", "confirmed", "completed"].includes(status.toLowerCase());
 }
 
 async function verifyAndConfirm(orderId: string, requestedPaymentId?: string) {
@@ -22,6 +23,8 @@ async function verifyAndConfirm(orderId: string, requestedPaymentId?: string) {
 
   const verifiedAmount = verification.mock ? order.total : Number(verification.amount);
   const verifiedCurrency = verification.mock ? order.currency : String(verification.currency || "").toUpperCase();
+  if (!verification.mock && Number.isFinite(verifiedAmount) && verifiedAmount < order.total) return { response: NextResponse.json({ success: false, error: "Montant Moneroo inférieur au montant attendu.", verification }, { status: 422 }) };
+  if (!verification.mock && verifiedCurrency && verifiedCurrency !== order.currency.toUpperCase()) return { response: NextResponse.json({ success: false, error: "Devise Moneroo différente de la commande.", verification }, { status: 422 }) };
   const providerRef = String(verification.id || paymentId);
   const confirmedOrder = await confirmOrderPayment(order, {
     providerRef,
@@ -49,6 +52,7 @@ async function verifyAndConfirm(orderId: string, requestedPaymentId?: string) {
   }
 
   await recordDonation({ order: confirmedOrder, paymentId: providerRef });
+  await activateMonerooEntitlements(providerRef);
   return { response: NextResponse.json({ success: true, order: confirmedOrder, verification }) };
 }
 
@@ -68,7 +72,7 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const orderId = req.nextUrl.searchParams.get("order_id");
-    const paymentId = req.nextUrl.searchParams.get("payment_id");
+    const paymentId = req.nextUrl.searchParams.get("paymentId") || req.nextUrl.searchParams.get("payment_id");
     if (!orderId) return NextResponse.json({ error: "orderId requis" }, { status: 400 });
     return (await verifyAndConfirm(orderId, paymentId || undefined)).response;
   } catch (error) {
