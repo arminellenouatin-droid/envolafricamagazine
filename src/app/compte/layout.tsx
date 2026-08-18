@@ -14,8 +14,6 @@ export default function CompteLayout({ children }: { children: React.ReactNode }
   const currentRole = useMemo(() => context.roles.find((item) => item.id === role) ?? context.roles[0], [context.roles, role]);
 
   useEffect(() => { const params = new URLSearchParams(window.location.search); const nextPlatform = getPlatformContext(params.get("platform")); setPlatform(nextPlatform); setRole(params.get("role") || PLATFORM_CONTEXTS[nextPlatform].roles[0].id); fetch("/api/auth/me").then((response) => response.json()).then((data) => { if (!data.user) router.push(`/auth/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`); else setUser(data.user); }); }, [router]);
-  const changeRole = (nextRole: string) => { setRole(nextRole); router.push(`/compte?platform=${platform}&role=${encodeURIComponent(nextRole)}`); };
-
   const changePlatform = (next: PlatformKey) => router.push(`/compte?platform=${next}`);
   const logout = async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); router.refresh(); };
 
@@ -32,10 +30,9 @@ export default function CompteLayout({ children }: { children: React.ReactNode }
             <div className="mt-4 rounded-xl px-3 py-2 text-center text-[11px] font-black uppercase" style={{ backgroundColor: `${context.accent}12`, color: context.accent }}>Dashboard {context.label}</div>
           </div>
           <nav className="mt-4 rounded-[20px] border border-zinc-100 bg-white p-3">
-            <div className="mb-2 px-3 text-[10px] font-black uppercase tracking-wider text-zinc-400">Rôle dans ce volet</div>
-            <select value={role} onChange={(event) => changeRole(event.target.value)} className="mb-3 h-10 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-xs font-bold text-zinc-700">{context.roles.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
+            <div className="mb-2 px-3 text-[10px] font-black uppercase tracking-wider text-zinc-400">Espace de travail</div>
             <Link href={`/compte?platform=${platform}`} className={`flex items-center gap-3 rounded-full px-4 py-2.5 text-[13px] font-medium ${pathname === "/compte" ? "text-white" : "text-zinc-700 hover:bg-zinc-50"}`} style={pathname === "/compte" ? { backgroundColor: context.accent } : undefined}>⌂ {currentRole.dashboardLabel}</Link>
-            {currentRole.id === "admin" && <Link href={platform === "magazine" ? "/admin" : platform === "marketplace" ? "/marketplace/admin" : platform === "jobs" ? "/emploi/admin" : platform === "wab" ? "/wab/admin" : "/africa-awards/organizer/dashboard"} className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-[13px] font-black text-white" style={{ backgroundColor: context.accent }}>⚙ Administration</Link>}
+            {currentRole.id === "admin" && <Link href={`/admin?platform=${platform}`} className="mt-2 flex items-center justify-center gap-3 rounded-full px-4 py-3 text-[13px] font-black text-white shadow-sm transition hover:brightness-110" style={{ backgroundColor: context.accent }}>⚙ Administration</Link>}
             {currentRole.links.map((item) => <Link key={item.href} href={item.href} className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-[13px] font-medium text-zinc-700 hover:bg-zinc-50">→ {item.label}</Link>)}
             <Link href="/affiliation" className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-[13px] font-medium text-zinc-700 hover:bg-zinc-50">↗ Affiliation</Link>
             <Link href="/compte/parametres" className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-[13px] font-medium text-zinc-700 hover:bg-zinc-50">⚙ Paramètres du compte</Link>

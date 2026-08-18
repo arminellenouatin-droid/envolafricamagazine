@@ -54,6 +54,11 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
   const fetchOrders = async () => { const res = await fetch("/api/admin/orders"); if (res.ok) { const d = await res.json(); setOrders(d.orders); } };
   const fetchComments = async () => { const res = await fetch("/api/comments"); if (res.ok) { const d = await res.json(); setComments(d.comments); } };
 
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("platform") as AdminPlatform | null;
+    if (requested && adminPlatforms.some((item) => item.id === requested)) setActivePlatform(requested);
+  }, []);
+
   useEffect(()=>{
     if (activePlatform !== "magazine") return;
     if(activeTab==="articles") fetchArticles();
