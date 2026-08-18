@@ -191,7 +191,7 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
         </div>
       </nav>}
 
-      <header className="sticky top-0 z-40 border-b border-[#e5bdbb] bg-[#fcf9f8] shadow-sm">
+      <header className="hidden sticky top-0 z-40 border-b border-[#e5bdbb] bg-[#fcf9f8] shadow-sm lg:block">
         <div className="mx-auto flex h-[76px] max-w-[1280px] items-center justify-between px-5 lg:px-[64px]">
           <div className="flex min-w-0 items-center gap-3 lg:gap-6">
             <Link href={platform.homeHref} aria-label={`Accueil ${platform.name}`} className="flex shrink-0 items-center gap-2">
@@ -242,16 +242,22 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
         </div>
       </section>}
 
-      <div className="md:hidden">
+      <div className="mobile-header-stack md:hidden">
         <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-around border-b border-[#e5bdbb] bg-[#fcf9f8] px-2 py-2">
           {[{ icon: "podcasts", label: "Live", href: "/" }, { icon: "shopping_cart", label: "Panier", href: "/panier" }, { icon: "favorite_border", label: "Favoris", href: "/compte/favoris" }, { icon: "mail_outline", label: "Message", href: "/service" }, { icon: "notifications_none", label: "Notif", href: "#notifications" }, { icon: "translate", label: "Trad", href: "#" }, { icon: "account_circle", label: "Profil", href: "/compte" }].map((item) => item.href === "#notifications" ? <button type="button" key={item.label} onClick={() => setNotificationPrompt(true)} className="flex flex-col items-center gap-0.5"><span className="material-symbols-outlined text-[20px]">{item.icon}</span><span className="text-[9px] font-medium">{item.label}</span></button> : <Link key={item.label} href={item.href} className="flex flex-col items-center gap-0.5"><span className="relative">{item.label === "Profil" && user?.avatar ? <img src={user.avatar} alt="" className="h-5 w-5 rounded-full object-cover" /> : <span className="material-symbols-outlined text-[20px]">{item.icon}</span>}{item.label === "Panier" && cartCount > 0 && <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-[#9e001f] px-1 text-[9px] font-bold text-white">{cartCount}</span>}</span><span className="text-[9px] font-medium">{item.label}</span></Link>)}
         </div>
-        <div className="pt-[56px]">
+        <div className="pt-[48px]">
           <header className="flex h-[56px] items-center justify-between border-b border-[#e5bdbb] bg-[#fcf9f8] px-4">
-            <Link href={platform.homeHref} aria-label={`Accueil ${platform.name}`} className="flex min-w-0 items-center gap-3"><img src={platform.logoSrc} alt={platform.logoAlt} className="h-8 w-auto" /><span className="max-w-[160px] truncate text-[13px] font-black" style={{ color: platform.accent }}>{platform.name}</span></Link>
+            <div className="flex min-w-0 items-center gap-2">
+              <Link href={platform.homeHref} aria-label={`Accueil ${platform.name}`} className="flex shrink-0 items-center"><img src={platform.logoSrc} alt={platform.logoAlt} className="h-8 w-auto" /></Link>
+              <div className="relative min-w-0">
+                <button type="button" onClick={() => setDropdownOpen((open) => !open)} aria-expanded={dropdownOpen} className="flex max-w-[150px] items-center gap-1 truncate text-[13px] font-black" style={{ color: platform.accent }}>{platform.name}<span className="material-symbols-outlined shrink-0 text-[18px]">expand_more</span></button>
+                {dropdownOpen && <div className="absolute left-0 top-full z-[80] mt-2 w-64 rounded-xl border border-[#e5bdbb] bg-white p-2 shadow-xl">{platformOptions.map((item) => <Link key={item.key} href={item.href} onClick={() => setDropdownOpen(false)} className={`block rounded-lg px-4 py-2.5 text-[13px] transition-colors hover:bg-[#f6f3f2] hover:text-[#9e001f] ${platform.key === item.key ? "bg-[#f0eded] font-bold text-[#9e001f]" : ""}`}>{item.name}</Link>)}</div>}
+              </div>
+            </div>
             <div className="flex items-center gap-2"><button type="button" onClick={() => setMegaMenuOpen((open) => !open)} aria-label="Ouvrir les actions de la plateforme" className="grid h-9 w-9 place-items-center rounded-full text-white" style={{ backgroundColor: platform.accent }}><span className="material-symbols-outlined">{platform.megaLabel === "+" ? "add" : "apps"}</span></button><button type="button" onClick={() => setShowSearch((open) => !open)} aria-label="Rechercher" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f3f2]"><span className="material-symbols-outlined">search</span></button><button type="button" onClick={() => setSideMenuOpen(true)} aria-label="Ouvrir le menu" className="grid h-9 w-9 place-items-center rounded-full bg-[#303030] text-white"><span className="material-symbols-outlined">menu</span></button></div>
           </header>
-          {megaMenuOpen && <div className="relative z-50"><MegaMenu platform={platform} onClose={() => setMegaMenuOpen(false)} /></div>}
+          {megaMenuOpen && <><div className="h-[52px]" aria-hidden="true" /><div className="mobile-context-row fixed inset-x-0 top-[104px] z-40 border-b border-[#e5bdbb] bg-white px-3 py-2 shadow-sm"><div className="flex items-center gap-2 overflow-x-auto">{platform.megaItems.map((item) => <Link key={item.label} href={item.href} onClick={() => setMegaMenuOpen(false)} className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#e5bdbb] px-3 py-2 text-[11px] font-bold text-[#303030] transition-colors hover:border-[#9e001f] hover:text-[#9e001f]" style={{ backgroundColor: `${platform.accentSoft}88` }}><span className="material-symbols-outlined text-[17px]" style={{ color: platform.accent }}>{item.icon}</span>{item.label}</Link>)}</div></div></>}
           {showSearch && <div className="border-b bg-white p-4"><form onSubmit={(event) => { event.preventDefault(); if (searchQuery.trim()) window.location.assign(`/recherche?q=${encodeURIComponent(searchQuery.trim())}`); }}><input autoFocus value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Rechercher..." className="h-11 w-full rounded-lg border bg-[#f6f3f2] px-4" /></form></div>}
         </div>
         <div className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 p-0">
