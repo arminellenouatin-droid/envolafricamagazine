@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { marketplaceSeed } from "@/lib/marketplace-seed";
+import { listMagazines } from "@/lib/core-db";
+import { MAGAZINE_MARKETPLACE_CATEGORY, toMagazineMarketplaceProduct } from "@/lib/magazine-republication";
 
 const PAGE_SIZE = 12;
 
@@ -31,8 +33,13 @@ export async function GET(request: NextRequest) {
   const category = params.get("category") || "Toutes les catégories";
   const country = params.get("country") || "";
   const supabase = getSupabaseAdmin();
+  const magazines = await listMagazines().catch(() => []);
+  const magazineProducts = magazines
+    .filter((magazine) => category === MAGAZINE_MARKETPLACE_CATEGORY || category === "Toutes les catégories")
+    .filter((magazine) => !query || `${magazine.title} ${magazine.description} ${magazine.numero}`.toLowerCase().includes(query.toLowerCase()))
+    .map(toMagazineMarketplaceProduct);
 
-  if (supabase) {
+  if (supabase && category !== MAGAZINE_MARKETPLACE_CATEGORY) {
     let requestQuery = supabase
       .from("marketplace_products")
       .select("id,title,description,category,country_code,city,price_xof,media,installment_enabled,installment_months_max,is_boosted,boost_ends_at,marketplace_suppliers!inner(business_name,certification_status,rating)")
@@ -46,11 +53,13 @@ export async function GET(request: NextRequest) {
     if (country) requestQuery = requestQuery.eq("country_code", country);
     const { data, error } = await requestQuery;
     if (!error && data && data.length > 0) {
-      return NextResponse.json({ products: data, page, hasMore: data.length === PAGE_SIZE, source: "supabase" });
+      const merged = page === 0 ? [...magazineProducts, ...data].slice(0, PAGE_SIZE) : data;
+      return NextResponse.json({ products: merged, page, hasMore: data.length === PAGE_SIZE || magazineProducts.length > PAGE_SIZE, source: "supabase" });
     }
   }
 
   const filtered = marketplaceSeed.filter((product) => {
+    if (category === MAGAZINE_MARKETPLACE_CATEGORY) return false;
     const matchesId = !productId || product.id === productId;
     const matchesQuery = !query || `${product.title} ${product.description} ${product.supplier}`.toLowerCase().includes(query.toLowerCase());
     const matchesCategory = category === "Toutes les catégories" || product.category === category;
@@ -58,5 +67,6 @@ export async function GET(request: NextRequest) {
     return matchesId && matchesQuery && matchesCategory && matchesCountry;
   });
   const start = page * PAGE_SIZE;
-  return NextResponse.json({ products: filtered.slice(start, start + PAGE_SIZE), page, hasMore: start + PAGE_SIZE < filtered.length, source: "seed" });
+  const fallbackProducts = category === MAGAZINE_MARKETPLACE_CATEGORY ? magazineProducts : [...(page === 0 ? magazineProducts : []), ...filtered];
+  return NextResponse.json({ products: fallbackProducts.slice(start, start + PAGE_SIZE), page, hasMore: start + PAGE_SIZE < fallbackProducts.length, source: "seed" });
 }

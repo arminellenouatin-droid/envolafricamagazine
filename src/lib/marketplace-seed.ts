@@ -33,4 +33,4 @@ export const marketplaceSeed: MarketplaceProduct[] = [
   { id: "seed-solar-pro", title: "Éclairage solaire pour boutique — pack 10", supplier: "Sun Africa Solutions", country: "TG", city: "Lomé", category: "Énergie", priceXof: 295000, image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=900&q=80", accent: "#c68a00", certified: true, boosted: false, installment: true, months: 12, description: "Pack d’éclairage solaire pour commerces et ateliers, installation accompagnée." },
   ];
 
-export const marketplaceCategories = ["Toutes les catégories", "Alimentation", "Beauté & bien-être", "Mode & textile", "Maison & artisanat", "Énergie", "Technologie"];
+export const marketplaceCategories = ["Toutes les catégories", "Magazines & médias", "Alimentation", "Beauté & bien-être", "Mode & textile", "Maison & artisanat", "Énergie", "Technologie"];

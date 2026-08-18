@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserForAdmin } from "@/lib/admin-auth";
 import { writeDB } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
+import { publishMagazineToWab } from "@/lib/magazine-republication";
 
 export async function GET() {
   const { db, error, status } = await getCurrentUserForAdmin('redacteur');
@@ -10,7 +11,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { db, error, status } = await getCurrentUserForAdmin('redacteur_chef');
+  const { db, user, error, status } = await getCurrentUserForAdmin('redacteur_chef');
   if (error) return NextResponse.json({ error }, { status });
   try {
     const body = await req.json();
@@ -50,7 +51,8 @@ export async function POST(req: NextRequest) {
     };
     db!.magazines.push(newMag as any);
     writeDB(db!);
-    return NextResponse.json({ success: true, magazine: newMag });
+    const republication = await publishMagazineToWab(newMag as any, user?.id || "");
+    return NextResponse.json({ success: true, magazine: newMag, republication });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: "Erreur serveur: " + (e as any).message }, { status: 500 });

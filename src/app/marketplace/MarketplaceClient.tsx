@@ -2,21 +2,29 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { marketplaceCategories, marketplaceSeed, type MarketplaceProduct } from "@/lib/marketplace-seed";
+import { marketplaceCategories, type MarketplaceProduct } from "@/lib/marketplace-seed";
 
 const countryOptions = [{ code: "", label: "Tous les pays" }, { code: "BJ", label: "Bénin" }, { code: "CI", label: "Côte d’Ivoire" }, { code: "CM", label: "Cameroun" }, { code: "BF", label: "Burkina Faso" }, { code: "SN", label: "Sénégal" }, { code: "ML", label: "Mali" }, { code: "TG", label: "Togo" }];
 const countryLabels = Object.fromEntries(countryOptions.map((country) => [country.code, country.label]));
 
-type ApiProduct = Partial<MarketplaceProduct> & { id: string; title: string; description?: string; media?: unknown; price_xof?: number; country_code?: string; installment_enabled?: boolean; installment_months_max?: number; is_boosted?: boolean; marketplace_suppliers?: { business_name: string; certification_status: string; rating: number } | { business_name: string; certification_status: string; rating: number }[] };
+type ApiProduct = Partial<MarketplaceProduct> & { id: string; title: string; description?: string; media?: unknown; price_xof?: number; country_code?: string; installment_enabled?: boolean; installment_months_max?: number; is_boosted?: boolean; magazineId?: string; magazineNumero?: number; isMagazine?: boolean; marketplace_suppliers?: { business_name: string; certification_status: string; rating: number } | { business_name: string; certification_status: string; rating: number }[] };
 
 function normalizeProduct(product: ApiProduct): MarketplaceProduct {
   const supplier = Array.isArray(product.marketplace_suppliers) ? product.marketplace_suppliers[0] : product.marketplace_suppliers;
-  return { id: product.id, title: product.title, description: product.description || "", category: product.category || "Autres produits", supplier: supplier?.business_name || product.supplier || "Fournisseur Envol Africa", country: product.country_code ?? product.country ?? "", city: product.city || "", priceXof: product.price_xof ?? product.priceXof ?? 0, image: product.image || (Array.isArray(product.media) && typeof product.media[0] === "string" ? product.media[0] : ""), accent: product.accent || "#a36300", certified: Boolean(supplier?.certification_status === "certified" || product.certified), boosted: Boolean(product.is_boosted ?? product.boosted), installment: Boolean(product.installment_enabled ?? product.installment), months: product.installment_months_max ?? product.months ?? 0 };
+  return { id: product.id, title: product.title, description: product.description || "", category: product.category || "Autres produits", supplier: supplier?.business_name || product.supplier || "Fournisseur Envol Africa", country: product.country_code ?? product.country ?? "", city: product.city || "", priceXof: product.price_xof ?? product.priceXof ?? 0, image: product.image || (Array.isArray(product.media) && typeof product.media[0] === "string" ? product.media[0] : ""), accent: product.accent || "#a36300", certified: Boolean(supplier?.certification_status === "certified" || product.certified), boosted: Boolean(product.is_boosted ?? product.boosted), installment: Boolean(product.installment_enabled ?? product.installment), months: product.installment_months_max ?? product.months ?? 0, ...(product.isMagazine ? { isMagazine: true, magazineId: product.magazineId, magazineNumero: product.magazineNumero } : {}) } as MarketplaceProduct & { isMagazine?: boolean; magazineId?: string; magazineNumero?: number };
 }
 
 function formatXof(value: number) { return new Intl.NumberFormat("fr-FR").format(value) + " XOF"; }
 
-function ProductCard({ product }: { product: MarketplaceProduct }) {
+function ProductCard({ product }: { product: MarketplaceProduct & { isMagazine?: boolean; magazineId?: string; magazineNumero?: number } }) {
+  const addMagazineToCart = () => {
+    if (!product.isMagazine || !product.magazineId) return;
+    const cart = JSON.parse(localStorage.getItem("eam_cart") || "[]");
+    cart.push({ type: "magazine", magazineId: product.magazineId, format: "numerique", language: "fr", price: product.priceXof, title: product.title, cover: product.image, numero: product.magazineNumero });
+    localStorage.setItem("eam_cart", JSON.stringify(cart));
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("eam-cart-updated"));
+  };
   return <article className="group overflow-hidden rounded-[22px] border border-[#eadfce] bg-white shadow-[0_12px_34px_rgba(74,48,18,0.06)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(74,48,18,0.13)]">
     <div className="relative aspect-[4/3] overflow-hidden" style={{ background: `linear-gradient(135deg, ${product.accent}55, #f6eee2)` }}>
       {product.image ? <img src={product.image} alt={product.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center text-5xl" aria-hidden="true">✦</div>}
@@ -28,13 +36,13 @@ function ProductCard({ product }: { product: MarketplaceProduct }) {
       <p className="mt-3 line-clamp-2 min-h-[38px] text-[12px] leading-5 text-[#725f4d]">{product.description}</p>
       <div className="mt-4 flex items-center justify-between gap-2"><span className="font-display text-[17px] font-black text-[#9e001f]">{formatXof(product.priceXof)}</span><span className="text-[11px] text-[#806c58]">{countryLabels[product.country] || product.country} · {product.city}</span></div>
       <div className="mt-3 flex items-center justify-between border-t border-[#f0e7dc] pt-3"><span className="max-w-[170px] truncate text-[11px] font-bold text-[#5d4a39]">{product.supplier}</span>{product.installment ? <span className="rounded-full bg-[#f5eee4] px-2 py-1 text-[10px] font-bold text-[#765326]">Jusqu’à {product.months} mois</span> : <span className="text-[10px] text-[#8d7b69]">Paiement comptant</span>}</div>
-      <div className="mt-4 grid grid-cols-2 gap-2"><Link href={`/marketplace/produits/${product.id}`} className="flex h-10 items-center justify-center rounded-full border border-[#cdbb9f] text-[11px] font-black text-[#5c3d19] transition hover:bg-[#fff8ed]">Voir le produit</Link><Link href={`/marketplace/messages?product=${encodeURIComponent(product.id)}`} className="flex h-10 items-center justify-center rounded-full bg-[#9e001f] text-[11px] font-black text-white transition hover:bg-[#c8102e]">Contacter</Link></div>
+      <div className="mt-4 grid grid-cols-2 gap-2">{product.isMagazine ? <button type="button" onClick={addMagazineToCart} className="flex min-h-10 items-center justify-center rounded-full border border-[#cdbb9f] px-2 text-center text-[10px] font-black text-[#5c3d19] transition hover:bg-[#fff8ed]">Ajouter</button> : <Link href={`/marketplace/produits/${product.id}`} className="flex min-h-10 items-center justify-center rounded-full border border-[#cdbb9f] px-2 text-center text-[10px] font-black text-[#5c3d19] transition hover:bg-[#fff8ed]">Voir le produit</Link>}{product.isMagazine ? <Link href={`/kiosque/${product.magazineId}`} className="flex min-h-10 items-center justify-center rounded-full bg-[#9e001f] px-2 text-center text-[10px] font-black text-white transition hover:bg-[#c8102e]">Détails</Link> : <Link href={`/marketplace/messages?product=${encodeURIComponent(product.id)}`} className="flex min-h-10 items-center justify-center rounded-full bg-[#9e001f] px-2 text-center text-[10px] font-black text-white transition hover:bg-[#c8102e]">Contacter</Link>}</div>
     </div>
   </article>;
 }
 
 export default function MarketplaceClient() {
-  const [products, setProducts] = useState<MarketplaceProduct[]>([]);
+  const [products, setProducts] = useState<Array<MarketplaceProduct & { isMagazine?: boolean; magazineId?: string; magazineNumero?: number }>>([]);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState(marketplaceCategories[0]);
   const [country, setCountry] = useState("");
@@ -73,7 +81,7 @@ export default function MarketplaceClient() {
     <section id="catalogue" className="mx-auto max-w-[1280px] px-5 py-10 md:px-10 lg:px-16"><div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end"><div><p className="font-display text-[11px] font-black uppercase tracking-[0.2em] text-[#a36300]">Le catalogue</p><h2 className="mt-2 font-display text-3xl font-black tracking-[-0.04em]">Trouvez votre prochaine opportunité</h2><p className="mt-2 text-sm text-[#806c58]">Les produits boostés apparaissent en premier, sans remplacer la pertinence de votre recherche.</p></div><div className="flex flex-wrap gap-2"><span className="rounded-full bg-white px-3 py-2 text-[11px] font-bold text-[#725f4d] shadow-sm">Messagerie surveillée</span><span className="rounded-full bg-white px-3 py-2 text-[11px] font-bold text-[#725f4d] shadow-sm">Médias vérifiés</span></div></div>
       <div className="mt-7 grid gap-3 rounded-[22px] border border-[#eadfce] bg-white p-3 md:grid-cols-[1.6fr_1fr_1fr] md:p-4"><label className="flex h-12 items-center gap-2 rounded-full bg-[#f8f3ed] px-4"><span className="material-symbols-outlined text-[20px] text-[#a36300]">search</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher un produit, une entreprise..." className="min-w-0 flex-1 bg-transparent text-[13px] outline-none" /></label><select value={category} onChange={(event) => setCategory(event.target.value)} className="h-12 rounded-full bg-[#f8f3ed] px-4 text-[12px] font-bold text-[#5d4a39] outline-none">{marketplaceCategories.map((item) => <option key={item}>{item}</option>)}</select><select value={country} onChange={(event) => setCountry(event.target.value)} className="h-12 rounded-full bg-[#f8f3ed] px-4 text-[12px] font-bold text-[#5d4a39] outline-none">{countryOptions.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}</select></div>
       {error && <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
-      <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{products.map((product) => <ProductCard key={product.id} product={product} />)}</div>
+      <div className="mt-7 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">{products.map((product) => <ProductCard key={product.id} product={product} />)}</div>
       {loading && <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{[1,2,3,4].map((item) => <div key={item} className="h-[390px] animate-pulse rounded-[22px] bg-[#f1e8dc]" />)}</div>}
       {!loading && !products.length && <div className="mt-8 rounded-[24px] border border-dashed border-[#cdbb9f] bg-white p-12 text-center"><span className="material-symbols-outlined text-4xl text-[#a36300]">search_off</span><h3 className="mt-3 font-display text-lg font-black">Aucun produit ne correspond à cette recherche</h3><p className="mt-2 text-sm text-[#806c58]">Essayez une autre catégorie ou recherchez un fournisseur africain.</p></div>}
       <div ref={sentinelRef} className="h-4" />{!hasMore && products.length > 0 && <p className="mt-8 text-center text-[11px] font-bold uppercase tracking-[0.16em] text-[#a18c75]">Vous êtes arrivé au bout du catalogue actuel</p>}
