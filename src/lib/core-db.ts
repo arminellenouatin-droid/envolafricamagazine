@@ -101,6 +101,7 @@ function mapMagazine(row: Record<string, unknown>): Magazine {
     numero: Number(row.numero),
     title: String(row.title ?? ""),
     cover: String(row.cover ?? ""),
+    coverBack: typeof row.cover_back === "string" ? row.cover_back : undefined,
     date: row.date ? String(row.date).slice(0, 10) : "",
     year: Number(row.year ?? new Date().getFullYear()),
     description: String(row.description ?? ""),

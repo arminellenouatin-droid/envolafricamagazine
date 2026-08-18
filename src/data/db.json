@@ -523,10 +523,24 @@
       "numero": 23,
       "title": "Envol Africa N°23 - L'Afrique qui gagne",
       "cover": "/covers/envol-africa-cover-03.jpg",
+      "coverBack": "/covers/envol-africa-cover-04.png",
       "date": "2025-11-01",
       "year": 2025,
       "description": "Dans ce numéro 23, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.",
-      "previewPages": 5,
+      "previewPages": 8,
+      "previewImages": [
+        "/magazines/23/page-01.jpg",
+        "/magazines/23/page-02.jpg",
+        "/magazines/23/page-03.jpg",
+        "/magazines/23/page-04.jpg",
+        "/magazines/23/page-05.jpg",
+        "/magazines/23/page-06.jpg",
+        "/magazines/23/page-07.jpg",
+        "/magazines/23/page-08.jpg"
+      ],
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      },
       "formats": [
         "numerique",
         "papier",

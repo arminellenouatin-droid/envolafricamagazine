@@ -69,6 +69,7 @@ export interface Magazine {
   numero: number;
   title: string;
   cover: string;
+  coverBack?: string;
   date: string;
   year: number;
   periode?: string; // Ex: "Mars-Avril 2024" ou "Mars 2024"

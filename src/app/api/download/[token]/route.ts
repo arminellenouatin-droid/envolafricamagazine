@@ -34,7 +34,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ token: 
     message: "Lien sécurisé valide",
     magazine: { id: magazine.id, title: magazine.title, numero: magazine.numero },
     expiresAt: new Date(payload.exp * 1000).toISOString(),
-    downloadUrl: magazine.cover, // mock - en prod ce serait le PDF
+    downloadUrl: magazine.pdfs?.[payload.format === "numerique" ? "fr" : (payload.format || "fr")] || magazine.cover,
     type: payload.type,
     format: payload.format,
   });
