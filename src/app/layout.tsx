@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/HeaderShell";
 import Footer from "@/components/FooterShell";
+import PromoPopup from "@/components/PromoPopup";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -61,6 +62,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className="min-h-full flex flex-col bg-[#fcf9f8]" style={{ fontFamily: "Source Serif 4, Georgia, serif" }}>
         <Header user={user ? { id: user.id, nom: user.nom, prenom: user.prenom, email: user.email, role: user.role, avatar: user.avatar } : undefined} />
+        <PromoPopup />
         <main className="flex-1">{children}</main>
         <Footer />
         <script dangerouslySetInnerHTML={{__html: `

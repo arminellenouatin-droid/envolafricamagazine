@@ -1,6 +1,5 @@
 import { listMagazines, listPublishedArticles } from "@/lib/core-db";
 import Link from "next/link";
-import PromoPopup from "@/components/PromoPopup";
 import AvantPremiereCarousel from "@/components/home/AvantPremiereCarousel";
 import EditorialCarousel from "@/components/home/EditorialCarousel";
 
@@ -33,7 +32,7 @@ export default async function HomePage() {
   const videos = ["Les marchés africains en 5 minutes", "Le carnet des entrepreneurs", "Décryptage : la ZLECAf"];
 
   return (
-    <div className="magazine-home overflow-x-hidden bg-[#fcf9f8] text-[#222223]"><PromoPopup /><main>
+    <div className="magazine-home overflow-x-hidden bg-[#fcf9f8] text-[#222223]"><main>
       <section className="magazine-hero mx-auto max-w-[1380px] px-5 pb-14 pt-8 md:px-10 lg:px-16 lg:pt-12">
         <div className="mb-7 flex items-end justify-between gap-5 border-b border-[#d8c3c1] pb-5"><div><p className="editorial-kicker">Le guide des dirigeants, chefs et jeunes créateurs d'entreprise</p><h1 className="magazine-display mt-3 max-w-4xl text-4xl leading-[0.98] md:text-6xl lg:text-[76px]">Créer, Manager, Développer</h1></div><p className="hidden max-w-[230px] text-right font-sans text-xs leading-5 text-[#5f5352] md:block">Analyses, récits et opportunités pour celles et ceux qui construisent les économies africaines.</p></div>
         <div className="first-four-grid grid grid-cols-12 gap-5 lg:gap-6">
