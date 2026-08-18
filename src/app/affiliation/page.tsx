@@ -20,7 +20,7 @@ export default function AffiliationPage() {
     });
   }, []);
 
-  const isAffiliate = user?.role === "affiliate" || user?.role === "subscriber" || ["admin", "gerant", "redacteur", "redacteur_chef"].includes(user?.role);
+  const isAffiliate = Boolean(user?.affiliateAccepted) || ["admin", "gerant", "redacteur", "redacteur_chef"].includes(user?.role);
   const affiliateLink = typeof window !== "undefined" && user ? `${window.location.origin}?ref=${user.affiliateCode}` : "";
   const total = useMemo(() => earnings.reduce((sum, item) => sum + Number(item.commission || 0), 0), [earnings]);
   const available = useMemo(() => earnings.filter((item) => item.status === "available").reduce((sum, item) => sum + Number(item.commission || 0), 0), [earnings]);
@@ -32,6 +32,12 @@ export default function AffiliationPage() {
     if (!response.ok) setNotice(data.error || "Impossible d’activer l’affiliation.");
     else { setUser(data.user); setNotice("Affiliation activée. Vos outils sont maintenant disponibles."); }
     setActivating(false);
+  }
+
+  async function requestPayout() {
+    const response = await fetch("/api/affiliate/withdraw", { method: "POST" });
+    const data = await response.json();
+    setNotice(response.ok ? "Votre demande de paiement a été enregistrée." : (data.error || "Impossible d’enregistrer la demande."));
   }
 
   async function copyLink() {
@@ -47,6 +53,6 @@ export default function AffiliationPage() {
 {tab === "dashboard" && <div className="mt-6 grid gap-5 md:grid-cols-3"><div className="rounded-2xl bg-[#0A1931] p-6 text-white"><p className="text-xs text-white/60">Commissions générées</p><p className="mt-2 text-3xl font-black">{total.toLocaleString("fr-FR")} F</p></div><div className="rounded-2xl bg-white p-6 shadow-sm"><p className="text-xs text-zinc-500">Disponible au paiement</p><p className="mt-2 text-3xl font-black text-emerald-700">{available.toLocaleString("fr-FR")} F</p></div><div className="rounded-2xl bg-[#D4AF37] p-6"><p className="text-xs text-[#0A1931]/70">Taux actuel</p><p className="mt-2 text-3xl font-black text-[#0A1931]">{user?.subscription?.status === "active" ? "25%" : "10%"}</p></div></div>}
 {tab === "link" && <section className="mt-6 rounded-2xl bg-white p-6 shadow-sm"><h2 className="text-xl font-black text-[#0A1931]">Votre lien affilié</h2><p className="mt-2 text-sm text-zinc-600">Utilisez ce lien pour promouvoir Envol Africa et attribuer les achats à votre compte.</p><div className="mt-5 flex flex-col gap-3 sm:flex-row"><div className="min-w-0 flex-1 rounded-full bg-zinc-50 px-5 py-3 font-mono text-sm text-zinc-700">{affiliateLink}</div><button onClick={copyLink} className="rounded-full bg-[#0A1931] px-5 py-3 text-sm font-bold text-white">{copied ? "Copié" : "Copier le lien"}</button></div><div className="mt-4 flex flex-wrap gap-2"><a target="_blank" rel="noreferrer" href={`https://wa.me/?text=${encodeURIComponent(`Découvrez Envol Africa : ${affiliateLink}`)}`} className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white">Partager sur WhatsApp</a><a target="_blank" rel="noreferrer" href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(affiliateLink)}`} className="rounded-full bg-[#0A1931] px-4 py-2 text-xs font-bold text-white">Partager sur LinkedIn</a></div></section>}
 {tab === "commissions" && <section className="mt-6 rounded-2xl bg-white p-6 shadow-sm"><h2 className="text-xl font-black text-[#0A1931]">Commissions générées</h2>{earnings.length === 0 ? <p className="mt-6 rounded-xl bg-zinc-50 p-8 text-center text-sm text-zinc-500">Aucune commission pour le moment. Partagez votre lien pour commencer.</p> : <div className="mt-5 space-y-2">{earnings.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-zinc-50 p-4"><div><p className="text-sm font-bold">Commande {String(item.orderId).slice(0, 8)}</p><p className="text-xs text-zinc-500">{new Date(item.createdAt).toLocaleDateString("fr-FR")} · {item.status}</p></div><strong className="text-emerald-700">+{Number(item.commission).toLocaleString("fr-FR")} F</strong></div>)}</div>}</section>}
-{tab === "payout" && <section className="mt-6 rounded-2xl bg-white p-6 shadow-sm"><h2 className="text-xl font-black text-[#0A1931]">Demande de paiement</h2><p className="mt-2 text-sm text-zinc-600">Le retrait est disponible à partir de 150 000 F CFA de commissions disponibles. Les paiements sont traités après vérification.</p><div className="mt-6 rounded-xl bg-zinc-50 p-5"><p className="text-sm">Montant disponible : <strong>{available.toLocaleString("fr-FR")} F CFA</strong></p><button disabled={available < 150000} className="mt-4 rounded-full bg-[#0A1931] px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">{available >= 150000 ? "Demander le paiement" : "Seuil de 150 000 F non atteint"}</button></div></section>}
+{tab === "payout" && <section className="mt-6 rounded-2xl bg-white p-6 shadow-sm"><h2 className="text-xl font-black text-[#0A1931]">Demande de paiement</h2><p className="mt-2 text-sm text-zinc-600">Le retrait est disponible à partir de 150 000 F CFA de commissions disponibles. Les paiements sont traités après vérification.</p><div className="mt-6 rounded-xl bg-zinc-50 p-5"><p className="text-sm">Montant disponible : <strong>{available.toLocaleString("fr-FR")} F CFA</strong></p><button onClick={requestPayout} disabled={available < 150000} className="mt-4 rounded-full bg-[#0A1931] px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">{available >= 150000 ? "Demander le paiement" : "Seuil de 150 000 F non atteint"}</button></div></section>}
 </div></main>;
 }

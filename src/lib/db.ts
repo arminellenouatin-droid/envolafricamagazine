@@ -22,6 +22,7 @@ export interface User {
   country: string;
   phone?: string;
   affiliateCode: string;
+  affiliateAccepted?: boolean;
   referredBy?: string;
   subscription?: {
     planId: string;

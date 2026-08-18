@@ -14,6 +14,7 @@ export async function GET(_req: NextRequest) {
         role: user.role,
         avatar: user.avatar,
         affiliateCode: user.affiliateCode,
+        affiliateAccepted: user.affiliateAccepted,
         subscription: user.subscription,
         favorites: user.favorites,
         lang: user.lang,
