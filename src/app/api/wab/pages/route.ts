@@ -3,7 +3,7 @@ import { getCurrentUserFromCookie } from "@/lib/auth";
 import { readWabDB, writeWabDB } from "@/lib/wab-db";
 import { createWabPage, ensureWabPage, listWabPages } from "@/lib/wab-supabase";
 
-const ENVOL_PAGE = { name: "ENVOL AFRICA", slug: "envol-africa", logoUrl: "https://drive.google.com/uc?export=download&id=1gzbeBDh79_cQUinL12_nb_fmQCjUKxYI", description: "La page officielle d’Envol Africa dans le réseau WAB." };
+const ENVOL_PAGE = { name: "ENVOL AFRICA", slug: "envol-africa", logoUrl: "https://drive.google.com/uc?export=download&id=1gzbeBDh79_cQUinL12_nb_fmQCjUKxYI", avatarUrl: "https://drive.google.com/uc?export=download&id=1gzbeBDh79_cQUinL12_nb_fmQCjUKxYI", description: "La page officielle d’Envol Africa dans le réseau WAB." };
 
 function slugify(value: string) { return value.toLocaleLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 80); }
 
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const name = typeof body.name === "string" ? body.name.trim().slice(0, 100) : "";
   if (!name) return NextResponse.json({ error: "Le nom de la page est obligatoire." }, { status: 400 });
-  const input = { name, slug: slugify(name), logoUrl: typeof body.logoUrl === "string" ? body.logoUrl.trim().slice(0, 500) : undefined, description: typeof body.description === "string" ? body.description.trim().slice(0, 500) : undefined };
+  const input = { name, slug: slugify(name), logoUrl: typeof body.logoUrl === "string" ? body.logoUrl.trim().slice(0, 500) : undefined, avatarUrl: typeof body.avatarUrl === "string" ? body.avatarUrl.trim().slice(0, 500) : undefined, coverUrl: typeof body.coverUrl === "string" ? body.coverUrl.trim().slice(0, 500) : undefined, description: typeof body.description === "string" ? body.description.trim().slice(0, 500) : undefined };
   const supabase = await createWabPage(user.id, input);
   if (supabase.configured) { if (!supabase.page) return NextResponse.json({ error: "Impossible de créer la page." }, { status: 400 }); return NextResponse.json({ page: supabase.page }, { status: 201 }); }
   const db = readWabDB();

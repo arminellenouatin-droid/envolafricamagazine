@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getPlatformKey, PLATFORM_CONFIGS, platformOptions, type PlatformConfig } from "@/lib/platforms";
 import { internalBrowserHref } from "@/lib/internal-browser";
+import { normalizeVisitorLocale, persistVisitorLocale, readPersistedVisitorLocale, type VisitorLocale } from "@/lib/visitor-locale";
 
 const firstLineMenus = [
   { name: "S'abonner", href: "/abonnement", icon: "stars" },
@@ -106,6 +107,8 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const [messageCount, setMessageCount] = useState(0);
+  const [wabToolsOpen, setWabToolsOpen] = useState(false);
+  const [visitorLocale, setVisitorLocale] = useState<VisitorLocale>(() => readPersistedVisitorLocale());
 
   useEffect(() => {
     const refreshInboxCounts = async () => {
@@ -128,7 +131,24 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
     setMegaMenuOpen(false);
     setDropdownOpen(false);
     setMobileNavOpen(false);
+    setWabToolsOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const loadVisitorLocale = async () => {
+      try {
+        const response = await fetch("/api/geo", { cache: "no-store" });
+        if (!response.ok) return;
+        const locale = normalizeVisitorLocale(await response.json());
+        setVisitorLocale(locale);
+        persistVisitorLocale(locale);
+      } catch { /* Le fallback local reste disponible si la détection échoue. */ }
+    };
+    loadVisitorLocale();
+    const syncLocale = (event: Event) => setVisitorLocale(normalizeVisitorLocale((event as CustomEvent<VisitorLocale>).detail));
+    window.addEventListener("ea-locale-updated", syncLocale);
+    return () => window.removeEventListener("ea-locale-updated", syncLocale);
+  }, []);
 
   useEffect(() => {
     const readCart = () => {
@@ -206,8 +226,8 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
           {firstLineMenus.map((item) => <Link key={item.name} href={item.href} className={`flex items-center gap-1.5 transition-colors hover:text-[#9e001f] ${firstLineActive(item.href) ? "font-bold text-[#9e001f]" : ""}`}><span className="material-symbols-outlined text-[16px]">{item.icon}</span>{item.name}</Link>)}
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" className="grid h-8 w-8 place-items-center text-black transition-colors hover:text-[#9e001f]" title="Traduction"><span className="material-symbols-outlined text-[18px]">translate</span></button>
-          <button type="button" className="grid h-8 w-8 place-items-center text-black transition-colors hover:text-[#9e001f]" title="Devise"><span className="material-symbols-outlined text-[18px]">payments</span></button>
+          <button type="button" className="grid h-8 w-8 place-items-center text-black transition-colors hover:text-[#9e001f]" title={`Langue détectée : ${visitorLocale.language.toUpperCase()}`} aria-label={`Traduction automatique en ${visitorLocale.language}`}><span className="material-symbols-outlined text-[18px]">translate</span></button>
+          <button type="button" className="grid h-8 w-8 place-items-center text-black transition-colors hover:text-[#9e001f]" title={`${visitorLocale.country} · ${visitorLocale.language.toUpperCase()} · ${visitorLocale.currency}`} aria-label={`Pays ${visitorLocale.country}, langue ${visitorLocale.language}, devise ${visitorLocale.currency}`}><span className="material-symbols-outlined text-[18px]">payments</span></button>
           <button type="button" onClick={toggleDarkMode} className="grid h-8 w-8 place-items-center text-black transition-colors hover:text-[#9e001f]" title={darkMode ? "Mode clair" : "Mode sombre"}><span className="material-symbols-outlined text-[18px]">{darkMode ? "light_mode" : "dark_mode"}</span></button>
         </div>
       </nav>}
@@ -265,8 +285,9 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
 
       <div className="mobile-header-stack md:hidden">
         <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-around border-b border-[#e5bdbb] bg-[#fcf9f8] px-2 py-2">
-          {[{ icon: "podcasts", label: "Live", href: "/" }, { icon: "shopping_cart", label: "Panier", href: "/panier" }, { icon: "favorite_border", label: "Favoris", href: "/compte/favoris" }, { icon: "mail_outline", label: "Message", href: "/messages" }, { icon: "notifications_none", label: "Notif", href: "/notifications" }, { icon: "translate", label: "Trad", href: "#" }, { icon: "account_circle", label: "Profil", href: "/compte" }].map((item) => <Link key={item.label} href={item.href} className="relative flex flex-col items-center gap-0.5"><span className="relative">{item.label === "Profil" && user?.avatar ? <img src={user.avatar} alt="" className="h-5 w-5 rounded-full object-cover" /> : <span className="material-symbols-outlined text-[20px]">{item.icon}</span>}{item.label === "Panier" && cartCount > 0 && <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-[#9e001f] px-1 text-[9px] font-bold text-white">{cartCount}</span>}{item.label === "Notif" && notificationCount > 0 && <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-[#9e001f] px-1 text-[8px] font-bold text-white">{notificationCount > 99 ? "99+" : notificationCount}</span>}{item.label === "Message" && messageCount > 0 && <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-[#006874] px-1 text-[8px] font-bold text-white">{messageCount > 99 ? "99+" : messageCount}</span>}</span><span className="text-[9px] font-medium">{item.label}</span></Link>)}
+          {[{ icon: "podcasts", label: "Live", href: "/" }, { icon: "shopping_cart", label: "Panier", href: "/panier" }, { icon: "favorite_border", label: "Favoris", href: "/compte/favoris" }, { icon: "mail_outline", label: "Message", href: "/messages" }, { icon: "notifications_none", label: "Notif", href: "/notifications" }, { icon: platform.key === "wab" ? "construction" : "translate", label: platform.key === "wab" ? "Outils" : "Trad", href: platform.key === "wab" ? "#wab-tools" : "#" }, { icon: "account_circle", label: "Profil", href: "/compte" }].map((item) => item.href === "#wab-tools" ? <button type="button" key={item.label} onClick={() => setWabToolsOpen((open) => !open)} aria-expanded={wabToolsOpen} aria-label="Ouvrir la boîte à outils WAB" className="relative flex flex-col items-center gap-0.5"><span className="relative"><span className="material-symbols-outlined text-[20px]">{item.icon}</span></span><span className="text-[9px] font-medium">{item.label}</span></button> : <Link key={item.label} href={item.href} className="relative flex flex-col items-center gap-0.5"><span className="relative">{item.label === "Profil" && user?.avatar ? <img src={user.avatar} alt="" className="h-5 w-5 rounded-full object-cover" /> : <span className="material-symbols-outlined text-[20px]">{item.icon}</span>}{item.label === "Panier" && cartCount > 0 && <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-[#9e001f] px-1 text-[9px] font-bold text-white">{cartCount}</span>}{item.label === "Notif" && notificationCount > 0 && <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-[#9e001f] px-1 text-[8px] font-bold text-white">{notificationCount > 99 ? "99+" : notificationCount}</span>}{item.label === "Message" && messageCount > 0 && <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-[#006874] px-1 text-[8px] font-bold text-white">{messageCount > 99 ? "99+" : messageCount}</span>}</span><span className="text-[9px] font-medium">{item.label}</span></Link>)}
         </div>
+        {platform.key === "wab" && wabToolsOpen && <div className="fixed inset-x-3 top-[52px] z-[90] max-h-[72vh] overflow-y-auto rounded-2xl border border-[#b9dadd] bg-white p-4 shadow-2xl"><div className="flex items-center justify-between border-b border-[#d8eef0] pb-3"><div><p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#006874]">WAB</p><h2 className="font-display text-base font-black text-[#172b2f]">Boîte à outils</h2></div><button type="button" onClick={() => setWabToolsOpen(false)} aria-label="Fermer la boîte à outils" className="grid h-9 w-9 place-items-center rounded-full bg-[#eef7f8] text-[#006874]"><span className="material-symbols-outlined">close</span></button></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{[...platform.megaItems, { label: "Mon profil WAB", href: "/wab/profil", icon: "account_circle" }, { label: "Messages", href: "/wab/messages", icon: "mail" }, { label: "Notifications", href: "/wab/notifications", icon: "notifications" }, { label: "Pages et groupes", href: "/wab/profil", icon: "groups" }].map((item) => <Link key={`${item.href}-${item.label}`} href={item.href} onClick={() => setWabToolsOpen(false)} className="flex items-center gap-3 rounded-xl border border-[#d8eef0] bg-[#f7fcfc] px-3 py-3 text-[12px] font-bold text-[#172b2f] transition hover:border-[#006874] hover:text-[#006874]"><span className="material-symbols-outlined text-[20px] text-[#006874]">{item.icon}</span><span>{item.label}</span></Link>)}</div></div>}
         <div className="pt-[48px]">
           <header className="flex h-[56px] items-center justify-between border-b border-[#e5bdbb] bg-[#fcf9f8] px-4">
             <div className="flex min-w-0 items-center gap-2">

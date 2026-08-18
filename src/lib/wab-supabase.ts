@@ -43,8 +43,8 @@ export type WabPostRow = {
   };
 };
 
-export type WabPageRow = { id: string; owner_user_id: string; name: string; slug: string; logo_url: string | null; description: string | null; status: string; created_at: string; updated_at: string };
-export type WabGroupRow = { id: string; owner_user_id: string; name: string; slug: string; description: string | null; logo_url: string | null; privacy: "community" | "private"; status: string; created_at: string; updated_at: string };
+export type WabPageRow = { id: string; owner_user_id: string; name: string; slug: string; logo_url: string | null; avatar_url: string | null; cover_url: string | null; description: string | null; status: string; created_at: string; updated_at: string };
+export type WabGroupRow = { id: string; owner_user_id: string; name: string; slug: string; description: string | null; logo_url: string | null; avatar_url: string | null; cover_url: string | null; privacy: "community" | "private"; status: string; created_at: string; updated_at: string };
 export type WabGroupMemberRow = { group_id: string; user_id: string; role: "owner" | "moderator" | "member"; status: "active" | "pending" | "blocked"; created_at: string };
 
 export type WabProfileRow = {
@@ -71,20 +71,20 @@ export async function listWabPages(ownerUserId: string) {
   return { configured: true as const, pages: data as WabPageRow[] };
 }
 
-export async function ensureWabPage(ownerUserId: string, input: { name: string; slug: string; logoUrl?: string; description?: string }) {
+export async function ensureWabPage(ownerUserId: string, input: { name: string; slug: string; logoUrl?: string; avatarUrl?: string; coverUrl?: string; description?: string }) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false as const, page: null };
   const { data: existing } = await supabase.from("wab_pages").select("*").eq("slug", input.slug).maybeSingle();
   if (existing) return { configured: true as const, page: existing as WabPageRow };
-  const { data, error } = await supabase.from("wab_pages").insert({ owner_user_id: ownerUserId, name: input.name, slug: input.slug, logo_url: input.logoUrl ?? null, description: input.description ?? null, status: "active" }).select("*").single();
+  const { data, error } = await supabase.from("wab_pages").insert({ owner_user_id: ownerUserId, name: input.name, slug: input.slug, logo_url: input.logoUrl ?? null, avatar_url: input.avatarUrl ?? input.logoUrl ?? null, cover_url: input.coverUrl ?? null, description: input.description ?? null, status: "active" }).select("*").single();
   if (error) return { configured: true as const, page: null, error };
   return { configured: true as const, page: data as WabPageRow };
 }
 
-export async function createWabPage(ownerUserId: string, input: { name: string; slug: string; logoUrl?: string; description?: string }) {
+export async function createWabPage(ownerUserId: string, input: { name: string; slug: string; logoUrl?: string; avatarUrl?: string; coverUrl?: string; description?: string }) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false as const, page: null };
-  const { data, error } = await supabase.from("wab_pages").insert({ owner_user_id: ownerUserId, name: input.name, slug: input.slug, logo_url: input.logoUrl ?? null, description: input.description ?? null, status: "active" }).select("*").single();
+  const { data, error } = await supabase.from("wab_pages").insert({ owner_user_id: ownerUserId, name: input.name, slug: input.slug, logo_url: input.logoUrl ?? null, avatar_url: input.avatarUrl ?? input.logoUrl ?? null, cover_url: input.coverUrl ?? null, description: input.description ?? null, status: "active" }).select("*").single();
   if (error) return { configured: true as const, page: null, error };
   return { configured: true as const, page: data as WabPageRow };
 }
@@ -411,10 +411,10 @@ export async function listWabGroups(userId: string) {
   return { configured: true as const, groups: Array.from(byId.values()), memberships: memberships as WabGroupMemberRow[] };
 }
 
-export async function createWabGroup(ownerUserId: string, input: { name: string; slug: string; description?: string; logoUrl?: string; privacy?: "community" | "private" }) {
+export async function createWabGroup(ownerUserId: string, input: { name: string; slug: string; description?: string; logoUrl?: string; avatarUrl?: string; coverUrl?: string; privacy?: "community" | "private" }) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false as const, group: null };
-  const { data: group, error } = await supabase.from("wab_groups").insert({ owner_user_id: ownerUserId, name: input.name, slug: input.slug, description: input.description ?? null, logo_url: input.logoUrl ?? null, privacy: input.privacy ?? "community", status: "active" }).select("*").single();
+  const { data: group, error } = await supabase.from("wab_groups").insert({ owner_user_id: ownerUserId, name: input.name, slug: input.slug, description: input.description ?? null, logo_url: input.logoUrl ?? null, avatar_url: input.avatarUrl ?? input.logoUrl ?? null, cover_url: input.coverUrl ?? null, privacy: input.privacy ?? "community", status: "active" }).select("*").single();
   if (error || !group) return { configured: true as const, group: null, error };
   await supabase.from("wab_group_members").insert({ group_id: group.id, user_id: ownerUserId, role: "owner", status: "active" });
   return { configured: true as const, group: group as WabGroupRow };
