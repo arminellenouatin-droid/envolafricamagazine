@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from "react";
 
+async function readJson(response: Response): Promise<Record<string, any>> {
+  const raw = await response.text();
+  if (!raw.trim()) return {};
+  try { return JSON.parse(raw) as Record<string, any>; } catch { return { error: `Réponse serveur invalide (HTTP ${response.status}).` }; }
+}
+
 type Comment = { id: string; author: string; content: string; createdAt: string };
 
 export default function CommentsPanel({ postId, openSignal = 0, onCountChange }: { postId: string; openSignal?: number; onCountChange?: (count: number) => void }) {
@@ -12,17 +18,17 @@ export default function CommentsPanel({ postId, openSignal = 0, onCountChange }:
   const [error, setError] = useState("");
 
   useEffect(() => { if (openSignal > 0) setOpen(true); }, [openSignal]);
-  useEffect(() => { if (!open) return; fetch(`/api/wab/posts/${postId}/comments`).then((response) => response.json()).then((data) => setItems(data.comments ?? [])).catch(() => setError("Commentaires indisponibles.")); }, [open, postId]);
+  useEffect(() => { if (!open) return; fetch(`/api/wab/posts/${postId}/comments`).then(async (response) => ({ response, data: await readJson(response) })).then(({ response, data }) => { if (!response.ok) throw new Error(String(data.error || "Commentaires indisponibles.")); setItems(Array.isArray(data.comments) ? data.comments as Comment[] : []); }).catch((cause) => setError(cause instanceof Error ? cause.message : "Commentaires indisponibles.")); }, [open, postId]);
 
   async function add() {
     if (!content.trim()) return;
     setBusy(true); setError("");
     try {
       const response = await fetch(`/api/wab/posts/${postId}/comments`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content }) });
-      const data = await response.json();
+      const data = await readJson(response);
       if (response.status === 401) { window.location.assign(`/auth/login?next=${encodeURIComponent("/wab")}`); return; }
-      if (!response.ok) throw new Error(data.error);
-      setItems((values) => { const next = [...values, data.comment]; onCountChange?.(next.length); return next; }); setContent("");
+      if (!response.ok) throw new Error(String(data.error || "Commentaire impossible."));
+      setItems((values) => { const next: Comment[] = [...values, data.comment as Comment]; onCountChange?.(next.length); return next; }); setContent("");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Commentaire impossible."); }
     finally { setBusy(false); }
   }

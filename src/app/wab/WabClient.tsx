@@ -5,6 +5,7 @@ import CommentsPanel from "./CommentsPanel";
 import PostActions from "./PostActions";
 import PostMedia from "./PostMedia";
 import PostViewTracker from "./PostViewTracker";
+import StoriesReelsCarousel from "./StoriesReelsCarousel";
 import { WAB_BUSINESS_MONTHLY_PRICE } from "@/lib/wab-access";
 
 type Post = {
@@ -124,11 +125,13 @@ export default function WabClient() {
   const [loadingFeed, setLoadingFeed] = useState(false);
   const [isBusiness, setIsBusiness] = useState(false);
   const [accountLoaded, setAccountLoaded] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ id: string; nom?: string; prenom?: string; avatar?: string } | null>(null);
   const [wabSubscriptionLoading, setWabSubscriptionLoading] = useState(false);
   const [wabSubscriptionMessage, setWabSubscriptionMessage] = useState("");
   const [commentSignals, setCommentSignals] = useState<Record<string, number>>({});
   const marker = useRef<HTMLDivElement>(null);
 
+  useEffect(() => { fetch("/api/auth/me").then((response) => response.json()).then((data) => setCurrentUser(data.user ?? null)).catch(() => setCurrentUser(null)); }, []);
   useEffect(() => { fetch("/api/geo").then((response) => readJsonResponse<{ country?: string }>(response)).then((data) => setVisitorCountry(data.country ?? "")).catch(() => undefined); fetch("/api/wab/subscription").then((response) => response.json()).then((data) => setIsBusiness(Boolean(data.subscription))).catch(() => setIsBusiness(false)).finally(() => setAccountLoaded(true)); }, []);
   useEffect(() => { const params = new URLSearchParams(window.location.search); const subscriptionId = params.get("wab_subscription_id"); const paymentId = params.get("payment_id"); if (!subscriptionId || !paymentId || (!params.get("verify") && !params.get("mock_success"))) return; fetch("/api/wab/subscription", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subscriptionId, paymentId }) }).then((response) => response.json().then((data) => ({ response, data }))).then(({ response, data }) => { if (!response.ok) throw new Error(data.error || "Paiement WAB non confirmé."); setIsBusiness(true); setWabSubscriptionMessage("Votre compte Entreprise WAB est actif. Vous pouvez publier des vidéos."); window.history.replaceState({}, "", "/wab"); }).catch((error) => setWabSubscriptionMessage(error instanceof Error ? error.message : "Vérification du paiement WAB impossible.")); }, []);
 
@@ -184,12 +187,12 @@ export default function WabClient() {
 
   return (
     <main className="min-h-screen bg-[#e9f7f5] pb-20 font-body text-[#111e1d] md:pb-0">
-      <ModelHeader />
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-4 py-3 md:flex-row md:gap-6 md:px-10 md:py-6">
         <ModelSidebar />
         <section className="flex w-full max-w-[800px] flex-1 flex-col gap-6">
+          <StoriesReelsCarousel />
           <div id="publier" className="flex items-center gap-3 rounded-3xl border border-[#d1e9e6] bg-white p-4 shadow-[0_2px_8px_rgba(8,40,67,0.08)]">
-            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full"><ModelAvatar src={MODEL_AUTHOR} alt="Avatar de publication" className="h-full w-full object-cover" /></div>
+            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full">{currentUser?.avatar ? <img src={currentUser.avatar} alt="Votre photo de profil" className="h-full w-full object-cover" /> : <ModelAvatar src={MODEL_AUTHOR} alt="Avatar de publication" className="h-full w-full object-cover" />}</div>
             <div className="min-w-0 flex-1">
               <textarea value={content} onChange={(event) => setContent(event.target.value)} rows={1} placeholder="What’s on your mind?" className="w-full resize-none rounded-full border border-transparent bg-[#eefcfa] px-4 py-3 text-sm text-[#111e1d] outline-none transition placeholder:text-[#43474d] focus:border-[#006874]" />
               <div className="mt-2 flex flex-wrap items-center justify-end gap-2 sm:justify-between">
