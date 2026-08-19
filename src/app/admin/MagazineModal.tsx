@@ -160,9 +160,9 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
 
           {/* Preview images 10 */}
           <div className="border rounded-[14px] p-4 bg-zinc-50">
-            <label className="text-[11px] font-bold uppercase">Premières pages - Upload jusqu'à 10 images pour flipbook aperçu</label>
+            <label className="text-[11px] font-bold uppercase">Aperçu flipbook — images optionnelles</label>
             <input type="file" accept="image/*" multiple onChange={e=>setPreviewFiles(e.target.files)} className="mt-2 text-[12px] w-full" />
-            <p className="text-[10px] text-zinc-500 mt-1">Le système génère un flipbook à feuilleter en aperçu sur page produit. 5 pages gratuites visibles, reste verrouillé après achat.</p>
+            <p className="text-[10px] text-zinc-500 mt-1">Les images servent de secours. Si un PDF est chargé, le flipbook le rend directement et protège la lecture à partir de la page 8.</p>
             {previewUrls.length>0 && <div className="mt-3 grid grid-cols-5 gap-2">{previewUrls.map((url,i)=><img key={i} src={url} alt={`preview ${i}`} className="w-full h-20 object-cover rounded border" />)}</div>}
             <div className="text-[11px] mt-2">{previewUrls.length}/10 images</div>
           </div>
@@ -222,7 +222,7 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
           <button type="submit" disabled={uploading} className="h-11 px-6 rounded-full bg-[#0A1931] text-white text-[13px] font-bold disabled:opacity-60">{uploading?"Upload & Enregistrement...":editingMag?"Enregistrer les modifications":"Créer le magazine"}</button>
           <button type="button" onClick={onClose} className="h-11 px-6 rounded-full border text-[13px]">Annuler</button>
         </div>
-        <p className="text-[10px] text-zinc-500 mt-3">Le flipbook aperçu sera généré à partir des 10 premières pages uploadées. Les PDF dans les 3 langues seront disponibles après achat version numérique. Les audios dans 12 langues après achat version audio. Couverture upload direct, pas URL.</p>
+        <p className="text-[10px] text-zinc-500 mt-3">Le flipbook utilise en priorité le PDF de la langue détectée du visiteur, puis le PDF français en secours. Les pages 1 à 7 sont accessibles en aperçu et la page 8 est protégée. Les images restent facultatives. Les audios dans 12 langues restent disponibles selon la version achetée.</p>
       </form>
     </div>
   );

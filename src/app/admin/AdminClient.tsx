@@ -159,9 +159,18 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
   };
 
   const handleDeleteMag = async (id:string) => {
-    if (!confirm("Supprimer ce magazine ?")) return;
-    const res = await fetch(`/api/admin/magazines?id=${id}`, { method:"DELETE" });
-    if (res.ok) fetchMagazines();
+    if (!confirm("Supprimer ce magazine ? Cette action est irréversible.")) return;
+    setMessage("Suppression du magazine en cours…");
+    try {
+      const res = await fetch(`/api/admin/magazines?id=${encodeURIComponent(id)}`, { method: "DELETE", credentials: "include" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `Suppression impossible (${res.status})`);
+      setMagazines((items) => items.filter((item) => item.id !== id));
+      setMessage("Magazine supprimé ✅");
+      await fetchMagazines();
+    } catch (error) {
+      setMessage(`Erreur de suppression : ${error instanceof Error ? error.message : "réessayez"}`);
+    }
   };
 
   const handleChangeRole = async (id:string, role:string) => {

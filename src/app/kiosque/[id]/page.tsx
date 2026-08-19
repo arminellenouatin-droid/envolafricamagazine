@@ -33,6 +33,7 @@ export default function MagazineDetailPage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [currency, setCurrency] = useState("XOF");
   const [countryCode, setCountryCode] = useState("BJ");
+  const [localeLanguage, setLocaleLanguage] = useState("fr");
   const [paymentMethods, setPaymentMethods] = useState(() => getAvailablePaymentMethods("BJ", "XOF"));
 
   useEffect(()=>{
@@ -60,9 +61,11 @@ export default function MagazineDetailPage() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/geo").then((response) => response.json()).then((data: { currency?: string; countryCode?: string }) => {
+    fetch("/api/geo").then((response) => response.json()).then((data: { currency?: string; countryCode?: string; language?: string }) => {
       setCurrency(data.currency || "XOF");
       setCountryCode(data.countryCode || "BJ");
+      const detected = String(data.language || navigator.language || "fr").toLowerCase().split("-")[0];
+      setLocaleLanguage(["fr", "en", "es"].includes(detected) ? detected : "fr");
     }).catch(() => { setCurrency("XOF"); setCountryCode("BJ"); });
   }, []);
 
@@ -270,7 +273,7 @@ export default function MagazineDetailPage() {
           <Link href="/kiosque" className="mt-2 block text-center text-[11px] font-bold uppercase tracking-[.12em] text-[#9e001f] hover:underline sm:hidden">Voir tous les numéros ↗</Link>
         </section>}
       </main>
-      {previewOpen && <PreviewFlipbook title={magazine.title} cover={magazine.cover} pages={magazine.previewImages} onClose={() => setPreviewOpen(false)} onPurchase={() => { setPreviewOpen(false); document.getElementById("purchase-options-title")?.scrollIntoView({ behavior: "smooth", block: "center" }); }} />}
+      {previewOpen && <PreviewFlipbook title={magazine.title} cover={magazine.cover} pages={magazine.previewImages} pdfUrl={magazine.pdfs?.[localeLanguage] || magazine.pdfs?.fr} language={localeLanguage} onClose={() => setPreviewOpen(false)} onPurchase={() => { setPreviewOpen(false); document.getElementById("purchase-options-title")?.scrollIntoView({ behavior: "smooth", block: "center" }); }} />}
     </div>
   );
 }
