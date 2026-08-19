@@ -95,13 +95,19 @@ export async function getUnifiedNotifications(userId: string) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false as const, notifications: [] as UnifiedNotification[], unreadCount: 0 };
   const [globalResult, wabResult, jobsResult, awardsResult] = await Promise.all([
-    supabase.from("notifications").select("id,platform,type,title,body,link,read_at,created_at").eq("profile_id", userId).order("created_at", { ascending: false }).limit(100),
+    supabase.from("notifications").select("id,platform,type,title,body,link,entity_type,entity_id,read_at,created_at").eq("profile_id", userId).order("created_at", { ascending: false }).limit(100),
     supabase.from("wab_notifications").select("id,type,title,body,href,read_at,created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(50),
     supabase.from("jobs_notifications").select("id,type,title,body,href,read_at,created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(50),
     supabase.from("awards_notifications").select("id,type,title,body,link,read_at,created_at").eq("profile_id", userId).order("created_at", { ascending: false }).limit(50),
   ]);
+  const notificationMessageIds = (globalResult.data ?? []).filter((item) => item.entity_type === "wab_message" && typeof item.entity_id === "string").map((item) => item.entity_id as string);
+  const notificationMessages = notificationMessageIds.length ? await supabase.from("wab_messages").select("id,sender_id").in("id", notificationMessageIds) : { data: [] as Array<{ id: string; sender_id: string | null }> };
+  const notificationSenderIds = Array.from(new Set((notificationMessages.data ?? []).map((item) => item.sender_id).filter((id): id is string => typeof id === "string")));
+  const notificationProfiles = notificationSenderIds.length ? await supabase.from("users").select("id,nom,prenom,avatar").in("id", notificationSenderIds) : { data: [] as Array<{ id: string; nom?: string | null; prenom?: string | null; avatar?: string | null }> };
+  const notificationSenderByMessage = new Map((notificationMessages.data ?? []).map((item) => [item.id, item.sender_id]));
+  const notificationProfileById = new Map((notificationProfiles.data ?? []).map((profile) => [profile.id, { name: `${profile.prenom || ""} ${profile.nom || ""}`.trim() || null, avatar: profile.avatar || null }]));
   const notifications = [
-    ...(globalResult.data ?? []).map((item) => mapNotification(item, "system")),
+    ...(globalResult.data ?? []).map((item) => { const senderId = typeof item.entity_id === "string" ? notificationSenderByMessage.get(item.entity_id) : null; const profile = senderId ? notificationProfileById.get(senderId) : undefined; return mapNotification({ ...item, actor_id: senderId, actor_name: profile?.name, actor_avatar: profile?.avatar }, "system"); }),
     ...(wabResult.data ?? []).map((item) => mapNotification(item, "wab")),
     ...(jobsResult.data ?? []).map((item) => mapNotification(item, "jobs")),
     ...(awardsResult.data ?? []).map((item) => mapNotification(item, "awards")),
