@@ -3,6 +3,7 @@ import { readCrowdDB, writeCrowdDB } from "@/lib/crowdfunding-db";
 import { v4 as uuidv4 } from "uuid";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { optimizeImageBuffer } from "@/lib/server-media-optimizer";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -29,15 +30,14 @@ export async function POST(req: NextRequest) {
     const allowedTypes = ["image/jpeg","image/png","image/webp","application/pdf","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
     // On autorise tout pour MVP, mais on log
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const ext = path.extname(file.name) || ".pdf";
-    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const fileName = `${Date.now()}_${safeName}`;
+    const originalBuffer = Buffer.from(await file.arrayBuffer());
+    const optimized = await optimizeImageBuffer(originalBuffer, file.name, file.type);
+    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_").replace(/\.[^.]+$/, "");
+    const fileName = `${Date.now()}_${safeName}.${optimized.extension}`;
     const uploadDir = path.join(process.cwd(), "public", "uploads", "crowdfunding", projetId, type);
     await mkdir(uploadDir, { recursive: true });
     const filePath = path.join(uploadDir, fileName);
-    await writeFile(filePath, buffer);
+    await writeFile(filePath, optimized.buffer);
     const publicUrl = `/uploads/crowdfunding/${projetId}/${type}/${fileName}`;
 
     const db = readCrowdDB();
@@ -48,8 +48,10 @@ export async function POST(req: NextRequest) {
       type: type as any,
       nom: file.name,
       url: publicUrl,
-      taille: file.size,
-      mimeType: file.type,
+      taille: optimized.finalSize,
+      tailleOriginale: optimized.originalSize,
+      optimise: optimized.optimized,
+      mimeType: optimized.contentType,
       createdAt: new Date().toISOString(),
       statut: "en_attente_verification" as const
     };

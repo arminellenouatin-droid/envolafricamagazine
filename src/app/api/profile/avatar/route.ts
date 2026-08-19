@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { updateUserAvatar } from "@/lib/core-db";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { optimizeImageBuffer } from "@/lib/server-media-optimizer";
 
 export const dynamic = "force-dynamic";
 
@@ -20,9 +21,9 @@ export async function POST(request: Request) {
     if (!supabase) return NextResponse.json({ error: "Stockage de profil temporairement indisponible" }, { status: 503 });
     const bucket = "avatars";
     await supabase.storage.createBucket(bucket, { public: true }).catch(() => undefined);
-    const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
-    const filePath = `${user.id}/avatar-${Date.now()}.${extension}`;
-    const upload = await supabase.storage.from(bucket).upload(filePath, Buffer.from(await file.arrayBuffer()), { contentType: file.type, upsert: true });
+    const optimized = await optimizeImageBuffer(Buffer.from(await file.arrayBuffer()), file.name, file.type);
+    const filePath = `${user.id}/avatar-${Date.now()}.${optimized.extension}`;
+    const upload = await supabase.storage.from(bucket).upload(filePath, optimized.buffer, { contentType: optimized.contentType, upsert: true });
     if (upload.error) throw upload.error;
     const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(filePath);
     const updatedUser = await updateUserAvatar(user.id, publicData.publicUrl);
