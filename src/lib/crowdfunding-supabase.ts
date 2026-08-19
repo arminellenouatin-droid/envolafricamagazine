@@ -8,16 +8,30 @@ export function mapCrowdProject(row: Record<string, unknown>): CrowdProject {
   };
 }
 
-export async function getCrowdProjects(filters: { secteur?: string | null; pays?: string | null; risque?: string | null; statut?: string | null; id?: string | null; }) {
+type CrowdProjectFilters = { secteur?: string | null; pays?: string | null; risque?: string | null; statut?: string | null; id?: string | null; type?: string | null; cursor?: string | null; limit?: number };
+
+export async function getCrowdProjects(filters: CrowdProjectFilters) {
   const client = getSupabaseAdmin();
-  if (!client) return { configured: false as const, projets: [] as CrowdProject[] };
-  let query = client.from("crowdfunding_projects").select("*").order("created_at", { ascending: false }).limit(500);
+  if (!client) return { configured: false as const, projets: [] as CrowdProject[], nextCursor: null as string | null, boostedIds: [] as string[] };
+  const limit = Math.min(Math.max(filters.limit || 12, 1), 30);
+  let query = client.from("crowdfunding_projects").select("*").order("created_at", { ascending: false }).limit(limit + 1);
   if (filters.id) query = query.eq("id", filters.id);
   if (filters.secteur && filters.secteur !== "all") query = query.eq("secteur", filters.secteur);
   if (filters.pays && filters.pays !== "all") query = query.eq("pays", filters.pays);
   if (filters.risque && filters.risque !== "all") query = query.eq("niveau_risque", filters.risque);
   if (filters.statut && filters.statut !== "all") query = query.eq("statut", filters.statut);
+  if (filters.type && filters.type !== "all") query = query.contains("types_financement", [filters.type]);
+  if (filters.cursor) query = query.lt("created_at", filters.cursor);
   const { data, error } = await query;
   if (error) throw error;
-  return { configured: true as const, projets: (data || []).map((row) => mapCrowdProject(row as Record<string, unknown>)) };
+  const rows = data || [];
+  const hasMore = rows.length > limit;
+  const pageRows = rows.slice(0, limit);
+  const projectIds = pageRows.map((row) => String((row as Record<string, unknown>).id));
+  const now = new Date().toISOString();
+  const { data: boosts } = await client.from("crowdfunding_boosts").select("project_id,ends_at").eq("status", "active").gt("ends_at", now).in("project_id", projectIds.length ? projectIds : ["00000000-0000-0000-0000-000000000000"]);
+  const boostedIds = (boosts || []).map((boost) => String(boost.project_id));
+  const boostedSet = new Set(boostedIds);
+  const sortedRows = [...pageRows].sort((a, b) => Number(boostedSet.has(String((b as Record<string, unknown>).id))) - Number(boostedSet.has(String((a as Record<string, unknown>).id))));
+  return { configured: true as const, projets: sortedRows.map((row) => mapCrowdProject(row as Record<string, unknown>)), nextCursor: hasMore && pageRows.length ? String((pageRows[pageRows.length - 1] as Record<string, unknown>).created_at) : null, boostedIds };
 }

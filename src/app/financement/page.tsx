@@ -1,23 +1,52 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import type { CrowdProject } from "@/lib/crowdfunding-db";
 
 export default function CrowdFundingPage() {
-  const [projets, setProjets] = useState<any[]>([]);
+  const [projets, setProjets] = useState<CrowdProject[]>([]);
+  const [now] = useState(() => Date.now());
   const [filtreSecteur, setFiltreSecteur] = useState("all");
   const [filtreType, setFiltreType] = useState("all");
   const [filtrePays, setFiltrePays] = useState("all");
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(()=>{
-    fetch("/api/crowdfunding/projects").then(r=>r.json()).then(d=>setProjets(d.projets||[]));
-  },[]);
+  const loadProjects = useCallback(async (reset = false) => {
+    if (loading || (!reset && !hasMore)) return;
+    setLoading(true);
+    const params = new URLSearchParams({ limit: "12", statut: "active" });
+    if (filtreSecteur !== "all") params.set("secteur", filtreSecteur);
+    if (filtreType !== "all") params.set("type", filtreType);
+    if (filtrePays !== "all") params.set("pays", filtrePays);
+    if (!reset && nextCursor) params.set("cursor", nextCursor);
+    try {
+      const response = await fetch(`/api/crowdfunding/projects?${params.toString()}`, { cache: "no-store" });
+      const data = await response.json();
+      const incoming = Array.isArray(data.projets) ? data.projets as CrowdProject[] : [];
+      setProjets((current) => reset ? incoming : [...current, ...incoming.filter((item) => !current.some((existing) => existing.id === item.id))]);
+      setNextCursor(data.nextCursor || null);
+      setHasMore(Boolean(data.nextCursor));
+    } finally {
+      setLoading(false);
+    }
+  }, [filtrePays, filtreSecteur, filtreType, hasMore, loading, nextCursor]);
 
-  const filtered = projets.filter(p=>{
-    if (filtreSecteur!=="all" && p.secteur!==filtreSecteur) return false;
-    if (filtreType!=="all" && !p.typesFinancement.includes(filtreType)) return false;
-    if (filtrePays!=="all" && p.pays!==filtrePays) return false;
-    return true;
-  });
+  // Les filtres déclenchent volontairement un nouveau chargement et réinitialisent la liste.
+  // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
+  useEffect(() => { void loadProjects(true); }, [filtrePays, filtreSecteur, filtreType]);
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver((entries) => { if (entries[0]?.isIntersecting) void loadProjects(false); }, { rootMargin: "600px" });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [loadProjects]);
+
+  const filtered = projets;
 
   return (
     <div className="bg-[#fcf9f8] min-h-screen">
@@ -26,7 +55,7 @@ export default function CrowdFundingPage() {
         <div className="absolute -top-32 -right-32 w-[500px] h-[500px] bg-[#9e001f]/20 rounded-full blur-[80px]"></div>
         <div className="max-w-[1280px] mx-auto px-5 md:px-[64px] relative z-10">
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/10 rounded-full px-4 py-1.5 text-[11px] font-bold tracking-wider uppercase">AfricaCrowdFunding • Simple • Sûr • Temps réel</div>
-          <h1 className="text-[36px] md:text-[52px] font-black leading-[0.9] mt-6 max-w-[800px]" style={{ fontFamily: "Montserrat" }}>Financez l'Afrique qui <span className="text-[#ffdad8]">entreprend</span></h1>
+          <h1 className="text-[36px] md:text-[52px] font-black leading-[0.9] mt-6 max-w-[800px]" style={{ fontFamily: "Montserrat" }}>Financez l&apos;Afrique qui <span className="text-[#ffdad8]">entreprend</span></h1>
           <p className="text-[#e4e2e1] mt-4 max-w-[640px] leading-7">Porteurs de projets présentent leurs idées, investisseurs les aident via 3 façons : <strong className="text-white">Don</strong> (sans retour), <strong className="text-white">Prise de part</strong> (devient propriétaire petite partie), <strong className="text-white">Prêt</strong> (remboursé avec intérêt). Suivi temps réel de chaque collecte.</p>
           
           <div className="mt-8 grid md:grid-cols-3 gap-4 max-w-[800px]">
@@ -48,20 +77,20 @@ export default function CrowdFundingPage() {
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#5c403f]">Filtres :</span>
           <select value={filtreSecteur} onChange={e=>setFiltreSecteur(e.target.value)} className="h-10 rounded-full border border-[#e5bdbb] bg-white px-4 text-[13px]"><option value="all">Tous secteurs</option><option>Agroalimentaire</option><option>Tech</option><option>Énergie</option><option>Éducation</option><option>Santé</option></select>
           <select value={filtreType} onChange={e=>setFiltreType(e.target.value)} className="h-10 rounded-full border border-[#e5bdbb] bg-white px-4 text-[13px]"><option value="all">Tous types</option><option value="don">Don</option><option value="prise_part">Prise de part</option><option value="pret">Prêt</option></select>
-          <select value={filtrePays} onChange={e=>setFiltrePays(e.target.value)} className="h-10 rounded-full border border-[#e5bdbb] bg-white px-4 text-[13px]"><option value="all">Tous pays</option><option value="BJ">Bénin</option><option value="CI">Côte d'Ivoire</option><option value="SN">Sénégal</option><option value="NG">Nigeria</option></select>
-          <span className="text-[12px] text-[#5c403f] ml-auto">{filtered.length} projets • Suivi temps réel</span>
+          <select value={filtrePays} onChange={e=>setFiltrePays(e.target.value)} className="h-10 rounded-full border border-[#e5bdbb] bg-white px-4 text-[13px]"><option value="all">Tous pays</option><option value="BJ">Bénin</option><option value="CI">Côte d&apos;Ivoire</option><option value="SN">Sénégal</option><option value="NG">Nigeria</option></select>
+          <span className="text-[12px] text-[#5c403f] ml-auto">{filtered.length} campagnes affichées • Suivi temps réel</span>
         </div>
       </div>
 
       {/* Projets */}
       <div id="projets" className="max-w-[1280px] mx-auto px-5 md:px-[64px] py-10">
         <div className="grid md:grid-cols-3 gap-6">
-          {filtered.map((p:any)=> {
-            const pct = Math.round((p.montantCollecte / p.montantRecherche)*100);
-            const reste = Math.ceil((new Date(p.dateFin).getTime() - Date.now())/86400000);
+          {filtered.map((p: CrowdProject) => {
+            const pct = p.montantRecherche > 0 ? Math.round((p.montantCollecte / p.montantRecherche)*100) : 0;
+            const reste = Math.ceil((new Date(p.dateFin).getTime() - now)/86400000);
             return (
               <Link key={p.id} href={`/financement/projets/${p.id}`} className="group bg-white rounded-[16px] border border-[#e5bdbb] overflow-hidden hover:shadow-xl transition-all">
-                <div className="aspect-[16/9] relative overflow-hidden bg-[#eae7e7]"><img src={p.images[0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /><div className="absolute top-3 left-3 flex gap-2"><span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${p.statut==="en_cours"?"bg-green-600 text-white":p.statut==="objectif_atteint"?"bg-[#9e001f] text-white":"bg-amber-600 text-white"}`}>{p.statut.replace(/_/g," ")}</span><span className="bg-black/60 text-white text-[10px] px-2 py-1 rounded-full">{p.secteur}</span></div><div className="absolute top-3 right-3 bg-white/90 backdrop-blur text-[10px] font-bold px-2 py-1 rounded-full">{p.niveauRisque} risque</div></div>
+                <div className="aspect-[16/9] relative overflow-hidden bg-[#eae7e7]"><img src={p.images?.[0] || "/covers/envol-africa-cover-01.jpg"} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /><div className="absolute top-3 left-3 flex gap-2"><span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${p.statut==="en_cours"?"bg-green-600 text-white":p.statut==="objectif_atteint"?"bg-[#9e001f] text-white":"bg-amber-600 text-white"}`}>{p.statut.replace(/_/g," ")}</span><span className="bg-black/60 text-white text-[10px] px-2 py-1 rounded-full">{p.secteur}</span></div><div className="absolute top-3 right-3 bg-white/90 backdrop-blur text-[10px] font-bold px-2 py-1 rounded-full">{p.niveauRisque} risque</div></div>
                 <div className="p-5">
                   <h3 className="font-bold text-[16px] leading-tight line-clamp-2 group-hover:text-[#9e001f]">{p.nom}</h3>
                   <p className="text-[12px] text-[#5c403f] mt-2 line-clamp-2">{p.description}</p>
@@ -92,7 +121,10 @@ export default function CrowdFundingPage() {
           })}
         </div>
 
-        {filtered.length===0 && <div className="text-center py-20 text-[#5c403f]">Aucun projet pour ces filtres - Essayez un autre filtre ou <Link href="/financement/dashboard/porteur" className="text-[#9e001f] font-bold">déposez votre projet</Link></div>}
+        {loading && <div className="py-8 text-center text-[#5c403f] text-sm">Chargement des campagnes…</div>}
+        <div ref={sentinelRef} aria-hidden="true" className="h-4" />
+        {!loading && filtered.length === 0 && <div className="text-center py-20 text-[#5c403f]">Aucune campagne active pour ces filtres — <Link href="/financement/dashboard/porteur" className="text-[#9e001f] font-bold">déposez votre projet</Link></div>}
+        {!hasMore && filtered.length > 0 && <div className="text-center py-8 text-[#5c403f] text-xs">Toutes les campagnes disponibles ont été chargées.</div>}
       </div>
 
       {/* Cagnottes */}
@@ -105,7 +137,7 @@ export default function CrowdFundingPage() {
               <div key={i} className="bg-white rounded-xl border p-5">
                 <div className="w-12 h-12 rounded-full bg-[#ffdad8] flex items-center justify-center text-[#9e001f] font-bold">❤️</div>
                 <div className="font-bold mt-3">Cagnotte solidaire {i}</div>
-                <div className="text-[12px] text-[#5c403f] mt-1">Soutenir l'éducation des filles au Bénin - Objectif 1M F CFA</div>
+                <div className="text-[12px] text-[#5c403f] mt-1">Soutenir l&apos;éducation des filles au Bénin - Objectif 1M F CFA</div>
                 <div className="mt-3 h-2 bg-[#f0eded] rounded-full overflow-hidden"><div className="h-full bg-[#9e001f] w-[45%]"></div></div>
                 <div className="mt-2 text-[11px] flex justify-between"><span>450k / 1M F</span><span>23 donateurs</span></div>
               </div>

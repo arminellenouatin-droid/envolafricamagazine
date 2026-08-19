@@ -14,16 +14,18 @@ export async function GET(req: NextRequest) {
   const risque = searchParams.get("risque");
   const statut = searchParams.get("statut");
   const id = searchParams.get("id");
+  const cursor = searchParams.get("cursor");
+  const limit = Number(searchParams.get("limit") || 12);
 
   const supabase = getSupabaseAdmin();
   if (supabase) {
-    const result = await getCrowdProjects({ secteur, pays, risque, statut, id });
+    const result = await getCrowdProjects({ secteur, pays, risque, statut: statut || (id ? null : "active"), type, id, cursor, limit });
     if (id) {
       const projet = result.projets[0];
       if (!projet) return NextResponse.json({ error: "Projet introuvable" }, { status: 404 });
       return NextResponse.json({ projet });
     }
-    return NextResponse.json({ projets: result.projets });
+    return NextResponse.json({ projets: result.projets, nextCursor: result.nextCursor, boostedIds: result.boostedIds });
   }
   const db = readCrowdDB();
   if (id) {
