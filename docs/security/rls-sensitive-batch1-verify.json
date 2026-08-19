@@ -1,0 +1,1 @@
+{"project_id":"rtfjwpytiuvoekomevpu","query":"select schemaname, tablename, rowsecurity from pg_tables where schemaname = 'public' and tablename in ('wab_messages','wab_conversations','downloads_detailed','affiliate_payouts','audit_log','service_requests_exact') order by tablename limit 20;"}

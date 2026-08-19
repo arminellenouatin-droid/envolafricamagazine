@@ -1,0 +1,1 @@
+{"project_id":"rtfjwpytiuvoekomevpu","query":"select table_name, column_name, data_type, is_nullable from information_schema.columns where table_schema = 'public' and table_name in ('wab_messages','wab_conversations','downloads_detailed','affiliate_payouts','audit_log','service_requests_exact') order by table_name, ordinal_position limit 250;"}
