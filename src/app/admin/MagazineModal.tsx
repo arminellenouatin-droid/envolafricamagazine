@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function MagazineModal({ editingMag, onClose, onSaved }: { editingMag?: any, onClose: () => void, onSaved: () => void }) {
   const [form, setForm] = useState({
@@ -20,7 +21,7 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
   const [pdfUrls, setPdfUrls] = useState<Record<string, string>>(editingMag?.pdfs || {});
   const [audioFiles, setAudioFiles] = useState<Record<string, File>>({});
   const [audioUrls, setAudioUrls] = useState<Record<string, string>>(editingMag?.audios || {});
-  const [prices, setPrices] = useState<Record<string, number>>(editingMag?.prices || {
+  const [prices, setPrices] = useState<Record<string, number | "">>(editingMag?.prices || {
     numerique: 10000,
     papier: 16000,
     cd_audio: 5000,
@@ -38,6 +39,17 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
   };
 
   const uploadFile = async (file: File, type: string, lang: string = "", magazineId: string = "temp") => {
+    const useDirectUpload = file.size > 3.5 * 1024 * 1024 || type === "pdf" || type === "audio";
+    if (useDirectUpload) {
+      const prepare = await fetch("/api/upload/signed", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ fileName: file.name, type, lang, magazineId, contentType: file.type || "application/octet-stream" }) });
+      const prepared = await readResponse(prepare);
+      if (!prepare.ok || !prepared.path || !prepared.token) throw new Error(prepared.error || `Préparation de l’upload direct échouée (${prepare.status})`);
+      const browserClient = getSupabaseBrowserClient();
+      if (!browserClient) throw new Error("Le stockage direct n’est pas disponible dans ce navigateur.");
+      const uploaded = await browserClient.storage.from("article-media").uploadToSignedUrl(prepared.path, prepared.token, file, { contentType: file.type || "application/octet-stream", upsert: false });
+      if (uploaded.error) throw new Error(`Upload direct échoué : ${uploaded.error.message}`);
+      return prepared.publicUrl;
+    }
     const fd = new FormData();
     fd.append("file", file);
     fd.append("type", type);
@@ -105,7 +117,7 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
         previewImages: finalPreviewUrls,
         pdfs: finalPdfUrls,
         audios: finalAudioUrls,
-        prices: prices,
+        prices: Object.fromEntries(Object.entries(prices).map(([key, value]) => [key, Number(value || 0)])),
         sommaire: form.sommaire.split("\n").filter((s:string)=>s.trim()),
         featured: form.featured,
         formats: ["numerique","papier","cd_audio","audio_pdf","audio_papier"],
@@ -217,7 +229,7 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
                 {id:"audio_pdf", label:"Audio + PDF"},
                 {id:"audio_papier", label:"Audio + Papier"},
               ].map(f=>(
-                <div key={f.id}><label className="text-[10px] font-bold uppercase">{f.label}</label><div className="flex items-center gap-1 mt-1"><input type="number" value={prices[f.id]||0} onChange={e=>setPrices({...prices, [f.id]: parseInt(e.target.value)||0})} className="w-full h-9 rounded-full border bg-white px-3 text-[13px]" /><span className="text-[11px]">F CFA</span></div></div>
+                <div key={f.id}><label className="text-[10px] font-bold uppercase">{f.label}</label><div className="flex items-center gap-1 mt-1"><input type="number" min="0" value={prices[f.id] ?? ""} onChange={e=>{ const raw = e.target.value; setPrices({...prices, [f.id]: raw === "" ? "" : Math.max(0, Number(raw))}); }} className="w-full h-9 rounded-full border bg-white px-3 text-[13px]" /><span className="text-[11px]">F CFA</span></div></div>
               ))}
             </div>
           </div>
