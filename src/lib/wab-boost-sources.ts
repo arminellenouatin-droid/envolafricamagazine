@@ -1,6 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { readWabDB, writeWabDB } from "@/lib/wab-db";
-import { readCrowdDB } from "@/lib/crowdfunding-db";
 
 export type BoostSourceType = "jobs_offer" | "jobs_candidate" | "crowdfunding_project" | "marketplace_product";
 
@@ -28,18 +27,15 @@ function sourceUrl(sourceType: BoostSourceType, sourceId: string) {
   return `/marketplace/produits/${sourceId}`;
 }
 
-function sourceTags(source: SourceRecord, sourceType: BoostSourceType) {
-  return [sourceType === "jobs_offer" || sourceType === "jobs_candidate" ? "Emploi" : sourceType === "crowdfunding_project" ? "Financement" : "Marketplace", source.category, source.country].filter((value): value is string => Boolean(value));
-}
-
 async function readSupabaseSource(input: SourceInput): Promise<SourceRecord | null> {
-  if (input.sourceType === "crowdfunding_project") {
-    const project = readCrowdDB().projets.find((item) => item.id === input.sourceId && item.porteurId === input.userId);
-    if (!project) return null;
-    return { title: project.nom, description: project.description, country: project.pays, category: project.secteur, image: project.images?.[0], url: sourceUrl(input.sourceType, input.sourceId) };
-  }
   const supabase = getSupabaseAdmin();
   if (!supabase) return null;
+  if (input.sourceType === "crowdfunding_project") {
+    const { data: project } = await supabase.from("crowdfunding_projects").select("nom,description,pays,secteur,images,porteur_id").eq("id", input.sourceId).eq("porteur_id", input.userId).maybeSingle();
+    if (!project) return null;
+    const images = Array.isArray(project.images) ? project.images : [];
+    return { title: project.nom, description: project.description, country: project.pays, category: project.secteur, image: typeof images[0] === "string" ? images[0] : undefined, url: sourceUrl(input.sourceType, input.sourceId) };
+  }
 
   if (input.sourceType === "jobs_offer") {
     const { data } = await supabase.from("jobs_offers").select("title,description,country_name,city,sector,company_name,company_logo_url").eq("id", input.sourceId).eq("created_by", input.userId).maybeSingle();
