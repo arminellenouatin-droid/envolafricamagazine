@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 
 type FlipMode = "single" | "spread";
-type PreviewFlipbookProps = { title: string; cover: string; pages?: string[]; pdfUrl?: string; language?: string; onClose: () => void; onPurchase: () => void };
+type FlipbookProps = { title: string; cover: string; pages?: string[]; pdfUrl?: string; previewUrl?: string; language?: string; onClose: () => void; onPurchase: () => void };
 
-export default function PreviewFlipbook({ title, cover, pages = [], pdfUrl, language = "fr", onClose, onPurchase }: PreviewFlipbookProps) {
+export default function PreviewFlipbook({ title, cover, pages = [], pdfUrl, previewUrl, language = "fr", onClose, onPurchase }: FlipbookProps) {
   const [page, setPage] = useState(1);
   const [pdf, setPdf] = useState<any>(null);
   const [pdfLoading, setPdfLoading] = useState(Boolean(pdfUrl));
@@ -31,7 +31,7 @@ export default function PreviewFlipbook({ title, cover, pages = [], pdfUrl, lang
 
   useEffect(() => {
     let cancelled = false;
-    if (!pdfUrl) { setPdfLoading(false); return; }
+    if (!pdfUrl || previewUrl) { setPdfLoading(false); return; }
     setPdfLoading(true); setPdfError(""); setPdf(null);
     import("pdfjs-dist").then(async (pdfjs) => {
       pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
@@ -40,7 +40,7 @@ export default function PreviewFlipbook({ title, cover, pages = [], pdfUrl, lang
       finally { if (!cancelled) setPdfLoading(false); }
     }).catch(() => { if (!cancelled) { setPdfLoading(false); setPdfError("Le moteur PDF n’est pas disponible dans cet aperçu."); } });
     return () => { cancelled = true; };
-  }, [pdfUrl]);
+  }, [pdfUrl, previewUrl]);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,15 +81,15 @@ export default function PreviewFlipbook({ title, cover, pages = [], pdfUrl, lang
     setTurnDirection(direction); setTurning(true); playTurnSound(); setPage(clamped); window.setTimeout(() => setTurning(false), 460);
   }
 
-  const currentImage = readablePages[page - 1] || cover; const nextImage = readablePages[rightPage - 1] || cover; const usingPdf = Boolean(pdfUrl && pdf && !pdfError); const hasPreview = usingPdf || readablePages.length > 0;
+  const currentImage = readablePages[page - 1] || cover; const nextImage = readablePages[rightPage - 1] || cover; const usingPdf = Boolean(pdfUrl && pdf && !pdfError && !previewUrl); const usingProtectedPreview = Boolean(previewUrl); const hasPreview = usingPdf || usingProtectedPreview || readablePages.length > 0; const previewImage = (number: number) => previewUrl ? `${previewUrl}${previewUrl.includes("?") ? "&" : "?"}page=${number}` : undefined;
   const pageLabel = page === 1 ? "Couverture" : page >= 8 ? "Page 8 protégée" : showSpread ? `${page}–${rightPage} / 7 gratuites` : `${page} / 7 gratuites`;
 
   return <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#1b1c1c]/90 p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="flipbook-title">
     <div className="flex max-h-[98vh] w-full max-w-6xl flex-col overflow-hidden rounded-none sm:rounded-2xl bg-[#f7f3f1] shadow-2xl">
       <header className="flex items-center justify-between gap-4 border-b border-[#e5bdbb] bg-white px-4 py-3 sm:px-6"><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#9e001f]">Aperçu du magazine · {language.toUpperCase()}</p><h2 id="flipbook-title" className="truncate text-sm font-bold text-[#2b2525]">{title}</h2></div><div className="flex items-center gap-2"><div className="hidden rounded-full bg-[#f0eded] p-1 sm:flex"><button type="button" onClick={() => setMode("single")} className={`rounded-full px-3 py-1.5 text-[10px] font-bold ${mode === "single" ? "bg-white text-[#9e001f] shadow-sm" : "text-[#746665]"}`}>1 page</button><button type="button" onClick={() => setMode("spread")} className={`rounded-full px-3 py-1.5 text-[10px] font-bold ${mode === "spread" ? "bg-white text-[#9e001f] shadow-sm" : "text-[#746665]"}`}>2 pages</button></div><button type="button" onClick={() => setSoundEnabled((value) => !value)} className="grid h-10 w-10 place-items-center rounded-full text-[#2b2525] hover:bg-[#f0eded]" aria-label={soundEnabled ? "Désactiver le son de tournage" : "Activer le son de tournage"}><span className="material-symbols-outlined">{soundEnabled ? "volume_up" : "volume_off"}</span></button><button type="button" onClick={onClose} className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-[#2b2525] hover:bg-[#f0eded]" aria-label="Fermer l’aperçu"><span className="material-symbols-outlined">close</span></button></div></header>
       <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-[#2b2525] p-0 sm:p-2 md:p-5"><div className={`relative flex w-full items-center justify-center ${showSpread ? "max-w-[1100px] gap-0" : "max-w-[560px]"} ${turning ? `flipbook-turn-${turnDirection}` : ""}`}>
-        <div className={`relative aspect-[3/4] w-full overflow-hidden bg-white shadow-2xl ${showSpread ? "rounded-l-md" : "rounded-md"}`}><canvas ref={canvasLeftRef} className={`${usingPdf && !isBlocked(page) ? "block" : "hidden"} h-full w-full object-contain`} aria-label={`${title}, page ${page}`} /><img src={usingPdf ? undefined : currentImage} alt={`${title}, page ${page}`} className={`${usingPdf ? "hidden" : "block"} h-full w-full object-cover ${isBlocked(page) ? "opacity-0" : ""}`} />{!usingPdf && !pdfLoading && !hasPreview && !isBlocked(page) && <div className="absolute inset-0 grid place-items-center p-6 text-center text-sm text-[#746665]">Aucun aperçu n’est encore disponible.</div>}{isBlocked(page) && <LockedPage onPurchase={onPurchase} />}</div>
-        {showSpread && <div className="relative hidden aspect-[3/4] w-full overflow-hidden rounded-r-md bg-white shadow-2xl md:block"><canvas ref={canvasRightRef} className={`${usingPdf && !isBlocked(rightPage) ? "block" : "hidden"} h-full w-full object-contain`} aria-label={`${title}, page ${rightPage}`} /><img src={usingPdf ? undefined : nextImage} alt={`${title}, page ${rightPage}`} className={`${usingPdf ? "hidden" : "block"} h-full w-full object-cover`} />{isBlocked(rightPage) && <LockedPage onPurchase={onPurchase} />}</div>}
+        <div className={`relative aspect-[3/4] w-full overflow-hidden bg-white shadow-2xl ${showSpread ? "rounded-l-md" : "rounded-md"}`}><canvas ref={canvasLeftRef} className={`${usingPdf && !isBlocked(page) ? "block" : "hidden"} h-full w-full object-contain`} aria-label={`${title}, page ${page}`} /><img src={usingPdf || usingProtectedPreview ? previewImage(page) : currentImage} alt={`${title}, page ${page}`} className={`${usingPdf ? "hidden" : "block"} h-full w-full object-contain ${isBlocked(page) ? "opacity-0" : ""}`} />{!usingPdf && !pdfLoading && !hasPreview && !isBlocked(page) && <div className="absolute inset-0 grid place-items-center p-6 text-center text-sm text-[#746665]">Aucun aperçu n’est encore disponible.</div>}{isBlocked(page) && <LockedPage onPurchase={onPurchase} />}</div>
+        {showSpread && <div className="relative hidden aspect-[3/4] w-full overflow-hidden rounded-r-md bg-white shadow-2xl md:block"><canvas ref={canvasRightRef} className={`${usingPdf && !isBlocked(rightPage) ? "block" : "hidden"} h-full w-full object-contain`} aria-label={`${title}, page ${rightPage}`} /><img src={usingPdf || usingProtectedPreview ? previewImage(rightPage) : nextImage} alt={`${title}, page ${rightPage}`} className={`${usingPdf ? "hidden" : "block"} h-full w-full object-contain`} />{isBlocked(rightPage) && <LockedPage onPurchase={onPurchase} />}</div>}
         {turning && <div className={`pointer-events-none absolute inset-y-0 ${turnDirection === "next" ? "right-0" : "left-0"} w-1/2 bg-gradient-to-l from-white/45 to-transparent`} />}{pdfLoading && <div className="absolute inset-0 grid place-items-center rounded-md bg-white/90 p-6 text-center text-sm text-[#746665]">Chargement de l’aperçu PDF…</div>}<span className="absolute bottom-3 left-3 rounded-full bg-[#1b1c1c]/75 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">{pageLabel}</span>
       </div></div>
       <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-[#e5bdbb] bg-white px-4 py-3 sm:px-6"><span className="text-xs text-[#746665]">{pdfError || "Aperçu généré depuis le PDF de l’édition sélectionnée."}</span><div className="flex items-center gap-2"><button type="button" onClick={() => goTo(previousPage(page), "prev")} disabled={page === 1 || turning} className="grid h-10 w-10 place-items-center rounded-full border border-[#d8c3c1] text-[#2b2525] disabled:opacity-40" aria-label="Page précédente"><span className="material-symbols-outlined">chevron_left</span></button><span className="min-w-24 text-center text-xs font-bold text-[#2b2525]">{pageLabel}</span><button type="button" onClick={() => goTo(nextPage(page), "next")} disabled={page >= maxStart || turning} className="grid h-10 w-10 place-items-center rounded-full border border-[#d8c3c1] text-[#2b2525] disabled:opacity-40" aria-label="Page suivante"><span className="material-symbols-outlined">chevron_right</span></button></div></footer>

@@ -55,9 +55,9 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
       if (!prepare.ok || !prepared.path || !prepared.token) throw new Error(prepared.error || `Préparation de l’upload direct échouée (${prepare.status})`);
       const browserClient = getSupabaseBrowserClient();
       if (!browserClient) throw new Error("Le stockage direct n’est pas disponible dans ce navigateur.");
-      const uploaded = await browserClient.storage.from("article-media").uploadToSignedUrl(prepared.path, prepared.token, file, { contentType: file.type || "application/octet-stream", upsert: false });
+      const uploaded = await browserClient.storage.from(prepared.bucket || "article-media").uploadToSignedUrl(prepared.path, prepared.token, file, { contentType: file.type || "application/octet-stream", upsert: false });
       if (uploaded.error) throw new Error(`Upload direct échoué : ${uploaded.error.message}`);
-      return prepared.publicUrl;
+      return type === "pdf" ? (prepared.privateRef || `private-pdf://${prepared.path}`) : prepared.publicUrl;
     }
     const fd = new FormData();
     fd.append("file", file);

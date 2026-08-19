@@ -273,7 +273,7 @@ export default function MagazineDetailPage() {
           <Link href="/kiosque" className="mt-2 block text-center text-[11px] font-bold uppercase tracking-[.12em] text-[#9e001f] hover:underline sm:hidden">Voir tous les numéros ↗</Link>
         </section>}
       </main>
-      {previewOpen && <PreviewFlipbook title={magazine.title} cover={magazine.cover} pages={magazine.previewImages} pdfUrl={magazine.pdfs?.[localeLanguage] || magazine.pdfs?.fr} language={localeLanguage} onClose={() => setPreviewOpen(false)} onPurchase={() => { setPreviewOpen(false); document.getElementById("purchase-options-title")?.scrollIntoView({ behavior: "smooth", block: "center" }); }} />}
+      {previewOpen && (() => { const selectedPdf = magazine.pdfs?.[localeLanguage] || magazine.pdfs?.fr; const protectedPdf = selectedPdf?.startsWith("private-pdf://") ? `/api/magazines/${encodeURIComponent(id)}/preview?lang=${encodeURIComponent(localeLanguage)}` : undefined; return <PreviewFlipbook title={magazine.title} cover={magazine.cover} pages={magazine.previewImages} pdfUrl={protectedPdf ? undefined : selectedPdf} previewUrl={protectedPdf} language={localeLanguage} onClose={() => setPreviewOpen(false)} onPurchase={() => { setPreviewOpen(false); document.getElementById("purchase-options-title")?.scrollIntoView({ behavior: "smooth", block: "center" }); }} />; })()}
     </div>
   );
 }

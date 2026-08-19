@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyDownloadToken } from "@/lib/download";
 import { findMagazineById, findUserById, listOrders } from "@/lib/core-db";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 export async function GET(req: NextRequest, context: { params: Promise<{ token: string }> }) {
   const { token } = await context.params;
@@ -27,14 +28,22 @@ export async function GET(req: NextRequest, context: { params: Promise<{ token: 
   const magazine = payload.magazineId ? await findMagazineById(payload.magazineId) : null;
   if (!magazine) return NextResponse.json({ error: "Magazine introuvable" }, { status: 404 });
 
-  // Génère une URL de téléchargement temporaire (mock)
-  // En prod: créer un signed URL S3 avec exp 5 min
+  const selectedFile = magazine.pdfs?.[payload.format === "numerique" ? "fr" : (payload.format || "fr")] || magazine.pdfs?.fr;
+  let downloadUrl = selectedFile || magazine.cover;
+  const privateMatch = selectedFile ? /^private-pdf:\/\/([^/]+)\/(.+)$/.exec(selectedFile) : null;
+  if (privateMatch) {
+    const client = getSupabaseAdmin();
+    if (!client) return NextResponse.json({ error: "Stockage privé indisponible" }, { status: 503 });
+    const signed = await client.storage.from(privateMatch[1]).createSignedUrl(privateMatch[2], 300);
+    if (signed.error || !signed.data?.signedUrl) return NextResponse.json({ error: "Impossible de générer le lien temporaire" }, { status: 503 });
+    downloadUrl = signed.data.signedUrl;
+  }
   return NextResponse.json({
     success: true,
     message: "Lien sécurisé valide",
     magazine: { id: magazine.id, title: magazine.title, numero: magazine.numero },
-    expiresAt: new Date(payload.exp * 1000).toISOString(),
-    downloadUrl: magazine.pdfs?.[payload.format === "numerique" ? "fr" : (payload.format || "fr")] || magazine.cover,
+    expiresAt: new Date(Math.min(payload.exp, Math.floor(Date.now() / 1000) + 300) * 1000).toISOString(),
+    downloadUrl,
     type: payload.type,
     format: payload.format,
   });

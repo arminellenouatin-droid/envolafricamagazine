@@ -12,6 +12,7 @@
     "supabase:migrate": "node scripts/migrate-to-supabase.js"
   },
   "dependencies": {
+    "@napi-rs/canvas": "^1.0.7",
     "@prisma/client": "^5.22.0",
     "@supabase/supabase-js": "^2.112.2",
     "@types/web-push": "^3.6.4",
