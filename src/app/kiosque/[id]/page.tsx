@@ -125,7 +125,7 @@ export default function MagazineDetailPage() {
     setAdding(true);
     const cart = JSON.parse(localStorage.getItem("eam_cart") || "[]");
     selections.forEach(({ format, language }) => {
-      cart.push({ type: "magazine", magazineId: id, format, language, price: formatPriceInXof[format] || 10000, title: magazine?.title, cover: magazine?.cover, numero: magazine?.numero });
+      cart.push({ type: "magazine", magazineId: id, format, language, price: prices[format] || 10000, title: magazine?.title, cover: magazine?.cover, numero: magazine?.numero });
     });
     localStorage.setItem("eam_cart", JSON.stringify(cart));
     window.dispatchEvent(new Event("storage"));

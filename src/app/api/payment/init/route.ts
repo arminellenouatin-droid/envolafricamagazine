@@ -21,10 +21,11 @@ const FORMAT_PRICES: Record<string, number> = {
   audio_papier: 18000,
 };
 
-function getMagazinePrice(format: string) {
+function getMagazinePrice(magazine: { prices?: Record<string, number>; priceOverrides?: Record<string, number> }, format: string) {
   const testPrice = Number(process.env.EAM_TEST_MAGAZINE_PRICE);
   if (process.env.EAM_PAYMENT_TEST_MODE === "true" && Number.isInteger(testPrice) && testPrice > 0) return testPrice;
-  return FORMAT_PRICES[format] ?? FORMAT_PRICES.numerique;
+  const configured = Number(magazine.priceOverrides?.[format] ?? magazine.prices?.[format]);
+  return Number.isFinite(configured) && configured > 0 ? configured : FORMAT_PRICES[format] ?? FORMAT_PRICES.numerique;
 }
 
 export async function POST(req: NextRequest) {
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
         if (line.type === "magazine") {
           const magazine = magazines.find((candidate) => candidate.id === line.magazineId);
           if (!magazine) return NextResponse.json({ error: "Magazine introuvable" }, { status: 404 });
-          const price = getMagazinePrice(line.format ?? "numerique");
+          const price = getMagazinePrice(magazine, line.format ?? "numerique");
           total += price;
           orderItems.push({ type: "magazine", magazineId: magazine.id, format: line.format ?? "numerique", language: line.language ?? "fr", price });
         } else if (line.type === "subscription") {
