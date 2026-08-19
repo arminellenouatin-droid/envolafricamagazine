@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { isProductionRuntime } from '@/lib/supabase-admin';
 
 const DATA_DIR = path.join(process.cwd(), 'src', 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
@@ -184,6 +185,7 @@ const defaultDB: DB = {
 };
 
 function ensureDataDir() {
+  if (isProductionRuntime()) return;
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
@@ -211,6 +213,9 @@ export function readDB(): DB {
 }
 
 export function writeDB(db: DB) {
+  if (isProductionRuntime()) {
+    throw new Error('Écriture du stockage JSON local désactivée en production. Configurez la persistance Supabase.');
+  }
   ensureDataDir();
   fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
 }
