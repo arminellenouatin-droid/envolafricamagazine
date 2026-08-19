@@ -67,6 +67,8 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
   const [selectedAuthorId, setSelectedAuthorId] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [subscriptionPlans, setSubscriptionPlans] = useState<any[]>(SUBSCRIPTION_PLANS);
+  const [editingPlan, setEditingPlan] = useState<any>(null);
 
   const fetchArticles = async () => { const res = await fetch("/api/admin/articles"); if (res.ok) { const d = await res.json(); setArticles(d.articles); } };
   const fetchMagazines = async () => { const res = await fetch("/api/admin/magazines"); if (res.ok) { const d = await res.json(); setMagazines(d.magazines); } };
@@ -74,6 +76,8 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
   const fetchOrders = async () => { const res = await fetch("/api/admin/orders"); if (res.ok) { const d = await res.json(); setOrders(d.orders); } };
   const fetchComments = async () => { const res = await fetch("/api/comments"); if (res.ok) { const d = await res.json(); setComments(d.comments); } };
   const fetchEditorial = async () => { const res = await fetch("/api/admin/editorial"); if (res.ok) { const d = await res.json(); setAuthors(d.authors || []); setCategories(d.categories || []); } };
+  const fetchSubscriptionPlans = async () => { const res = await fetch("/api/admin/subscription-plans", { credentials: "include" }); const data = await readApiResponse(res); if (res.ok && Array.isArray(data.plans)) setSubscriptionPlans(data.plans); else if (!res.ok) setMessage(`Erreur tarifs : ${data.error || `chargement impossible (${res.status})`}`); };
+  const saveSubscriptionPlan = async (plan: any) => { setMessage("Enregistrement du tarif en cours…"); const res = await fetch("/api/admin/subscription-plans", { method: "PUT", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(plan) }); const data = await readApiResponse(res); if (!res.ok) throw new Error(data.error || `Enregistrement impossible (${res.status})`); setSubscriptionPlans((items) => items.map((item) => item.id === data.plan.id ? data.plan : item)); setEditingPlan(null); setMessage("Tarif enregistré ✅"); };
   const createEditorialAuthor = async (payload: any) => { const res = await fetch("/api/admin/editorial", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "author", ...payload }) }); const d = await res.json().catch(() => ({})); if (!res.ok) throw new Error(d.error || "Création du rédacteur impossible"); setAuthors((items) => [...items, d.author].sort((a, b) => a.name.localeCompare(b.name))); return d.author; };
   const createEditorialCategory = async (payload: any) => { const res = await fetch("/api/admin/editorial", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "category", ...payload }) }); const d = await res.json().catch(() => ({})); if (!res.ok) throw new Error(d.error || "Création de la catégorie impossible"); setCategories((items) => [...items, d.category].sort((a, b) => a.label.localeCompare(b.label))); return d.category; };
   const updateEditorialAuthor = async (id: string, payload: any) => { const res = await fetch("/api/admin/editorial", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "author", id, ...payload }) }); const d = await res.json().catch(() => ({})); if (!res.ok) throw new Error(d.error || "Modification impossible"); setAuthors((items) => items.map((item) => item.id === id ? d.author : item).sort((a, b) => a.name.localeCompare(b.name))); return d.author; };
@@ -94,6 +98,7 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
     if(activeTab==="orders") fetchOrders();
     if(activeTab==="commentaires") fetchComments();
     if(activeTab==="articles" || activeTab==="redacteurs" || activeTab==="categories") fetchEditorial();
+    if(activeTab==="abonnements") fetchSubscriptionPlans();
   },[activePlatform, activeTab]);
 
   const handleCreateArticle = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -383,18 +388,19 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
               <h3 className="font-bold text-[18px]">Abonnements - 4 formules + KPIs + Gestion tarifs (Admin only)</h3>
               <p className="text-[11px] text-zinc-500 mt-1">Mensuel 5000 (2000 1er mois), Annuel 42000 (3500/mois), Chef d'entreprise 20000 (15000 1er), Soutien 600k/an + pack prestige</p>
               <div className="mt-6 grid md:grid-cols-4 gap-4">
-                {SUBSCRIPTION_PLANS.map((p:any)=>(
+                {subscriptionPlans.map((p:any)=>(
                   <div key={p.id} className="rounded-[16px] border p-4">
                     <div className="font-bold text-[14px]">{p.name}</div>
                     <div className="text-[10px] text-zinc-500 mt-1">{p.description}</div>
                     <div className="mt-3 font-black text-[20px]">{p.price.toLocaleString()} F</div>
                     {p.firstMonthPrice && <div className="text-[11px] text-green-700">1er mois {p.firstMonthPrice.toLocaleString()} F</div>}
                     <div className="mt-3 space-y-1 text-[11px]">{p.features.slice(0,3).map((f:string)=><div key={f} className="flex gap-1"><span>✓</span>{f}</div>)}</div>
-                    <button className="mt-4 w-full h-8 rounded-full border text-[11px] font-bold">Éditer tarifs</button>
+                    <button type="button" onClick={() => setEditingPlan({ ...p, features: [...(p.features || [])] })} className="mt-4 w-full h-8 rounded-full border text-[11px] font-bold hover:bg-zinc-50">Éditer tarifs</button>
                   </div>
                 ))}
               </div>
-              <div className="mt-6 p-4 rounded-[12px] bg-amber-50 border border-amber-100 text-[11px] text-amber-900">Règle: tarif 1er mois réduit = règle facturation récurrente J0 promo → J+30 plein, pas coupon. Test Playwright passage 1re→2e échéance obligatoire (BACKLOG Sprint 5). Job cron-subscription-renewal à implémenter pg_cron + Moneroo prélèvement.</div>
+              <div className="mt-6 p-4 rounded-[12px] bg-amber-50 border border-amber-100 text-[11px] text-amber-900">Règle: tarif 1er mois réduit = règle facturation récurrente J0 promo → J+30 plein, pas coupon. Les modifications sont sauvegardées dans Supabase.</div>
+              {editingPlan && <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4"><div className="w-full max-w-[520px] rounded-[22px] bg-white p-6 shadow-2xl"><div className="flex items-center justify-between"><h3 className="font-bold">Modifier le tarif — {editingPlan.name}</h3><button type="button" onClick={() => setEditingPlan(null)} className="grid h-9 w-9 place-items-center rounded-full bg-zinc-100">×</button></div><div className="mt-5 grid gap-3"><label className="text-[11px] font-bold">Tarif principal (F CFA)<input type="number" min="0" value={editingPlan.price} onChange={(event) => setEditingPlan({ ...editingPlan, price: Number(event.target.value) })} className="mt-1 h-11 w-full rounded-full border bg-zinc-50 px-4" /></label><label className="text-[11px] font-bold">Premier mois — facultatif<input type="number" min="0" value={editingPlan.firstMonthPrice ?? ""} onChange={(event) => setEditingPlan({ ...editingPlan, firstMonthPrice: event.target.value === "" ? null : Number(event.target.value) })} className="mt-1 h-11 w-full rounded-full border bg-zinc-50 px-4" /></label><label className="text-[11px] font-bold">Tarif mensuel affiché — facultatif<input type="number" min="0" value={editingPlan.monthlyPrice ?? ""} onChange={(event) => setEditingPlan({ ...editingPlan, monthlyPrice: event.target.value === "" ? null : Number(event.target.value) })} className="mt-1 h-11 w-full rounded-full border bg-zinc-50 px-4" /></label><label className="text-[11px] font-bold">Description<textarea value={editingPlan.description || ""} onChange={(event) => setEditingPlan({ ...editingPlan, description: event.target.value })} rows={3} className="mt-1 w-full rounded-[14px] border bg-zinc-50 p-3" /></label></div><div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setEditingPlan(null)} className="h-10 rounded-full border px-4 text-xs font-bold">Annuler</button><button type="button" onClick={() => saveSubscriptionPlan(editingPlan).catch((error) => setMessage(`Erreur tarif : ${error instanceof Error ? error.message : "réessayez"}`))} className="h-10 rounded-full bg-[#0A1931] px-5 text-xs font-bold text-white">Enregistrer</button></div></div></div>}
             </div>
           </div>
         )}

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SUBSCRIPTION_PLANS } from "@/lib/constants";
 
@@ -8,9 +8,14 @@ export default function AbonnementPage() {
   const [selected, setSelected] = useState<string>("annuel");
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [plans, setPlans] = useState<any[]>(SUBSCRIPTION_PLANS);
+
+  useEffect(() => {
+    fetch("/api/subscription-plans").then((response) => response.json()).then((data) => { if (Array.isArray(data.plans) && data.plans.length) setPlans(data.plans); }).catch(() => {});
+  }, []);
 
   const startSubscriptionCheckout = async (planId: string) => {
-    const plan = SUBSCRIPTION_PLANS.find(p=>p.id===planId);
+    const plan = plans.find(p=>p.id===planId);
     if (!plan || loadingPlan) return;
     setSelected(planId);
     setLoadingPlan(planId);
@@ -48,7 +53,7 @@ export default function AbonnementPage() {
         </div>
 
         <div className="mt-12 grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-[1280px] mx-auto">
-          {SUBSCRIPTION_PLANS.map(plan=>{
+          {plans.map(plan=>{
             const isPopular = plan.popular;
             const price = billing==="monthly" && (plan as any).firstMonthPrice && (plan.id==="mensuel" || plan.id==="entreprise") ? (plan as any).firstMonthPrice : plan.price;
             const fullPrice = plan.price;
@@ -68,7 +73,7 @@ export default function AbonnementPage() {
                   {plan.id==="soutien" && <div className="text-[11px] font-bold uppercase tracking-wide text-[#D4AF37] bg-amber-50 border border-amber-100 rounded-full px-2.5 py-1 inline-block mt-2">Pack Prestige inclus</div>}
                 </div>
                 <ul className="mt-6 space-y-2.5 flex-1">
-                  {plan.features.map(f=>(
+                  {(plan.features || []).map((f: string)=>( 
                     <li key={f} className="flex items-start gap-2 text-[13px] leading-5 text-zinc-700"><span className="w-5 h-5 rounded-full bg-zinc-900 text-white flex items-center justify-center text-[10px] shrink-0 mt-0.5">✓</span>{f}</li>
                   ))}
                 </ul>
