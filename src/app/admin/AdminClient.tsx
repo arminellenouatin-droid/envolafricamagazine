@@ -74,9 +74,11 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
   const [editingPlan, setEditingPlan] = useState<any>(null);
   const [magazineCategories, setMagazineCategories] = useState<any[]>([]);
   const [newMagazineCategory, setNewMagazineCategory] = useState("");
+  const [protectingPdfs, setProtectingPdfs] = useState(false);
 
   const fetchArticles = async () => { const res = await fetch("/api/admin/articles"); if (res.ok) { const d = await res.json(); setArticles(d.articles); } };
   const fetchMagazines = async () => { const res = await fetch("/api/admin/magazines"); if (res.ok) { const d = await res.json(); setMagazines(d.magazines); } };
+  const protectExistingPdfs = async () => { setProtectingPdfs(true); try { const res = await fetch("/api/admin/magazines/protect-pdfs", { method: "POST", credentials: "include" }); const data = await readApiResponse(res); if (!res.ok) throw new Error(data.error || "Migration impossible"); setMessage(`Protection PDF terminée : ${data.migrated?.length || 0} fichier(s) migré(s).`); await fetchMagazines(); } catch (error) { setMessage(`Protection PDF : ${error instanceof Error ? error.message : "échec de la migration"}`); } finally { setProtectingPdfs(false); } };
   const fetchUsers = async () => { const res = await fetch("/api/admin/users"); if (res.ok) { const d = await res.json(); setUsers(d.users); } };
   const fetchOrders = async () => { const res = await fetch("/api/admin/orders"); if (res.ok) { const d = await res.json(); setOrders(d.orders); } };
   const fetchComments = async () => { const res = await fetch("/api/comments"); if (res.ok) { const d = await res.json(); setComments(d.comments); } };
@@ -336,7 +338,7 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
                 <h3 className="font-bold text-[18px]">Kiosque - Magazines CRUD Complet (Version Corrigée)</h3>
                 <p className="text-[11px] text-zinc-500 mt-1">Numéro, période, titre, description, catégorie, couverture upload direct (pas URL), 10 premières pages flipbook, PDF 3 langues, audio 12 langues, prix par version</p>
               </div>
-              <button onClick={()=>{setEditingMag(null); setShowMagModal(true);}} className="h-9 px-4 rounded-full bg-[#9e001f] text-white text-[12px] font-bold">+ Nouveau numéro</button>
+              <div className="flex flex-wrap justify-end gap-2"><button type="button" onClick={() => void protectExistingPdfs()} disabled={protectingPdfs} className="h-9 rounded-full border border-[#9e001f] px-4 text-[11px] font-bold text-[#9e001f] disabled:opacity-50">{protectingPdfs ? "Protection en cours…" : "Protéger les anciens PDF"}</button><button onClick={()=>{setEditingMag(null); setShowMagModal(true);}} className="h-9 px-4 rounded-full bg-[#9e001f] text-white text-[12px] font-bold">+ Nouveau numéro</button></div>
             </div>
             <div className="mt-6 grid md:grid-cols-4 gap-4">
               {magazines.map((m:any)=>(
