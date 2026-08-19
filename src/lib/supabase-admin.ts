@@ -15,5 +15,7 @@ export function getSupabaseAdmin(): SupabaseClient | null {
 }
 
 export function isProductionRuntime() {
-  return process.env.NODE_ENV === "production";
+  // Vercel peut exposer NODE_ENV différemment selon le contexte de build/runtime.
+  // Toute fonction Vercel doit néanmoins être traitée comme non-inscriptible sur disque.
+  return process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
 }
