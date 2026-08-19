@@ -22,9 +22,12 @@ export type UnifiedNotification = {
   link: string | null;
   readAt: string | null;
   createdAt: string;
+  actorId?: string | null;
+  actorName?: string | null;
+  actorAvatar?: string | null;
 };
 
-export type UnifiedMessage = {
+type UnifiedMessage = {
   id: string;
   platform: string;
   threadId: string | null;
@@ -35,6 +38,8 @@ export type UnifiedMessage = {
   href: string | null;
   readAt: string | null;
   createdAt: string;
+  senderName?: string | null;
+  senderAvatar?: string | null;
 };
 
 export async function createGlobalNotification(input: NotificationInput) {
@@ -60,7 +65,7 @@ export async function createGlobalNotification(input: NotificationInput) {
   return { configured: true as const, created: Boolean(data?.id), id: data?.id ?? null };
 }
 
-function mapNotification(item: { id: string; platform?: string | null; type: string | null; title: string | null; body: string | null; link?: string | null; href?: string | null; read_at: string | null; created_at: string | null }, fallbackPlatform: string): UnifiedNotification {
+function mapNotification(item: { id: string; platform?: string | null; type: string | null; title: string | null; body: string | null; link?: string | null; href?: string | null; read_at: string | null; created_at: string | null; actor_id?: string | null; actor_name?: string | null; actor_avatar?: string | null }, fallbackPlatform: string): UnifiedNotification {
   return {
     id: item.id,
     platform: item.platform || fallbackPlatform,
@@ -70,6 +75,9 @@ function mapNotification(item: { id: string; platform?: string | null; type: str
     link: item.link ?? item.href ?? null,
     readAt: item.read_at,
     createdAt: item.created_at || new Date(0).toISOString(),
+    actorId: item.actor_id ?? null,
+    actorName: item.actor_name ?? null,
+    actorAvatar: item.actor_avatar ?? null,
   };
 }
 
@@ -115,10 +123,13 @@ export async function getUnifiedMessages(userId: string) {
     wabIds.length ? supabase.from("wab_messages").select("id,conversation_id,sender_id,body,read_at,created_at").in("conversation_id", wabIds).neq("sender_id", userId).order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [], error: null }),
     marketplaceIds.length ? supabase.from("marketplace_messages").select("id,conversation_id,sender_id,body,read_at,created_at").in("conversation_id", marketplaceIds).neq("sender_id", userId).eq("moderation_status", "approved").order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [], error: null }),
   ]);
+  const senderIds = Array.from(new Set([...(ecosystemResult.data ?? []).map((item) => item.sender_id), ...(wabMessagesResult.data ?? []).map((item) => item.sender_id), ...(marketplaceMessagesResult.data ?? []).map((item) => item.sender_id)].filter((id): id is string => typeof id === "string")));
+  const senderProfiles = senderIds.length ? await supabase.from("users").select("id,nom,prenom,avatar").in("id", senderIds) : { data: [] as Array<{ id: string; nom?: string | null; prenom?: string | null; avatar?: string | null }> };
+  const profileById = new Map((senderProfiles.data ?? []).map((profile) => [profile.id, { name: `${profile.prenom || ""} ${profile.nom || ""}`.trim() || null, avatar: profile.avatar || null }]));
   const messages: UnifiedMessage[] = [
-    ...(ecosystemResult.data ?? []).map((item) => ({ id: item.id, platform: item.platform, threadId: item.thread_id, senderId: item.sender_id, recipientId: item.recipient_id, subject: item.subject, body: item.body, href: item.href, readAt: item.read_at, createdAt: item.created_at })),
-    ...(wabMessagesResult.data ?? []).map((item) => ({ id: item.id, platform: "wab", threadId: item.conversation_id, senderId: item.sender_id, recipientId: userId, subject: null, body: item.body, href: "/wab/messages", readAt: item.read_at, createdAt: item.created_at })),
-    ...(marketplaceMessagesResult.data ?? []).map((item) => ({ id: item.id, platform: "marketplace", threadId: item.conversation_id, senderId: item.sender_id, recipientId: userId, subject: null, body: item.body, href: "/marketplace/messages", readAt: item.read_at, createdAt: item.created_at })),
+    ...(ecosystemResult.data ?? []).map((item) => ({ id: item.id, platform: item.platform, threadId: item.thread_id, senderId: item.sender_id, recipientId: item.recipient_id, subject: item.subject, body: item.body, href: item.href, readAt: item.read_at, createdAt: item.created_at, senderName: profileById.get(item.sender_id || "")?.name, senderAvatar: profileById.get(item.sender_id || "")?.avatar })),
+    ...(wabMessagesResult.data ?? []).map((item) => ({ id: item.id, platform: "wab", threadId: item.conversation_id, senderId: item.sender_id, recipientId: userId, subject: null, body: item.body, href: `/wab/messages?conversationId=${encodeURIComponent(item.conversation_id)}`, readAt: item.read_at, createdAt: item.created_at, senderName: profileById.get(item.sender_id || "")?.name, senderAvatar: profileById.get(item.sender_id || "")?.avatar })),
+    ...(marketplaceMessagesResult.data ?? []).map((item) => ({ id: item.id, platform: "marketplace", threadId: item.conversation_id, senderId: item.sender_id, recipientId: userId, subject: null, body: item.body, href: "/marketplace/messages", readAt: item.read_at, createdAt: item.created_at, senderName: profileById.get(item.sender_id || "")?.name, senderAvatar: profileById.get(item.sender_id || "")?.avatar })),
   ].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 150);
   return { configured: true as const, messages, unreadCount: messages.filter((item) => !item.readAt).length, errors: [ecosystemResult.error, wabConversationsResult.error, marketplaceConversationsResult.error, wabMessagesResult.error, marketplaceMessagesResult.error].filter(Boolean).length };
 }
