@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { readCrowdDB, writeCrowdDB } from "@/lib/crowdfunding-db";
 import { v4 as uuidv4 } from "uuid";
 import { getCurrentUserFromCookie } from "@/lib/auth";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { getCrowdProjects, mapCrowdProject } from "@/lib/crowdfunding-supabase";
+import type { CrowdProject } from "@/lib/crowdfunding-db";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -12,6 +15,16 @@ export async function GET(req: NextRequest) {
   const statut = searchParams.get("statut");
   const id = searchParams.get("id");
 
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const result = await getCrowdProjects({ secteur, pays, risque, statut, id });
+    if (id) {
+      const projet = result.projets[0];
+      if (!projet) return NextResponse.json({ error: "Projet introuvable" }, { status: 404 });
+      return NextResponse.json({ projet });
+    }
+    return NextResponse.json({ projets: result.projets });
+  }
   const db = readCrowdDB();
   if (id) {
     const projet = db.projets.find(p=>p.id===id);
@@ -21,7 +34,7 @@ export async function GET(req: NextRequest) {
 
   let projets = db.projets;
   if (secteur && secteur!=="all") projets = projets.filter(p=>p.secteur===secteur);
-  if (type && type!=="all") projets = projets.filter(p=>p.typesFinancement.includes(type as any));
+  if (type && type!=="all") projets = projets.filter(p=>p.typesFinancement.includes(type as CrowdProject["typesFinancement"][number]));
   if (pays && pays!=="all") projets = projets.filter(p=>p.pays===pays);
   if (risque && risque!=="all") projets = projets.filter(p=>p.niveauRisque===risque);
   if (statut && statut!=="all") projets = projets.filter(p=>p.statut===statut);
@@ -39,7 +52,7 @@ export async function POST(req: NextRequest) {
     if (!nom || !secteur || !description || !montantRecherche) {
       return NextResponse.json({ error: "Champs requis manquants" }, { status: 400 });
     }
-    const db = readCrowdDB();
+    const supabase = getSupabaseAdmin();
     const newProjet = {
       id: uuidv4(),
       nom,
@@ -65,10 +78,16 @@ export async function POST(req: NextRequest) {
       investisseurs: 0,
       repartition: { dons: 0, prise_part: 0, pret: 0 }
     };
+    if (supabase) {
+      const { data, error } = await supabase.from("crowdfunding_projects").insert({ id: newProjet.id, nom: newProjet.nom, secteur: newProjet.secteur, description: newProjet.description, videos: newProjet.videos, images: newProjet.images, pdf: newProjet.pdf, montant_recherche: newProjet.montantRecherche, montant_collecte: 0, niveau_risque: newProjet.niveauRisque, duree_jours: newProjet.dureeJours, types_financement: newProjet.typesFinancement, statut: newProjet.statut, porteur_id: newProjet.porteurId, pays: newProjet.pays, taux_interet: newProjet.tauxInteret, pourcentage_vendu: newProjet.pourcentageVendu, valorisation: newProjet.valorisation, created_at: newProjet.createdAt, date_fin: newProjet.dateFin, vues: 0, investisseurs: 0, repartition: newProjet.repartition }).select("*").single();
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ success: true, projet: mapCrowdProject(data as Record<string, unknown>) });
+    }
+    const db = readCrowdDB();
     db.projets.push(newProjet);
     writeCrowdDB(db);
     return NextResponse.json({ success: true, projet: newProjet });
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

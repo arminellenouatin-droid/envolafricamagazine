@@ -1,0 +1,1 @@
+{"project_id":"rtfjwpytiuvoekomevpu","query":"select count(*)::integer as project_count, min(created_at) as oldest_created_at, max(created_at) as newest_created_at from public.crowdfunding_projects;"}
