@@ -296,7 +296,7 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
         {showSearch && <div className="border-t border-[#e5bdbb] bg-white p-4"><form onSubmit={(event) => { event.preventDefault(); if (searchQuery.trim()) window.location.assign(`/recherche?q=${encodeURIComponent(searchQuery.trim())}`); }} className="mx-auto flex max-w-[720px] gap-2"><input autoFocus value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Rechercher..." className="h-11 flex-1 rounded-lg border bg-[#f6f3f2] px-4" /><button type="button" onClick={() => setShowSearch(false)} aria-label="Fermer la recherche" className="grid h-11 w-11 place-items-center rounded-full border">×</button></form></div>}
       </header>
 
-      <InboxToolbox open={Boolean(inboxToolboxTab)} tab={inboxToolboxTab || "notifications"} onClose={() => setInboxToolboxTab(null)} />
+      <InboxToolbox open={Boolean(inboxToolboxTab)} tab={inboxToolboxTab || "notifications"} platform={platform.key} onClose={() => setInboxToolboxTab(null)} />
       <CartToolbox open={cartToolboxOpen} onClose={() => setCartToolboxOpen(false)} />
       {isMagazineExperience && <section className="hidden items-center overflow-hidden border-b border-black bg-black py-2 lg:flex">
         <div className="flex w-full items-center px-5 lg:px-[64px]">
