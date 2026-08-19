@@ -329,3 +329,11 @@ h1, h2, h3, h4, .font-display {
 @media (min-width: 1024px) { .kiosque-archive-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4.5rem 2rem; } }
 @media (max-width: 639px) { .kiosque-filter-bar { align-items: stretch; flex-direction: column; } .kiosque-search { width: 100%; } .kiosque-primary-cta, .kiosque-ghost-cta { justify-content: center; width: 100%; } .kiosque-featured-cover { transform: rotate(2deg); } }
 @media (prefers-reduced-motion: reduce) { .kiosque-card, .kiosque-featured-cover { animation: none; transition: none; } .kiosque-card__cover, .kiosque-card__cover img { transition: none; } }
+
+
+/* Flipbook Magazine : couverture indépendante, doubles pages et tournage réaliste. */
+@keyframes flipbook-turn-next { 0% { transform: perspective(1400px) rotateY(0deg); transform-origin: right center; filter: brightness(1); } 45% { transform: perspective(1400px) rotateY(-12deg); filter: brightness(.92); } 100% { transform: perspective(1400px) rotateY(0deg); filter: brightness(1); } }
+@keyframes flipbook-turn-prev { 0% { transform: perspective(1400px) rotateY(0deg); transform-origin: left center; filter: brightness(1); } 45% { transform: perspective(1400px) rotateY(12deg); filter: brightness(.92); } 100% { transform: perspective(1400px) rotateY(0deg); filter: brightness(1); } }
+.flipbook-turn-next { animation: flipbook-turn-next 460ms cubic-bezier(.22,.8,.25,1); transform-style: preserve-3d; }
+.flipbook-turn-prev { animation: flipbook-turn-prev 460ms cubic-bezier(.22,.8,.25,1); transform-style: preserve-3d; }
+@media (prefers-reduced-motion: reduce) { .flipbook-turn-next, .flipbook-turn-prev { animation: none !important; } }
