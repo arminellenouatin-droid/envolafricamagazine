@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { createOffer, readJobsDB } from "@/lib/jobs-db";
 import { createJobsOfferInSupabase, listPublishedJobsOffers } from "@/lib/jobs-supabase";
+import { isProductionRuntime } from "@/lib/supabase-admin";
 
 function normalize(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -16,8 +17,9 @@ export async function GET(request: NextRequest) {
   const city = searchParams.get("city") ?? "";
   const sector = searchParams.get("sector") ?? "";
   const interests = (searchParams.get("interests") ?? "").split(",").map(normalize).filter(Boolean).slice(0, 10);
-  const database = readJobsDB();
   const supabaseOffers = await listPublishedJobsOffers();
+  if (isProductionRuntime() && !supabaseOffers.configured) return NextResponse.json({ error: "Le service Jobs est temporairement indisponible, la persistance Supabase doit être configurée." }, { status: 503 });
+  const database = isProductionRuntime() ? { offers: [] } : readJobsDB();
   // En environnement avec migration Supabase appliquée, la base est prioritaire.
   // Le fallback JSON reste temporairement utile au développement local et à la recette avant migration.
   const sourceOffers = supabaseOffers.offers ?? database.offers
@@ -65,6 +67,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Fallback de développement uniquement, jusqu’à application de la migration Supabase Jobs.
+  if (isProductionRuntime()) return NextResponse.json({ error: "La publication Jobs est temporairement indisponible, la persistance Supabase doit être configurée." }, { status: 503 });
   const database = readJobsDB();
   const publishedByEmployer = database.offers.filter((offer) => offer.createdBy === user.id).length;
   const activeEmployerAccess = database.subscriptions.some((subscription) => subscription.userId === user.id && subscription.audience === "employer" && subscription.status === "active" && (!subscription.endsAt || new Date(subscription.endsAt) > new Date()));

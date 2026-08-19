@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { v4 as uuid } from "uuid";
+import { isProductionRuntime } from "@/lib/supabase-admin";
 
 const DATA_FILE = path.join(process.cwd(), "src", "data", "jobs.json");
 
@@ -154,17 +155,20 @@ function reconcileJobsDatabase(database: JobsDatabase): JobsDatabase {
 export function readJobsDB(): JobsDatabase {
   try {
     if (!fs.existsSync(DATA_FILE)) {
+      if (isProductionRuntime()) throw new Error("Stockage Jobs local indisponible en production.");
       fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
       fs.writeFileSync(DATA_FILE, JSON.stringify(emptyDatabase(), null, 2));
     }
     const parsed = JSON.parse(fs.readFileSync(DATA_FILE, "utf8")) as Partial<JobsDatabase>;
     return reconcileJobsDatabase({ offers: parsed.offers ?? seedOffers, candidates: parsed.candidates ?? [], unlocks: parsed.unlocks ?? [], applications: parsed.applications ?? [], subscriptions: parsed.subscriptions ?? [], boosts: parsed.boosts ?? [], events: parsed.events ?? [] });
   } catch {
+    if (isProductionRuntime()) throw new Error("Persistance Jobs Supabase non configurée en production.");
     return emptyDatabase();
   }
 }
 
 export function writeJobsDB(database: JobsDatabase) {
+  if (isProductionRuntime()) throw new Error("Écriture du stockage Jobs JSON local désactivée en production. Configurez la persistance Supabase.");
   fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
   fs.writeFileSync(DATA_FILE, JSON.stringify(database, null, 2));
 }
