@@ -8,6 +8,7 @@ const countryOptions = [{ code: "", label: "Tous les pays" }, { code: "BJ", labe
 const countryLabels = Object.fromEntries(countryOptions.map((country) => [country.code, country.label]));
 
 type ApiProduct = Partial<MarketplaceProduct> & { id: string; title: string; description?: string; media?: unknown; price_xof?: number; country_code?: string; installment_enabled?: boolean; installment_months_max?: number; is_boosted?: boolean; magazineId?: string; magazineNumero?: number; isMagazine?: boolean; marketplace_suppliers?: { business_name: string; certification_status: string; rating: number } | { business_name: string; certification_status: string; rating: number }[] };
+type MarketplaceView = "products" | "vendors";
 
 function normalizeProduct(product: ApiProduct): MarketplaceProduct {
   const supplier = Array.isArray(product.marketplace_suppliers) ? product.marketplace_suppliers[0] : product.marketplace_suppliers;
@@ -15,6 +16,12 @@ function normalizeProduct(product: ApiProduct): MarketplaceProduct {
 }
 
 function formatXof(value: number) { return new Intl.NumberFormat("fr-FR").format(value) + " XOF"; }
+
+function VendorProductCarousel({ products }: { products: Array<MarketplaceProduct & { isMagazine?: boolean; magazineId?: string; magazineNumero?: number }> }) {
+  const rowRef = useRef<HTMLDivElement | null>(null);
+  const move = (direction: number) => rowRef.current?.scrollBy({ left: direction * 300, behavior: "smooth" });
+  return <div className="relative mt-4"><div ref={rowRef} className="flex snap-x gap-4 overflow-x-auto pb-3 [scrollbar-width:thin]"><div className="grid min-w-[220px] max-w-[220px] shrink-0 snap-start place-items-center rounded-[18px] border border-dashed border-[#cdbb9f] bg-[#fffaf3] p-5 text-center"><span className="material-symbols-outlined text-3xl text-[#a36300]">storefront</span><p className="mt-2 text-xs font-bold text-[#725f4d]">Produits de ce vendeur</p><p className="mt-1 text-[11px] text-[#806c58]">Faites défiler manuellement pour découvrir le catalogue.</p></div>{products.map((product) => <div key={product.id} className="w-[220px] shrink-0 snap-start"><ProductCard product={product} /></div>)}</div><button type="button" onClick={() => move(-1)} aria-label="Produits précédents" className="absolute left-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-[#9e001f] shadow-lg"><span className="material-symbols-outlined">chevron_left</span></button><button type="button" onClick={() => move(1)} aria-label="Produits suivants" className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-[#9e001f] shadow-lg"><span className="material-symbols-outlined">chevron_right</span></button></div>;
+}
 
 function ProductCard({ product }: { product: MarketplaceProduct & { isMagazine?: boolean; magazineId?: string; magazineNumero?: number } }) {
   const [favorite, setFavorite] = useState(false);
@@ -57,6 +64,10 @@ function ProductCard({ product }: { product: MarketplaceProduct & { isMagazine?:
 
 export default function MarketplaceClient() {
   const [products, setProducts] = useState<Array<MarketplaceProduct & { isMagazine?: boolean; magazineId?: string; magazineNumero?: number }>>([]);
+  const [viewMode, setViewMode] = useState<MarketplaceView>("products");
+  const [imageSearchPreview, setImageSearchPreview] = useState("");
+  const [imageSearchLoading, setImageSearchLoading] = useState(false);
+  const [imageSearchMessage, setImageSearchMessage] = useState("");
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState(marketplaceCategories[0]);
   const [country, setCountry] = useState("");
@@ -81,7 +92,32 @@ export default function MarketplaceClient() {
   }, [category, country, query]);
 
   useEffect(() => { loadProducts(0, true); }, [loadProducts]);
-  useEffect(() => { const node = sentinelRef.current; if (!node) return; const observer = new IntersectionObserver((entries) => { if (entries[0].isIntersecting && hasMore && !loading) loadProducts(page + 1); }, { rootMargin: "420px" }); observer.observe(node); return () => observer.disconnect(); }, [hasMore, loading, loadProducts, page]);
+  useEffect(() => { const node = sentinelRef.current; if (!node) return; const observer = new IntersectionObserver((entries) => { if (entries[0].isIntersecting && hasMore && !loading && viewMode === "products") loadProducts(page + 1); }, { rootMargin: "420px" }); observer.observe(node); return () => observer.disconnect(); }, [hasMore, loading, loadProducts, page, viewMode]);
+
+  const handleImageSearch = async (file?: File) => {
+    if (!file) return;
+    setImageSearchLoading(true);
+    setImageSearchMessage("");
+    const objectUrl = URL.createObjectURL(file);
+    setImageSearchPreview(objectUrl);
+    const getAverageColor = (source: string | File) => new Promise<[number, number, number]>((resolve, reject) => {
+      const image = new Image();
+      image.crossOrigin = "anonymous";
+      image.onload = () => { const canvas = document.createElement("canvas"); canvas.width = 1; canvas.height = 1; const context = canvas.getContext("2d"); if (!context) return reject(new Error("canvas")); context.drawImage(image, 0, 0, 1, 1); const pixel = context.getImageData(0, 0, 1, 1).data; resolve([pixel[0], pixel[1], pixel[2]]); };
+      image.onerror = () => reject(new Error("image"));
+      image.src = typeof source === "string" ? source : URL.createObjectURL(source);
+    });
+    try {
+      const target = await getAverageColor(file);
+      const ranked = await Promise.all(products.map(async (product) => { try { const color = await getAverageColor(product.image); const distance = Math.sqrt((target[0] - color[0]) ** 2 + (target[1] - color[1]) ** 2 + (target[2] - color[2]) ** 2); return { product, distance }; } catch { return { product, distance: Number.MAX_SAFE_INTEGER }; } }));
+      setProducts(ranked.sort((a, b) => a.distance - b.distance).map((item) => item.product));
+      setViewMode("products");
+      setImageSearchMessage("Résultats rapprochés par analyse visuelle de l’image.");
+    } catch { setImageSearchMessage("Cette image n’a pas pu être analysée. Essayez un autre fichier."); }
+    finally { setImageSearchLoading(false); }
+  };
+
+  const vendors = Array.from(new Set(products.map((product) => product.supplier))).map((supplier) => ({ supplier, products: products.filter((product) => product.supplier === supplier) }));
 
   return <div className="min-h-screen bg-[#fcf9f8] pb-24 text-[#2a211a]">
     <section className="relative overflow-hidden bg-[#f2e7d8]">
@@ -92,10 +128,10 @@ export default function MarketplaceClient() {
       </div>
     </section>
 
-    <section id="catalogue" className="mx-auto max-w-[1280px] px-5 py-10 md:px-10 lg:px-16"><div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end"><div><p className="font-display text-[11px] font-black uppercase tracking-[0.2em] text-[#a36300]">Le catalogue</p><h2 className="mt-2 font-display text-3xl font-black tracking-[-0.04em]">Trouvez votre prochaine opportunité</h2><p className="mt-2 text-sm text-[#806c58]">Les produits boostés apparaissent en premier, sans remplacer la pertinence de votre recherche.</p></div><div className="flex flex-wrap gap-2"><span className="rounded-full bg-white px-3 py-2 text-[11px] font-bold text-[#725f4d] shadow-sm">Messagerie surveillée</span><span className="rounded-full bg-white px-3 py-2 text-[11px] font-bold text-[#725f4d] shadow-sm">Médias vérifiés</span></div></div>
-      <div className="mt-7 grid gap-3 rounded-[22px] border border-[#eadfce] bg-white p-3 md:grid-cols-[1.6fr_1fr_1fr] md:p-4"><label className="flex h-12 items-center gap-2 rounded-full bg-[#f8f3ed] px-4"><span className="material-symbols-outlined text-[20px] text-[#a36300]">search</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher un produit, une entreprise..." className="min-w-0 flex-1 bg-transparent text-[13px] outline-none" /></label><select value={category} onChange={(event) => setCategory(event.target.value)} className="h-12 rounded-full bg-[#f8f3ed] px-4 text-[12px] font-bold text-[#5d4a39] outline-none">{marketplaceCategories.map((item) => <option key={item}>{item}</option>)}</select><select value={country} onChange={(event) => setCountry(event.target.value)} className="h-12 rounded-full bg-[#f8f3ed] px-4 text-[12px] font-bold text-[#5d4a39] outline-none">{countryOptions.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}</select></div>
+    <section id="catalogue" className="mx-auto max-w-[1280px] px-5 py-10 md:px-10 lg:px-16"><div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end"><div><p className="font-display text-[11px] font-black uppercase tracking-[0.2em] text-[#a36300]">Le catalogue</p><h2 className="mt-2 font-display text-3xl font-black tracking-[-0.04em]">Trouvez votre prochaine opportunité</h2><p className="mt-2 text-sm text-[#806c58]">Les produits boostés apparaissent en premier, sans remplacer la pertinence de votre recherche.</p></div><div className="flex rounded-full border border-[#eadfce] bg-white p-1 shadow-sm"><button type="button" onClick={() => setViewMode("products")} className={`rounded-full px-4 py-2 text-[11px] font-black transition ${viewMode === "products" ? "bg-[#9e001f] text-white" : "text-[#725f4d] hover:bg-[#f8f3ed]"}`}>Produits</button><button type="button" onClick={() => setViewMode("vendors")} className={`rounded-full px-4 py-2 text-[11px] font-black transition ${viewMode === "vendors" ? "bg-[#9e001f] text-white" : "text-[#725f4d] hover:bg-[#f8f3ed]"}`}>Vendeurs</button></div></div>
+      <div className="mt-7 rounded-[22px] border border-[#eadfce] bg-white p-3 md:p-4"><div className="grid gap-3 md:grid-cols-[1.6fr_1fr_1fr]"><label className="flex h-12 items-center gap-2 rounded-full bg-[#f8f3ed] px-4"><span className="material-symbols-outlined text-[20px] text-[#a36300]">search</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher un produit, une entreprise..." className="min-w-0 flex-1 bg-transparent text-[13px] outline-none" /></label><select value={category} onChange={(event) => setCategory(event.target.value)} className="h-12 rounded-full bg-[#f8f3ed] px-4 text-[12px] font-bold text-[#5d4a39] outline-none">{marketplaceCategories.map((item) => <option key={item}>{item}</option>)}</select><select value={country} onChange={(event) => setCountry(event.target.value)} className="h-12 rounded-full bg-[#f8f3ed] px-4 text-[12px] font-bold text-[#5d4a39] outline-none">{countryOptions.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}</select></div><div className="mt-3 flex flex-wrap items-center gap-3 border-t border-[#f0e7dc] pt-3"><label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#cdbb9f] px-4 py-2 text-[11px] font-black text-[#5c3d19] transition hover:bg-[#fff8ed]"><span className="material-symbols-outlined text-[17px]">image_search</span><span>{imageSearchLoading ? "Analyse en cours…" : "Rechercher par image"}</span><input type="file" accept="image/*" className="sr-only" disabled={imageSearchLoading} onChange={(event) => void handleImageSearch(event.target.files?.[0])} /></label>{imageSearchPreview && <img src={imageSearchPreview} alt="Image utilisée pour la recherche" className="h-9 w-9 rounded-lg border border-[#eadfce] object-cover" />}{imageSearchMessage && <span className="text-[11px] font-semibold text-[#806c58]">{imageSearchMessage}</span>}</div></div>
       {error && <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
-      <div className="mt-7 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">{products.map((product) => <ProductCard key={product.id} product={product} />)}</div>
+      {viewMode === "products" ? <div className="mt-7 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">{products.map((product) => <ProductCard key={product.id} product={product} />)}</div> : <div className="mt-7 space-y-8">{vendors.map((vendor) => <section key={vendor.supplier} className="rounded-[24px] border border-[#eadfce] bg-white p-5"><div className="flex items-center justify-between gap-4"><div><p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#a36300]">Vendeur</p><h3 className="mt-1 font-display text-xl font-black text-[#2a211a]">{vendor.supplier}</h3><p className="mt-1 text-xs text-[#806c58]">{vendor.products.length} produit{vendor.products.length > 1 ? "s" : ""} disponible{vendor.products.length > 1 ? "s" : ""}</p></div><span className="material-symbols-outlined text-3xl text-[#087e8b]">storefront</span></div><VendorProductCarousel products={vendor.products} /></section>)}{!vendors.length && <div className="rounded-[24px] border border-dashed border-[#cdbb9f] bg-white p-12 text-center text-sm text-[#806c58]">Aucun vendeur ne correspond aux filtres actuels.</div>}</div>}
       {loading && <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{[1,2,3,4].map((item) => <div key={item} className="h-[390px] animate-pulse rounded-[22px] bg-[#f1e8dc]" />)}</div>}
       {!loading && !products.length && <div className="mt-8 rounded-[24px] border border-dashed border-[#cdbb9f] bg-white p-12 text-center"><span className="material-symbols-outlined text-4xl text-[#a36300]">search_off</span><h3 className="mt-3 font-display text-lg font-black">Aucun produit ne correspond à cette recherche</h3><p className="mt-2 text-sm text-[#806c58]">Essayez une autre catégorie ou recherchez un fournisseur africain.</p></div>}
       <div ref={sentinelRef} className="h-4" />{!hasMore && products.length > 0 && <p className="mt-8 text-center text-[11px] font-bold uppercase tracking-[0.16em] text-[#a18c75]">Vous êtes arrivé au bout du catalogue actuel</p>}
