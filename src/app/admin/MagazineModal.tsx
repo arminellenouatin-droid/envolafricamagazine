@@ -1,14 +1,21 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function MagazineModal({ editingMag, onClose, onSaved }: { editingMag?: any, onClose: () => void, onSaved: () => void }) {
+  const [magazineCategories, setMagazineCategories] = useState<Array<{ id: string; label: string }>>([
+    { id: "edition-normale", label: "Édition Normale" },
+    { id: "edition-speciale", label: "Édition spéciale" },
+    { id: "enquete-speciale", label: "Enquête spéciale" },
+    { id: "hors-serie", label: "Hors série" },
+    { id: "master-class", label: "Master class" },
+  ]);
   const [form, setForm] = useState({
     numero: editingMag?.numero || "",
     periode: editingMag?.periode || "",
     title: editingMag?.title || "",
     description: editingMag?.description || "",
-    category: editingMag?.category || "Economie",
+    category: editingMag?.category || "Édition Normale",
     year: editingMag?.year || new Date().getFullYear(),
     featured: editingMag?.featured || false,
     sommaire: (editingMag?.sommaire || []).join("\n"),
@@ -31,6 +38,8 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const hasPdfFlipbook = Object.keys(pdfFiles).length > 0 || Object.keys(pdfUrls).length > 0;
+
+  useEffect(() => { fetch("/api/admin/magazine-categories", { credentials: "include" }).then((response) => response.json()).then((data) => { if (Array.isArray(data.categories) && data.categories.length) setMagazineCategories(data.categories); }).catch(() => undefined); }, []);
 
   const readResponse = async (res: Response) => {
     const raw = await res.text();
@@ -161,7 +170,7 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
             <div><label className="text-[11px] font-bold uppercase">Numéro *</label><input value={form.numero} onChange={e=>setForm({...form, numero:e.target.value})} placeholder="26" required type="number" className="mt-1 w-full h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" /></div>
             <div><label className="text-[11px] font-bold uppercase">Période *</label><input value={form.periode} onChange={e=>setForm({...form, periode:e.target.value})} placeholder="Mars-Avril 2024 ou Mars 2024" required className="mt-1 w-full h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" /></div>
             <div><label className="text-[11px] font-bold uppercase">Année</label><input value={form.year} onChange={e=>setForm({...form, year:e.target.value})} type="number" className="mt-1 w-full h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" /></div>
-            <div><label className="text-[11px] font-bold uppercase">Catégorie</label><select value={form.category} onChange={e=>setForm({...form, category:e.target.value})} className="mt-1 w-full h-11 rounded-full border bg-zinc-50 px-4 text-[13px]"><option>Economie</option><option>Finance</option><option>Tech</option><option>Entrepreneuriat</option><option>Énergie</option><option>Agro</option><option>Interview</option><option>Analyse</option></select></div>
+            <div><label className="text-[11px] font-bold uppercase">Catégorie Magazine</label><select value={form.category} onChange={e=>setForm({...form, category:e.target.value})} className="mt-1 w-full h-11 rounded-full border bg-zinc-50 px-4 text-[13px]">{magazineCategories.map((category) => <option key={category.id} value={category.label}>{category.label}</option>)}</select></div>
           </div>
 
           <div><label className="text-[11px] font-bold uppercase">Titre *</label><input value={form.title} onChange={e=>setForm({...form, title:e.target.value})} placeholder="Envol Africa N°26 - Spécial Fintech" required className="mt-1 w-full h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" /></div>
