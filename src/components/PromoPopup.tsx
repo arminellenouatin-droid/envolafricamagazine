@@ -37,16 +37,49 @@ const platformFromPath = (pathname: string) => {
 
 const excludedPath = (pathname: string) => ["/auth", "/compte", "/panier", "/moneroo", "/admin", "/wab/admin", "/marketplace/admin"].some((prefix) => pathname.startsWith(prefix));
 
+const FIRST_PLATFORM_INTRO_DELAY = 2 * 60 * 1000;
 const randomDelay = () => 30 * 60 * 1000 + Math.floor(Math.random() * (30 * 60 * 1000 + 1));
 
 export default function PromoPopup() {
   const pathname = usePathname();
   const [show, setShow] = useState(false);
   const [current, setCurrent] = useState<EcosystemExperience | null>(null);
+  const [visitCount, setVisitCount] = useState(1);
   const currentPlatform = useMemo(() => platformFromPath(pathname), [pathname]);
 
   useEffect(() => {
     if (excludedPath(pathname)) return;
+    const introKey = `ea_platform_intro_seen_${currentPlatform}`;
+    const hasSeenPlatform = localStorage.getItem(introKey) === "1";
+    let visibleMs = 0;
+    let lastTick = Date.now();
+    let active = true;
+
+    const showPlatformIntro = () => {
+      if (!active || document.visibilityState !== "visible" || localStorage.getItem(introKey) === "1") return;
+      const visits = Number(localStorage.getItem("ea_ecosystem_visit_count") || 0) + 1;
+      localStorage.setItem("ea_ecosystem_visit_count", String(visits));
+      localStorage.setItem(introKey, "1");
+      localStorage.setItem("ea_ecosystem_popup_last", String(Date.now()));
+      localStorage.setItem("ea_ecosystem_popup_next", String(Date.now() + randomDelay()));
+      setVisitCount(visits);
+      setCurrent(experiences.find((experience) => experience.key === currentPlatform) || experiences[0]);
+      setShow(true);
+    };
+
+    if (!hasSeenPlatform) {
+      const interval = window.setInterval(() => {
+        const now = Date.now();
+        if (document.visibilityState === "visible") visibleMs += now - lastTick;
+        lastTick = now;
+        if (visibleMs >= FIRST_PLATFORM_INTRO_DELAY) {
+          window.clearInterval(interval);
+          showPlatformIntro();
+        }
+      }, 1000);
+      return () => { active = false; window.clearInterval(interval); };
+    }
+
     const now = Date.now();
     const scheduled = Number(localStorage.getItem("ea_ecosystem_popup_next") || 0);
     const nextAt = scheduled > now ? scheduled : now + randomDelay();
@@ -57,18 +90,18 @@ export default function PromoPopup() {
       const visits = Number(localStorage.getItem("ea_ecosystem_visit_count") || 0) + 1;
       localStorage.setItem("ea_ecosystem_visit_count", String(visits));
       const index = (visits + Math.floor(now / (60 * 60 * 1000))) % available.length;
+      setVisitCount(visits);
       setCurrent(available[index]);
       setShow(true);
       localStorage.setItem("ea_ecosystem_popup_last", String(Date.now()));
       localStorage.setItem("ea_ecosystem_popup_next", String(Date.now() + randomDelay()));
     }, Math.max(1000, nextAt - now));
-    return () => window.clearTimeout(timer);
+    return () => { active = false; window.clearTimeout(timer); };
   }, [currentPlatform, pathname]);
 
   const close = () => setShow(false);
   if (!show || !current) return null;
-  const visits = Number(localStorage.getItem("ea_ecosystem_visit_count") || 1);
-  const congratulations = visits <= 1 ? "Félicitations, vous commencez votre découverte de l’écosystème." : visits < 4 ? "Bravo, votre parcours Envol Africa prend forme." : "Félicitations, vous explorez déjà les différentes facettes d’Envol Africa.";
+  const congratulations = visitCount <= 1 ? "Félicitations, vous commencez votre découverte de l’écosystème." : visitCount < 4 ? "Bravo, votre parcours Envol Africa prend forme." : "Félicitations, vous explorez déjà les différentes facettes d’Envol Africa.";
 
   return <div className="fixed inset-0 z-[110] flex items-center justify-center bg-[#151112]/45 p-4 backdrop-blur-[3px]" role="dialog" aria-modal="true" aria-labelledby="ecosystem-popup-title"><div className="relative w-full max-w-[480px] overflow-hidden rounded-[22px] border border-[#e6c9c7] bg-[#fffdfc] shadow-[0_24px_80px_rgba(54,19,24,.26)]"><button type="button" onClick={close} aria-label="Fermer la découverte" className="absolute right-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full bg-white/80 text-[#4a3433] shadow-sm backdrop-blur transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#9e001f]"><span className="material-symbols-outlined">close</span></button><div className="relative overflow-hidden px-6 pb-7 pt-8" style={{ backgroundColor: current.soft }}><div className="absolute -right-16 -top-20 h-48 w-48 rounded-full border-[20px] border-white/50" /><div className="relative"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-white shadow-sm" style={{ color: current.accent }}><span className="material-symbols-outlined text-[26px]">{current.icon}</span></div><p className="mt-5 font-sans text-[10px] font-black uppercase tracking-[0.17em]" style={{ color: current.accent }}>Une nouvelle étape dans votre parcours</p><p className="mt-2 max-w-[360px] font-serif text-[25px] font-semibold leading-[1.05] text-[#292323]">{congratulations}</p></div></div><div className="p-6"><div className="flex items-center gap-2 font-sans text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: current.accent }}><span className="material-symbols-outlined text-[18px]">arrow_forward</span> À découvrir : {current.name}</div><h2 id="ecosystem-popup-title" className="mt-3 font-display text-[22px] font-extrabold leading-tight text-[#292323]">{current.title}</h2><p className="mt-3 text-[14px] leading-6 text-[#635655]">{current.body}</p><div className="mt-6 flex flex-col gap-2 sm:flex-row"><Link href={current.href} onClick={close} className="flex h-12 flex-1 items-center justify-center rounded-xl px-5 font-sans text-[12px] font-black text-white transition hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" style={{ backgroundColor: current.accent }}>Découvrir {current.name} <span className="ml-2">→</span></Link><button type="button" onClick={close} className="h-12 rounded-xl border border-[#ead9d7] px-5 font-sans text-[12px] font-bold text-[#635655] transition hover:border-[#9e001f] hover:text-[#9e001f]">Continuer ici</button></div><p className="mt-4 text-center font-sans text-[10px] text-[#9b8987]">Nous vous proposerons une autre découverte plus tard, sans interrompre votre lecture.</p></div></div></div>;
 }
