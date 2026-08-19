@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
  type Product = {
-  id: string; title: string; description: string; category: string; country_code?: string; country?: string;
+  id: string; title: string; description: string; category: string; country_code?: string; country?: string; product_video_url?: string | null; product_video_mime?: string | null; product_video_size?: number | null;
   city?: string; price_xof?: number; priceXof?: number; image?: string; media?: unknown;
   installment_enabled?: boolean; installment?: boolean; installment_months_max?: number; months?: number;
   is_boosted?: boolean; boosted?: boolean; marketplace_suppliers?: { business_name: string; certification_status: string; rating: number };
@@ -56,8 +56,8 @@ export default function MarketplaceProductPage() {
       <nav className="mb-8 text-xs text-[#806c58]"><Link href="/marketplace" className="hover:text-[#9e001f]">Marketplace</Link> <span className="px-2">›</span> Produit</nav>
       <div className="grid gap-8 lg:grid-cols-[.9fr_1.1fr]">
         <div className="overflow-hidden rounded-[28px] border border-[#eadfce] bg-white shadow-sm">
-          <div className="aspect-[4/3] bg-[#f2e7d8]">{image ? <img src={image} alt={product.title} className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-6xl text-[#a36300]">✦</div>}</div>
-          <div className="flex gap-2 border-t border-[#eadfce] p-4 text-xs text-[#806c58]"><span className="rounded-full bg-[#f5eee4] px-3 py-1">Médias contrôlés</span><span className="rounded-full bg-[#f5eee4] px-3 py-1">Échange protégé</span></div>
+          <div className="aspect-[4/3] bg-[#f2e7d8]">{product.product_video_url ? <video src={product.product_video_url} poster={image || undefined} controls playsInline preload="metadata" className="h-full w-full object-cover" aria-label={`Vidéo de présentation de ${product.title}`} /> : image ? <img src={image} alt={product.title} className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-6xl text-[#a36300]">✦</div>}</div>
+          <div className="flex flex-wrap gap-2 border-t border-[#eadfce] p-4 text-xs text-[#806c58]"><span className="rounded-full bg-[#f5eee4] px-3 py-1">Médias contrôlés</span>{product.product_video_url && <span className="rounded-full bg-[#e9f7f5] px-3 py-1 text-[#087e8b]">Vidéo produit</span>}<span className="rounded-full bg-[#f5eee4] px-3 py-1">Échange protégé</span></div>
         </div>
         <div>
           <div className="flex flex-wrap gap-2"><span className="rounded-full bg-[#ffca63] px-3 py-1 text-[10px] font-black uppercase text-[#513000]">{product.is_boosted || product.boosted ? "Produit boosté" : product.category}</span>{product.certified || supplier?.certification_status === "certified" ? <span className="rounded-full bg-[#e9f7f5] px-3 py-1 text-[10px] font-black uppercase text-[#087e8b]">Fournisseur certifié</span> : null}</div>

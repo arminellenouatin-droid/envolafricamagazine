@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
   if (supabase && category !== MAGAZINE_MARKETPLACE_CATEGORY) {
     let requestQuery = supabase
       .from("marketplace_products")
-      .select("id,title,description,category,country_code,city,price_xof,media,installment_enabled,installment_months_max,is_boosted,boost_ends_at,marketplace_suppliers!inner(business_name,certification_status,rating)")
+      .select("id,title,description,category,country_code,city,price_xof,media,product_video_url,product_video_mime,product_video_size,installment_enabled,installment_months_max,is_boosted,boost_ends_at,marketplace_suppliers!inner(business_name,certification_status,rating)")
       .eq("status", "published")
       .order("is_boosted", { ascending: false })
       .order("created_at", { ascending: false })
