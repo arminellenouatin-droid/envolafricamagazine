@@ -6,6 +6,8 @@ import { getPlatformKey, PLATFORM_CONFIGS, platformOptions, type PlatformConfig 
 import { internalBrowserHref } from "@/lib/internal-browser";
 import { normalizeVisitorLocale, persistVisitorLocale, readPersistedVisitorLocale, type VisitorLocale } from "@/lib/visitor-locale";
 
+type FeaturedArticle = { slug: string; title: string };
+
 const firstLineMenus = [
   { name: "S'abonner", href: "/abonnement", icon: "stars" },
   { name: "Kiosque", href: "/kiosque", icon: "menu_book" },
@@ -110,6 +112,7 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
   const [wabToolsOpen, setWabToolsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [visitorLocale, setVisitorLocale] = useState<VisitorLocale>(() => readPersistedVisitorLocale());
+  const [featuredArticles, setFeaturedArticles] = useState<FeaturedArticle[]>([]);
 
   useEffect(() => {
     const refreshInboxCounts = async () => {
@@ -151,6 +154,16 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
     window.addEventListener("ea-locale-updated", syncLocale);
     return () => window.removeEventListener("ea-locale-updated", syncLocale);
   }, []);
+
+  useEffect(() => {
+    if (platform.key !== "magazine" && platform.key !== "kiosque") { setFeaturedArticles([]); return; }
+    let cancelled = false;
+    fetch("/api/articles?featured=true", { cache: "no-store" })
+      .then((response) => response.ok ? response.json() as Promise<{ articles?: FeaturedArticle[] }> : Promise.reject(new Error("Articles indisponibles")))
+      .then((data) => { if (!cancelled) setFeaturedArticles((data.articles || []).filter((article) => article.slug && article.title).slice(0, 8)); })
+      .catch(() => { if (!cancelled) setFeaturedArticles([]); });
+    return () => { cancelled = true; };
+  }, [platform.key]);
 
   useEffect(() => {
     const readCart = () => {
@@ -280,7 +293,7 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
       {isMagazineExperience && <section className="hidden items-center overflow-hidden border-b border-black bg-black py-2 lg:flex">
         <div className="flex w-full items-center px-5 lg:px-[64px]">
           <span className="mr-4 shrink-0 bg-[#9e001f] px-3 py-1 text-[12px] font-bold tracking-wider text-white">À LA UNE</span>
-          <div className="flex-1 overflow-hidden"><p className="scrolling-ticker text-[13px] font-black text-white" style={{ fontFamily: "Century Gothic, sans-serif" }}>• Transition énergétique Nigeria 12M$ • Sommet UA libre-échange • PIB continental prévisions 2025 • Fintech Kenya • ZLECAf 1,3Md • Cacao 50% transformation locale • Wave 20M utilisateurs</p></div>
+          <div className="flex-1 overflow-hidden"><div className="scrolling-ticker text-[13px] font-black text-white" style={{ fontFamily: "Century Gothic, sans-serif" }}>{featuredArticles.length > 0 ? featuredArticles.map((article, index) => <span key={article.slug}><span aria-hidden="true">• </span><Link href={`/article/${encodeURIComponent(article.slug)}`} className="transition-colors hover:text-[#ffdad8] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ffdad8]">{article.title}</Link>{index < featuredArticles.length - 1 && <span aria-hidden="true"> </span>}</span>) : <span>• Les dernières analyses et opportunités africaines arrivent bientôt</span>}</div></div>
           <div className="ml-4 flex items-center gap-2 whitespace-nowrap text-[12px] font-bold text-white"><span className="material-symbols-outlined text-[16px]">location_on</span>{cityWeather.city} • {cityWeather.temp} {cityWeather.icon}</div>
         </div>
       </section>}
