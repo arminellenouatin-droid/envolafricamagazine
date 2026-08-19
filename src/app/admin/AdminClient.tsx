@@ -5,6 +5,12 @@ import { SUBSCRIPTION_PLANS } from "@/lib/constants";
 import MagazineModal from "./MagazineModal";
 import RichTextEditor from "@/components/RichTextEditor";
 
+async function readApiResponse(response: Response) {
+  const raw = await response.text();
+  if (!raw) return {};
+  try { return JSON.parse(raw); } catch { return { error: raw.slice(0, 300) }; }
+}
+
 type AdminPlatform = "magazine" | "jobs" | "wab" | "marketplace" | "financement" | "awards";
 
 const adminPlatforms: Array<{ id: AdminPlatform; label: string; accent: string; description: string; href: string; modules: string[] }> = [
@@ -148,11 +154,12 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
     };
     if (editingMag) {
       payload.id = editingMag.id;
-      const res = await fetch("/api/admin/magazines", { method:"PUT", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
-      if (res.ok) { setMessage("Magazine modifié ✅"); fetchMagazines(); setShowMagModal(false); setEditingMag(null); }
+      const res = await fetch("/api/admin/magazines", { method:"PUT", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload), credentials: "include" });
+      const data = await readApiResponse(res);
+      if (res.ok) { setMessage("Magazine modifié ✅"); fetchMagazines(); setShowMagModal(false); setEditingMag(null); } else setMessage(`Erreur magazine : ${data.error || `enregistrement impossible (${res.status})`}`);
     } else {
-      const res = await fetch("/api/admin/magazines", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
-      const data = await res.json();
+      const res = await fetch("/api/admin/magazines", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload), credentials: "include" });
+      const data = await readApiResponse(res);
       if (res.ok) { setMessage("Magazine créé ✅"); fetchMagazines(); setShowMagModal(false); }
       else alert(data.error);
     }

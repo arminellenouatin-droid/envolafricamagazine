@@ -29,6 +29,13 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
   });
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
+  const hasPdfFlipbook = Object.keys(pdfFiles).length > 0 || Object.keys(pdfUrls).length > 0;
+
+  const readResponse = async (res: Response) => {
+    const raw = await res.text();
+    if (!raw) return {};
+    try { return JSON.parse(raw); } catch { return { error: raw.slice(0, 300) }; }
+  };
 
   const uploadFile = async (file: File, type: string, lang: string = "", magazineId: string = "temp") => {
     const fd = new FormData();
@@ -36,9 +43,10 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
     fd.append("type", type);
     fd.append("magazineId", magazineId);
     if (lang) fd.append("lang", lang);
-    const res = await fetch("/api/upload", { method: "POST", body: fd });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Upload échoué");
+    const res = await fetch("/api/upload", { method: "POST", body: fd, credentials: "include" });
+    const data = await readResponse(res);
+    if (!res.ok) throw new Error(data.error || `Upload échoué (${res.status})`);
+    if (!data.url) throw new Error("L’upload n’a pas retourné d’URL exploitable");
     return data.url;
   };
 
@@ -106,13 +114,13 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
 
       if (editingMag) {
         payload.id = editingMag.id;
-        const res = await fetch("/api/admin/magazines", { method:"PUT", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
-        const data = await res.json();
+        const res = await fetch("/api/admin/magazines", { method:"PUT", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload), credentials: "include" });
+        const data = await readResponse(res);
         if (!res.ok) throw new Error(data.error);
         setMessage("Magazine modifié ✅");
       } else {
-        const res = await fetch("/api/admin/magazines", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
-        const data = await res.json();
+        const res = await fetch("/api/admin/magazines", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload), credentials: "include" });
+        const data = await readResponse(res);
         if (!res.ok) throw new Error(data.error);
         setMessage("Magazine créé ✅");
       }
@@ -158,14 +166,13 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
             <p className="text-[10px] text-zinc-500 mt-1">Formats: JPG, PNG, WebP - Max 50MB - Recommandé 600x800px minimum</p>
           </div>
 
-          {/* Preview images 10 */}
-          <div className="border rounded-[14px] p-4 bg-zinc-50">
+          {!hasPdfFlipbook && <div className="border rounded-[14px] p-4 bg-zinc-50">
             <label className="text-[11px] font-bold uppercase">Aperçu flipbook — images optionnelles</label>
             <input type="file" accept="image/*" multiple onChange={e=>setPreviewFiles(e.target.files)} className="mt-2 text-[12px] w-full" />
-            <p className="text-[10px] text-zinc-500 mt-1">Les images servent de secours. Si un PDF est chargé, le flipbook le rend directement et protège la lecture à partir de la page 8.</p>
+            <p className="text-[10px] text-zinc-500 mt-1">Ce bloc est une solution de secours. Il disparaît dès qu’un PDF est chargé pour alimenter le flipbook.</p>
             {previewUrls.length>0 && <div className="mt-3 grid grid-cols-5 gap-2">{previewUrls.map((url,i)=><img key={i} src={url} alt={`preview ${i}`} className="w-full h-20 object-cover rounded border" />)}</div>}
             <div className="text-[11px] mt-2">{previewUrls.length}/10 images</div>
-          </div>
+          </div>}
 
           {/* PDFs 3 langues */}
           <div className="border rounded-[14px] p-4 bg-white">
