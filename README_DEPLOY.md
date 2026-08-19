@@ -2,10 +2,10 @@
 
 Tu as fourni :
 - Supabase Project URL : `https://rtfjwpytiuvoekomevpu.supabase.co`
-- Publishable key : `sb_publishable_a0s486xyTpd9OdTYjcMR9g_jN0upwoA`
+- Clé Supabase publique : à renseigner via l’environnement, sans la versionner
 - Project ref : `rtfjwpytiuvoekomevpu`
-- Mot de passe DB : `3r+j9XtJuSRxUbh`
-- GitHub Tokens (classic + fine-grained) : fournis
+- Mot de passe DB : jamais stocké dans la documentation
+- Tokens GitHub : jamais stockés dans la documentation
 
 ## ✅ Ce qui est déjà fait dans le code
 
@@ -52,17 +52,17 @@ Tu as donné des **GitHub tokens** mais pas de **Vercel token**.
 3. Choisis branche `arena/019fdc3b-envolafricamagazine` ou `main` (après merge)
 4. Ajoute les Environment Variables :
    ```
-   MONEROO_API_KEY=pvk_4lf37v|01KZ7F2SRWWFQ70JCRASB8YHEC
+   MONEROO_API_KEY=<clé Moneroo de production stockée uniquement dans Vercel>
    JWT_SECRET=un-secret-32-caracteres-minimum-change-moi
    NEXT_PUBLIC_BASE_URL=https://ton-projet.vercel.app
    SUPABASE_URL=https://rtfjwpytiuvoekomevpu.supabase.co
    NEXT_PUBLIC_SUPABASE_URL=https://rtfjwpytiuvoekomevpu.supabase.co
-   SUPABASE_PUBLISHABLE_KEY=sb_publishable_a0s486xyTpd9OdTYjcMR9g_jN0upwoA
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_a0s486xyTpd9OdTYjcMR9g_jN0upwoA
+   SUPABASE_PUBLISHABLE_KEY=<clé publique Supabase>
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=<clé publique Supabase>
    SUPABASE_SERVICE_ROLE_KEY=sb_secret_... (à compléter)
    SUPABASE_SECRET_KEY=sb_secret_...
    DATABASE_URL=postgresql://postgres.rtfjwpytiuvoekomevpu:XXXX@aws-...pooler...:6543/postgres?pgbouncer=true
-   DIRECT_URL=postgresql://postgres:3r%2Bj9XtJuSRxUbh@db.rtfjwpytiuvoekomevpu.supabase.co:5432/postgres
+   DIRECT_URL=postgresql://postgres:<mot de passe Supabase stocké uniquement dans l’environnement>@db.rtfjwpytiuvoekomevpu.supabase.co:5432/postgres
    ```
 5. Deploy
 
@@ -106,13 +106,13 @@ Tu as partagé 2 tokens GitHub en clair dans le chat. **Recommandation sécurit�
 - [ ] Me donner `VERCEL_TOKEN` si tu veux que je déploie via CLI, sinon importe manuellement via dashboard
 - [ ] Exécuter `001_init.sql` dans Supabase SQL Editor
 - [ ] Lancer migration `node scripts/migrate-to-supabase.js`
-- [ ] Vercel → Deploy → Tester https://ton-projet.vercel.app/auth/login avec yekpondafe@gmail.com / 3NAtiposy@22
+- [ ] Vercel → Deploy → Tester https://ton-projet.vercel.app/auth/login avec un compte de recette créé spécifiquement, sans mot de passe documenté
 
 ## 🎯 Une fois déployé
 
 - Ton site sera sur `https://...vercel.app`
 - Base de données Supabase Postgres au lieu de JSON (persistant, scalable)
-- Paiement Moneroo toujours actif avec ta clé `pvk_4lf37v|01KZ7F2SRWWFQ70JCRASB8YHEC`
+- Paiement Moneroo toujours actif avec ta clé `<clé Moneroo de production stockée uniquement dans Vercel>`
 - Admin Quentin DAVAKAN opérationnel
 - Tous les features (paywall serveur, kiosque, abonnements, affiliation 10/25%, panier, dons) fonctionnent en prod
 
