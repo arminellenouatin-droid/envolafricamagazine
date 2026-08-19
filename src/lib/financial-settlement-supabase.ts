@@ -23,6 +23,8 @@ export async function settleAwardVoteSupabase(metadata: Record<string, unknown>,
   const voterId = String(metadata.user_id || "");
   const points = Math.max(1, Math.min(1000, Number(metadata.points) || 1));
   if (!candidateId || !competitionId || !voterId || voterId === "guest") throw new Error("Métadonnées de vote Awards invalides");
+  const { error: profileError } = await client.from("awards_profiles").upsert({ id: voterId, full_name: String(metadata.voter_name || ""), avatar_url: typeof metadata.voter_avatar === "string" ? metadata.voter_avatar : null }, { onConflict: "id", ignoreDuplicates: true });
+  if (profileError) throw profileError;
 
   const { data: payment, error: paymentError } = await client.from("awards_payment_transactions").upsert({
     id: crypto.randomUUID(),
