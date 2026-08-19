@@ -15,7 +15,7 @@ export async function GET() {
   if (!client) return NextResponse.json({ authors: [], categories: [], error: "Base de production non configurée" }, { status: 503 });
   const [{ data: authors, error: authorError }, { data: categories, error: categoryError }] = await Promise.all([
     client.from("editorial_authors").select("id,name,slug,photo_url,bio,role_label,is_active,created_at").order("name"),
-    client.from("categories").select("id,slug,label,color_hex,is_active").order("label"),
+    client.from("categories").select("id,slug,label,color_hex,is_active,parent_id").order("label"),
   ]);
   if (authorError || categoryError) return NextResponse.json({ error: authorError?.message || categoryError?.message || "Impossible de charger les données éditoriales" }, { status: 503 });
   return NextResponse.json({ authors: authors ?? [], categories: categories ?? [] });
@@ -45,7 +45,9 @@ export async function POST(req: NextRequest) {
     let slug = baseSlug;
     const existing = await client.from("categories").select("id").eq("slug", slug).limit(1);
     if (existing.data?.length) slug = `${baseSlug}-${Date.now().toString(36)}`;
-    const { data, error } = await client.from("categories").insert({ label, slug, color_hex: body.colorHex || "#9e001f", is_active: body.isActive !== false }).select("*").single();
+    const parentId = body.parentId ? String(body.parentId) : null;
+    if (parentId === (body.id || "")) return NextResponse.json({ error: "Une catégorie ne peut pas être son propre parent." }, { status: 400 });
+    const { data, error } = await client.from("categories").insert({ label, slug, parent_id: parentId, color_hex: body.colorHex || "#9e001f", is_active: body.isActive !== false }).select("*").single();
     if (error) return NextResponse.json({ error: error.code === "23505" ? "Cette catégorie existe déjà." : error.message }, { status: 400 });
     return NextResponse.json({ category: data });
   }
@@ -67,7 +69,9 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ author: data });
   }
   if (body.type === "category") {
-    const patch = { label: String(body.label || "").trim(), color_hex: body.colorHex || "#9e001f", is_active: body.isActive !== false };
+    const parentId = body.parentId ? String(body.parentId) : null;
+    if (parentId === id) return NextResponse.json({ error: "Une catégorie ne peut pas être son propre parent." }, { status: 400 });
+    const patch = { label: String(body.label || "").trim(), parent_id: parentId, color_hex: body.colorHex || "#9e001f", is_active: body.isActive !== false };
     const { data, error } = await client.from("categories").update(patch).eq("id", id).select("*").single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ category: data });
@@ -86,7 +90,9 @@ export async function DELETE(req: NextRequest) {
   if (!type || !id || !["author", "category"].includes(type)) return NextResponse.json({ error: "Type ou identifiant invalide" }, { status: 400 });
   const relationColumn = type === "author" ? "author_profile_id" : "category_id";
   const linked = await client.from("articles").select("id", { count: "exact", head: true }).eq(relationColumn, id);
+  const children = type === "category" ? await client.from("categories").select("id", { count: "exact", head: true }).eq("parent_id", id) : { count: 0 };
   if ((linked.count || 0) > 0) return NextResponse.json({ error: "Impossible de supprimer cet élément car des articles lui sont encore liés. Désactivez-le plutôt." }, { status: 409 });
+  if ((children.count || 0) > 0) return NextResponse.json({ error: "Impossible de supprimer cette catégorie car elle possède des sous-catégories. Désactivez-la plutôt." }, { status: 409 });
   const table = type === "author" ? "editorial_authors" : "categories";
   const result = await client.from(table).delete().eq("id", id);
   if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
