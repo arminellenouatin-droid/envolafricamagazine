@@ -1,0 +1,1 @@
+{"project_id":"rtfjwpytiuvoekomevpu","query":"select id, role, full_name from public.awards_profiles where id = '4fecde1b-bfc5-4e46-a3b3-c4281e6c3024' limit 1;"}
