@@ -263,6 +263,17 @@ h1, h2, h3, h4, .font-display {
 .editorial-carousel--ecosystem .editorial-carousel__image img { opacity: .58; }
 .editorial-carousel--sponsored .editorial-carousel__image { aspect-ratio: 16 / 10; }
 @media (max-width: 767px) {
+  .magazine-home .magazine-mobile-hero-carousel .magazine-mobile-overlay-copy { padding: 1rem; }
+  .magazine-home .magazine-mobile-hero-carousel .magazine-mobile-overlay-categories,
+  .magazine-home .magazine-mobile-hero-carousel .magazine-mobile-overlay-summary,
+  .magazine-home .magazine-mobile-hero-carousel .magazine-mobile-overlay-author { display: none; }
+  .magazine-home .magazine-mobile-hero-carousel .magazine-mobile-overlay-title { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; margin: 0; font-size: 1.18rem; line-height: 1.08; text-overflow: ellipsis; }
+  .magazine-home .magazine-mobile-overlay-story .magazine-mobile-overlay-author { display: none; }
+  .magazine-home .magazine-mobile-overlay-story .editorial-tag { display: none; }
+  .magazine-home .magazine-mobile-overlay-story h2,
+  .magazine-home .magazine-mobile-overlay-story h3 { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; text-overflow: ellipsis; }
+  .magazine-home .magazine-mobile-overlay-story h2 { font-size: 1.35rem; line-height: 1.05; }
+  .magazine-home .magazine-mobile-overlay-story h3 { font-size: 1.15rem; line-height: 1.08; }
   .editorial-carousel__track { gap: .8rem; }
   .editorial-carousel__item { flex-basis: calc((100% - .8rem) / 2); }
   .editorial-carousel__copy { min-height: 118px; padding: .8rem; }
@@ -270,6 +281,9 @@ h1, h2, h3, h4, .font-display {
   .editorial-carousel__copy p { font-size: .62rem; }
 }
 @media (max-width: 480px) {
+  .magazine-home .magazine-mobile-overlay-story .relative.flex.h-full { padding: 1rem; }
+  .magazine-home .magazine-mobile-overlay-story h2 { font-size: 1.18rem; }
+  .magazine-home .magazine-mobile-overlay-story h3 { font-size: 1rem; }
   .editorial-carousel__item { flex-basis: 82%; }
   .editorial-carousel__track { gap: .7rem; }
 }
