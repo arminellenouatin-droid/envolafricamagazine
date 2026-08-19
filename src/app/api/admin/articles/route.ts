@@ -5,6 +5,7 @@ import { publishArticleToWab } from "@/lib/article-republication";
 import { v4 as uuidv4 } from "uuid";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { notifyPushSubscribers } from "@/lib/ecosystem-inbox";
+import { sanitizeRichText } from "@/lib/rich-text";
 
 function slugify(value: string) {
   return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -28,7 +29,8 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error }, { status });
   try {
     const body = await req.json();
-    const { title, summary, content, category, categoryId, categoryIds, author, authorId, authorProfileId, image, isEncrypted, isPublished, isFeatured, isSentinelle, isEssor, isOmbreDouce, tags } = body;
+    const { title, summary, content: rawContent, category, categoryId, categoryIds, author, authorId, authorProfileId, image, isEncrypted, isPublished, isFeatured, isSentinelle, isEssor, isOmbreDouce, tags } = body;
+    const content = sanitizeRichText(String(rawContent ?? ""));
     if (!title || !content) return NextResponse.json({ error: "Titre et contenu requis" }, { status: 400 });
     const createdAt = new Date().toISOString();
     const published = Boolean(isPublished);
@@ -81,7 +83,7 @@ export async function PUT(req: NextRequest) {
     if (client) {
       const patch: Record<string, unknown> = {};
       const fields: Record<string, string> = { title: "title", summary: "summary", content: "content", category: "category", categoryId: "category_id", author: "author", authorId: "author_id", authorProfileId: "author_profile_id", image: "image", tags: "tags", isPublished: "is_published", isEncrypted: "is_encrypted", isFeatured: "is_featured", isSentinelle: "is_sentinelle", isEssor: "is_essor", isOmbreDouce: "is_ombre_douce" };
-      for (const [key, column] of Object.entries(fields)) if (Object.prototype.hasOwnProperty.call(updates, key)) patch[column] = updates[key];
+      for (const [key, column] of Object.entries(fields)) if (Object.prototype.hasOwnProperty.call(updates, key)) patch[column] = key === "content" ? sanitizeRichText(String(updates[key] ?? "")) : key === "summary" ? String(updates[key] ?? "").replace(/<[^>]*>/g, "").trim() : updates[key];
       if (publishedAt) patch.published_at = publishedAt;
       const result = await client.from("articles").update(patch).eq("id", id).select("*").single();
       if (result.error) return NextResponse.json({ error: `Impossible d’enregistrer l’article : ${result.error.message}` }, { status: 503 });
@@ -92,6 +94,8 @@ export async function PUT(req: NextRequest) {
     }
     const article = existing as Article;
     const localUpdates = { ...updates } as Partial<Article>;
+    if (Object.prototype.hasOwnProperty.call(updates, "content")) localUpdates.content = sanitizeRichText(String(updates.content ?? ""));
+    if (Object.prototype.hasOwnProperty.call(updates, "summary")) localUpdates.summary = String(updates.summary ?? "").replace(/<[^>]*>/g, "").trim();
     if (publishedAt) localUpdates.publishedAt = publishedAt;
     Object.assign(article, localUpdates);
     writeDB(db!);
