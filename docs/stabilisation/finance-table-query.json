@@ -1,0 +1,1 @@
+{"project_id":"rtfjwpytiuvoekomevpu","query":"select distinct table_name from information_schema.columns where table_schema = 'public' and (table_name ilike '%crowd%' or table_name ilike '%award%' or table_name ilike '%vote%' or table_name ilike '%contribution%' or table_name ilike '%fund%') order by table_name limit 100;"}
