@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
   if (error || !message) return NextResponse.json({ error: "Impossible d’envoyer le message." }, { status: 503 });
   const { data: conversation } = await supabase.from("wab_conversations").select("participant_a,participant_b").eq("id", conversationId).single();
   const recipientId = conversation && conversation.participant_a === user.id ? conversation.participant_b : conversation?.participant_a;
-  if (recipientId) await createGlobalNotification({ userId: recipientId, platform: "wab", type: "message", title: "Nouveau message WAB", body: body.body.trim(), link: "/wab/messages", entityType: "wab_message", entityId: message.id });
+  if (recipientId) await createGlobalNotification({ userId: recipientId, platform: "wab", type: "message", title: "Nouveau message WAB", body: body.body.trim(), link: `/wab/messages?conversationId=${encodeURIComponent(conversationId)}`, entityType: "wab_message", entityId: message.id });
   await supabase.from("wab_conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
   return NextResponse.json({ message }, { status: 201 });
 }
