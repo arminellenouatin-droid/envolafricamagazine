@@ -178,7 +178,11 @@ export default function WabClient() {
   const [wabSubscriptionMessage, setWabSubscriptionMessage] = useState("");
   const [upgradeRequired, setUpgradeRequired] = useState<"video" | "large" | null>(null);
   const [commentSignals, setCommentSignals] = useState<Record<string, number>>({});
+  const [newPostCount, setNewPostCount] = useState(0);
   const marker = useRef<HTMLDivElement>(null);
+  const feedTopRef = useRef<HTMLDivElement>(null);
+  const postsRef = useRef<Post[]>([]);
+  const pendingNewPostsRef = useRef<Post[]>([]);
 
   useEffect(() => { fetch("/api/auth/me").then((response) => response.json()).then((data) => setCurrentUser(data.user ?? null)).catch(() => setCurrentUser(null)); fetch("/api/wab/pages").then((response) => response.json()).then((data) => setPages(data.pages ?? [])).catch(() => setPages([])); fetch("/api/wab/groups").then((response) => response.json()).then((data) => setGroups(data.groups ?? [])).catch(() => setGroups([])); fetch("/api/wab/reels").then((response) => response.json()).then((data) => setReels(data.reels ?? [])).catch(() => setReels([])); const draft = sessionStorage.getItem("wab-publish-draft"); if (draft) { try { const parsed = JSON.parse(draft) as { content?: string; type?: string }; setContent(parsed.content || ""); setType(parsed.type || "text"); setPublishOpen(true); } catch { sessionStorage.removeItem("wab-publish-draft"); } } }, []);
   useEffect(() => { fetch("/api/geo").then((response) => readJsonResponse<{ country?: string }>(response)).then((data) => setVisitorCountry(data.country ?? "")).catch(() => undefined); fetch("/api/wab/subscription").then((response) => response.json()).then((data) => setIsBusiness(Boolean(data.subscription))).catch(() => setIsBusiness(false)).finally(() => setAccountLoaded(true)); }, []);
@@ -192,7 +196,12 @@ export default function WabClient() {
       const response = await fetch(`/api/wab/posts?${params}`);
       const data = await readJsonResponse<{ posts?: Post[]; pagination?: { hasMore?: boolean } }>(response);
       if (!response.ok) throw new Error((data as { error?: string }).error || `Impossible de charger le fil (HTTP ${response.status}).`);
-      setPosts((items) => reset ? data.posts ?? [] : [...items, ...(data.posts ?? [])]);
+      setPosts((items) => {
+        const nextPosts = reset ? data.posts ?? [] : [...items, ...(data.posts ?? [])];
+        postsRef.current = nextPosts;
+        if (reset) { pendingNewPostsRef.current = []; setNewPostCount(0); }
+        return nextPosts;
+      });
       setPage(nextPage);
       setHasMore(Boolean(data.pagination?.hasMore));
     } finally { setLoadingFeed(false); }
@@ -206,6 +215,45 @@ export default function WabClient() {
     observer.observe(node);
     return () => observer.disconnect();
   }, [hasMore, loadingFeed, loadFeed, page]);
+
+  useEffect(() => {
+    const poll = async () => {
+      try {
+        const params = new URLSearchParams({ page: "1" });
+        if (visitorCountry) params.set("country", visitorCountry);
+        const response = await fetch(`/api/wab/posts?${params}`, { cache: "no-store" });
+        const data = await readJsonResponse<{ posts?: Post[] }>(response);
+        if (!response.ok || !Array.isArray(data.posts) || !data.posts.length) return;
+        const knownIds = new Set(postsRef.current.map((post) => post.id));
+        const pendingIds = new Set(pendingNewPostsRef.current.map((post) => post.id));
+        const incoming = data.posts.filter((post) => !knownIds.has(post.id) && !pendingIds.has(post.id));
+        if (!incoming.length) return;
+        if (window.scrollY < 220) {
+          const nextPosts = [...incoming, ...postsRef.current];
+          postsRef.current = nextPosts;
+          setPosts(nextPosts);
+        } else {
+          pendingNewPostsRef.current = [...incoming, ...pendingNewPostsRef.current];
+          setNewPostCount((count) => count + incoming.length);
+        }
+      } catch { /* Un rafraîchissement silencieux ne doit pas interrompre le fil. */ }
+    };
+    const timer = window.setInterval(poll, 30000);
+    return () => window.clearInterval(timer);
+  }, [visitorCountry]);
+
+  function revealNewPosts() {
+    const pending = pendingNewPostsRef.current;
+    if (pending.length) {
+      const knownIds = new Set(postsRef.current.map((post) => post.id));
+      const nextPosts = [...pending.filter((post) => !knownIds.has(post.id)), ...postsRef.current];
+      postsRef.current = nextPosts;
+      setPosts(nextPosts);
+    }
+    pendingNewPostsRef.current = [];
+    setNewPostCount(0);
+    feedTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   function openComments(postId: string) { setCommentSignals((signals) => ({ ...signals, [postId]: (signals[postId] ?? 0) + 1 })); }
   function chooseType(nextType: string) { setMessage(""); setType(nextType); }
@@ -250,6 +298,7 @@ export default function WabClient() {
       if (response.status === 403 && data.upgradeUrl) { setUpgradeRequired(hasVideo ? "video" : "large"); return; }
       if (!response.ok) throw new Error(data.error);
       if (!data.post) throw new Error("La publication n’a pas été renvoyée par le serveur.");
+      postsRef.current = [data.post, ...postsRef.current];
       setPosts((items) => [data.post!, ...items]); setContent(""); setSelectedFiles([]); setPublishOpen(false); setUpgradeRequired(null); sessionStorage.removeItem("wab-publish-draft");
     } catch (error) { setMessage(error instanceof Error ? error.message : "Publication impossible."); }
     finally { setBusy(false); }
@@ -257,7 +306,8 @@ export default function WabClient() {
 
   return (
     <><main className="min-h-screen bg-[#e9f7f5] pb-20 font-body text-[#111e1d] md:pb-0">
-      <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-4 py-3 md:flex-row md:gap-6 md:px-10 md:py-6">
+      <div ref={feedTopRef} className="mx-auto flex max-w-[1200px] flex-col gap-6 px-4 py-3 md:flex-row md:gap-6 md:px-10 md:py-6">
+        {newPostCount > 0 && <button type="button" onClick={revealNewPosts} aria-live="polite" aria-label={`Afficher ${newPostCount} nouvelle${newPostCount > 1 ? "s" : ""} publication${newPostCount > 1 ? "s" : ""}`} className="fixed left-1/2 top-[76px] z-[60] -translate-x-1/2 rounded-full border border-[#b9ebe6] bg-white/95 px-3 py-2 text-[11px] font-bold text-[#006874] shadow-[0_5px_18px_rgba(0,104,116,0.16)] backdrop-blur transition hover:bg-[#eefcfa] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006874]">{newPostCount} nouvelle{newPostCount > 1 ? "s" : ""} publication{newPostCount > 1 ? "s" : ""}</button>}
         <ModelSidebar user={currentUser} />
         <section className="flex w-full max-w-[800px] flex-1 flex-col gap-6">
           <StoriesReelsCarousel />
