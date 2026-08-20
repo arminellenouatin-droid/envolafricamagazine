@@ -99,3 +99,13 @@
 - [ ] Créer et pousser le commit de déploiement.
 - [ ] Vérifier Vercel Production en état READY.
 - [ ] Tester les routes de préférence et d’article après mise en ligne.
+
+
+## Navigation mobile multi-plateformes
+
+- [ ] Auditer les en-têtes mobiles des plateformes Magasin, Job, Kiosque, Crowdfunding, Marketplace et Hub.
+- [ ] Auditer le composant du menu inférieur « + » et ses trois actions actuelles.
+- [ ] Ajouter les boîtes à outils contextuelles par plateforme.
+- [ ] Transformer le menu « + » en barre texte avec six actions et ouverture/fermeture au clic.
+- [ ] Tester les plateformes mobile et préserver le desktop.
+- [ ] Compiler, documenter et déployer le lot.
