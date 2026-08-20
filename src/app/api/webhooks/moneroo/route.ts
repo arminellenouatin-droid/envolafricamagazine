@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { verifyMonerooPayment } from "@/lib/moneroo";
-import { settleAwardVoteSupabase, settleCrowdfundingContributionSupabase } from "@/lib/financial-settlement-supabase";
+import { settleAwardVoteSupabase, settleAwardRegistrationFeeSupabase, settleAwardGiftSupabase, settleAwardDonationSupabase, settleCrowdfundingContributionSupabase } from "@/lib/financial-settlement-supabase";
 import { activateJobsBoostByPayment } from "@/lib/jobs-supabase";
 import { activateMonerooEntitlements } from "@/lib/moneroo-entitlements";
 import { activateCrowdfundingBoostByPayment, activateMarketplaceBoostByPayment } from "@/lib/wab-boost-sources";
@@ -52,6 +52,13 @@ async function settleAwardVote(metadata: Record<string, unknown>, paymentId: str
 async function settleCrowdfundingContribution(metadata: Record<string, unknown>, paymentId: string) {
   if (metadata.product !== "crowdfunding_contribution") return;
   await settleCrowdfundingContributionSupabase(metadata, paymentId);
+}
+
+async function settleAwardProduct(metadata: Record<string, unknown>, paymentId: string) {
+  if (metadata.product === "award_registration_fee") return settleAwardRegistrationFeeSupabase(metadata, paymentId);
+  if (metadata.product === "award_gift") return settleAwardGiftSupabase(metadata, paymentId);
+  if (["award_donation", "award_pot_increase"].includes(String(metadata.product))) return settleAwardDonationSupabase(metadata, paymentId);
+  return null;
 }
 
 async function settleSubscription(orderId: string, alreadyPaid: boolean) {
@@ -118,10 +125,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (eventType === "payment.success" && metadata.product === "award_vote") {
+    if (eventType === "payment.success" && ["award_vote", "award_registration_fee", "award_gift", "award_donation", "award_pot_increase"].includes(String(metadata.product))) {
       const verification = await verifyMonerooPayment(data.id);
       if (!validPaymentStatus(verification.status)) return NextResponse.json({ error: "Paiement non confirmé" }, { status: 409 });
-      await settleAwardVote(metadata, data.id);
+      if (metadata.product === "award_vote") await settleAwardVote(metadata, data.id);
+      else await settleAwardProduct(metadata, data.id);
       return NextResponse.json({ ok: true }, { status: 200 });
     }
     if (eventType === "payment.success" && metadata.product === "crowdfunding_contribution") {

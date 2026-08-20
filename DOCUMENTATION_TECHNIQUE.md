@@ -44,3 +44,17 @@ L’audit Supabase du 19 août 2026 signale toutefois **19 tables supplémentair
 La compilation Next.js et la vérification TypeScript passent. Le landing Marketplace public a été ouvert après déploiement, une carte Magazine a été sélectionnée et a correctement ouvert le Kiosque. La page boutique affiche le tarif, le quota et le formulaire vidéo. La fiche Kiosque et les cartes Marketplace ont été vérifiées visuellement sur le navigateur sandbox.
 
 La recette restante recommandée est une validation authentifiée avec un vendeur réel : paiement confirmé, upload inférieur à 3 Mo, refus d’un fichier supérieur, refus au onzième produit distinct, remplacement d’une vidéo existante et lecture côté acheteur.
+
+## Mise à jour du 19 août 2026 — parcours vendeur premiumisé
+
+`src/app/marketplace/boutique/page.tsx` est désormais un point d’entrée self-service contextuel. Il appelle `GET /api/marketplace/suppliers` avant rendu. Si aucune boutique n’est associée à l’utilisateur courant, l’interface affiche un assistant de création en trois étapes et persiste les champs via `POST /api/marketplace/suppliers`. Si une boutique existe, l’interface devient un tableau de bord avec synthèse, catalogue et accès aux commandes et à la publication.
+
+L’option vidéo n’est plus le contenu principal de la page de création ou de gestion générale. Elle est accessible dans la section « Administration vidéo » du tableau de bord vendeur et conserve les contrôles serveur suivants : abonnement confirmé à 5 000 XOF par mois, quota de 10 produits distincts, fichier limité à 3 Mo, type MIME contrôlé et vérification de l’appartenance du produit au vendeur.
+
+La boîte à outils Marketplace mobile ne propose plus un raccourci vidéo isolé. Ses liens renvoient au tableau de bord vendeur, ce qui évite de présenter l’option payante avant que l’utilisateur ait une boutique.
+
+## Mise à jour sécurité et performance
+
+L’advisor Supabase du 19 août 2026 identifie 19 tables publiques avec RLS désactivé et plusieurs tables avec RLS actif sans policies métier. Le détail, le SQL préparatoire non exécuté et l’ordre recommandé de sécurisation sont documentés dans `docs/security/rls-hardening-plan.md`. Il est volontairement interdit d’activer RLS en production sans policies métier testées, car cette action peut fermer des chemins légitimes ; les policies doivent être définies par domaine et validées avec les rôles anonyme, utilisateur, propriétaire, participant, vendeur et administrateur.
+
+Le même audit signale des clés étrangères sans index couvrant. Toute optimisation doit vérifier l’absence d’un index équivalent avant création et être livrée dans une migration dédiée, avec mesure avant/après sur Marketplace, WAB, Jobs et affiliation.

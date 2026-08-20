@@ -33,6 +33,11 @@ export default function AdminDashboardAwards() {
             <div className="font-bold mt-4">Créer compétition (ADMIN UNIQUEMENT)</div>
             <div className="text-[12px] text-black/70 mt-2">Seul admin peut créer/lancer - Test 403 organizer - Règle absolue gouvernance</div>
           </Link>
+          <Link href="/africa-awards/admin/dashboard/applications" className="bg-[#16161D] border border-white/10 rounded-xl p-6 hover:border-[#D4AF37]/30">
+            <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-xl">🧾</div>
+            <div className="font-bold mt-4">Valider les candidatures</div>
+            <div className="text-[12px] text-[#A8A6A0] mt-2">Examiner les dossiers, approuver et créer les nominés officiels</div>
+          </Link>
           <Link href="/africa-awards/competitions" className="bg-[#16161D] border border-white/10 rounded-xl p-6 hover:border-[#D4AF37]/30">
             <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-xl">🏆</div>
             <div className="font-bold mt-4">Gérer compétitions</div>

@@ -1,0 +1,1 @@
+{"project_id":"rtfjwpytiuvoekomevpu","query":"select id, email, role from public.users where role = 'admin' order by created_at asc limit 20;"}
