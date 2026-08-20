@@ -221,3 +221,13 @@
 - [ ] Vérifier l’ouverture, la fermeture, les pages PDF et les images de secours.
 - [ ] Tester le fonctionnement sur ordinateur, mobile et mobile paysage.
 - [ ] Compiler et enregistrer la correction dans un commit réversible.
+
+
+## Performance Flipbook mobile
+
+- [ ] Mesurer le délai de la route d’aperçu et le poids du PDF demandé par le Kiosque.
+- [ ] Vérifier si le lecteur attend inutilement le PDF complet avant d’afficher la couverture.
+- [ ] Vérifier le délai des images d’aperçu et le comportement de la route sécurisée.
+- [ ] Afficher immédiatement une couverture ou une première page disponible sur mobile.
+- [ ] Ajouter un état d’erreur et un fallback explicite si le PDF est lent ou inaccessible.
+- [ ] Tester le premier affichage et la navigation sur mobile portrait et paysage.
