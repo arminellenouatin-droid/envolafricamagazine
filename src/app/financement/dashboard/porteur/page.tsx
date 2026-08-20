@@ -25,6 +25,7 @@ export default function PorteurDashboard() {
     if (!selectedProjet) return;
     fetch(`/api/crowdfunding/documents?projetId=${selectedProjet.id}`).then(r=>r.json()).then(d=>setDocuments(d.documents||[]));
     fetch(`/api/crowdfunding/messages?projetId=${selectedProjet.id}`).then(r=>r.json()).then(d=>setMessages(d.messages||[]));
+    fetch(`/api/crowdfunding/reports?projetId=${selectedProjet.id}`).then(r=>r.json()).then(d=>setRapports(d.reports||[]));
   },[selectedProjet]);
 
   const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
@@ -54,12 +55,15 @@ export default function PorteurDashboard() {
   };
 
   const submitRapport = async () => {
-    if (!newRapport.contenu || !selectedProjet) return;
-    // Mock rapport
-    const newR = { id: Date.now().toString(), projetId: selectedProjet.id, porteurId:"porteur_demo", type:newRapport.type, periode:newRapport.periode, contenu:newRapport.contenu, documents:[], createdAt:new Date().toISOString() };
-    setRapports([...rapports, newR]);
+    if (!newRapport.contenu || !selectedProjet || !newRapport.periode) return;
+    const [year, month] = newRapport.periode.split("-").map(Number);
+    const lastDay = new Date(year, month, 0).getDate();
+    const response = await fetch("/api/crowdfunding/reports", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projetId: selectedProjet.id, periodeDebut: `${newRapport.periode}-01`, periodeFin: `${newRapport.periode}-${String(lastDay).padStart(2, "0")}`, resume: newRapport.contenu, soumettre: true }) });
+    const result = await response.json();
+    if (!response.ok) { alert(result.error || "Impossible d’envoyer le rapport"); return; }
+    setRapports((current) => [result.report, ...current.filter((report: any) => report.id !== result.report.id)]);
     setNewRapport({ type:"mensuel", periode:"", contenu:"" });
-    alert("Rapport "+newRapport.type+" envoyé - Reste en contact avec investisseurs + docs justificatifs");
+    alert("Rapport mensuel envoyé aux investisseurs autorisés.");
   };
 
   return (
@@ -132,12 +136,12 @@ export default function PorteurDashboard() {
               <h4 className="font-bold text-[16px]">Suivi après collecte - Rapports mensuels/trimestriels + docs justificatifs + rester en contact</h4>
               <div className="mt-4 grid md:grid-cols-3 gap-3">
                 <select value={newRapport.type} onChange={e=>setNewRapport({...newRapport, type:e.target.value as any})} className="h-10 rounded-full border bg-[#f6f3f2] px-4 text-[12px]"><option value="mensuel">Mensuel</option><option value="trimestriel">Trimestriel</option></select>
-                <input value={newRapport.periode} onChange={e=>setNewRapport({...newRapport, periode:e.target.value})} placeholder="Période ex: Jan 2026" className="h-10 rounded-full border bg-[#f6f3f2] px-4 text-[12px]" />
+                <input type="month" value={newRapport.periode} onChange={e=>setNewRapport({...newRapport, periode:e.target.value})} className="h-10 rounded-full border bg-[#f6f3f2] px-4 text-[12px]" />
                 <button onClick={submitRapport} className="h-10 rounded-full bg-[#303030] text-white text-[12px] font-bold">Envoyer rapport</button>
               </div>
               <textarea value={newRapport.contenu} onChange={e=>setNewRapport({...newRapport, contenu:e.target.value})} placeholder="Contenu rapport régulier - restez en contact avec investisseurs..." rows={3} className="mt-3 w-full rounded-xl border bg-[#f6f3f2] p-3 text-[12px]" />
               <div className="mt-4 space-y-2">
-                {rapports.map((r:any)=><div key={r.id} className="border rounded-lg p-3 bg-[#f6f3f2]"><div className="font-bold text-[12px]">{r.type} - {r.periode} - {new Date(r.createdAt).toLocaleDateString()}</div><div className="text-[11px] text-[#5c403f] mt-1">{r.contenu}</div></div>)}
+                {rapports.map((r:any)=><div key={r.id} className="border rounded-lg p-3 bg-[#f6f3f2]"><div className="font-bold text-[12px]">Rapport {r.period_start} → {r.period_end} · {r.status}</div><div className="text-[11px] text-[#5c403f] mt-1">{r.narrative || r.contenu}</div></div>)}
               </div>
             </div>
 
