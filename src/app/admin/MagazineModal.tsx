@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import RichTextEditor from "@/components/RichTextEditor";
 
 export default function MagazineModal({ editingMag, onClose, onSaved }: { editingMag?: any, onClose: () => void, onSaved: () => void }) {
   const [magazineCategories, setMagazineCategories] = useState<Array<{ id: string; label: string }>>([
@@ -174,7 +175,7 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
           </div>
 
           <div><label className="text-[11px] font-bold uppercase">Titre *</label><input value={form.title} onChange={e=>setForm({...form, title:e.target.value})} placeholder="Envol Africa N°26 - Spécial Fintech" required className="mt-1 w-full h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" /></div>
-          <div><label className="text-[11px] font-bold uppercase">Description</label><textarea value={form.description} onChange={e=>setForm({...form, description:e.target.value})} placeholder="Résumé du sommaire..." rows={3} className="mt-1 w-full rounded-[14px] border bg-zinc-50 p-3 text-[13px]" /></div>
+          <div><label className="mb-1 block text-[11px] font-bold uppercase">Description</label><RichTextEditor value={form.description} onChange={(description) => setForm({...form, description})} placeholder="Résumé du sommaire..." minHeight={120} className="bg-zinc-50" /></div>
           <div><label className="text-[11px] font-bold uppercase">Sommaire (1 par ligne)</label><textarea value={form.sommaire} onChange={e=>setForm({...form, sommaire:e.target.value})} placeholder={"Dossier Spécial Fintech\nInterview : Patrice Motsepe\nBourse : Le rallye de la BRVM\nÉnergie : L'hydrogène vert"} rows={4} className="mt-1 w-full rounded-[14px] border bg-zinc-50 p-3 text-[12px]" /></div>
 
           {/* Couverture upload */}

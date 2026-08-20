@@ -5,6 +5,7 @@ import Link from "next/link";
 import { KIOSQUE_FORMATS, LANGUAGE_LABELS } from "@/lib/constants";
 import { getAvailablePaymentMethods } from "@/lib/payment-methods";
 import PreviewFlipbook from "@/components/kiosque/PreviewFlipbook";
+import RichTextContent from "@/components/RichTextContent";
 import { useLocale } from "@/components/LocaleProvider";
 
 type Magazine = {
@@ -153,7 +154,7 @@ export default function MagazineDetailPage() {
                 <span className="text-[#5c403f] text-[12px] italic">N° {magazine.numero} — {magazine.year} • 124 pages</span>
               </div>
               <h1 className="text-[32px] md:text-[40px] font-bold leading-tight text-[#1b1c1c] mb-2" style={{ fontFamily: "Montserrat" }}>{magazine.title}</h1>
-              <p className="text-[18px] text-[#5f5e5e] leading-relaxed max-w-2xl" style={{ fontFamily: "Source Serif 4" }}>{magazine.description} Ce numéro inclut notre enquête sur la transformation locale du cacao, entretien CEO Wave, classement 50 entreprises les plus performantes.</p>
+              <div className="max-w-2xl text-[18px] leading-relaxed text-[#5f5e5e]" style={{ fontFamily: "Source Serif 4" }}><RichTextContent value={`${magazine.description || ""} Ce numéro inclut notre enquête sur la transformation locale du cacao, entretien CEO Wave, classement 50 entreprises les plus performantes.`} /></div>
             </header>
 
             <section className="p-6 bg-[#f0eded] rounded-xl">

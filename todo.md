@@ -193,3 +193,22 @@
 - [ ] Repositionner la photo dans le flux éditorial avant le titre ou entre le titre et le résumé.
 - [ ] Vérifier le rendu mobile, desktop, le mode sombre et les articles sans image.
 - [ ] Compiler, créer un commit réversible et communiquer séparément l’état de production.
+
+
+## Publication demandée — correction Article
+
+- [ ] Préparer le commit validé comme version de livraison.
+- [ ] Vérifier la branche et la cible Vercel avant publication.
+- [ ] Publier uniquement après validation de la build.
+- [ ] Contrôler l’URL de production et l’ordre photo puis titre sur un article réel.
+- [ ] Confirmer à l’utilisateur le résultat et l’URL publique.
+
+
+## Éditeur de texte enrichi — articles et magazines
+
+- [ ] Inventorier les champs article : titre, résumé, contenu principal et traductions.
+- [ ] Inventorier les champs magazine : description, détails et contenus affichés au kiosque.
+- [ ] Vérifier le format actuellement stocké et les composants de lecture concernés.
+- [ ] Ajouter gras, italique et souligné avec une structure compatible avec les contenus existants.
+- [ ] Sanitizer le contenu formaté avant rendu public afin d’empêcher l’injection HTML ou script.
+- [ ] Tester création, édition, sauvegarde, lecture publique et compatibilité avec les anciens contenus.
