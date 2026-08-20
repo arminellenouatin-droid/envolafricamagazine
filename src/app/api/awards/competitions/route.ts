@@ -102,6 +102,27 @@ export async function POST(req: NextRequest) {
       legacy_cover_image: newComp.cover_image || null,
     }).select("*").single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    const registrationConfig = body.registration_config && typeof body.registration_config === "object" ? body.registration_config as Record<string, unknown> : {};
+    const { error: configError } = await supabase.from("awards_registration_configs").upsert({
+      competition_id: data.id,
+      form_mode: registrationConfig.form_mode === "entrepreneurship" ? "entrepreneurship" : "simple",
+      registration_fee_xof: Math.max(0, Number(registrationConfig.registration_fee_xof) || 0),
+      currency: "XOF",
+      registrations_start_at: registrationConfig.registrations_start_at || null,
+      registrations_end_at: registrationConfig.registrations_end_at || null,
+      voting_start_at: registrationConfig.voting_start_at || null,
+      voting_end_at: registrationConfig.voting_end_at || null,
+      initial_prize_pool_xof: Math.max(0, Number(registrationConfig.initial_prize_pool_xof) || 0),
+      min_pool_contribution_xof: Math.max(100, Number(registrationConfig.min_pool_contribution_xof) || 100),
+      min_donation_xof: Math.max(100, Number(registrationConfig.min_donation_xof) || 100),
+      updated_by: user.id,
+    }, { onConflict: "competition_id" });
+    if (configError) return NextResponse.json({ error: configError.message }, { status: 500 });
+    const customFields = Array.isArray(body.registration_fields) ? body.registration_fields : [];
+    if (customFields.length) {
+      const { error: fieldsError } = await supabase.from("awards_registration_fields").insert(customFields.slice(0, 30).map((field: any, index: number) => ({ competition_id: data.id, field_key: String(field.field_key || `field_${index + 1}`), label: String(field.label || field.field_key || `Champ ${index + 1}`), field_type: ["text","textarea","phone","number","url","date","select","file"].includes(field.field_type) ? field.field_type : "text", is_required: Boolean(field.is_required), options: Array.isArray(field.options) ? field.options : [], sort_order: index })));
+      if (fieldsError) return NextResponse.json({ error: fieldsError.message }, { status: 500 });
+    }
     return NextResponse.json({ success: true, competition: data });
   }
   const db = readAwardsDB();

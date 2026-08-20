@@ -1,6 +1,10 @@
 import Link from "next/link";
 
-export default function AfricaAwardsLanding() {
+import { getSupabaseCompetitions } from "@/lib/awards-supabase";
+
+export default async function AfricaAwardsLanding() {
+  const remote = await getSupabaseCompetitions();
+  const competitions = remote.configured ? remote.competitions : [];
   return (
     <div className="bg-[#0B0B0F] text-[#F5F3EE] min-h-screen">
       {/* Hero */}
@@ -38,14 +42,15 @@ export default function AfricaAwardsLanding() {
           <h2 className="text-[24px] font-bold flex items-center gap-3"><span className="w-3 h-3 bg-red-600 rounded-full animate-pulse"></span> En direct maintenant</h2>
           <Link href="/africa-awards/competitions" className="text-[#D4AF37] text-[13px] font-bold hover:underline">Voir tout →</Link>
         </div>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[1,2,3].map(i=>(
-            <Link key={i} href={`/africa-awards/competitions/demo-${i}`} className="group rounded-[20px] overflow-hidden bg-[#16161D] border border-white/10 hover:border-[#D4AF37]/30 transition-all">
+        <div className="grid md:grid-cols-2 gap-6">
+          {competitions.filter((competition) => competition.status !== "archived").slice(0, 2).map((competition) => (
+            <Link key={competition.id} href={`/africa-awards/competitions/${competition.slug}`} className="group rounded-[20px] overflow-hidden bg-[#16161D] border border-white/10 hover:border-[#D4AF37]/30 transition-all">
               <div className="aspect-video bg-[#1B2A6B]/30 relative overflow-hidden">
-                <div className="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">LIVE • {120+i*23} spectateurs</div>
-                <div className="absolute bottom-3 left-3 right-3 flex justify-between text-[11px]"><span className="bg-black/60 text-white px-2 py-1 rounded-full">Cagnotte: {(5000+i*1200).toLocaleString()} F</span><span className="bg-[#D4AF37] text-black px-2 py-1 rounded-full font-bold">Vote en cours</span></div>
+                {competition.cover_image && <img src={competition.cover_image} alt={competition.title} className="w-full h-full object-cover" />}
+                <div className="absolute top-3 left-3 bg-[#D4AF37] text-black text-[10px] font-bold px-2 py-1 rounded-full">{competition.status === "draft" ? "Bientôt" : competition.status}</div>
+                <div className="absolute bottom-3 left-3 right-3 flex justify-between text-[11px]"><span className="bg-black/60 text-white px-2 py-1 rounded-full">Vote à partir de {competition.vote_price_cents} F</span><span className="bg-[#D4AF37] text-black px-2 py-1 rounded-full font-bold">{competition.category}</span></div>
               </div>
-              <div className="p-4"><div className="text-[11px] uppercase tracking-wider text-[#D4AF37] font-bold">Awards • {i===1?"Miss":"Startup"} {i}</div><div className="font-bold text-[16px] mt-1 leading-tight">Africa Awards Édition {2024+i} - Finale {i}</div><div className="text-[12px] text-[#A8A6A0] mt-2">12 candidats • Jury international • Cagnotte 2M F</div></div>
+              <div className="p-4"><div className="text-[11px] uppercase tracking-wider text-[#D4AF37] font-bold">{competition.category}</div><div className="font-bold text-[16px] mt-1 leading-tight">{competition.title}</div><div className="text-[12px] text-[#A8A6A0] mt-2">Compétition Africa Awards • Paramètres en préparation</div></div>
             </Link>
           ))}
         </div>

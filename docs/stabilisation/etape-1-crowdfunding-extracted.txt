@@ -1,0 +1,735 @@
+Étape 1 — Création d'un projet
+Crowdfunding par un porteur
+
+1. Vue d'ensemble du parcours
+
+  Inscription/Connexion porteur
+           │
+           ▼
+  Vérification identité de base (KYC léger)
+           │
+           ▼
+  ┌─────────────────────────────────────────┐
+  │   FORMULAIRE MULTI-ÉTAPES (wizard)                │
+  │   1. Informations générales                       │
+  │   2. Type de financement                          │
+  │   3. Objectif financier & durée                   │
+  │   4. Description détaillée & médias               │
+  │   5. Documents justificatifs                      │
+  │   6. Coordonnées & équipe                         │
+  │   7. Risques & conditions                         │
+  │   8. Récapitulatif & soumission                   │
+  └─────────────────────────────────────────┘
+           │
+           ▼
+  Sauvegarde Supabase → statut "brouillon" (draft)
+           │
+           ▼
+  Soumission finale → statut "en attente de validation"
+  (pending_review)
+           │
+           ▼
+           (→ Étape 2 : validation administrative)
+
+
+Règle clé : le porteur peut sauvegarder un brouillon ( draft ) à tout
+moment sans que le projet soit visible ni soumis. Seule l'action
+explicite "Soumettre pour validation" fait passer le statut à
+pending_review .
+
+
+
+
+2. Statuts du cycle de vie d'un projet
+
+                                                                Qui peut le
+  Statut        Code                       Description
+                                                                déclencher
+
+
+                                           Le porteur
+  Brouillon      draft                     remplit encore       Porteur
+                                           le formulaire
+
+
+  En attente
+                                           Soumis, en file
+  de             pending_review                                 Porteur
+                                           d'attente admin
+  validation
+
+
+                                           Admin a
+  Correction
+                 changes_requested         renvoyé avec         Admin
+  demandée
+                                           commentaires
+
+
+                                           Validé mais pas
+                                           encore publié
+  Approuvé       approved                                       Admin
+                                           (peut être
+                                           programmé)
+
+
+                                           Visible
+                                                                Système (à la
+  Publié /                                 publiquement,
+                 active                                         date de
+  actif                                    collecte en
+                                                                lancement)
+                                           cours
+
+
+                                           Retiré
+                                           temporairement
+  Suspendu       suspended                                      Admin
+                                           (signalement,
+                                           litige)
+
+
+  Terminé -      completed_success         Fin de               Système
+  objectif                                 campagne,
+                                                         Qui peut le
+ Statut      Code                    Description
+                                                         déclencher
+
+ atteint                             objectif atteint
+
+
+ Terminé -                           Fin de
+ objectif                            campagne,
+              completed_failed                           Système
+ non                                 objectif non
+ atteint                             atteint
+
+
+                                     Retiré par le
+                                     porteur ou
+ Annulé       cancelled                                  Porteur/Admin
+                                     l'admin avant
+                                     collecte
+
+
+                                     Rejet définitif
+ Refusé       rejected                                   Admin
+                                     par l'admin
+
+
+
+
+3. Formulaire — champs détaillés
+
+3.1 Section 1 — Informations générales (obligatoire)
+
+
+ Champ        Type          Obligatoire    Règle de validation
+
+
+ Titre du
+ projet
+              texte court   ✅              10–80 caractères,
+                                           unique par porteur
+
+
+ Slogan /
+ accroche
+              texte court   ✅              max 150 caractères
+ Champ          Type          Obligatoire   Règle de validation
+
+
+                                            Agri-business, Tech,
+                                            Santé, Éducation,
+                                            Commerce, Artisanat,
+ Secteur
+ d'activité
+                liste
+                déroulante
+                              ✅             Énergie, Immobilier,
+                                            Culture/Créatif,
+                                            Industrie, Services,
+                                            Autre
+
+
+
+ Sous-
+                liste
+                dépendante
+                              ⛔             —
+ catégorie                    optionnel
+                du secteur
+
+
+                liste
+                déroulante
+ Pays du
+ projet
+                (pays         ✅             ISO 3166-1
+                africains +
+                diaspora)
+
+
+ Ville /
+ région
+                texte         ✅             —
+
+
+
+                                            Idée, Prototype, MVP
+ Stade du
+ projet
+                liste         ✅             lancé, En activité
+                                            (préciser CA),
+                                            Croissance/expansion
+
+
+ Date de
+ création
+ de
+                date
+                              ⛔             requise si "En activité"
+ l'entreprise                 optionnel
+ (si
+ existante)
+
+
+
+3.2 Section 2 — Type de financement (obligatoire, choix
+unique par projet)
+                                                    Contrepartie
+  Type             Code          Description        pour
+                                                    l'investisseur
+
+
+                                                    Aucune ou
+                                 Pas de retour
+  Don simple       donation                         symbolique
+                                 financier
+                                                    (remerciement)
+
+
+  Don avec                       Récompense         Produit, service,
+                   reward
+  contrepartie                   non financière     accès anticipé
+
+
+                                                    % de capital,
+  Prise de                       Vente de parts
+                   equity                           dividendes
+  participation                  sociales
+                                                    potentiels
+
+
+                                 Financement        Capital + intérêts
+  Prêt             lending
+                                 remboursable       selon échéancier
+
+
+
+Chaque type déclenche des sous-champs spécifiques (cf. 3.2 bis).
+
+3.2 bis — Champs conditionnels par type
+
+   Don avec contrepartie : liste des paliers de dons + description de
+   chaque récompense + stock disponible + date de livraison
+   estimée.
+
+   Prise de participation : % du capital proposé, valorisation pré-
+   money, nombre de parts, prix par part, droits attachés (droit de
+   vote ou non), document de pacte d'actionnaires (upload).
+
+   Prêt : montant total du prêt, taux d'intérêt proposé, durée du prêt
+   (mois), périodicité de remboursement (mensuel/trimestriel/à
+   échéance), garanties proposées, tableau d'amortissement
+   prévisionnel.
+
+
+3.3 Section 3 — Objectif financier & durée (obligatoire)
+ Champ          Type          Obligatoire    Règle
+
+
+                                             XOF, XAF, NGN, GHS,
+ Devise         liste         ✅              KES, EGP, MAD, USD,
+                                             EUR (selon pays)
+
+
+ Objectif
+                                             > seuil plateforme
+ minimum
+ (seuil de
+                nombre        ✅              (ex. 100 000 XOF
+                                             min)
+ succès)
+
+
+ Objectif
+ maximum        nombre
+                              ⛔              doit être ≥ objectif
+                              optionnel      minimum
+ (plafond)
+
+
+                                             "Tout ou rien" (all-or-
+ Type de
+ collecte
+                choix         ✅              nothing) / "Garder
+                                             tout" (keep-it-all)
+
+
+ Date de
+ lancement      date          ✅              ≥ date de validation
+                                             admin
+ souhaitée
+
+
+                                             entre 7 et 90 jours
+ Durée de la
+ campagne
+                nombre
+                (jours)
+                              ✅              (bornes
+                                             paramétrables)
+
+
+ Utilisation    tableau                      doit totaliser 100 %
+ prévue des     répartition   ✅              (ex. Production 40%,
+ fonds          %                            Marketing 20%, etc.)
+
+
+
+3.4 Section 4 — Description & médias (obligatoire)
+
+
+ Champ         Type                Obligatoire       Règle
+
+
+ Description   texte               ✅                 50–300
+ courte                                              caractères,
+ Champ          Type               Obligatoire     Règle
+
+                                                   affichée en
+                                                   carte projet
+
+
+                                                   min 300
+ Description
+ complète
+                éditeur riche      ✅               caractères,
+                                                   sections libres
+
+
+ Problème
+ résolu
+                texte              ✅               —
+
+
+
+ Solution
+ proposée
+                texte              ✅               —
+
+
+
+ Marché
+                texte
+                                   ⛔               —
+ cible                             recommandé
+
+
+                                                   ratio 16:9, max
+ Image de
+ couverture
+                image              ✅               5 Mo,
+                                                   JPG/PNG/WebP
+
+
+ Galerie
+ d'images
+                images multiples   ⛔   optionnel
+                                                   max 10, 5 Mo
+                                                   chacune
+
+
+
+ Vidéo de
+                lien               ⛔               max 3 min
+                (YouTube/Vimeo)    fortement
+ présentation                                      conseillé
+                ou upload          recommandé
+
+
+ Site web /
+ réseaux        liens              ⛔   optionnel
+                                                   validation
+                                                   format URL
+ sociaux
+
+
+
+3.5 Section 5 — Documents justificatifs
+
+Communs à tous les types :
+  Document                                  Obligatoire              Format
+
+
+  Pièce d'identité du porteur
+  (CNI/Passeport)
+                                            ✅                        PDF/JPG
+
+
+
+
+  Justificatif d'adresse
+                                            ⛔   optionnel
+                                                                     PDF/JPG
+                                            selon pays
+
+
+  Business plan / présentation
+  projet (pitch deck)
+                                            ✅                        PDF
+
+
+
+  Budget prévisionnel détaillé              ✅                        PDF/XLSX
+
+
+
+Spécifiques :
+
+
+  Document                                         Requis pour
+
+
+  Registre de commerce / statuts de                equity, lending, ou si "En
+  l'entreprise                                     activité"
+
+
+  Pacte d'actionnaires (projet)                    equity
+
+
+  RIB / coordonnées bancaires ou mobile
+                                                   tous (pour reversement)
+  money du bénéficiaire
+
+
+  Attestation de propriété intellectuelle
+                                                   tous, optionnel
+  (si applicable)
+
+
+                                                   equity, lending, si
+  États financiers récents
+                                                   entreprise existante
+
+
+
+Règle de sécurité : tous les documents sont stockés dans Supabase
+Storage avec accès restreint (bucket privé), lien signé à durée limitée
+pour l'admin, jamais exposés publiquement.
+
+
+3.6 Section 6 — Coordonnées & équipe (obligatoire)
+ Champ                   Type                        Obligatoire
+
+
+ Nom complet du
+                         texte
+                                                     ✅     (déjà en base via
+ porteur                                             compte utilisateur)
+
+
+ Téléphone (avec
+ indicatif)
+                         texte                       ✅
+ Email                   texte                       ✅     (déjà en base)
+
+
+ Rôle dans le
+ projet
+                         texte                       ✅
+ Membres de              liste répétable :
+ l'équipe                nom, rôle, photo,           ⛔     optionnel
+ (optionnel)             bio courte
+
+
+ Compte de
+                         mobile money /
+                                                     ✅     — collecté et vérifié
+ réception des                                       séparément avant tout
+                         banque
+ fonds                                               versement
+
+
+
+3.7 Section 7 — Risques & conditions (obligatoire, bloquant)
+
+
+ Champ                                       Type                      Obligatoire
+
+
+                                             texte libre
+                                             guidé
+
+ Description des risques du projet
+                                             (placeholder :
+                                             "quels sont les
+                                                                       ✅
+                                             risques pour un
+                                             investisseur ?")
+
+
+ Case "J'ai lu et j'accepte les
+ Conditions Générales                        checkbox
+                                                                       ✅
+                                                                       bloquant
+ d'Utilisation"
+
+
+ Case "J'ai lu et j'accepte la Charte
+                                             checkbox
+                                                                       ✅
+ du porteur de projet"                                                 bloquant
+ Champ                                Type                Obligatoire
+
+
+ Case "Je certifie l'exactitude des
+                                      checkbox
+                                                          ✅
+ informations fournies"                                   bloquant
+
+
+ Case spécifique pour
+  equity / lending : "Je
+                                                          ✅
+                                                          bloquant si
+ comprends les obligations            checkbox
+                                                          type
+ légales de
+                                                          concerné
+ remboursement/reversement"
+
+
+
+3.8 Section 8 — Récapitulatif & soumission
+
+   Affichage en lecture seule de toutes les sections avec boutons
+   "Modifier"
+
+   Estimation automatique des commissions plateforme (affichée
+   avant soumission, transparence obligatoire)
+
+   Bouton "Enregistrer comme brouillon"
+
+   Bouton "Soumettre pour validation" → passe en
+    pending_review , horodatage submitted_at , notification à
+   l'équipe admin
+
+
+
+
+4. Règles de validation globales
+
+ 1. Unicité : un porteur ne peut avoir qu'un seul projet active à la
+   fois (paramétrable — évite la dispersion des campagnes).
+
+ 2. Cohérence financière : objectif minimum ≥ seuil plancher
+   plateforme ; répartition des fonds = 100 %.
+
+ 3. Cohérence des dates : date de fin = date de lancement + durée ;
+   la durée ne peut être modifiée après passage en active .
+
+ 4. KYC préalable : le compte du porteur doit avoir un statut "identité
+   vérifiée" avant de pouvoir soumettre (pas seulement créer un
+   brouillon).
+5. Documents obligatoires bloquants : la soumission est refusée
+  côté formulaire si un document obligatoire manque (validation
+  front + back).
+
+6. Anti-fraude basique : limite de projets soumis par porteur/mois,
+  détection de doublons de titre/description.
+
+7. Commission : le taux de commission (%) doit être calculé et figé
+  au moment de l'approbation admin (pas modifiable après
+  lancement pour ce projet).
+
+
+
+
+5. Schéma de données proposé (Supabase /
+PostgreSQL)
+
+ -- Table principale
+ create table projects (
+   id uuid primary key default gen_random_uuid(),
+   owner_id uuid not null references auth.users(id),
+   title text not null,
+   tagline text,
+   sector text not null,
+   subsector text,
+   country text not null,
+   city text,
+   project_stage text not null,
+   company_created_at date,
+
+
+   funding_type text not null check (funding_type in
+ ('donation','reward','equity','lending')),
+
+
+   currency text not null,
+   goal_min numeric not null,
+   goal_max numeric,
+   funding_model text not null check (funding_model in
+ ('all_or_nothing','keep_it_all')),
+   launch_date date not null,
+   duration_days int not null check (duration_days
+ between 7 and 90),
+   fund_allocation jsonb, -- [{ "label": "Production",
+"percent": 40 }, ...]
+
+
+     short_description text not null,
+     full_description text not null,
+     problem text not null,
+     solution text not null,
+     target_market text,
+     cover_image_url text,
+     gallery jsonb,
+     video_url text,
+     website_url text,
+     social_links jsonb,
+
+
+     risks_description text not null,
+
+
+     status text not null default 'draft'
+       check (status in
+('draft','pending_review','changes_requested','approved'
+,
+
+
+'active','suspended','completed_success','completed_fail
+ed',
+                             'cancelled','rejected')),
+     commission_rate numeric,
+     submitted_at timestamptz,
+     reviewed_at timestamptz,
+     reviewed_by uuid references auth.users(id),
+     review_comment text,
+
+
+     created_at timestamptz default now(),
+     updated_at timestamptz default now()
+);
+
+
+-- Table financement (spécifique au type)
+create table project_funding_details (
+     project_id uuid primary key references projects(id) on
+delete cascade,
+     -- reward
+     reward_tiers jsonb,
+     -- equity
+     equity_percent numeric,
+     pre_money_valuation numeric,
+      share_price numeric,
+      shares_count int,
+      voting_rights boolean,
+      -- lending
+      loan_amount numeric,
+      interest_rate numeric,
+      loan_duration_months int,
+      repayment_frequency text,
+      guarantees text
+ );
+
+
+ -- Documents
+ create table project_documents (
+      id uuid primary key default gen_random_uuid(),
+      project_id uuid references projects(id) on delete
+ cascade,
+      doc_type text not null, --
+ 'id_card','business_plan','budget','registry','bank_info
+ ',...
+      file_url text not null,
+      uploaded_at timestamptz default now()
+ );
+
+
+ -- Équipe
+ create table project_team_members (
+      id uuid primary key default gen_random_uuid(),
+      project_id uuid references projects(id) on delete
+ cascade,
+      full_name text not null,
+      role text,
+      photo_url text,
+      bio text
+ );
+
+
+
+
+6. Règles de sécurité (RLS Supabase)
+
+      projects :
+       SELECT public uniquement si status = 'active' (ou
+       completed_* ) → page publique.
+
+       SELECT complet réservé à owner_id = auth.uid() ou rôle
+       admin .
+
+       INSERT réservé aux utilisateurs authentifiés avec role =
+      'porteur' et KYC validé.
+
+       UPDATE réservé au propriétaire uniquement si status in
+      ('draft','changes_requested') ; sinon lecture seule pour
+      le porteur.
+
+      Changement de status vers
+       approved/rejected/changes_requested réservé au rôle
+       admin uniquement (policy séparée + colonne protégée).
+
+   project_documents : bucket Storage privé, SELECT réservé au
+  propriétaire et à l'admin, jamais d'accès public direct.
+
+  Audit : trigger de log sur toute modification de status (table
+   project_status_history ) pour traçabilité complète.
+
+
+
+
+7. Points à trancher avec vous avant
+implémentation
+
+1. Devises & pays : liste exacte des pays/devises à supporter au
+  lancement (tous les pays africains ou une liste restreinte au
+  départ ?).
+
+2. Seuils financiers : montant minimum/maximum d'objectif par
+  défaut (ex. 50 000 XOF à 50 000 000 XOF) ?
+
+3. Durée de campagne : 7–90 jours vous convient-il, ou une autre
+  borne ?
+
+4. Un seul projet actif par porteur : confirmez-vous cette règle, ou
+  un porteur peut-il gérer plusieurs campagnes simultanées ?
+
+5. KYC : à quel niveau (simple pièce d'identité, ou vérification tierce
+  type Smile Identity/Veriff) ?
+ 6. Commission : taux fixe unique ou variable selon le type de
+    financement (don / equity / prêt) ?
+
+ 7. equity et lending : ces deux modes impliquent des
+    obligations réglementaires potentiellement lourdes selon les
+    pays (finance participative encadrée). Voulez-vous les activer dès
+    le lancement ou les garder en fonctionnalité "à venir" pour la V1 ?
+
+Dès que vous validez ces points (ou m'indiquez vos règles), je
+verrouille le formulaire définitif et je peux passer à l'implémentation
+réversible (migration Supabase + composant wizard React).
+

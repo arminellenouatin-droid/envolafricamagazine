@@ -112,3 +112,102 @@ Sur le preview avant le dernier correctif, l’appel `GET /api/admin/crowdfundin
 - [ ] Vérifier que la campagne apparaît sur `/financement`.
 
 - [x] Corriger le chargement client de `/financement` qui envoyait encore `statut=active`.
+
+## Vérification publique finale
+
+- [x] L’API publique retourne MagicAfrica avec le statut `en_cours`.
+- [x] La page `/financement` affiche MagicAfrica et le compteur `1 campagne affichée`.
+- [ ] Ouvrir la fiche publique et vérifier le formulaire de contribution.
+- [ ] Tester la redirection Moneroo sans confirmer le paiement.
+
+## Défaut contribution Moneroo à diagnostiquer
+
+- [ ] Le bouton « Contribuer » redirige vers la route webhook au lieu d’ouvrir le checkout Moneroo.
+- [ ] Identifier la route appelée par la fiche publique et la réponse de création de paiement.
+- [ ] Vérifier que l’URL webhook reste uniquement serveur-à-serveur et n’est jamais utilisée comme URL de navigation.
+- [ ] Corriger la redirection vers l’URL checkout Moneroo.
+- [ ] Retester avec un montant de test sans confirmer ni débiter le paiement.
+
+
+## Résultat corrigé du test Moneroo
+
+Le clic sur « Contribuer » ouvre bien la page de paiement Moneroo. Il ne s’agit pas d’une redirection erronée vers le webhook. Le contrôle restant porte sur le montant, la devise XOF, le projet MagicAfrica et le bénéficiaire affichés par Moneroo. Aucun paiement n’est encore confirmé.
+
+- [x] Ouvrir la page de paiement Moneroo.
+- [ ] Vérifier le montant de test et la devise.
+- [ ] Vérifier que le contexte de la contribution correspond à MagicAfrica.
+- [ ] Obtenir une confirmation explicite avant tout paiement réel.
+
+
+## Échec paiement Moneroo — tentative autorisée
+
+- [ ] Relever l’identifiant de paiement ou de contribution généré lors de la tentative.
+- [ ] Vérifier dans Supabase qu’aucune contribution MagicAfrica n’a été réglée à tort.
+- [ ] Vérifier les journaux et le webhook pour distinguer paiement refusé, annulé ou erreur technique.
+- [ ] Contrôler la réponse Moneroo et la configuration des moyens de paiement.
+- [ ] Corriger uniquement la cause confirmée, sans relancer automatiquement la transaction.
+- [ ] Refaire un test contrôlé après diagnostic.
+
+
+## Résultat paiement MTN — webhook non reçu à ce stade
+
+Le paiement MTN Mobile Money a été déclaré abouti par l’utilisateur et la transaction est visible dans le dashboard Moneroo. Pourtant, MagicAfrica reste à `montant_collecte = 0`, `investisseurs = 0` et sa répartition reste nulle. Les journaux Vercel du preview ne montrent aucun appel à `/api/webhooks/moneroo` dans les 30 minutes contrôlées.
+
+Conclusion provisoire : la création du checkout et le paiement Moneroo fonctionnent, mais la notification de succès n’atteint pas le webhook du preview, ou elle est configurée vers une autre URL/environnement. Il faut vérifier l’URL webhook configurée dans Moneroo et la référence de transaction avant toute nouvelle tentative.
+
+
+## URL webhook du preview — cause confirmée
+
+L’URL configurée dans Moneroo est `https://envolafricamagazinegildas-7ocahoa04-arminel.vercel.app/wzbhook`. Le contrôle public de cette URL renvoie une page **404** : aucune route webhook n’existe à cet emplacement.
+
+La route active du code est `https://envolafricamagazinegildas-7ocahoa04-arminel.vercel.app/api/webhooks/moneroo`. Son contrôle GET renvoie `status: ok`, indique la méthode POST et exige l’en-tête `x-moneroo-signature`.
+
+La cause de l’absence de règlement dans le preview est donc confirmée : Moneroo envoie les notifications vers une URL inexistante au lieu de la route Next.js active. Il faut remplacer l’URL dans Moneroo par la route `/api/webhooks/moneroo`, en conservant le secret de signature dans `MONEROO_WEBHOOK_SECRET` côté Vercel Preview.
+
+
+## Deuxième URL webhook historique
+
+L’URL `https://envolafricamagazine-o4sglwoo.vercel.app/webhook` renvoie `404: NOT_FOUND` avec le code `DEPLOYMENT_NOT_FOUND`. Ce déploiement n’est plus disponible et ne peut pas recevoir de notifications Moneroo.
+
+Cette URL est donc une ancienne valeur historique ou une configuration obsolète. Elle ne doit pas être utilisée dans le dashboard Moneroo. La route active vérifiée reste celle du preview actuel : `/api/webhooks/moneroo`.
+
+
+## Vérification des variables Vercel
+
+La page Vercel du projet `envolafricamagazinegildas` montre que `MONEROO_API_KEY` et `MONEROO_WEBHOOK_SECRET` sont bien configurées pour les environnements **Production et Preview**. `NEXT_PUBLIC_BASE_URL` est également présente dans ces deux environnements.
+
+Les valeurs elles-mêmes ne sont pas lisibles dans le contrôle et ne doivent pas être exposées. La présence des variables ne permet donc pas encore de confirmer que les nouvelles valeurs correspondent à celles saisies dans Moneroo. Il n’existe pas de variable Vercel qui rende automatiquement l’URL webhook active : l’URL de destination est configurée dans le dashboard Moneroo, tandis que Vercel ne fournit que le secret de vérification au runtime.
+
+
+## Nouveau déploiement `envolafricamagazinealokpe.vercel.app`
+
+Le domaine répond, mais la page d’accueil affiche **« Une erreur temporaire est survenue »** avec un bouton « Réessayer ». Aucun message console navigateur n’est remonté. Le déploiement ne doit pas encore être utilisé pour un paiement ni configuré comme webhook définitif tant que l’erreur runtime n’est pas identifiée.
+
+
+## Nouveau déploiement : API projet Crowdfunding en 404
+
+Sur `https://envolafricamagazinealokpe.vercel.app`, la fiche MagicAfrica reste sur « Chargement projet… ». L’URL `/api/crowdfunding/projects/51c966b9-193a-405a-af4e-b967a7fc7a25` renvoie `404`. Aucun paiement ne doit être lancé depuis ce déploiement avant correction ou identification de la route réelle.
+
+
+## Paiement MTN de 100 XOF — retour DNS
+
+- [ ] Vérifier le webhook Moneroo et la contribution Supabase après le paiement MTN réussi de 100 XOF.
+- [ ] Corriger `NEXT_PUBLIC_BASE_URL` avec l’URL Vercel complète du déploiement actif.
+- [ ] Vérifier que le retour Moneroo ouvre une page valide sans effectuer un nouveau paiement.
+
+
+## Suite après paiement MTN réussi de 100 XOF
+
+- [ ] Remplacer `NEXT_PUBLIC_BASE_URL` par l’URL complète du preview actif et redéployer.
+- [ ] Vérifier le retour Moneroo sans erreur DNS.
+- [ ] Vérifier l’idempotence de `py_836994l5mu07` et l’absence de double crédit.
+- [ ] Préparer le contrôle du payout et de la commission configurable.
+- [ ] Auditer les règlements Magazine, WAB, Marketplace et Africa Awards.
+
+
+## Second paiement MTN de 100 XOF — retour vers déploiement pausé
+
+- [ ] Vérifier la référence Moneroo `py_l6nnzs2wycw6` dans Supabase.
+- [ ] Contrôler que le second paiement n’a pas créé de doublon inattendu.
+- [ ] Remplacer le domaine de retour preview par le domaine de production actif.
+- [ ] Ne lancer aucun nouveau paiement avant stabilisation du retour.

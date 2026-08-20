@@ -1,0 +1,47 @@
+
+
+## Reprise Africa Awards — prochain lot
+
+- [ ] Auditer la route serveur de vote et la source de configuration de la compétition.
+- [ ] Bloquer côté serveur les votes avant `voting_start_at`, après `voting_end_at` et hors statut `voting_open`.
+- [ ] Vérifier les seuils minimums de 100 XOF pour votes, dons et contributions de cagnotte.
+- [ ] Ajouter l’action administrative d’approbation d’une candidature et sa conversion idempotente en nominé officiel.
+- [ ] Vérifier l’affichage du nombre de votes et le masquage après 60 points.
+- [ ] Documenter les tests et sauvegarder un checkpoint avant les lots live/paiements cadeaux.
+
+
+## Lot financier et live Africa Awards
+
+- [ ] Auditer les routes de frais d’inscription, cadeaux, dons et cagnotte.
+- [ ] Vérifier le routage Moneroo et les métadonnées webhook par type de produit.
+- [ ] Vérifier et imposer le minimum de 100 XOF partout dans ce lot.
+- [ ] Auditer les tables et routes de sessions live, chat, likes, présence et événements.
+- [ ] Remplacer les écritures locales ou états React simulés par une persistance serveur là où nécessaire.
+- [ ] Tester les parcours sans lancer de reversement.
+
+
+## Actions restantes — animateur, Mux et tests financiers
+
+- [ ] Auditer le tableau animateur et ses contrôles actuellement locaux.
+- [ ] Connecter démarrage, arrêt, événements, candidats et modération à `/api/awards/live`.
+- [ ] Vérifier les variables Mux sans exposer les secrets dans le code ou les logs.
+- [ ] Prévoir un état clair lorsque le flux Mux n’est pas configuré.
+- [ ] Préparer les scénarios de test contrôlé pour inscription, cadeau, don et cagnotte.
+
+
+## Administration centralisée et tests sans paiement
+
+- [ ] Vérifier si les dernières modifications Africa Awards sont réellement incluses dans le déploiement en ligne.
+- [ ] Vérifier les onglets d’administration existants et la présence de Crowdfunding.
+- [ ] Ajouter l’onglet Africa Awards si nécessaire, avec accès à création, inscriptions et validation.
+- [ ] Vérifier que Crowdfunding ouvre bien ses outils d’administration sans lien cassé.
+- [ ] Tester le parcours Africa Awards sans paiement avant les tests Moneroo.
+
+
+## Déploiement et tests fonctionnels
+
+- [ ] Vérifier compilation et diff avant déploiement.
+- [ ] Créer un commit réversible contenant l’administration centrale et Africa Awards.
+- [ ] Déployer en Production Vercel et vérifier l’état READY.
+- [ ] Tester l’accès administration, Crowdfunding et Africa Awards sans paiement.
+- [ ] Documenter le lien de test et les limites restantes.

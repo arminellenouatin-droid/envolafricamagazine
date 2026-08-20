@@ -22,7 +22,7 @@ const adminPlatforms: Array<{ id: AdminPlatform; label: string; accent: string; 
   { id: "wab", label: "WAB", accent: "#006874", description: "Publications, signalements, comptes Business, campagnes et récompenses.", href: "/wab/admin", modules: ["Publications", "Signalements", "Profils", "Campagnes", "Récompenses"] },
   { id: "marketplace", label: "Marketplace", accent: "#7c3aed", description: "Vendeurs, produits, commandes, commissions, litiges et versements.", href: "/marketplace/admin", modules: ["Vendeurs", "Produits", "Commandes", "Commissions", "Litiges", "Versements"] },
   { id: "financement", label: "Crowdfunding", accent: "#b45309", description: "Projets, investisseurs, documents, paiements et remboursements.", href: "/admin/crowdfunding", modules: ["Projets soumis", "Validation", "Investisseurs", "Documents", "Paiements", "Remboursements"] },
-  { id: "awards", label: "Africa Awards", accent: "#b5832f", description: "Compétitions, candidats, jurys, votes, animateurs et demandes.", href: "/africa-awards/organizer/dashboard", modules: ["Compétitions", "Candidats", "Jurys", "Votes", "Demandes"] },
+  { id: "awards", label: "Africa Awards", accent: "#b5832f", description: "Compétitions, inscriptions, candidatures, nominés, votes, animateurs et lives.", href: "/africa-awards/admin/dashboard", modules: ["Créer une compétition", "Ouvrir les inscriptions", "Valider les candidatures", "Nominés et votes", "Animateurs et lives", "Paiements Awards"] },
 ];
 
 function PlatformAdminLanding({ platform, user }: { platform: AdminPlatform; user: any }) {

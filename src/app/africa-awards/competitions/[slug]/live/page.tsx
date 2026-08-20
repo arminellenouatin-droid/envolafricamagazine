@@ -8,12 +8,10 @@ export default function LivePage() {
   const slug = params.slug as string;
   const [competition, setCompetition] = useState<any>(null);
   const [candidates, setCandidates] = useState<any[]>([]);
-  const [spectators, setSpectators] = useState(128);
-  const [pot, setPot] = useState(500000);
-  const [comments, setComments] = useState<any[]>([
-    { user: "Aminata", text: "Go go go ! 🔥", time: "12:01" },
-    { user: "Kwame", text: "Trop fort ce candidat !", time: "12:02" },
-  ]);
+  const [spectators] = useState(0);
+  const [pot, setPot] = useState(0);
+  const [liveSession, setLiveSession] = useState<any>(null);
+  const [comments, setComments] = useState<any[]>([]);
   const [ranking, setRanking] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
 
@@ -25,16 +23,19 @@ export default function LivePage() {
       }
     });
 
-    // Simule temps réel - Supabase Realtime
-    const interval = setInterval(()=>{
-      setSpectators(s=>s+Math.floor(Math.random()*5));
-      setPot(p=>p+Math.floor(Math.random()*1000));
-      setRanking(prev=>{
-        // Flèches évolution verte/rouge
-        return prev.map((r:any)=>({ ...r, change: Math.random()>0.5 ? "up" : "down" }));
-      });
-    }, 3000);
-    return ()=>clearInterval(interval);
+    let active = true;
+    const loadLive = async () => {
+      const live = await fetch(`/api/awards/live?competition_id=${encodeURIComponent(slug)}`).then(r=>r.json()).catch(() => null);
+      if (!active || !live) return;
+      setLiveSession(live.session || null);
+      if (live.events) {
+        setComments(live.events.filter((event:any) => ["comment","gift","donation","pot_increase"].includes(event.event_type)).map((event:any) => ({ user: event.payload?.user_name || "Participant", text: event.payload?.content || event.event_type, time: new Date(event.created_at).toLocaleTimeString().slice(0,5), isGift: event.event_type === "gift" })));
+        setPot(live.events.reduce((sum:number,event:any) => sum + Number(event.payload?.amount_xof || 0), 0));
+      }
+    };
+    loadLive();
+    const interval = setInterval(loadLive, 5000);
+    return () => { active = false; clearInterval(interval); };
   },[slug]);
 
   useEffect(()=>{
@@ -43,25 +44,30 @@ export default function LivePage() {
       setRanking(candidates.slice(0,5).map((c:any,i:number)=>({
         id: c.id,
         name: c.display_name,
-        votes: c.votes + Math.floor(Math.random()*10),
-        change: Math.random()>0.5?"up":"down",
+        votes: c.votes,
+        change: "stable",
         pos: i+1
       })).sort((a:any,b:any)=>b.votes-a.votes).map((r:any,i:number)=>({ ...r, pos: i+1 })));
     }
   },[candidates]);
 
-  const sendComment = (e: React.FormEvent) => {
+  const sendComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim()) return;
-    setComments([...comments, { user: "Moi", text: newComment, time: new Date().toLocaleTimeString().slice(0,5) }]);
+    const session = await fetch(`/api/awards/live?competition_id=${encodeURIComponent(slug)}`).then(r=>r.json()).catch(()=>null);
+    if (!session?.session?.id) return;
+    await fetch("/api/awards/live", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"event", session_id:session.session.id, event_type:"comment", payload:{ content:newComment.trim() } }) });
     setNewComment("");
   };
 
-  const sendGift = (gift: string) => {
-    const giftData = { Cœur: "❤️", Étoile: "⭐", Fusée: "🚀", Couronne: "👑", Diamant: "💎", Coffre: "💰" }[gift] || "🎁";
-    setComments([...comments, { user: "Moi", text: `a envoyé ${gift} ${giftData} à ${candidates[0]?.display_name||"candidat"}`, time: "maintenant", isGift: true }]);
-    // Animation cadeau
-    setPot(p=>p+500);
+  const sendGift = async (gift: any) => {
+    const candidate = candidates[0];
+    if (!candidate || !competition) return;
+    const giftCatalog = await fetch("/api/awards/gifts").then(r=>r.json()).catch(()=>null);
+    const selected = giftCatalog?.gifts?.find((item:any)=>item.name===gift.name);
+    if (!selected) return;
+    const payment = await fetch("/api/awards/payments/init", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ product:"award_gift", competition_id:competition.id, candidate_id:candidate.id, gift_id:selected.id, gift_name:selected.name }) }).then(r=>r.json()).catch(()=>null);
+    if (payment?.checkout_url) window.location.href = payment.checkout_url;
   };
 
   if (!competition) return <div className="bg-[#0B0B0F] text-white min-h-screen p-10">Chargement live...</div>;
@@ -71,7 +77,7 @@ export default function LivePage() {
       {/* Live Overlay complet - cœur du produit */}
       <div className="relative aspect-video bg-black overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#1B2A6B]/40 to-[#0B0B0F]/60"></div>
-        <div className="w-full h-full bg-[#16161D] flex items-center justify-center text-[24px] font-bold">🔴 LIVE - {competition.title} - Mux Player (mock)</div>
+        <div className="w-full h-full bg-[#16161D] flex items-center justify-center text-[24px] font-bold">{liveSession?.mux_playback_id ? <video className="w-full h-full object-cover" controls autoPlay muted src={`https://stream.mux.com/${liveSession.mux_playback_id}.m3u8`} /> : liveSession?.status === "live" ? `🔴 LIVE - ${competition.title} — flux en attente` : `Le live de ${competition.title} n’est pas démarré`}</div>
         
         {/* Haut: spectateurs, durée, cagnotte, logo compétition */}
         <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start z-20">
@@ -116,8 +122,8 @@ export default function LivePage() {
         {/* Bas: boutons Voter/Soutenir/Cadeau/Don/Rejoindre */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
           <Link href={`/africa-awards/vote/${candidates[0]?.id||"demo"}`} className="h-11 px-6 rounded-full bg-[#D4AF37] text-black font-bold text-[13px] flex items-center gap-2 hover:bg-[#F4D976]"><span>🗳️</span> Voter</Link>
-          <button onClick={()=>sendGift("Cœur")} className="h-11 px-5 rounded-full bg-white/10 border border-white/10 backdrop-blur text-white font-bold text-[13px] hover:bg-white/15">🎁 Cadeau</button>
-          <button onClick={()=>setPot(p=>p+10000)} className="h-11 px-5 rounded-full bg-white/10 border border-white/10 backdrop-blur text-white font-bold text-[13px] hover:bg-white/15">💰 Don</button>
+          <button onClick={()=>sendGift({name:"Cœur"})} className="h-11 px-5 rounded-full bg-white/10 border border-white/10 backdrop-blur text-white font-bold text-[13px] hover:bg-white/15">🎁 Cadeau</button>
+          <button onClick={async()=>{ if(!competition) return; const payment=await fetch("/api/awards/payments/init",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({product:"award_donation",competition_id:competition.id,amount_xof:100})}).then(r=>r.json()); if(payment.checkout_url) window.location.href=payment.checkout_url; }} className="h-11 px-5 rounded-full bg-white/10 border border-white/10 backdrop-blur text-white font-bold text-[13px] hover:bg-white/15">💰 Don (100 F min.)</button>
           <button className="h-11 px-5 rounded-full bg-[#1B2A6B] text-white font-bold text-[13px] border border-white/10">Cagnotte {(pot/100).toLocaleString()} F</button>
         </div>
       </div>

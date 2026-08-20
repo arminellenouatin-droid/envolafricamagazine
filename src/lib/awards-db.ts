@@ -11,6 +11,7 @@ export interface AwardsCompetition {
   title: string;
   description: string;
   category: string;
+  category_id?: string;
   status: 'draft'|'published'|'registrations_open'|'registrations_closed'|'voting_open'|'live_scheduled'|'live_running'|'voting_closed'|'deliberation'|'finished'|'archived';
   vote_price_cents: number;
   points_per_vote: number;
