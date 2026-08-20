@@ -46,3 +46,15 @@ Le commit `8dca8a1` (« fix(crowdfunding): allow partial draft saves ») possèd
 ## Vérification endpoint public production
 
 L’endpoint `https://envolafricamagazinegildas.vercel.app/api/crowdfunding/projects?limit=12` renvoie encore plusieurs campagnes de démonstration (« Projet AgroBio », « Projet TechVillage », « Projet Solar Power », etc.) avec des dates du 18 août 2026 et des porteurs `porteur_0`, `porteur_1`, etc. Ces données ne correspondent pas à la liste nettoyée attendue sur Supabase. Le domaine de production utilise donc encore une source fallback, une ancienne version ou une autre base de données. Il faut corriger cette incohérence avant d’autoriser une contribution réelle.
+
+## Résultat preview 212ebc3
+
+Le déploiement `212ebc3` est READY à `https://envolafricamagazinegildas-4ap1vaueh-arminel.vercel.app`. L’endpoint public retourne `{"projets":[],"nextCursor":null,"boostedIds":[]}` : les anciennes campagnes de démonstration ne sont plus servies et la liste est cohérente avec le nettoyage. Le preview est donc prêt pour reprendre la validation authentifiée du projet soumis.
+
+## Tâches ajoutées — administration Crowdfunding
+
+- [ ] Ajouter une liste administrative des projets soumis depuis Supabase.
+- [ ] Ajouter l’affichage du détail, du porteur, du financement et des documents.
+- [ ] Ajouter les actions sécurisées approuver, rejeter et remettre en brouillon.
+- [ ] Tester la visibilité du projet Noélie avant toute contribution Moneroo.
+- [ ] Vérifier que la promotion en production ne réintroduit aucun fallback JSON.

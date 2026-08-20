@@ -21,7 +21,7 @@ const adminPlatforms: Array<{ id: AdminPlatform; label: string; accent: string; 
   { id: "jobs", label: "Jobs", accent: "#087e8b", description: "Offres, candidats, entreprises, abonnements et modération.", href: "/emploi/admin", modules: ["Offres", "Candidats", "Entreprises", "Abonnements", "Modération"] },
   { id: "wab", label: "WAB", accent: "#006874", description: "Publications, signalements, comptes Business, campagnes et récompenses.", href: "/wab/admin", modules: ["Publications", "Signalements", "Profils", "Campagnes", "Récompenses"] },
   { id: "marketplace", label: "Marketplace", accent: "#7c3aed", description: "Vendeurs, produits, commandes, commissions, litiges et versements.", href: "/marketplace/admin", modules: ["Vendeurs", "Produits", "Commandes", "Commissions", "Litiges", "Versements"] },
-  { id: "financement", label: "Crowdfunding", accent: "#b45309", description: "Projets, investisseurs, documents, paiements et remboursements.", href: "/financement/dashboard", modules: ["Projets", "Investisseurs", "Documents", "Paiements", "Remboursements"] },
+  { id: "financement", label: "Crowdfunding", accent: "#b45309", description: "Projets, investisseurs, documents, paiements et remboursements.", href: "/admin/crowdfunding", modules: ["Projets soumis", "Validation", "Investisseurs", "Documents", "Paiements", "Remboursements"] },
   { id: "awards", label: "Africa Awards", accent: "#b5832f", description: "Compétitions, candidats, jurys, votes, animateurs et demandes.", href: "/africa-awards/organizer/dashboard", modules: ["Compétitions", "Candidats", "Jurys", "Votes", "Demandes"] },
 ];
 
