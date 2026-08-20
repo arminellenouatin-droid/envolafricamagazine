@@ -57,3 +57,38 @@ export async function consumeEmailVerificationToken(rawToken: string, purpose = 
   if (consumeError) throw consumeError;
   return data.user_id as string | null;
 }
+
+
+export async function issueLoginChallenge(userId: string) {
+  const client = getSupabaseAdmin();
+  if (!client) return null;
+  const rawChallenge = createOpaqueToken(32);
+  const { error: deleteError } = await client.from("login_challenges").delete().eq("user_id", userId);
+  if (deleteError) throw deleteError;
+  const { error } = await client.from("login_challenges").insert({ user_id: userId, challenge_hash: hashOpaqueToken(rawChallenge), expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString() });
+  if (error) throw error;
+  return rawChallenge;
+}
+
+export async function consumeLoginChallenge(rawChallenge: string, userId: string) {
+  const client = getSupabaseAdmin();
+  if (!client) return null;
+  const { data, error } = await client.from("login_challenges").select("id,attempts,expires_at,consumed_at").eq("user_id", userId).eq("challenge_hash", hashOpaqueToken(rawChallenge)).maybeSingle();
+  if (error) throw error;
+  if (!data || data.consumed_at || new Date(data.expires_at).getTime() <= Date.now() || Number(data.attempts) >= 5) return null;
+  return { id: String(data.id), attempts: Number(data.attempts) };
+}
+
+export async function incrementLoginChallenge(challengeId: string) {
+  const client = getSupabaseAdmin();
+  if (!client) return;
+  const { data } = await client.from("login_challenges").select("attempts").eq("id", challengeId).single();
+  await client.from("login_challenges").update({ attempts: Number(data?.attempts || 0) + 1 }).eq("id", challengeId);
+}
+
+export async function consumeLoginChallengeOnce(challengeId: string) {
+  const client = getSupabaseAdmin();
+  if (!client) return;
+  const { error } = await client.from("login_challenges").update({ consumed_at: new Date().toISOString() }).eq("id", challengeId).is("consumed_at", null);
+  if (error) throw error;
+}

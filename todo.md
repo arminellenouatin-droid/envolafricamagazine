@@ -285,3 +285,14 @@
 - [ ] Appliquer 5 tentatives sur 15 minutes avec blocage progressif côté serveur.
 - [ ] Empêcher l’ouverture automatique d’une session pour un compte non vérifié.
 - [ ] Compiler et tester les routes d’inscription, de connexion et de 2FA avant le lot suivant.
+
+
+## Lot final demandé — sécurité, KPI, AdSense et publication
+
+- [ ] Brancher le challenge 2FA avant l’émission du cookie de session.
+- [ ] Ajouter les écrans de résultat pour vérification e-mail et challenge 2FA.
+- [ ] Construire les routes KPI administrateur à partir des données réelles Supabase.
+- [ ] Afficher connexions, utilisateurs actifs, paniers abandonnés, commandes, achats et flux financiers par plateforme.
+- [ ] Ajouter Consent Mode et le composant AdSense désactivé tant que l’identifiant Google n’est pas fourni.
+- [ ] Tester les parcours sensibles et compiler la version finale.
+- [ ] Enregistrer un checkpoint réversible et préparer la publication contrôlée.

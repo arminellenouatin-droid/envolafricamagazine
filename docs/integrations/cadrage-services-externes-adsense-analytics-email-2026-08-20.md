@@ -136,3 +136,14 @@ La connexion enregistre désormais les tentatives et applique le seuil initial d
 Le prototype 2FA qui acceptait les codes `123456` et `000000` a été remplacé par un socle TOTP réel avec secret chiffré, URI d’authenticator et codes de récupération hachés à usage unique. Le challenge 2FA lors de la connexion et l’interface complète d’activation restent à finaliser dans l’incrément suivant avant de déclarer la 2FA complètement opérationnelle.
 
 La build Next.js passe après ce lot. Commit réversible : `7d67c95` (`feat(security): add internal verification and newsletter foundations`).
+
+
+## Lot finalisé avant publication
+
+Le parcours de connexion possède maintenant un challenge 2FA temporaire de cinq minutes. Lorsqu’un compte a la 2FA active, le mot de passe correct ne délivre plus immédiatement le cookie de session : une seconde route vérifie le code TOTP ou un code de récupération, consomme le challenge et crée ensuite l’événement de connexion.
+
+Le dashboard administrateur Magazine appelle `/api/admin/kpis`. La route calcule les utilisateurs totaux, les connexions actives sur les quinze dernières minutes, les utilisateurs hors ligne, les inscriptions du jour, les événements des dernières 24 heures, les commandes payées, le chiffre d’affaires des commandes, les paniers abandonnés suivis et les dons confirmés. Les agrégats de revenus utilisent les commandes, dons et événements disponibles, sans générer de données fictives.
+
+La préparation AdSense est ajoutée sous la forme d’un composant `AdSenseSlot` activé uniquement si un identifiant réel est fourni et si le consentement publicitaire est accordé. La route `/ads.txt` renvoie une entrée Google uniquement lorsque `ADSENSE_PUBLISHER_ID` ou `NEXT_PUBLIC_ADSENSE_PUBLISHER_ID` est configuré ; sinon elle ne publie pas de faux identifiant.
+
+La build Next.js passe après l’intégration de ces éléments. Les avertissements existants sur l’accès filesystem de la route d’aperçu WAB restent non bloquants mais devront être traités dans un lot performance séparé avant une optimisation complète du poids Vercel.

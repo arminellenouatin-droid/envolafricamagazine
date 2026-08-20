@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findUserByEmail, ProductionDatabaseNotConfiguredError } from "@/lib/core-db";
 import { verifyPassword, generateToken, COOKIE_NAME, COOKIE_OPTIONS } from "@/lib/auth";
-import { isLoginBlocked, recordLoginAttempt, recordSessionEvent } from "@/lib/security-db";
+import { isLoginBlocked, recordLoginAttempt, recordSessionEvent, issueLoginChallenge } from "@/lib/security-db";
 import { normalizeEmail } from "@/lib/security-crypto";
 
 function requestIp(request: NextRequest) {
@@ -33,6 +33,11 @@ export async function POST(req: NextRequest) {
     }
 
     await recordLoginAttempt(email, ip, true);
+    if (user.twoFactorEnabled) {
+      const challenge = await issueLoginChallenge(user.id);
+      if (!challenge) return NextResponse.json({ error: "Service 2FA indisponible" }, { status: 503 });
+      return NextResponse.json({ success: true, twoFactorRequired: true, challenge, userId: user.id });
+    }
     await recordSessionEvent({ userId: user.id, type: "login", ip, userAgent: req.headers.get("user-agent") || undefined, country: user.country });
     const token = generateToken(user);
     const res = NextResponse.json({ success: true, user: { id: user.id, email: user.email, nom: user.nom, prenom: user.prenom, role: user.role, affiliateCode: user.affiliateCode, subscription: user.subscription } });
