@@ -5,6 +5,7 @@ import { settleAwardVoteSupabase, settleAwardRegistrationFeeSupabase, settleAwar
 import { activateJobsBoostByPayment } from "@/lib/jobs-supabase";
 import { activateMonerooEntitlements } from "@/lib/moneroo-entitlements";
 import { activateCrowdfundingBoostByPayment, activateMarketplaceBoostByPayment } from "@/lib/wab-boost-sources";
+import { settleMarketplaceOrderByPayment } from "@/lib/marketplace-digital";
 import {
   confirmOrderPayment,
   findOrderById,
@@ -123,6 +124,13 @@ export async function POST(req: NextRequest) {
         const result = await activateJobsBoostByPayment(String(metadata.user_id), data.id);
         return NextResponse.json({ ok: true, boost: result }, { status: result.activated ? 200 : 409 });
       }
+    }
+
+    if (eventType === "payment.success" && metadata.product === "marketplace_order") {
+      const verification = await verifyMonerooPayment(data.id);
+      if (!validPaymentStatus(verification.status)) return NextResponse.json({ error: "Paiement non confirmé" }, { status: 409 });
+      const result = await settleMarketplaceOrderByPayment(String(metadata.order_id || ""), data.id, Number(verification.amount ?? data.amount), String(verification.currency ?? data.currency ?? "XOF"));
+      return NextResponse.json({ ok: true, marketplace: result }, { status: 200 });
     }
 
     if (eventType === "payment.success" && ["award_vote", "award_registration_fee", "award_gift", "award_donation", "award_pot_increase"].includes(String(metadata.product))) {
