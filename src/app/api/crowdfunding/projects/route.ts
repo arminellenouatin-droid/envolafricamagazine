@@ -54,7 +54,8 @@ export async function POST(req: NextRequest) {
     const requestedStatus = body.statut === "pending_review" ? "pending_review" : "draft";
     const requestedFundingTypes = Array.isArray(typesFinancement) ? typesFinancement.map(String) : [];
     const isAngel = requestedFundingTypes.includes("angel");
-    if (!nom || !secteur || !description || !montantRecherche) {
+    const isSubmission = requestedStatus === "pending_review";
+    if (!nom || !secteur || (isSubmission && (!description || !montantRecherche))) {
       return NextResponse.json({ error: "Champs requis manquants" }, { status: 400 });
     }
     const supabase = getSupabaseAdmin();
@@ -67,11 +68,11 @@ export async function POST(req: NextRequest) {
       id: uuidv4(),
       nom,
       secteur,
-      description,
+      description: description || "",
       videos: body.videos||[],
       images: body.images||[],
       pdf: body.pdf||"",
-      montantRecherche: parseInt(montantRecherche),
+      montantRecherche: Number(montantRecherche || 0),
       montantCollecte: 0,
       niveauRisque: niveauRisque||"moyen",
       dureeJours: parseInt(dureeJours)||30,
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
       pays: pays||"BJ",
       tauxInteret: tauxInteret||8,
       pourcentageVendu: 20,
-      valorisation: Math.round(parseInt(montantRecherche) / 0.2),
+      valorisation: montantRecherche ? Math.round(Number(montantRecherche) / 0.2) : 0,
       createdAt: new Date().toISOString(),
       dateFin: new Date(Date.now()+parseInt(dureeJours||30)*86400000).toISOString(),
       vues: 0,
@@ -95,7 +96,8 @@ export async function POST(req: NextRequest) {
         if (planError) return NextResponse.json({ error: planError.message }, { status: 500 });
         if (!plan) return NextResponse.json({ error: "La formule d’accompagnement sélectionnée n’est plus disponible." }, { status: 400 });
       }
-      const { data, error } = await supabase.from("crowdfunding_projects").insert({ id: newProjet.id, nom: newProjet.nom, secteur: newProjet.secteur, description: newProjet.description, videos: newProjet.videos, images: newProjet.images, pdf: newProjet.pdf, montant_recherche: newProjet.montantRecherche, montant_collecte: 0, niveau_risque: newProjet.niveauRisque, duree_jours: newProjet.dureeJours, types_financement: newProjet.typesFinancement, statut: newProjet.statut, porteur_id: newProjet.porteurId, pays: newProjet.pays, taux_interet: newProjet.tauxInteret, pourcentage_vendu: newProjet.pourcentageVendu, valorisation: newProjet.valorisation, created_at: newProjet.createdAt, date_fin: newProjet.dateFin, vues: 0, investisseurs: 0, repartition: newProjet.repartition }).select("*").single();
+      const { data, error } = await supabase.from("crowdfunding_projects").insert({ id: newProjet.id, nom: newProjet.nom, secteur: newProjet.secteur,       description: newProjet.description,
+ videos: newProjet.videos, images: newProjet.images, pdf: newProjet.pdf,       montant_recherche: newProjet.montantRecherche, montant_collecte: 0, niveau_risque: newProjet.niveauRisque, duree_jours: newProjet.dureeJours, types_financement: newProjet.typesFinancement, statut: newProjet.statut, porteur_id: newProjet.porteurId, pays: newProjet.pays, taux_interet: newProjet.tauxInteret, pourcentage_vendu: newProjet.pourcentageVendu, valorisation: newProjet.valorisation, created_at: newProjet.createdAt, date_fin: newProjet.dateFin, vues: 0, investisseurs: 0, repartition: newProjet.repartition }).select("*").single();
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       if (isAngel) {
         const { data: plan } = await supabase.from("crowdfunding_advisory_plans").select("id,monthly_price_xof").eq("id", String(body.advisoryPlanId)).maybeSingle();
