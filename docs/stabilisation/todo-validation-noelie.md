@@ -94,3 +94,11 @@ Sur le preview avant le dernier correctif, l’appel `GET /api/admin/crowdfundin
 - [ ] Exposer une action explicite « Approuver le projet » et une action de rejet séparée.
 - [ ] Tester la requête PUT et la transition `en_attente_validation` vers `en_cours`.
 - [ ] Ne lancer aucun paiement pendant cette correction.
+
+## Correction complémentaire — bouton réellement actionnable
+
+- [ ] Séparer la carte de sélection du projet et le bouton d’action de validation.
+- [ ] Afficher un bouton d’approbation directement dans la ligne du projet en attente.
+- [ ] Empêcher la propagation du clic du bouton vers la sélection de la carte.
+- [ ] Afficher un état de chargement puis le résultat de la requête d’approbation.
+- [ ] Vérifier que MagicAfrica passe bien à `en_cours` après validation.
