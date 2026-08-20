@@ -231,3 +231,57 @@
 - [ ] Afficher immédiatement une couverture ou une première page disponible sur mobile.
 - [ ] Ajouter un état d’erreur et un fallback explicite si le PDF est lent ou inaccessible.
 - [ ] Tester le premier affichage et la navigation sur mobile portrait et paysage.
+
+
+## Publication demandée — performance Flipbook mobile
+
+- [ ] Vérifier que le commit `7cf7147` est la version de livraison validée.
+- [ ] Vérifier la branche et la cible de production avant publication.
+- [ ] Déclencher la publication depuis l’interface de gestion du projet.
+- [ ] Ouvrir le Kiosque en production sur mobile et tester l’apparition immédiate de la couverture.
+- [ ] Contrôler le chargement de la première page et le message de délai éventuel.
+
+
+## Lot backend — newsletter, KPI, rôles et e-mails
+
+- [ ] Auditer les tables, routes et services déjà disponibles pour les abonnements newsletter.
+- [ ] Vérifier la présence de tables d’événements pour connexions, déconnexions, paniers abandonnés, commandes et paiements.
+- [ ] Définir les KPI réels calculables sans données fictives et leurs périodes.
+- [ ] Réparer l’enregistrement newsletter avec validation, unicité et désinscription.
+- [ ] Mettre en place une vérification e-mail réelle avant activation du compte.
+- [ ] Définir les rôles rédacteur, gestionnaire magazine et administrateur avec contrôle serveur.
+- [ ] Protéger séparément la publication, la modification et la suppression des articles et magazines.
+- [ ] Préparer le service d’envoi d’e-mails pour inscription, notifications et événements importants.
+- [ ] Tester les permissions, les doublons, les faux e-mails, les KPI et les erreurs d’envoi.
+
+
+## Cadrage des intégrations externes et monétisation
+
+- [ ] Cartographier les besoins pouvant rester internes à Supabase/Next.js et ceux nécessitant un fournisseur externe.
+- [ ] Vérifier les prérequis officiels Google AdSense : domaine, contenu, confidentialité, consentement, ads.txt et validation Google.
+- [ ] Vérifier les prérequis Google Analytics 4 et le consentement des visiteurs avant mesure non nécessaire.
+- [ ] Préparer une architecture d’emplacements publicitaires non intrusive pour WAB, Magazine, Jobs, Marketplace et Crowdfunding.
+- [ ] Préparer la liste des variables à fournir pour le service d’envoi d’e-mails et la vérification des comptes.
+- [ ] Définir les KPI réels, leur source de données et leur fréquence de calcul sans générer de données fictives.
+- [ ] Documenter les limites : aucune garantie d’acceptation AdSense avant examen Google et aucune détection parfaite d’un faux e-mail sans vérification par lien ou code.
+
+
+## Fondations internes — sécurité et monétisation
+
+- [ ] Auditer le flux d’inscription, de connexion, de session et de 2FA déjà présent.
+- [ ] Retenir une limite initiale de 5 tentatives échouées par fenêtre de 15 minutes, avec blocage progressif et journalisation.
+- [ ] Implémenter la vérification e-mail par lien à usage unique et expiration courte, avec possibilité d’adapter plus tard le fournisseur d’envoi.
+- [ ] Vérifier et renforcer la 2FA existante sans supprimer le mécanisme de secours administrateur.
+- [ ] Préparer les tables internes newsletter, événements de session, KPI et consentements publicitaires.
+- [ ] Préparer les composants AdSense désactivés par défaut, `ads.txt` paramétrable et emplacements clairement séparés du contenu.
+- [ ] Tester les scénarios de sécurité, la récupération de compte et la compatibilité future avec un service externe.
+
+
+## Implémentation démarrée — sécurité interne
+
+- [ ] Ajouter les tables de tokens de vérification e-mail, tentatives de connexion et événements de session.
+- [ ] Ajouter les helpers de génération, hash, expiration et consommation des tokens.
+- [ ] Remplacer le 2FA fictif par une vérification TOTP réelle et des codes de récupération hachés.
+- [ ] Appliquer 5 tentatives sur 15 minutes avec blocage progressif côté serveur.
+- [ ] Empêcher l’ouverture automatique d’une session pour un compte non vérifié.
+- [ ] Compiler et tester les routes d’inscription, de connexion et de 2FA avant le lot suivant.

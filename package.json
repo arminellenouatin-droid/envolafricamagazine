@@ -20,6 +20,7 @@
     "jsonwebtoken": "^9.0.3",
     "next": "16.3.0",
     "next-intl": "^4.13.5",
+    "otplib": "^13.4.1",
     "pdfjs-dist": "^6.2.108",
     "pg": "^8.22.0",
     "prisma": "^5.22.0",
