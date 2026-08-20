@@ -210,3 +210,12 @@ Le tableau animateur utilise désormais l’API `/api/awards/live` pour démarre
 La page publique live affiche un flux vidéo uniquement si la session contient un `mux_playback_id` réel. Sans identifiant Mux, elle indique clairement que le live n’est pas démarré ou que le flux est en attente. Aucune variable Mux ou clé secrète n’a été trouvée dans le code source ; le flux Mux de production doit donc être configuré séparément dans les secrets de déploiement et dans le service de génération de sessions avant une diffusion réelle.
 
 Une erreur TypeScript du tableau animateur a été corrigée et le build complet a été relancé avec succès visible dans la liste des routes. La prochaine vérification doit porter sur des sessions et paiements réels dans un environnement connecté, sans reversement.
+
+
+## Mise à jour — boîte à outils mobile Africa Awards
+
+Dans l’en-tête mobile partagé, l’icône Traduction est maintenant remplacée par l’icône Boîte à outils uniquement lorsque la plateforme active est Africa Awards. Le desktop, les autres plateformes et l’icône Traduction des autres sections restent inchangés.
+
+La fenêtre contextuelle affiche des raccourcis adaptés au contexte : le visiteur peut découvrir les compétitions, voter et accéder aux lives ; un utilisateur connecté dispose en plus de son espace nominé et de son historique de votes ; un administrateur dispose du dashboard Africa Awards, de la création de compétition, de la validation des candidatures et de l’accès aux sessions live. Chaque raccourci ferme la fenêtre après navigation et le changement de route réinitialise l’état d’ouverture.
+
+La compilation TypeScript/Next.js a été relancée après cette modification. La mise à jour reste locale tant qu’un commit et un déploiement Production ne sont pas demandés.
