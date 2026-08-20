@@ -1,4 +1,5 @@
 import fs from 'fs';
+/* eslint-disable @typescript-eslint/no-explicit-any -- store legacy en cours de typage progressif */
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -17,8 +18,8 @@ export interface CrowdProject {
   montantCollecte: number;
   niveauRisque: 'faible' | 'moyen' | 'élevé';
   dureeJours: number;
-  typesFinancement: ('don' | 'prise_part' | 'pret')[];
-  statut: 'en_attente_validation' | 'en_cours' | 'objectif_atteint' | 'objectif_depasse' | 'termine_sans_objectif' | 'cloture' | 'en_litige';
+  typesFinancement: ('don' | 'donation' | 'reward' | 'prise_part' | 'equity' | 'pret' | 'lending')[];
+  statut: 'draft' | 'en_attente_validation' | 'en_cours' | 'objectif_atteint' | 'objectif_depasse' | 'termine_sans_objectif' | 'cloture' | 'en_litige';
   porteurId: string;
   pays: string;
   tauxInteret?: number;

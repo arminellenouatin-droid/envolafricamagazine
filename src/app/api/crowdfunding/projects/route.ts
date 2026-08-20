@@ -51,10 +51,16 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: "Connexion requise pour créer un projet." }, { status: 401 });
     const body = await req.json();
     const { nom, secteur, description, montantRecherche, niveauRisque, dureeJours, typesFinancement, pays, tauxInteret } = body;
+    const requestedStatus = body.statut === "pending_review" ? "pending_review" : "draft";
     if (!nom || !secteur || !description || !montantRecherche) {
       return NextResponse.json({ error: "Champs requis manquants" }, { status: 400 });
     }
     const supabase = getSupabaseAdmin();
+    if (supabase) {
+      const { data: existingDraft, error: draftError } = await supabase.from("crowdfunding_projects").select("id,statut").eq("porteur_id", user.id).in("statut", ["draft", "pending_review"]).limit(1).maybeSingle();
+      if (draftError) return NextResponse.json({ error: draftError.message }, { status: 500 });
+      if (existingDraft) return NextResponse.json({ error: "Un seul brouillon ou projet en validation est autorisé par porteur.", projetId: existingDraft.id }, { status: 409 });
+    }
     const newProjet = {
       id: uuidv4(),
       nom,
@@ -68,7 +74,7 @@ export async function POST(req: NextRequest) {
       niveauRisque: niveauRisque||"moyen",
       dureeJours: parseInt(dureeJours)||30,
       typesFinancement: typesFinancement||["don"],
-      statut: "en_attente_validation" as const,
+      statut: requestedStatus === "pending_review" ? "en_attente_validation" as const : "draft" as const,
       porteurId: user.id,
       pays: pays||"BJ",
       tauxInteret: tauxInteret||8,
@@ -86,6 +92,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, projet: mapCrowdProject(data as Record<string, unknown>) });
     }
     const db = readCrowdDB();
+    if (db.projets.some((project) => project.porteurId === user.id && ["draft", "en_attente_validation"].includes(project.statut))) return NextResponse.json({ error: "Un seul brouillon ou projet en validation est autorisé par porteur." }, { status: 409 });
     db.projets.push(newProjet);
     writeCrowdDB(db);
     return NextResponse.json({ success: true, projet: newProjet });

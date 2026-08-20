@@ -1,6 +1,8 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any -- module legacy en cours de typage progressif */
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import ProjectWizard from "@/components/crowdfunding/ProjectWizard";
 
 export default function PorteurDashboard() {
   const [projets, setProjets] = useState<any[]>([]);
@@ -65,6 +67,8 @@ export default function PorteurDashboard() {
       <div className="max-w-[1280px] mx-auto px-5 md:px-[64px] py-10">
         <h1 className="text-[28px] font-black" style={{ fontFamily: "Montserrat" }}>Espace Porteur de projet - Gérer sa collecte - Suivi après collecte</h1>
         <p className="text-[#5c403f] text-[13px] mt-2">Modifier projet, historique contributions, gérer documents (plan affaires, comptes financiers, carte identité...), chiffres utiles vues/avancement/taux réussite, messagerie investisseurs, demandes retrait, rapports mensuels/trimestriels + remboursement auto prêts</p>
+
+        <div className="mt-8"><ProjectWizard /></div>
 
         <div className="mt-8 grid md:grid-cols-3 gap-4">
           <div className="bg-white border rounded-xl p-5"><div className="text-[11px] uppercase font-bold text-[#5c403f]">Collecte totale</div><div className="text-[22px] font-black mt-1">3.2M F</div><div className="text-[11px] text-green-600 mt-1">67% objectif atteint</div></div>
