@@ -18,7 +18,7 @@ export interface CrowdProject {
   montantCollecte: number;
   niveauRisque: 'faible' | 'moyen' | 'élevé';
   dureeJours: number;
-  typesFinancement: ('don' | 'donation' | 'reward' | 'prise_part' | 'equity' | 'pret' | 'lending')[];
+  typesFinancement: ('don' | 'angel' | 'donation' | 'reward' | 'prise_part' | 'equity' | 'pret' | 'lending')[];
   statut: 'draft' | 'en_attente_validation' | 'en_cours' | 'objectif_atteint' | 'objectif_depasse' | 'termine_sans_objectif' | 'cloture' | 'en_litige';
   porteurId: string;
   pays: string;
