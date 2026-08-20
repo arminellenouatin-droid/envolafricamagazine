@@ -83,3 +83,14 @@ La base Supabase de référence `rtfjwpytiuvoekomevpu` contient exactement un pr
 - [ ] Distinguer une réponse 401/403 d’une réponse vide Supabase.
 - [ ] Comparer la base lue par le preview avec `rtfjwpytiuvoekomevpu`.
 - [ ] Ne modifier ni le projet MagicAfrica ni son statut avant diagnostic.
+
+## Réponse API et preview corrigé
+
+Sur le preview avant le dernier correctif, l’appel `GET /api/admin/crowdfunding/projects` a répondu `401 {"error":"Non authentifié"}` dans la session de contrôle. Le correctif `4388e0d` affiche désormais une page explicite de session non reconnue au lieu de compteurs zéro. Le déploiement Vercel `dpl_AUjcSFB4VSvjvP4TfZ9JXgUCxLRn` est READY à l’URL `https://envolafricamagazinegildas-q5oid18d7-arminel.vercel.app`. La base Supabase de référence contient toujours MagicAfrica avec le statut `en_attente_validation`.
+
+## Blocage — action administrative non fonctionnelle
+
+- [ ] Vérifier pourquoi le statut affiche « À valider » sans bouton d’action opérationnel.
+- [ ] Exposer une action explicite « Approuver le projet » et une action de rejet séparée.
+- [ ] Tester la requête PUT et la transition `en_attente_validation` vers `en_cours`.
+- [ ] Ne lancer aucun paiement pendant cette correction.
