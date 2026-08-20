@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { MIN_PAYMENT_AMOUNT_XOF } from "@/lib/payment-policy";
 
 const amounts = [5000,10000,25000,50000,100000];
 
@@ -14,7 +15,7 @@ export default function DonPage() {
   const finalAmount = custom ? parseInt(custom) : amount;
 
   const handleDon = async () => {
-    if (!finalAmount || finalAmount<1000) { alert("Montant minimum 1000 F CFA"); return; }
+    if (!Number.isInteger(finalAmount) || finalAmount < MIN_PAYMENT_AMOUNT_XOF) { alert(`Le montant minimum accepté est de ${MIN_PAYMENT_AMOUNT_XOF.toLocaleString("fr-FR")} F CFA.`); return; }
     setLoading(true);
     try {
       const res = await fetch("/api/payment/init", {
@@ -53,7 +54,8 @@ export default function DonPage() {
             </div>
             <div className="mt-4">
               <label className="text-[12px] font-semibold uppercase tracking-wide text-zinc-600">Montant personnalisé (F CFA)</label>
-              <input type="number" value={custom} onChange={e=>setCustom(e.target.value)} placeholder="Ex: 75000" className="mt-2 w-full h-12 rounded-full border border-zinc-200 bg-zinc-50 px-5 text-[15px] focus:bg-white focus:border-[#0A1931] outline-none" />
+              <input type="number" min={MIN_PAYMENT_AMOUNT_XOF} value={custom} onChange={e=>setCustom(e.target.value)} placeholder={`Minimum ${MIN_PAYMENT_AMOUNT_XOF.toLocaleString("fr-FR")} F CFA`} className="mt-2 w-full h-12 rounded-full border border-zinc-200 bg-zinc-50 px-5 text-[15px] focus:bg-white focus:border-[#0A1931] outline-none" />
+              <p className="mt-2 text-[12px] text-zinc-500">Le montant minimum accepté est de {MIN_PAYMENT_AMOUNT_XOF.toLocaleString("fr-FR")} F CFA.</p>
             </div>
 
             <div className="mt-8">

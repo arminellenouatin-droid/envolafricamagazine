@@ -5,6 +5,7 @@ import { getCurrentUserFromCookie } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 import { SHIPPING_RATES } from "@/lib/constants";
 import { getMonerooMethodCodes } from "@/lib/payment-methods";
+import { validateMinimumPaymentAmount } from "@/lib/payment-policy";
 
 const SUBSCRIPTION_PRICES: Record<string, number> = {
   mensuel: 2000,
@@ -78,6 +79,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (!Number.isInteger(total) || total <= 0) return NextResponse.json({ error: "Montant de commande invalide" }, { status: 400 });
+    if (paymentCurrency === "XOF") {
+      const minimumError = validateMinimumPaymentAmount(total);
+      if (minimumError) return NextResponse.json({ error: minimumError, code: "MINIMUM_PAYMENT_AMOUNT" }, { status: 400 });
+    }
     const orderId = uuidv4();
     createdOrderId = orderId;
     const shippingCost = shippingCountry ? (SHIPPING_RATES[shippingCountry] || SHIPPING_RATES.default) : 0;
