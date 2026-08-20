@@ -7,6 +7,35 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { notifyPushSubscribers } from "@/lib/ecosystem-inbox";
 import { sanitizeRichText } from "@/lib/rich-text";
 
+const SUPPORTED_ARTICLE_LANGUAGES = ["fr", "en", "es", "sw", "fon", "wo", "ha", "yo", "ig", "ff", "zu", "ee"] as const;
+type ArticleLanguage = typeof SUPPORTED_ARTICLE_LANGUAGES[number];
+
+function normalizeTranslations(input: unknown, fallback: { title: string; summary: string; content: string }) {
+  const source = input && typeof input === "object" ? input as Record<string, unknown> : {};
+  const output: Record<string, { title: string; summary: string; content: string }> = {};
+  for (const language of SUPPORTED_ARTICLE_LANGUAGES) {
+    const value = source[language];
+    if (!value || typeof value !== "object") continue;
+    const item = value as Record<string, unknown>;
+    const title = String(item.title ?? "").trim();
+    const summary = String(item.summary ?? "").trim();
+    const content = sanitizeRichText(String(item.content ?? ""));
+    if (title && content) output[language] = { title, summary, content };
+  }
+  if (!output.fr) output.fr = fallback;
+  return output;
+}
+
+function normalizeAudioByLanguage(input: unknown) {
+  const source = input && typeof input === "object" ? input as Record<string, unknown> : {};
+  const output: Record<string, string> = {};
+  for (const language of SUPPORTED_ARTICLE_LANGUAGES) {
+    const value = source[language];
+    if (typeof value === "string" && /^https?:\/\//i.test(value.trim())) output[language] = value.trim();
+  }
+  return output;
+}
+
 function slugify(value: string) {
   return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
@@ -29,8 +58,10 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error }, { status });
   try {
     const body = await req.json();
-    const { title, summary, content: rawContent, category, categoryId, categoryIds, author, authorId, authorProfileId, image, isEncrypted, isPublished, isFeatured, isSentinelle, isEssor, isOmbreDouce, tags } = body;
+    const { title, summary, content: rawContent, category, categoryId, categoryIds, author, authorId, authorProfileId, image, isEncrypted, isPublished, isFeatured, isSentinelle, isEssor, isOmbreDouce, tags, translations, audioByLanguage } = body;
     const content = sanitizeRichText(String(rawContent ?? ""));
+    const normalizedTranslations = normalizeTranslations(translations, { title: String(title), summary: String(summary ?? ""), content });
+    const normalizedAudio = normalizeAudioByLanguage(audioByLanguage);
     if (!title || !content) return NextResponse.json({ error: "Titre et contenu requis" }, { status: 400 });
     const createdAt = new Date().toISOString();
     const published = Boolean(isPublished);
@@ -38,11 +69,11 @@ export async function POST(req: NextRequest) {
       id: uuidv4(), slug: `${slugify(String(title))}-${Date.now().toString().slice(-4)}`, title: String(title), summary: summary || String(content).substring(0, 180) + "...", content: String(content), previewLines: 12,
       category: category || "Economie", tags: Array.isArray(tags) ? tags.filter(Boolean) : [category || "Economie"], author: author || `${user!.prenom} ${user!.nom}`, authorId: authorId || user!.id,
       image: image || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800", isPublished: published, isEncrypted: isEncrypted !== false, isFeatured: Boolean(isFeatured), isSentinelle: Boolean(isSentinelle), isEssor: Boolean(isEssor), isOmbreDouce: Boolean(isOmbreDouce),
-      views: 0, likes: 0, createdAt, publishedAt: published ? createdAt : undefined, language: "fr", hasAudio: true, audioUrl: "/audio/sample.mp3", readingTime: Math.ceil(String(content).split(/\s+/).length / 200),
+      views: 0, likes: 0, createdAt, publishedAt: published ? createdAt : undefined, language: Object.keys(normalizedTranslations)[0] || "fr", translations: normalizedTranslations, hasAudio: Object.keys(normalizedAudio).length > 0, audioUrl: normalizedAudio[Object.keys(normalizedAudio)[0] || ""] || undefined, audioByLanguage: normalizedAudio, readingTime: Math.ceil(String(content).split(/\s+/).length / 200),
     };
     const client = getSupabaseAdmin();
     if (client) {
-      const { data: article, error: insertError } = await client.from("articles").insert({ id: newArticle.id, slug: newArticle.slug, title: newArticle.title, summary: newArticle.summary, content: newArticle.content, preview_lines: newArticle.previewLines, category: newArticle.category, tags: newArticle.tags, author: newArticle.author, author_id: newArticle.authorId, image: newArticle.image, author_profile_id: authorProfileId || null, category_id: categoryId || null, is_published: newArticle.isPublished, is_encrypted: newArticle.isEncrypted, is_featured: newArticle.isFeatured, is_sentinelle: newArticle.isSentinelle, is_essor: newArticle.isEssor, is_ombre_douce: newArticle.isOmbreDouce, views: 0, likes: 0, created_at: newArticle.createdAt, published_at: newArticle.publishedAt ?? null, language: newArticle.language, has_audio: newArticle.hasAudio, audio_url: newArticle.audioUrl, reading_time: newArticle.readingTime }).select("*").single();
+      const { data: article, error: insertError } = await client.from("articles").insert({ id: newArticle.id, slug: newArticle.slug, title: newArticle.title, summary: newArticle.summary, content: newArticle.content, preview_lines: newArticle.previewLines, category: newArticle.category, tags: newArticle.tags, author: newArticle.author, author_id: newArticle.authorId, image: newArticle.image, author_profile_id: authorProfileId || null, category_id: categoryId || null, is_published: newArticle.isPublished, is_encrypted: newArticle.isEncrypted, is_featured: newArticle.isFeatured, is_sentinelle: newArticle.isSentinelle, is_essor: newArticle.isEssor, is_ombre_douce: newArticle.isOmbreDouce, views: 0, likes: 0, created_at: newArticle.createdAt, published_at: newArticle.publishedAt ?? null, language: newArticle.language, translations: normalizedTranslations, has_audio: newArticle.hasAudio, audio_url: newArticle.audioUrl ?? null, audio_by_language: normalizedAudio, reading_time: newArticle.readingTime }).select("*").single();
       if (insertError) return NextResponse.json({ error: `Impossible d’enregistrer l’article : ${insertError.message}` }, { status: 503 });
       const relationIds = Array.isArray(categoryIds) ? categoryIds.filter(Boolean) : (categoryId ? [categoryId] : []);
       if (relationIds.length) await client.from("article_categories").insert(relationIds.map((category_id: string, index: number) => ({ article_id: newArticle.id, category_id, is_primary: index === 0 })));
@@ -66,6 +97,8 @@ export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
     const { id, ...updates } = body;
+    if (updates.translations !== undefined) updates.translations = normalizeTranslations(updates.translations, { title: String(updates.title ?? ""), summary: String(updates.summary ?? ""), content: sanitizeRichText(String(updates.content ?? "")) });
+    if (updates.audioByLanguage !== undefined) updates.audioByLanguage = normalizeAudioByLanguage(updates.audioByLanguage);
     if (!id) return NextResponse.json({ error: "ID requis" }, { status: 400 });
     const client = getSupabaseAdmin();
     let existing: any;
@@ -82,8 +115,10 @@ export async function PUT(req: NextRequest) {
     const publishedAt = isPublishing ? new Date().toISOString() : undefined;
     if (client) {
       const patch: Record<string, unknown> = {};
-      const fields: Record<string, string> = { title: "title", summary: "summary", content: "content", category: "category", categoryId: "category_id", author: "author", authorId: "author_id", authorProfileId: "author_profile_id", image: "image", tags: "tags", isPublished: "is_published", isEncrypted: "is_encrypted", isFeatured: "is_featured", isSentinelle: "is_sentinelle", isEssor: "is_essor", isOmbreDouce: "is_ombre_douce" };
+      const fields: Record<string, string> = { title: "title", summary: "summary", content: "content", category: "category", categoryId: "category_id", author: "author", authorId: "author_id", authorProfileId: "author_profile_id", image: "image", tags: "tags", isPublished: "is_published", isEncrypted: "is_encrypted", isFeatured: "is_featured", isSentinelle: "is_sentinelle", isEssor: "is_essor", isOmbreDouce: "is_ombre_douce", translations: "translations", audioByLanguage: "audio_by_language" };
       for (const [key, column] of Object.entries(fields)) if (Object.prototype.hasOwnProperty.call(updates, key)) patch[column] = key === "content" ? sanitizeRichText(String(updates[key] ?? "")) : key === "summary" ? String(updates[key] ?? "").replace(/<[^>]*>/g, "").trim() : updates[key];
+      if (Object.prototype.hasOwnProperty.call(updates, "audioByLanguage")) { patch.has_audio = Object.keys(updates.audioByLanguage || {}).length > 0; patch.audio_url = updates.audioByLanguage?.fr || Object.values(updates.audioByLanguage || {})[0] || null; }
+      if (Object.prototype.hasOwnProperty.call(updates, "translations") && updates.translations?.fr) { patch.title = updates.translations.fr.title; patch.summary = updates.translations.fr.summary; patch.content = updates.translations.fr.content; patch.language = "fr"; }
       if (publishedAt) patch.published_at = publishedAt;
       const result = await client.from("articles").update(patch).eq("id", id).select("*").single();
       if (result.error) return NextResponse.json({ error: `Impossible d’enregistrer l’article : ${result.error.message}` }, { status: 503 });

@@ -226,3 +226,12 @@ La compilation TypeScript/Next.js a été relancée après cette modification. L
 L’accueil de l’administration Magazine a été réorganisé sans supprimer les outils existants. Le nouvel écran présente un centre de pilotage avec indicateurs revenus, éditions, abonnés et demandes, un parcours recommandé et six cartes opérationnelles : Articles, Magazines/flipbooks, Abonnements/tarifs, Commandes/paiements, Rédacteurs/catégories et Réglages/sécurité.
 
 Chaque carte conserve l’onglet opérationnel correspondant et son action existante. La composition reprend l’esprit apprécié du dashboard Africa Awards : hiérarchie forte, numérotation des étapes, descriptions courtes, accès directs et contrôle rapide. La boîte à outils mobile Africa Awards reste incluse dans le même lot de travail. La compilation complète et `git diff --check` sont passés ; aucun déploiement supplémentaire n’a encore été effectué pour permettre le regroupement avec les prochaines modifications demandées.
+
+
+## Extension Magazine : articles multilingues et audio
+
+Le modèle Article prend désormais en charge `translations`, une structure JSON par code de langue contenant le titre, le résumé et le contenu, ainsi que `audio_by_language`, une structure JSON associant chaque langue à une URL audio validée. La migration `20260820_article_localizations_audio.sql` ajoute ces colonnes à Supabase avec des index GIN.
+
+L’administration Magazine expose des champs pour le français principal, l’anglais, l’espagnol, le swahili, le fongbé et le wolof, ainsi qu’une URL audio par langue. Les valeurs sont normalisées côté serveur, les contenus sont nettoyés et aucune piste audio fictive n’est désormais générée. La préférence de langue du compte peut être sauvegardée via `/api/profile/preferences` et lue par la page article.
+
+La page article propose un sélecteur de langue et un lecteur audio HTML réservé aux abonnés. La version préférée est sélectionnée par défaut lorsqu’elle existe ; sinon le site revient à la langue principale de l’article. Le paywall reste appliqué à chaque version. Avant déploiement, la migration Supabase doit être appliquée sur la base de production et un article réel doit être vérifié avec au moins une traduction et une piste audio hébergée.
