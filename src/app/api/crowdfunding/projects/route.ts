@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Crowdfunding indisponible : connexion Supabase manquante." }, { status: 503 });
   }
   if (supabase) {
-    const result = await getCrowdProjects({ secteur, pays, risque, statut: statut || (id ? null : "active"), type, id, cursor, limit });
+    const result = await getCrowdProjects({ secteur, pays, risque, statut: statut || (id ? null : "en_cours"), type, id, cursor, limit });
     if (id) {
       const projet = result.projets[0];
       if (!projet) return NextResponse.json({ error: "Projet introuvable" }, { status: 404 });

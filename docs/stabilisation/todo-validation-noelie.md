@@ -102,3 +102,11 @@ Sur le preview avant le dernier correctif, l’appel `GET /api/admin/crowdfundin
 - [ ] Empêcher la propagation du clic du bouton vers la sélection de la carte.
 - [ ] Afficher un état de chargement puis le résultat de la requête d’approbation.
 - [ ] Vérifier que MagicAfrica passe bien à `en_cours` après validation.
+
+## Blocage public résolu en diagnostic — filtre de statut incohérent
+
+- [x] Confirmer dans Supabase que MagicAfrica est `en_cours`.
+- [x] Identifier que la route publique demandait par défaut `statut=active`.
+- [ ] Remplacer le statut public par `en_cours`.
+- [ ] Vérifier que l’API publique retourne MagicAfrica.
+- [ ] Vérifier que la campagne apparaît sur `/financement`.
