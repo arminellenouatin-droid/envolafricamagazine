@@ -18,6 +18,9 @@ export async function GET(req: NextRequest) {
   const limit = Number(searchParams.get("limit") || 12);
 
   const supabase = getSupabaseAdmin();
+  if (!supabase && process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Crowdfunding indisponible : connexion Supabase manquante." }, { status: 503 });
+  }
   if (supabase) {
     const result = await getCrowdProjects({ secteur, pays, risque, statut: statut || (id ? null : "active"), type, id, cursor, limit });
     if (id) {
@@ -59,6 +62,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Champs requis manquants" }, { status: 400 });
     }
     const supabase = getSupabaseAdmin();
+    if (!supabase && process.env.NODE_ENV === "production") {
+      return NextResponse.json({ error: "Crowdfunding indisponible : connexion Supabase manquante." }, { status: 503 });
+    }
     if (supabase) {
       const { data: existingDraft, error: draftError } = await supabase.from("crowdfunding_projects").select("id,statut").eq("porteur_id", user.id).in("statut", ["draft", "pending_review"]).limit(1).maybeSingle();
       if (draftError) return NextResponse.json({ error: draftError.message }, { status: 500 });
