@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { readAwardsDB } from "@/lib/awards-db";
+import { getSupabaseCompetitions } from "@/lib/awards-supabase";
 
 export default async function CompetitionsPage({ searchParams }: { searchParams: Promise<{ filter?: string }> }) {
-  const db = readAwardsDB();
   const filter = (await searchParams).filter || "all";
-  const allComps = db.competitions.sort((a,b)=> new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const remote = await getSupabaseCompetitions();
+  const allComps = (remote.configured ? remote.competitions : readAwardsDB().competitions).sort((a,b)=> new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   const comps = filter === "live" ? allComps.filter(c => c.status === "live_running") : filter === "voting" ? allComps.filter(c => c.status === "voting_open") : filter === "upcoming" ? allComps.filter(c => ["published", "registrations_open", "live_scheduled"].includes(c.status)) : filter === "finished" ? allComps.filter(c => ["finished", "archived"].includes(c.status)) : allComps;
   const live = comps.filter(c=>c.status==="live_running");
   const voting = comps.filter(c=>c.status==="voting_open");

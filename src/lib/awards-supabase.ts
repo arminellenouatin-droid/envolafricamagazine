@@ -8,6 +8,7 @@ function mapCompetition(row: Record<string, unknown>): AwardsCompetition {
     title: String(row.title),
     description: typeof row.description === "string" ? row.description : "",
     category: typeof row.category === "string" ? row.category : "Awards",
+    category_id: typeof row.category_id === "string" ? row.category_id : undefined,
     status: String(row.status) as AwardsCompetition["status"],
     vote_price_cents: Number(row.vote_price_cents ?? 0),
     points_per_vote: Number(row.points_per_vote ?? 1),
@@ -50,7 +51,7 @@ export function awardsSupabaseConfigured() {
 export async function getSupabaseCompetitions(filters?: { slug?: string | null; status?: string | null }) {
   const client = getSupabaseAdmin();
   if (!client) return { configured: false as const, competitions: [] as AwardsCompetition[] };
-  let query = client.from("awards_competitions").select("id,slug,title,description,category,status,vote_price_cents,points_per_vote,jury_weight,public_vote_weight,organizer_org_id,created_by,created_at,starts_at,ends_at,legacy_candidates_count,legacy_votes_count,legacy_pot_amount_cents,legacy_cover_image").order("created_at", { ascending: false }).limit(100);
+  let query = client.from("awards_competitions").select("id,slug,title,description,category,category_id,status,vote_price_cents,points_per_vote,jury_weight,public_vote_weight,organizer_org_id,created_by,created_at,starts_at,ends_at,legacy_candidates_count,legacy_votes_count,legacy_pot_amount_cents,legacy_cover_image").order("created_at", { ascending: false }).limit(100);
   if (filters?.slug) query = query.eq("slug", filters.slug);
   if (filters?.status) query = query.eq("status", filters.status);
   const { data, error } = await query;
