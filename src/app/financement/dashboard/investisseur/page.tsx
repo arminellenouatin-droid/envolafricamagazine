@@ -1,18 +1,17 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any -- dashboard legacy en cours de typage progressif */
 import { useEffect, useState } from "react";
-import Link from "next/link";
 
 export default function InvestisseurDashboard() {
   const [contribs, setContribs] = useState<any[]>([]);
   const [repayments, setRepayments] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
+  const [reports, setReports] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [selectedProjectId] = useState(() => typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("projetId") || "" : "");
 
   useEffect(()=>{
-    const params = new URLSearchParams(window.location.search);
-    setSelectedProjectId(params.get("projetId") || "");
     fetch("/api/auth/me").then(r=>r.json()).then(d=>setCurrentUser(d.user || null)).catch(()=>{});
     fetch("/api/crowdfunding/contributions").then(r=>r.ok ? r.json() : { contributions: [] }).then(d=>setContribs(d.contributions || [])).catch(()=>setContribs([]));
     fetch("/api/crowdfunding/repayments").then(r=>r.json()).then(d=>setRepayments(d.repayments||[])).catch(()=>{});
@@ -21,6 +20,7 @@ export default function InvestisseurDashboard() {
   useEffect(()=>{
     if (!selectedProjectId) return;
     fetch(`/api/crowdfunding/messages?projetId=${encodeURIComponent(selectedProjectId)}`).then(r=>r.json()).then(d=>setMessages(d.messages||[])).catch(()=>setMessages([]));
+    fetch(`/api/crowdfunding/reports?projetId=${encodeURIComponent(selectedProjectId)}`).then(r=>r.json()).then(d=>setReports(d.reports||[])).catch(()=>setReports([]));
   },[selectedProjectId]);
 
   const sendMessage = async () => {
@@ -51,10 +51,11 @@ export default function InvestisseurDashboard() {
         <div className="mt-8 grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-white rounded-xl border p-6">
             <h3 className="font-bold">Historique contributions + Contrats PDF auto + Messagerie</h3>
+            {selectedProjectId && <div className="mt-5 rounded-xl border border-[#e5bdbb] p-4"><h4 className="font-bold text-[14px]">Reporting mensuel du projet</h4><p className="text-[11px] text-[#5c403f] mt-1">Les rapports sont accessibles uniquement aux investisseurs autorisés du projet.</p><div className="mt-3 space-y-2">{reports.map((report:any)=><div key={report.id} className="rounded-lg bg-[#f6f3f2] p-3"><div className="flex justify-between gap-3 text-[11px] font-bold"><span>{report.period_start} → {report.period_end}</span><span>{report.status}</span></div><div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px]"><span>CA : <b>{report.revenue ?? "—"}</b></span><span>Trésorerie : <b>{report.cash_end ?? "—"}</b></span><span>Dépenses : <b>{report.operating_expenses ?? "—"}</b></span><span>Clients : <b>{report.customers_active ?? "—"}</b></span></div><p className="mt-2 text-[11px] text-[#5c403f]">{report.narrative || "Aucun commentaire"}</p></div>)}{reports.length===0 && <p className="text-[11px] text-[#5c403f]">Aucun rapport mensuel publié pour ce projet.</p>}</div></div>}
             <div className="mt-4 space-y-3">
               {contribs.map((c:any)=>(
                 <div key={c.id} className="border rounded-xl p-4 flex justify-between gap-4">
-                  <div className="flex-1"><div className="font-bold text-[14px]">{c.projet} • {c.type.replace("_"," ")}</div><div className="text-[11px] text-[#5c403f] mt-1">{new Date(c.createdAt||Date.now()).toLocaleDateString()} • {c.montant.toLocaleString()} F {c.pourcentage?`• ${c.pourcentage}%`:""} {c.taux?`• ${c.taux}%`:""} • {c.statut}</div>
+                  <div className="flex-1"><div className="font-bold text-[14px]">{c.projet} • {c.type.replace("_"," ")}</div><div className="text-[11px] text-[#5c403f] mt-1">{c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "—"} • {c.montant.toLocaleString()} F {c.pourcentage?`• ${c.pourcentage}%`:""} {c.taux?`• ${c.taux}%`:""} • {c.statut}</div>
                     {c.type==="pret" && (
                       <div className="mt-3">
                         <div className="font-bold text-[11px]">Calendrier remboursement - Fréquence mensuelle, capital+intérêts, date paiement</div>
@@ -85,7 +86,7 @@ export default function InvestisseurDashboard() {
             </div>
 
             <div className="bg-white border rounded-xl p-5">
-              <h4 className="font-bold text-[14px]">Parts d'entreprises - Valeur mise à jour</h4>
+              <h4 className="font-bold text-[14px]">Parts d&apos;entreprises - Valeur mise à jour</h4>
               <p className="text-[12px] text-[#5c403f] mt-2">Valeur calculée auto: montant collecté / % vendu. Ex: TechVillage 20M valo → ta part 2.5% = 500k F - Retrouvé dans espace perso avec valeur mise à jour</p>
               <div className="mt-3 bg-[#f6f3f2] rounded-lg p-3 text-[11px]">
                 <div className="flex justify-between"><span>Valorisation</span><span className="font-bold">20M F</span></div>
