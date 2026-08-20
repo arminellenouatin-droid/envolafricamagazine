@@ -1,0 +1,1 @@
+{"project_id":"rtfjwpytiuvoekomevpu","query":"select id, slug, title, category, status, vote_price_cents, points_per_vote, jury_weight, public_vote_weight, created_by, created_at, starts_at, ends_at from public.awards_competitions order by created_at desc limit 20;"}

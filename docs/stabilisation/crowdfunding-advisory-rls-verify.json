@@ -1,0 +1,1 @@
+{"project_id":"rtfjwpytiuvoekomevpu","query":"select c.relname as table_name, c.relrowsecurity as row_security from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname in ('crowdfunding_advisory_plans','crowdfunding_advisory_engagements','crowdfunding_monthly_reports','crowdfunding_angel_chain_events') order by c.relname limit 10;"}

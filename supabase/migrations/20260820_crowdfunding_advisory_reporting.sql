@@ -1,0 +1,102 @@
+-- Crowdfunding advisory, monthly reporting and Angel chain.
+-- Additive migration: no existing business data is deleted.
+
+create table if not exists public.crowdfunding_advisory_plans (
+  id uuid primary key default uuid_generate_v4(),
+  code text unique not null,
+  name text not null,
+  monthly_price_xof numeric not null check (monthly_price_xof >= 0),
+  service_level text not null default '',
+  description text not null default '',
+  active boolean not null default true,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.crowdfunding_advisory_engagements (
+  id uuid primary key default uuid_generate_v4(),
+  project_id uuid not null references public.crowdfunding_projects(id) on delete cascade,
+  porteur_id text not null,
+  plan_id uuid not null references public.crowdfunding_advisory_plans(id),
+  status text not null default 'pending' check (status in ('pending','active','paused','autonomous','cancelled')),
+  monthly_price_xof numeric not null check (monthly_price_xof >= 0),
+  started_at timestamptz,
+  autonomous_at timestamptz,
+  ended_at timestamptz,
+  autonomy_source_project_id uuid references public.crowdfunding_projects(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(project_id)
+);
+
+create table if not exists public.crowdfunding_monthly_reports (
+  id uuid primary key default uuid_generate_v4(),
+  project_id uuid not null references public.crowdfunding_projects(id) on delete cascade,
+  author_id text not null,
+  period_start date not null,
+  period_end date not null,
+  status text not null default 'draft' check (status in ('draft','submitted','approved','changes_requested')),
+  revenue numeric,
+  gross_margin numeric,
+  operating_expenses numeric,
+  operating_profit numeric,
+  cash_start numeric,
+  cash_end numeric,
+  cash_inflows numeric,
+  cash_outflows numeric,
+  operating_cashflow numeric,
+  free_cashflow numeric,
+  burn_rate numeric,
+  runway_months numeric,
+  debt_service numeric,
+  dscr numeric,
+  customers_active integer,
+  customers_new integer,
+  customers_lost integer,
+  employees_count integer,
+  milestones_completed integer,
+  milestones_delayed integer,
+  narrative text not null default '',
+  risks text not null default '',
+  next_actions text not null default '',
+  attachments jsonb not null default '[]'::jsonb,
+  submitted_at timestamptz,
+  reviewed_at timestamptz,
+  reviewer_id text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(project_id, period_start, period_end)
+);
+
+create table if not exists public.crowdfunding_angel_chain_events (
+  id uuid primary key default uuid_generate_v4(),
+  source_porteur_id text not null,
+  source_project_id uuid references public.crowdfunding_projects(id) on delete set null,
+  beneficiary_project_id uuid not null references public.crowdfunding_projects(id) on delete cascade,
+  amount numeric not null check (amount > 0),
+  currency text not null default 'XOF',
+  status text not null default 'declared' check (status in ('declared','verified','completed','cancelled')),
+  proof_url text,
+  note text not null default '',
+  verified_at timestamptz,
+  verified_by text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_crowdfunding_advisory_engagements_porteur on public.crowdfunding_advisory_engagements(porteur_id, status);
+create index if not exists idx_crowdfunding_monthly_reports_project_period on public.crowdfunding_monthly_reports(project_id, period_end desc);
+create index if not exists idx_crowdfunding_angel_chain_source on public.crowdfunding_angel_chain_events(source_porteur_id, created_at desc);
+create index if not exists idx_crowdfunding_angel_chain_beneficiary on public.crowdfunding_angel_chain_events(beneficiary_project_id, created_at desc);
+
+alter table public.crowdfunding_advisory_plans enable row level security;
+alter table public.crowdfunding_advisory_engagements enable row level security;
+alter table public.crowdfunding_monthly_reports enable row level security;
+alter table public.crowdfunding_angel_chain_events enable row level security;
+
+insert into public.crowdfunding_advisory_plans (code, name, monthly_price_xof, service_level, description, sort_order)
+values
+  ('angel_50000', 'Formule Essentielle', 50000, 'Accompagnement de base', 'Suivi financier, comptable et points de pilotage.', 1),
+  ('angel_80000', 'Formule Croissance', 80000, 'Accompagnement renforcé', 'Suivi financier, comptable, managérial et commercial renforcé.', 2),
+  ('angel_100000', 'Formule Accélération', 100000, 'Accompagnement complet', 'Accompagnement complet incluant stratégie, marketing et croissance.', 3)
+on conflict (code) do nothing;

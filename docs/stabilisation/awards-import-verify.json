@@ -1,0 +1,1 @@
+{"project_id":"rtfjwpytiuvoekomevpu","query":"select 'competitions' as entity, id::text, slug, legacy_candidates_count::text as metric_a, legacy_votes_count::text as metric_b from public.awards_competitions order by created_at desc limit 20;"}

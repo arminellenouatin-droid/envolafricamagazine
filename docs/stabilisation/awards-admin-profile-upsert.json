@@ -1,0 +1,1 @@
+{"project_id":"rtfjwpytiuvoekomevpu","query":"insert into public.awards_profiles (id, full_name, role, country) select id, concat_ws(' ', prenom, nom), 'admin', country from public.users where id = '4fecde1b-bfc5-4e46-a3b3-c4281e6c3024' limit 1 on conflict (id) do update set role = 'admin';"}

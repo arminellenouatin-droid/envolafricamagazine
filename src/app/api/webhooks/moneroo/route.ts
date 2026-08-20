@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { verifyMonerooPayment } from "@/lib/moneroo";
-import { readAwardsDB, writeAwardsDB } from "@/lib/awards-db";
+import { settleAwardVoteSupabase, settleCrowdfundingContributionSupabase } from "@/lib/financial-settlement-supabase";
 import { activateJobsBoostByPayment } from "@/lib/jobs-supabase";
 import { activateMonerooEntitlements } from "@/lib/moneroo-entitlements";
 import { activateCrowdfundingBoostByPayment, activateMarketplaceBoostByPayment } from "@/lib/wab-boost-sources";
-import { generateCalendrierRemboursement, readCrowdDB, writeCrowdDB } from "@/lib/crowdfunding-db";
 import {
   confirmOrderPayment,
   findOrderById,
@@ -47,42 +46,12 @@ function hasValidSignature(payload: string, receivedSignature: string, secret: s
 
 async function settleAwardVote(metadata: Record<string, unknown>, paymentId: string) {
   if (metadata.product !== "award_vote") return;
-  const candidateId = String(metadata.candidate_id || "");
-  const competitionId = String(metadata.competition_id || "");
-  const points = Math.max(1, Math.min(1000, Number(metadata.points) || 1));
-  if (!candidateId || !competitionId) throw new Error("Métadonnées de vote Awards invalides");
-  const db = readAwardsDB();
-  if (db.votes.some((vote) => vote.payment_transaction_id === paymentId)) return;
-  db.votes.push({ id: `vote_${paymentId}`, voter_id: String(metadata.user_id || "guest"), candidate_id: candidateId, competition_id: competitionId, points, payment_transaction_id: paymentId, created_at: new Date().toISOString() });
-  const candidate = db.candidates.find((item) => item.id === candidateId);
-  if (candidate) candidate.votes += points;
-  const competition = db.competitions.find((item) => item.id === competitionId);
-  if (competition) competition.votes_count = (competition.votes_count || 0) + points;
-  writeAwardsDB(db);
+  await settleAwardVoteSupabase(metadata, paymentId);
 }
 
 async function settleCrowdfundingContribution(metadata: Record<string, unknown>, paymentId: string) {
   if (metadata.product !== "crowdfunding_contribution") return;
-  const projectId = String(metadata.project_id || "");
-  const contributionId = String(metadata.contribution_id || paymentId);
-  const mode = String(metadata.mode || "don") as "don" | "prise_part" | "pret";
-  const amount = Math.round(Number(metadata.amount_xof) || 0);
-  const investorId = String(metadata.user_id || "guest");
-  if (!projectId || !amount || !["don", "prise_part", "pret"].includes(mode)) throw new Error("Métadonnées Crowdfunding invalides");
-  const db = readCrowdDB();
-  if (db.contributions.some((item) => item.id === contributionId || item.id === `contribution_${paymentId}`)) return;
-  const project = db.projets.find((item) => item.id === projectId);
-  if (!project) throw new Error("Projet Crowdfunding introuvable");
-  const percentage = mode === "prise_part" ? Math.max(0.1, Math.min(10, Number(metadata.percentage) || 1)) : undefined;
-  const contribution = { id: contributionId, projetId: projectId, investisseurId: investorId, type: mode, montant: amount, pourcentage: percentage, tauxInteret: mode === "pret" ? project.tauxInteret : undefined, calendrierRemboursement: mode === "pret" ? generateCalendrierRemboursement(amount, project.tauxInteret || 8, Math.max(1, Math.ceil(project.dureeJours / 30))) : undefined, createdAt: new Date().toISOString() };
-  db.contributions.push(contribution);
-  project.montantCollecte += amount;
-  project.investisseurs += 1;
-  project.repartition[mode === "don" ? "dons" : mode === "prise_part" ? "prise_part" : "pret"] += amount;
-  if (mode === "pret") {
-    for (const installment of contribution.calendrierRemboursement || []) db.repayments.push({ id: `repayment_${contributionId}_${installment.date}`, contributionId, projetId: projectId, investisseurId: investorId, porteurId: project.porteurId, datePrevue: installment.date, capital: installment.capital, interet: installment.interet, total: installment.total, statut: "prevu", retardJours: 0 });
-  }
-  writeCrowdDB(db);
+  await settleCrowdfundingContributionSupabase(metadata, paymentId);
 }
 
 async function settleSubscription(orderId: string, alreadyPaid: boolean) {
