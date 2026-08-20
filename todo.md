@@ -109,3 +109,11 @@
 - [ ] Transformer le menu « + » en barre texte avec six actions et ouverture/fermeture au clic.
 - [ ] Tester les plateformes mobile et préserver le desktop.
 - [ ] Compiler, documenter et déployer le lot.
+
+
+## Correction responsive du menu inférieur mobile
+
+- [ ] Garantir une seule ligne horizontale avec défilement contrôlé.
+- [ ] Remplacer les sélecteurs natifs Pays et Devise par des menus clairs et modernes.
+- [ ] Refermer automatiquement la barre après une sélection.
+- [ ] Tester les largeurs mobiles et compiler avant déploiement.

@@ -235,3 +235,8 @@ Le modèle Article prend désormais en charge `translations`, une structure JSON
 L’administration Magazine expose des champs pour le français principal, l’anglais, l’espagnol, le swahili, le fongbé et le wolof, ainsi qu’une URL audio par langue. Les valeurs sont normalisées côté serveur, les contenus sont nettoyés et aucune piste audio fictive n’est désormais générée. La préférence de langue du compte peut être sauvegardée via `/api/profile/preferences` et lue par la page article.
 
 La page article propose un sélecteur de langue et un lecteur audio HTML réservé aux abonnés. La version préférée est sélectionnée par défaut lorsqu’elle existe ; sinon le site revient à la langue principale de l’article. Le paywall reste appliqué à chaque version. Avant déploiement, la migration Supabase doit être appliquée sur la base de production et un article réel doit être vérifié avec au moins une traduction et une piste audio hébergée.
+
+
+## Correction responsive du menu mobile inférieur
+
+La barre ouverte par le bouton « + » est maintenant une ligne unique avec `flex-nowrap`, largeur bornée à la largeur de l’écran, défilement horizontal contrôlé et libellés empêchés de passer sur deux lignes. Les trois raccourcis sont uniquement textuels. Les choix Pays et Devise utilisent des panneaux clairs et arrondis inspirés du sélecteur de plateforme mobile, au lieu des menus natifs sombres. Après sélection d’un pays ou d’une devise, le panneau puis la barre se referment automatiquement. Le mode sombre se ferme également après activation. Le comportement reste limité à la version mobile.
