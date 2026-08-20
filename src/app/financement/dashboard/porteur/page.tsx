@@ -11,6 +11,8 @@ export default function PorteurDashboard() {
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [rapports, setRapports] = useState<any[]>([]);
+  const [payout, setPayout] = useState<any>(null);
+  const [payoutMessage, setPayoutMessage] = useState("");
   const [newRapport, setNewRapport] = useState({ type:"mensuel", periode:"", contenu:"", kpis:{ chiffreAffaires:"", tresorerieFin:"", depensesExploitation:"", clientsActifs:"", effectif:"", jalonsAtteints:"" } });
 
   useEffect(()=>{
@@ -26,6 +28,7 @@ export default function PorteurDashboard() {
     fetch(`/api/crowdfunding/documents?projetId=${selectedProjet.id}`).then(r=>r.json()).then(d=>setDocuments(d.documents||[]));
     fetch(`/api/crowdfunding/messages?projetId=${selectedProjet.id}`).then(r=>r.json()).then(d=>setMessages(d.messages||[]));
     fetch(`/api/crowdfunding/reports?projetId=${selectedProjet.id}`).then(r=>r.json()).then(d=>setRapports(d.reports||[]));
+    fetch(`/api/crowdfunding/payouts?projetId=${selectedProjet.id}`).then(r=>r.json()).then(d=>setPayout((d.payouts||[])[0] || null)).catch(()=>setPayout(null));
   },[selectedProjet]);
 
   const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
@@ -35,7 +38,6 @@ export default function PorteurDashboard() {
     fd.append("file", file);
     fd.append("projetId", selectedProjet.id);
     fd.append("type", type);
-    fd.append("userId", "porteur_demo");
     const res = await fetch("/api/crowdfunding/documents", { method:"POST", body: fd });
     const data = await res.json();
     if (res.ok) {
@@ -52,6 +54,16 @@ export default function PorteurDashboard() {
       setMessages([...messages, data.message]);
       setNewMessage("");
     }
+  };
+
+  const requestPayout = async () => {
+    if (!selectedProjet) return;
+    setPayoutMessage("");
+    const response = await fetch("/api/crowdfunding/payouts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projetId: selectedProjet.id }) });
+    const result = await response.json();
+    if (!response.ok) { setPayoutMessage(result.error || "Impossible de demander le reversement"); return; }
+    setPayout(result.payout);
+    setPayoutMessage("Demande de reversement enregistrée ; la commission est prélevée sur le brut collecté lors du paiement.");
   };
 
   const submitRapport = async () => {
@@ -75,9 +87,9 @@ export default function PorteurDashboard() {
         <div className="mt-8"><ProjectWizard /></div>
 
         <div className="mt-8 grid md:grid-cols-3 gap-4">
-          <div className="bg-white border rounded-xl p-5"><div className="text-[11px] uppercase font-bold text-[#5c403f]">Collecte totale</div><div className="text-[22px] font-black mt-1">3.2M F</div><div className="text-[11px] text-green-600 mt-1">67% objectif atteint</div></div>
-          <div className="bg-white border rounded-xl p-5"><div className="text-[11px] uppercase font-bold text-[#5c403f]">Vues</div><div className="text-[22px] font-black mt-1">1 240</div></div>
-          <div className="bg-white border rounded-xl p-5"><div className="text-[11px] uppercase font-bold text-[#5c403f]">Taux réussite</div><div className="text-[22px] font-black mt-1">78%</div></div>
+          <div className="bg-white border rounded-xl p-5"><div className="text-[11px] uppercase font-bold text-[#5c403f]">Collecte totale</div><div className="text-[22px] font-black mt-1">{selectedProjet ? Number(selectedProjet.montantCollecte || 0).toLocaleString() : "0"} F</div><div className="text-[11px] text-green-600 mt-1">{selectedProjet ? Math.min(100, Math.round((Number(selectedProjet.montantCollecte || 0) / Math.max(1, Number(selectedProjet.montantRecherche || 1))) * 100)) : 0}% de l’objectif atteint</div></div>
+          <div className="bg-white border rounded-xl p-5"><div className="text-[11px] uppercase font-bold text-[#5c403f]">Vues</div><div className="text-[22px] font-black mt-1">{selectedProjet ? Number(selectedProjet.vues || 0).toLocaleString() : "0"}</div></div>
+          <div className="bg-white border rounded-xl p-5"><div className="text-[11px] uppercase font-bold text-[#5c403f]">Investisseurs</div><div className="text-[22px] font-black mt-1">{selectedProjet ? Number(selectedProjet.investisseurs || 0).toLocaleString() : "0"}</div></div>
         </div>
 
         <div className="mt-8">
@@ -94,6 +106,7 @@ export default function PorteurDashboard() {
 
         {selectedProjet && (
           <div className="mt-8 grid lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl border p-6 lg:col-span-2"><div className="flex flex-wrap items-center justify-between gap-3"><div><h4 className="font-bold text-[16px]">Reversement et commission</h4><p className="text-[11px] text-[#5c403f] mt-1">La commission est calculée sur le montant brut collecté et prélevée au moment du reversement.</p></div><button onClick={requestPayout} disabled={Boolean(payout) || Number(selectedProjet.montantCollecte || 0) <= 0} className="h-10 px-4 rounded-full bg-[#9e001f] text-white text-[12px] font-bold disabled:opacity-50">{payout ? "Demande déjà enregistrée" : "Demander le reversement"}</button></div>{payout && <div className="mt-4 grid md:grid-cols-4 gap-3 text-[12px]"><div className="rounded-lg bg-[#f6f3f2] p-3"><span className="block text-[10px] text-[#5c403f]">Brut collecté</span><b>{Number(payout.gross_amount || 0).toLocaleString()} {payout.currency}</b></div><div className="rounded-lg bg-[#f6f3f2] p-3"><span className="block text-[10px] text-[#5c403f]">Taux</span><b>{payout.commission_rate}%</b></div><div className="rounded-lg bg-[#f6f3f2] p-3"><span className="block text-[10px] text-[#5c403f]">Commission</span><b>{Number(payout.commission_amount || 0).toLocaleString()} {payout.currency}</b></div><div className="rounded-lg bg-[#f6f3f2] p-3"><span className="block text-[10px] text-[#5c403f]">Net demandé</span><b>{Number(payout.net_amount || 0).toLocaleString()} {payout.currency}</b></div></div>}{payoutMessage && <p className="mt-3 text-[11px] text-[#9e001f]">{payoutMessage}</p>}</div>
             {/* Documents */}
             <div className="bg-white rounded-xl border p-6">
               <h4 className="font-bold text-[16px]">Gérer documents - Plan affaires, comptes financiers, carte identité, enregistrement entreprise, photos</h4>
