@@ -17,7 +17,7 @@ export default function CrowdFundingPage() {
   const loadProjects = useCallback(async (reset = false) => {
     if (loading || (!reset && !hasMore)) return;
     setLoading(true);
-    const params = new URLSearchParams({ limit: "12", statut: "active" });
+    const params = new URLSearchParams({ limit: "12", statut: "en_cours" });
     if (filtreSecteur !== "all") params.set("secteur", filtreSecteur);
     if (filtreType !== "all") params.set("type", filtreType);
     if (filtrePays !== "all") params.set("pays", filtrePays);

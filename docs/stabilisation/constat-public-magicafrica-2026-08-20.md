@@ -1,7 +1,11 @@
 # Constat public MagicAfrica — 20 août 2026
 
-Le projet MagicAfrica est confirmé comme approuvé dans l’espace administratif par l’utilisateur. Cependant, sur le preview `https://envolafricamagazinegildas-4bq0osag8-arminel.vercel.app/financement`, la section des campagnes affiche `0 campagnes affichées` et le message « Aucune campagne active pour ces filtres ».
+La base Supabase de référence contient un seul projet : `MagicAfrica` avec l’identifiant `51c966b9-193a-405a-af4e-b967a7fc7a25` et le statut `en_cours`.
 
-Le contrôle direct de `https://envolafricamagazinegildas-4bq0osag-arminel.vercel.app/api/crowdfunding/projects?limit=12` (URL corrigée ci-dessous) doit être vérifié avec l’URL exacte du déploiement. Le premier contrôle réalisé sur `https://envolafricamagazinegildas-4bq0osag8-arminel.vercel.app/api/crowdfunding/projects?limit=12` a renvoyé `{"projets":[],"nextCursor":null,"boostedIds":[]}`.
+La cause de l’absence publique a été identifiée dans `src/app/api/crowdfunding/projects/route.ts` : la route publique appliquait par défaut le filtre `statut=active`, alors que le statut réellement utilisé par l’administration et Supabase est `en_cours`. Le correctif `0e042e3` remplace ce filtre par `en_cours`.
 
-Conclusion provisoire : l’approbation administrative est confirmée côté utilisateur, mais le projet n’est pas encore exposé par la liste publique du preview. Il faut diagnostiquer la lecture publique Supabase, le statut réellement enregistré et le filtrage des projets avant toute contribution Moneroo. Aucun paiement ne doit être lancé tant que cette incohérence n’est pas résolue.
+Le nouveau preview `https://envolafricamagazinegildas-bamat3ebq-arminel.vercel.app` est READY. Son endpoint public retourne maintenant MagicAfrica avec `statut: "en_cours"`, objectif `5 000 000 XOF`, type `angel` et fin prévue le 19 septembre 2026.
+
+La page `/financement` capturée immédiatement après le déploiement affiche encore son état initial « 0 campagnes affichées » puis « Chargement des campagnes… » dans le rendu capturé. L’API est corrigée ; il faut vérifier un rechargement complet de la page et, si nécessaire, le chargement client ou le cache de cette page avant de passer à Moneroo.
+
+Aucun paiement n’a été lancé.

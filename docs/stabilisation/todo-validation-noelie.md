@@ -110,3 +110,5 @@ Sur le preview avant le dernier correctif, l’appel `GET /api/admin/crowdfundin
 - [ ] Remplacer le statut public par `en_cours`.
 - [ ] Vérifier que l’API publique retourne MagicAfrica.
 - [ ] Vérifier que la campagne apparaît sur `/financement`.
+
+- [x] Corriger le chargement client de `/financement` qui envoyait encore `statut=active`.
