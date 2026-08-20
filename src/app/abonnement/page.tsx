@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SUBSCRIPTION_PLANS } from "@/lib/constants";
+import { useLocale } from "@/components/LocaleProvider";
 
 export default function AbonnementPage() {
   const [billing, setBilling] = useState<"monthly"|"yearly">("monthly");
@@ -9,6 +10,7 @@ export default function AbonnementPage() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [plans, setPlans] = useState<any[]>(SUBSCRIPTION_PLANS);
+  const { formatPrice } = useLocale();
 
   useEffect(() => {
     fetch("/api/subscription-plans").then((response) => response.json()).then((data) => { if (Array.isArray(data.plans) && data.plans.length) setPlans(data.plans); }).catch(() => {});
@@ -42,7 +44,7 @@ export default function AbonnementPage() {
     <div className="bg-[#FFFCF5] min-h-screen pb-20">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-8 pt-10">
         <div className="text-center max-w-[720px] mx-auto">
-          <div className="inline-flex items-center gap-2 bg-[#0A1931] text-white rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide">⚡️ Premier mois à partir de 2 000 F CFA</div>
+          <div className="inline-flex items-center gap-2 bg-[#0A1931] text-white rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide">⚡️ Premier mois à partir de {formatPrice(2000)}</div>
           <h1 className="font-serif font-black text-[36px] md:text-[54px] leading-[0.9] tracking-tight text-[#0A1931] mt-6">L'information qui fait <span className="text-[#D4AF37]">gagner.</span></h1>
           <p className="text-[16px] leading-7 text-zinc-600 mt-5">Rejoignez 12 000 décideurs. Analyses exclusives, enquêtes terrain, 1 magazine offert par mois, audio en 12 langues. Sans engagement, annulable à tout moment.</p>
 
@@ -64,12 +66,11 @@ export default function AbonnementPage() {
                 <div className="text-[12px] text-zinc-500 mt-1">{plan.description}</div>
                 <div className="mt-6">
                   <div className="flex items-baseline gap-2">
-                    <span className="font-serif font-black text-[36px] text-[#0A1931]">{price.toLocaleString()}</span>
-                    <span className="text-[13px] font-bold text-zinc-600">F CFA</span>
+                    <span className="font-serif font-black text-[36px] text-[#0A1931]">{formatPrice(Number(price || 0))}</span>
                     <span className="text-[11px] text-zinc-500">/{billing==="monthly" ? "mois" : "an"}</span>
                   </div>
-                  {price!==fullPrice && <div className="text-[12px] text-zinc-500 mt-1">Puis {fullPrice.toLocaleString()} F CFA • Sans action de votre part</div>}
-                  {plan.id==="annuel" && billing==="monthly" && <div className="text-[12px] font-semibold text-green-700 bg-green-50 border border-green-100 rounded-full px-2.5 py-1 inline-block mt-2">Soit 3 500 F CFA / mois</div>}
+                  {price!==fullPrice && <div className="text-[12px] text-zinc-500 mt-1">Puis {formatPrice(Number(fullPrice || 0))} • Sans action de votre part</div>}
+                  {plan.id==="annuel" && billing==="monthly" && <div className="text-[12px] font-semibold text-green-700 bg-green-50 border border-green-100 rounded-full px-2.5 py-1 inline-block mt-2">Soit {formatPrice(3500)} / mois</div>}
                   {plan.id==="soutien" && <div className="text-[11px] font-bold uppercase tracking-wide text-[#D4AF37] bg-amber-50 border border-amber-100 rounded-full px-2.5 py-1 inline-block mt-2">Pack Prestige inclus</div>}
                 </div>
                 <ul className="mt-6 space-y-2.5 flex-1">
@@ -88,12 +89,12 @@ export default function AbonnementPage() {
 
         <div className="mt-16 max-w-[960px] mx-auto grid md:grid-cols-3 gap-4">
           <div className="rounded-[18px] bg-white border border-zinc-100 p-5 flex gap-3"><div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center">🔒</div><div><div className="font-bold text-[13px] text-[#0A1931]">Mur payant inviolable</div><div className="text-[12px] text-zinc-600 mt-1">Le contenu complet n'est jamais envoyé au navigateur sans abonnement. Sécurité serveur.</div></div></div>
-          <div className="rounded-[18px] bg-white border border-zinc-100 p-5 flex gap-3"><div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center">⚡️</div><div><div className="font-bold text-[13px] text-[#0A1931]">Premier mois réduit auto</div><div className="text-[12px] text-zinc-600 mt-1">2 000 F CFA le 1er mois, puis 5 000 F CFA automatiquement. Pas besoin de se souvenir.</div></div></div>
+          <div className="rounded-[18px] bg-white border border-zinc-100 p-5 flex gap-3"><div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center">⚡️</div><div><div className="font-bold text-[13px] text-[#0A1931]">Premier mois réduit auto</div><div className="text-[12px] text-zinc-600 mt-1">{formatPrice(2000)} le 1er mois, puis {formatPrice(5000)} automatiquement. Pas besoin de se souvenir.</div></div></div>
           <div className="rounded-[18px] bg-white border border-zinc-100 p-5 flex gap-3"><div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">🌍</div><div><div className="font-bold text-[13px] text-[#0A1931]">12 langues • 5 devises</div><div className="text-[12px] text-zinc-600 mt-1">Fongbé, Wolof, Swahili, Mina, Zulu, etc. Paiement local.</div></div></div>
         </div>
 
         <div className="mt-12 text-center">
-          <Link href="/kiosque" className="text-[13px] font-medium text-zinc-600 hover:text-[#0A1931]">Ou acheter un numéro à l'unité à partir de 5 000 F CFA →</Link>
+          <Link href="/kiosque" className="text-[13px] font-medium text-zinc-600 hover:text-[#0A1931]">Ou acheter un numéro à l'unité à partir de {formatPrice(5000)} →</Link>
         </div>
       </div>
     </div>

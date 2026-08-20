@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { readAwardsDB } from "@/lib/awards-db";
 import { getSupabaseCandidates, getSupabaseCompetitions } from "@/lib/awards-supabase";
+import VisitorPrice from "@/components/VisitorPrice";
 
 export default async function CompetitionDetail({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -19,7 +20,7 @@ export default async function CompetitionDetail({ params }: { params: Promise<{ 
         <div className="absolute bottom-0 left-0 right-0 z-20 p-8 max-w-[1280px] mx-auto">
           <div className="flex items-center gap-2 text-[11px] uppercase tracking-widest"><Link href="/africa-awards" className="text-[#D4AF37]">Africa Awards</Link><span className="text-white/50">›</span><span className="text-white/80">{comp.category}</span></div>
           <h1 className="text-[32px] md:text-[48px] font-black leading-tight mt-3 max-w-[800px]" style={{ fontFamily: "Fraunces" }}>{comp.title}</h1>
-          <div className="flex items-center gap-3 mt-4"><span className={`px-3 py-1 rounded-full text-[11px] font-bold ${comp.status === "live_running" ? "bg-red-600 text-white" : "bg-[#D4AF37] text-black"}`}>{comp.status}</span><span className="text-[12px] text-white/70">{comp.candidates_count ?? candidates.length} candidats • {comp.votes_count ?? 0} votes • Cagnotte {((comp.pot_amount_cents ?? 0) / 100).toLocaleString()} F</span></div>
+          <div className="flex items-center gap-3 mt-4"><span className={`px-3 py-1 rounded-full text-[11px] font-bold ${comp.status === "live_running" ? "bg-red-600 text-white" : "bg-[#D4AF37] text-black"}`}>{comp.status}</span><span className="text-[12px] text-white/70">{comp.candidates_count ?? candidates.length} candidats • {comp.votes_count ?? 0} votes • Cagnotte <VisitorPrice amountInXof={(comp.pot_amount_cents ?? 0) / 100} /></span></div>
         </div>
       </div>
 
@@ -27,7 +28,7 @@ export default async function CompetitionDetail({ params }: { params: Promise<{ 
         <div>
           <p className="text-[16px] leading-7 text-[#A8A6A0]">{comp.description}</p>
           <div className="mt-8 grid md:grid-cols-3 gap-4">
-            <div className="bg-[#16161D] border border-white/10 rounded-xl p-4"><div className="text-[11px] uppercase tracking-wider text-[#A8A6A0]">Vote</div><div className="font-bold mt-1">{comp.vote_price_cents || 0} F / vote • {comp.points_per_vote} pts</div></div>
+            <div className="bg-[#16161D] border border-white/10 rounded-xl p-4"><div className="text-[11px] uppercase tracking-wider text-[#A8A6A0]">Vote</div><div className="font-bold mt-1"><VisitorPrice amountInXof={comp.vote_price_cents || 0} /> / vote • {comp.points_per_vote} pts</div></div>
             <div className="bg-[#16161D] border border-white/10 rounded-xl p-4"><div className="text-[11px] uppercase tracking-wider text-[#A8A6A0]">Pondération</div><div className="font-bold mt-1">Public {comp.public_vote_weight}% / Jury {comp.jury_weight}%</div></div>
             <div className="bg-[#16161D] border border-white/10 rounded-xl p-4"><div className="text-[11px] uppercase tracking-wider text-[#A8A6A0]">Calendrier</div><div className="font-bold mt-1 text-[12px]">{comp.starts_at ? new Date(comp.starts_at).toLocaleDateString() : "À définir"} → {comp.ends_at ? new Date(comp.ends_at).toLocaleDateString() : "À définir"}</div></div>
           </div>

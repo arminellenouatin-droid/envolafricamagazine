@@ -142,3 +142,45 @@
 - [ ] Regrouper mode sombre/clair, devise et langue dans la fenêtre du drapeau.
 - [ ] Vérifier la persistance du pays et la fermeture des réglages.
 - [ ] Compiler et déployer directement en Production.
+
+
+## Audit locale globale
+
+- [ ] Vérifier si la devise choisie convertit et reformate réellement tous les montants.
+- [ ] Vérifier si la langue choisie traduit réellement les textes de toute la plateforme.
+- [ ] Comparer les pages principales et distinguer préférence enregistrée, formatage et traduction complète.
+
+
+## Internationalisation globale et mode sombre
+
+- [ ] Auditer la détection pays, la locale, les devises et les traductions existantes.
+- [ ] Définir une source de vérité pour les pays, devises, taux et langues.
+- [ ] Centraliser la conversion monétaire côté serveur et le formatage global.
+- [ ] Centraliser les textes traduisibles de la plateforme.
+- [ ] Refaire le thème sombre avec textes clairs et accents contrastés.
+- [ ] Tester progressivement avant tout déploiement global.
+
+
+## Premier lot internationalisation
+
+- [ ] Corriger la conversion monétaire pour utiliser de vrais taux et conserver la devise source.
+- [ ] Centraliser le formatage des prix et repérer les affichages codés en dur.
+- [ ] Préparer les fondations du dictionnaire de traduction global.
+- [ ] Définir les tokens clair/sombre et vérifier les contrastes prioritaires.
+
+
+## Lot final — affichage international sans modification des montants
+
+- [ ] Confirmer que les montants métier restent stockés dans leur devise source, principalement XOF, et que seule la présentation visiteur est convertie.
+- [ ] Centraliser un formatteur unique pour les cartes, fiches, paniers et récapitulatifs avant paiement.
+- [ ] Migrer les prix affichés dans Marketplace, Kiosque/Magazine, Crowdfunding et Africa Awards vers ce formatteur.
+- [ ] Préserver les montants source envoyés à Moneroo et ne pas doubler la conversion côté application.
+- [ ] Vérifier le minimum de 100 XOF côté serveur pour les paiements concernés et afficher une information claire côté interface.
+- [ ] Tester la détection pays/devise, le changement manuel de devise, le panier et la redirection Moneroo.
+- [ ] Vérifier le mode sombre sur les pages migrées et préparer un checkpoint réversible avant toute livraison.
+
+## Lot final — traduction globale progressive
+
+- [ ] Remplacer les chaînes prioritaires des en-têtes, menus, boutons et formulaires par le dictionnaire i18n.
+- [ ] Auditer les chaînes restantes par plateforme et documenter les exceptions non traduisibles.
+- [ ] Vérifier la cohérence de langue entre navigation, panier, paiement et compte utilisateur.

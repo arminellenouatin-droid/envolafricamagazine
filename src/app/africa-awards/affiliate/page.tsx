@@ -1,11 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useLocale } from "@/components/LocaleProvider";
 
 export default function AffiliateAwards() {
   const [user, setUser] = useState<any>(null);
   const [links, setLinks] = useState<any[]>([]);
   const [earnings, setEarnings] = useState(0);
+  const { formatPrice } = useLocale();
 
   useEffect(()=>{
     fetch("/api/auth/me").then(r=>r.json()).then(d=>setUser(d.user));
@@ -50,7 +52,7 @@ export default function AffiliateAwards() {
         </div>
 
         <div className="mt-6 grid md:grid-cols-3 gap-4">
-          <div className="bg-[#16161D] border border-white/10 rounded-xl p-5"><div className="text-[11px] uppercase tracking-wider text-[#A8A6A0]">Gains totaux</div><div className="text-[22px] font-black mt-1 text-[#D4AF37]">{earnings.toLocaleString()} F</div></div>
+          <div className="bg-[#16161D] border border-white/10 rounded-xl p-5"><div className="text-[11px] uppercase tracking-wider text-[#A8A6A0]">Gains totaux</div><div className="text-[22px] font-black mt-1 text-[#D4AF37]">{formatPrice(earnings)}</div></div>
           <div className="bg-[#16161D] border border-white/10 rounded-xl p-5"><div className="text-[11px] uppercase tracking-wider text-[#A8A6A0]">Inscriptions parrainées</div><div className="text-[22px] font-black mt-1">12</div></div>
           <div className="bg-[#16161D] border border-white/10 rounded-xl p-5"><div className="text-[11px] uppercase tracking-wider text-[#A8A6A0]">Taux conversion</div><div className="text-[22px] font-black mt-1">4.2%</div></div>
         </div>

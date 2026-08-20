@@ -1,3 +1,5 @@
+import { formatMoney, type CurrencyRates } from "@/lib/currency";
+
 export type VisitorLocale = {
   country: string;
   countryCode: string;
@@ -48,7 +50,7 @@ export function readPersistedVisitorLocale(): VisitorLocale {
   }
 }
 
-export function formatVisitorPrice(amountInBaseCurrency: number, locale: VisitorLocale, baseCurrency = "XOF") {
-  const amount = baseCurrency === locale.currency ? amountInBaseCurrency : amountInBaseCurrency;
-  return new Intl.NumberFormat(locale.language || "fr", { style: "currency", currency: locale.currency || baseCurrency, maximumFractionDigits: locale.currency === "XOF" ? 0 : 2 }).format(amount);
+export function formatVisitorPrice(amountInBaseCurrency: number, locale: VisitorLocale, rates?: CurrencyRates, baseCurrency = "XOF") {
+  const currency = locale.currency || baseCurrency;
+  return formatMoney(amountInBaseCurrency, currency, locale.language || "fr", rates);
 }

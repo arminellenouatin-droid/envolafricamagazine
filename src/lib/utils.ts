@@ -21,11 +21,10 @@ export function truncateToLines(text: string, lines: number): { preview: string,
   };
 }
 
-export function formatPrice(amount: number, currency: string = "XOF") {
-  const symbols: Record<string,string> = { XOF: "F CFA", EUR:"€", USD:"$", NGN:"₦", GHS:"₵" };
-  const sym = symbols[currency] || currency;
-  if (currency === "XOF") return `${amount.toLocaleString('fr-FR')} ${sym}`;
-  return `${sym}${amount.toLocaleString()} ${currency}`;
+import { formatMoney, type CurrencyRates } from "@/lib/currency";
+
+export function formatPrice(amount: number, currency = "XOF", language = "fr", rates?: CurrencyRates) {
+  return formatMoney(amount, currency, language, rates);
 }
 
 export function getExcerpt(text: string, length=160) {
