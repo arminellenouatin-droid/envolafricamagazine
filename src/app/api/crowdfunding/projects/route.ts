@@ -52,6 +52,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { nom, secteur, description, montantRecherche, niveauRisque, dureeJours, typesFinancement, pays, tauxInteret } = body;
     const requestedStatus = body.statut === "pending_review" ? "pending_review" : "draft";
+    const requestedFundingTypes = Array.isArray(typesFinancement) ? typesFinancement.map(String) : [];
+    const isAngel = requestedFundingTypes.includes("angel");
     if (!nom || !secteur || !description || !montantRecherche) {
       return NextResponse.json({ error: "Champs requis manquants" }, { status: 400 });
     }
@@ -87,8 +89,22 @@ export async function POST(req: NextRequest) {
       repartition: { dons: 0, prise_part: 0, pret: 0 }
     };
     if (supabase) {
+      if (isAngel) {
+        if (!body.advisoryPlanId) return NextResponse.json({ error: "Une formule d’accompagnement est obligatoire pour un projet Angel." }, { status: 400 });
+        const { data: plan, error: planError } = await supabase.from("crowdfunding_advisory_plans").select("id,monthly_price_xof,active").eq("id", String(body.advisoryPlanId)).eq("active", true).maybeSingle();
+        if (planError) return NextResponse.json({ error: planError.message }, { status: 500 });
+        if (!plan) return NextResponse.json({ error: "La formule d’accompagnement sélectionnée n’est plus disponible." }, { status: 400 });
+      }
       const { data, error } = await supabase.from("crowdfunding_projects").insert({ id: newProjet.id, nom: newProjet.nom, secteur: newProjet.secteur, description: newProjet.description, videos: newProjet.videos, images: newProjet.images, pdf: newProjet.pdf, montant_recherche: newProjet.montantRecherche, montant_collecte: 0, niveau_risque: newProjet.niveauRisque, duree_jours: newProjet.dureeJours, types_financement: newProjet.typesFinancement, statut: newProjet.statut, porteur_id: newProjet.porteurId, pays: newProjet.pays, taux_interet: newProjet.tauxInteret, pourcentage_vendu: newProjet.pourcentageVendu, valorisation: newProjet.valorisation, created_at: newProjet.createdAt, date_fin: newProjet.dateFin, vues: 0, investisseurs: 0, repartition: newProjet.repartition }).select("*").single();
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (isAngel) {
+        const { data: plan } = await supabase.from("crowdfunding_advisory_plans").select("id,monthly_price_xof").eq("id", String(body.advisoryPlanId)).maybeSingle();
+        const { error: engagementError } = await supabase.from("crowdfunding_advisory_engagements").insert({ project_id: newProjet.id, porteur_id: user.id, plan_id: String(body.advisoryPlanId), status: "pending", monthly_price_xof: Number(plan?.monthly_price_xof || 0) });
+        if (engagementError) {
+          await supabase.from("crowdfunding_projects").delete().eq("id", newProjet.id);
+          return NextResponse.json({ error: engagementError.message }, { status: 500 });
+        }
+      }
       return NextResponse.json({ success: true, projet: mapCrowdProject(data as Record<string, unknown>) });
     }
     const db = readCrowdDB();
