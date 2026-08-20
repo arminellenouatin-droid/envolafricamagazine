@@ -41,7 +41,7 @@ export default function AbonnementPage() {
   };
 
   return (
-    <div className="bg-[#FFFCF5] min-h-screen pb-20">
+    <div className="subscription-page bg-[#FFFCF5] min-h-screen pb-20">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-8 pt-10">
         <div className="text-center max-w-[720px] mx-auto">
           <div className="inline-flex items-center gap-2 bg-[#0A1931] text-white rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide">⚡️ Premier mois à partir de {formatPrice(2000)}</div>

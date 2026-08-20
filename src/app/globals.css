@@ -383,3 +383,15 @@ h1, h2, h3, h4, .font-display {
 .dark textarea::placeholder { color: #c8b8b6 !important; }
 .dark ::-webkit-scrollbar-track { background: var(--surface-container); }
 .dark ::-webkit-scrollbar-thumb { background: #f0b27e; }
+
+
+/* Subscription dark-mode contrast: explicit legacy utility colors must remain readable on dark cards. */
+.dark .subscription-page { background: var(--background) !important; color: var(--foreground) !important; }
+.dark .subscription-page [class*="text-[#0A1931]"],
+.dark .subscription-page [class*="text-zinc-700"],
+.dark .subscription-page [class*="text-zinc-600"] { color: #f5f3ee !important; }
+.dark .subscription-page [class*="text-zinc-500"] { color: #c8b8b6 !important; }
+.dark .subscription-page [class*="bg-[#FFFCF5]"] { background: var(--background) !important; }
+.dark .subscription-page [class*="bg-white"] { background: var(--surface-container-lowest) !important; border-color: var(--outline-variant) !important; }
+.dark .subscription-page [class*="bg-zinc-50"] { background: var(--surface-container) !important; }
+.dark .subscription-page [class*="border-zinc"] { border-color: var(--outline-variant) !important; }
