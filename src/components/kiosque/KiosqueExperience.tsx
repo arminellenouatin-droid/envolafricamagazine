@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import Link from "next/link";
+import PreviewFlipbook from "@/components/kiosque/PreviewFlipbook";
+import { useLocale } from "@/components/LocaleProvider";
 
 const formatLabels: Record<string, string> = { numerique: "Numérique", papier: "Papier", cd_audio: "Audio" };
 
@@ -11,6 +13,8 @@ export default function KiosquePage({ initialMagazines = [] }: { initialMagazine
   const [filterYear, setFilterYear] = useState("all");
   const [filterFormat, setFilterFormat] = useState("all");
   const [search, setSearch] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const { locale } = useLocale();
 
 
   const years = [...new Set(magazines.map((magazine: any) => magazine.year))].sort((a: any, b: any) => b - a);
@@ -35,7 +39,7 @@ export default function KiosquePage({ initialMagazines = [] }: { initialMagazine
               <p className="mt-6 max-w-xl font-sans text-sm leading-7 text-[#746665] md:text-base">Des dossiers pour comprendre les transformations du continent, des récits de terrain et les idées qui façonnent les économies africaines.</p>
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <Link href={`/kiosque/${featured.id}`} className="kiosque-primary-cta"><span className="material-symbols-outlined text-[19px]">shopping_bag</span> Découvrir ce numéro <span aria-hidden>↗</span></Link>
-                <button type="button" onClick={() => alert("Feuilletage : 5 pages gratuites - aperçu limité, abonnement requis pour la suite")} className="kiosque-ghost-cta"><span className="material-symbols-outlined text-[19px]">import_contacts</span> Feuilleter</button>
+                <button type="button" onClick={() => setPreviewOpen(true)} className="kiosque-ghost-cta"><span className="material-symbols-outlined text-[19px]">import_contacts</span> Feuilleter</button>
               </div>
               <div className="mt-10 flex items-center gap-7 border-t border-[#d8c3c1] pt-5 font-sans text-[10px] font-bold uppercase tracking-[.14em] text-[#746665]"><span><strong className="text-2xl font-serif text-[#9e001f]">{magazines.length || "—"}</strong><br />numéros disponibles</span><span><strong className="text-2xl font-serif text-[#9e001f]">2026</strong><br />édition en cours</span></div>
             </div>
@@ -60,8 +64,14 @@ export default function KiosquePage({ initialMagazines = [] }: { initialMagazine
           {!filtered.length && <div className="rounded-2xl border border-dashed border-[#cdb7b4] bg-white p-12 text-center"><span className="material-symbols-outlined text-4xl text-[#9e001f]">search_off</span><h3 className="mt-3 font-serif text-2xl">Aucun numéro trouvé</h3><p className="mt-2 font-sans text-sm text-[#746665]">Essayez une autre année, un autre format ou un terme différent.</p></div>}
         </section>
 
-        <section className="kiosque-newsletter relative overflow-hidden bg-[#2b2525] py-16 text-white md:py-20"><div className="relative z-10 mx-auto flex max-w-[1380px] flex-col gap-8 px-5 md:px-10 lg:flex-row lg:items-end lg:justify-between lg:px-16"><div><p className="editorial-kicker text-[#f0b27e]">Le prochain numéro dans votre boîte mail</p><h2 className="mt-3 max-w-2xl font-serif text-4xl leading-none md:text-6xl">Ne manquez pas<br /><em className="text-[#f0b27e]">la prochaine édition.</em></h2><p className="mt-5 max-w-xl font-sans text-sm leading-6 text-white/65">Recevez les alertes de parution, un aperçu gratuit et nos analyses exclusives chaque semaine.</p></div><form className="flex w-full max-w-lg flex-col gap-3 sm:flex-row" onSubmit={(event) => { event.preventDefault(); alert("Inscription newsletter OK - merci !"); }}><input className="min-h-14 flex-1 border border-white/20 bg-white/10 px-5 font-sans text-sm text-white outline-none placeholder:text-white/45 focus:border-[#f0b27e]" placeholder="votre@email.com" type="email" required /><button className="min-h-14 bg-[#9e001f] px-7 font-sans text-xs font-bold uppercase tracking-[.14em] text-white transition hover:bg-[#c8102e]">S’inscrire <span aria-hidden>→</span></button></form></div><span className="material-symbols-outlined absolute -bottom-16 right-0 text-[280px] text-white/[.04]">auto_stories</span></section>
+        <section className="kiosque-newsletter relative overflow-hidden bg-[#2b2525] py-16 text-white md:py-20"><div className="relative z-10 mx-auto flex max-w-[1380px] flex-col gap-8 px-5 md:px-10 lg:flex-row lg:items-end lg:justify-between lg:px-16"><div><p className="editorial-kicker text-[#f0b27e]">Le prochain numéro dans votre boîte mail</p><h2 className="mt-3 max-w-2xl font-serif text-4xl leading-none md:text-6xl">Ne manquez pas<br /><em className="text-[#f0b27e]">la prochaine édition.</em></h2><p className="mt-5 max-w-xl font-sans text-sm leading-6 text-white/65">Recevez les alertes de parution, un aperçu gratuit et nos analyses exclusives chaque semaine.</p></div><form className="flex w-full max-w-lg flex-col gap-3 sm:flex-row" onSubmit={(event) => { event.preventDefault(); alert("Inscription newsletter OK - merci !"); }}><input className="min-h-14 flex-1 border border-white/20 bg-white/10 px-5 font-sans text-sm text-white outline-none placeholder:text-white/45 focus:border-[#f0b27e]" placeholder="votre@email.com" type="email" required /><button className="min-h-14 bg-[#9e001f] px-7 font-sans text-xs font-bold uppercase tracking-[.14em] text-white transition hover:bg-[#c8102e]">S’inscrire <span aria-hidden>→</span></button></form></div><span className="material-symbols-outlined absolute -bottom-16 right-0 text-[280px] text-white/[.04]">auto_stories</span>        </section>
       </main>
+      {previewOpen && featured && (() => {
+        const language = locale.language || "fr";
+        const selectedPdf = featured.pdfs?.[language] || featured.pdfs?.fr;
+        const protectedPdf = selectedPdf?.startsWith("private-pdf://") ? `/api/magazines/${encodeURIComponent(featured.id)}/preview?lang=${encodeURIComponent(language)}` : undefined;
+        return <PreviewFlipbook title={featured.title} cover={featured.cover} pages={featured.previewImages} pdfUrl={protectedPdf ? undefined : selectedPdf} previewUrl={protectedPdf} language={language} onClose={() => setPreviewOpen(false)} onPurchase={() => { window.location.assign(`/kiosque/${featured.id}#purchase-options-title`); }} />;
+      })()}
     </div>
   );
 }

@@ -212,3 +212,12 @@
 - [ ] Ajouter gras, italique et souligné avec une structure compatible avec les contenus existants.
 - [ ] Sanitizer le contenu formaté avant rendu public afin d’empêcher l’injection HTML ou script.
 - [ ] Tester création, édition, sauvegarde, lecture publique et compatibilité avec les anciens contenus.
+
+
+## Kiosque — aperçu du magazine à la une
+
+- [ ] Auditer le composant du bloc magazine à la une et son bouton d’aperçu.
+- [ ] Réutiliser le même composant et les mêmes données que le flipbook de la fiche produit.
+- [ ] Vérifier l’ouverture, la fermeture, les pages PDF et les images de secours.
+- [ ] Tester le fonctionnement sur ordinateur, mobile et mobile paysage.
+- [ ] Compiler et enregistrer la correction dans un commit réversible.
