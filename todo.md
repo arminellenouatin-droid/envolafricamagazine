@@ -117,3 +117,20 @@
 - [ ] Remplacer les sélecteurs natifs Pays et Devise par des menus clairs et modernes.
 - [ ] Refermer automatiquement la barre après une sélection.
 - [ ] Tester les largeurs mobiles et compiler avant déploiement.
+
+
+## Bandeau audio article et menu mobile
+
+- [ ] Regrouper langue et audio dans un bandeau rouge responsive.
+- [ ] Remplacer le sélecteur de langue natif par un menu moderne et accessible.
+- [ ] Rechercher les autres menus natifs ciblés sans modifier les contrôles indispensables.
+- [ ] Réaligner les six actions du bouton « + » sur une seule ligne et replier l’ensemble.
+- [ ] Compiler et préparer le déploiement après vérification.
+
+
+## Restauration du menu inférieur mobile
+
+- [ ] Identifier la version du menu avant les deux dernières corrections.
+- [ ] Restaurer uniquement le rendu et le comportement du menu inférieur.
+- [ ] Conserver le bandeau rouge langue-audio de la page article.
+- [ ] Compiler, déployer directement et vérifier l’état Production.
