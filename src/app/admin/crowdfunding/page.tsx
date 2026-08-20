@@ -15,13 +15,19 @@ export default function CrowdfundingAdminPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [unauthorized, setUnauthorized] = useState(false);
 
   const load = async () => {
     setLoading(true);
     const response = await fetch("/api/admin/crowdfunding/projects", { credentials: "include" });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) setMessage(data.error || "Chargement impossible");
-    else setProjects(data.projets || []);
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) setUnauthorized(true);
+      setMessage(data.error || "Chargement impossible");
+    } else {
+      setUnauthorized(false);
+      setProjects(data.projets || []);
+    }
     setLoading(false);
   };
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, []);
@@ -40,6 +46,8 @@ export default function CrowdfundingAdminPage() {
     else { setMessage("Décision enregistrée."); setSelected(data.projet); setProjects((items) => items.map((item) => item.id === data.projet.id ? data.projet : item)); }
     setBusy(false);
   };
+
+  if (unauthorized) return <main className="min-h-screen bg-[#f6f4ef] px-4 py-8 text-[#0A1931] sm:px-8 lg:px-12"><div className="mx-auto max-w-xl rounded-3xl border border-[#0A1931]/10 bg-white p-8 text-center shadow-sm"><p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#b45309]">Accès administrateur requis</p><h1 className="mt-3 text-3xl font-black">Session non reconnue</h1><p className="mt-4 text-sm leading-6 text-[#0A1931]/65">La file de validation n’est pas vide par défaut : elle est protégée et ne charge les projets qu’après une connexion admin ou gérant sur ce domaine de preview.</p><Link href="/auth/login" className="mt-6 inline-flex rounded-full bg-[#0A1931] px-5 py-3 text-xs font-black text-white">Se connecter</Link></div></main>;
 
   return <main className="min-h-screen bg-[#f6f4ef] px-4 py-8 text-[#0A1931] sm:px-8 lg:px-12">
     <div className="mx-auto max-w-7xl">

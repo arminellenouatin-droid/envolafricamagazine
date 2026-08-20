@@ -58,3 +58,28 @@ Le déploiement `212ebc3` est READY à `https://envolafricamagazinegildas-4ap1va
 - [ ] Ajouter les actions sécurisées approuver, rejeter et remettre en brouillon.
 - [ ] Tester la visibilité du projet Noélie avant toute contribution Moneroo.
 - [ ] Vérifier que la promotion en production ne réintroduit aucun fallback JSON.
+
+## Blocage constaté — file administrative vide
+
+- [ ] Comparer le projet Supabase utilisé par le preview avec celui de la production.
+- [ ] Vérifier si la soumission Noélie existe dans la table `crowdfunding_projects`.
+- [ ] Vérifier que la session administrateur utilise le même environnement et les bons droits.
+- [ ] Ne pas recréer de projet tant que la cause de la file vide n’est pas établie.
+
+## Diagnostic confirmé
+
+La base Supabase de référence `rtfjwpytiuvoekomevpu` contient exactement un projet Crowdfunding, `MagicAfrica`, avec le statut `en_attente_validation`. Son `porteur_id` correspond au compte Noélie `Noelie GBETOKOU` (`noeliegbetokou@gmail.com`). La file administrative du preview affichant zéro projet, le problème est une mauvaise liaison d’environnement Supabase du preview ou une configuration Vercel différente, et non une absence du projet. Aucun doublon ne doit être créé.
+
+## Action confirmée — alignement de configuration
+
+- [ ] Auditer les variables Supabase locales et la configuration Vercel du preview.
+- [ ] Aligner le preview sur la base `rtfjwpytiuvoekomevpu` qui contient MagicAfrica.
+- [ ] Redéployer sans modifier le statut du projet.
+- [ ] Vérifier que MagicAfrica apparaît dans la file administrative.
+
+## Nouveau blocage — projet toujours invisible après connexion
+
+- [ ] Capturer le statut HTTP et le JSON de `/api/admin/crowdfunding/projects` sur le preview.
+- [ ] Distinguer une réponse 401/403 d’une réponse vide Supabase.
+- [ ] Comparer la base lue par le preview avec `rtfjwpytiuvoekomevpu`.
+- [ ] Ne modifier ni le projet MagicAfrica ni son statut avant diagnostic.
