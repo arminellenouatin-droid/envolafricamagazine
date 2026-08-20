@@ -2,8 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { findArticleBySlug, findEditorialAuthorById, listPublishedArticles } from "@/lib/core-db";
-import ArticlePaywall from "@/components/ArticlePaywall";
 import ArticleActions from "@/components/ArticleActions";
+import LocalizedArticleExperience from "@/components/LocalizedArticleExperience";
 
 async function getIsSubscribed() {
   try {
@@ -23,7 +23,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   const { slug } = await params;
   const [article, articles] = await Promise.all([findArticleBySlug(slug), listPublishedArticles()]);
   if (!article) return notFound();
-  const [editorialAuthor, isSubscriber] = await Promise.all([findEditorialAuthorById(article.authorProfileId), getIsSubscribed()]);
+  const [editorialAuthor, isSubscriber, preferredLanguage] = await Promise.all([findEditorialAuthorById(article.authorProfileId), getIsSubscribed(), (async () => { const user = await getCurrentUserFromCookie(); return user?.lang || "fr"; })()]);
 
   const articleCategorySet = new Set(article.categories?.length ? article.categories : [article.category]);
   const related = articles.filter((a) => a.id !== article.id && (a.categories || [a.category]).some((category) => articleCategorySet.has(category))).slice(0, 3);
@@ -46,29 +46,11 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               {(article.categories?.length ? article.categories : [article.category]).map((category) => <span key={category} className="bg-[#9e001f]/10 text-[#9e001f] px-3 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold">{category}</span>)}
               <span className="bg-[#5f5e5e]/10 text-[#5f5e5e] px-3 py-1 rounded-full text-[11px] uppercase tracking-wider">Exclusif</span>
             </div>
-            <h1 className="text-[32px] md:text-[40px] leading-tight font-bold text-[#1b1c1c] mb-4" style={{ fontFamily: "Montserrat" }}>{article.title}</h1>
+            <LocalizedArticleExperience article={article} isSubscriber={isSubscriber} preferredLanguage={preferredLanguage} />
             <div className="mb-6 flex items-center gap-3 lg:hidden"><img src={editorialAuthor?.photoUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100"} alt={editorialAuthor?.name || article.author} className="h-9 w-9 rounded-full object-cover"/><div><p className="text-[12px] font-bold text-[#1b1c1c]">{editorialAuthor?.name || article.author}</p><p className="text-[10px] text-[#9e001f]">{editorialAuthor?.roleLabel || "Rédacteur"}</p></div></div>
-            <p className="text-[18px] text-[#5c403f] mb-8 italic leading-[1.6]" style={{ fontFamily: "Source Serif 4" }}>{article.summary}</p>
+            <div className="mb-6 flex items-center justify-between py-4 border-y border-[#e5bdbb]"><div className="hidden text-[12px] text-[#5f5e5e] sm:block">Par {editorialAuthor?.name || article.author}</div><div className="ml-auto text-right"><p className="text-[11px] uppercase text-[#5c403f]">{new Date(article.publishedAt!).toLocaleDateString('fr-FR',{day:'numeric', month:'short', year:'numeric'})}</p><p className="flex items-center justify-end gap-1 text-[11px] text-[#5f5e5e]"><span className="material-symbols-outlined text-[14px]">schedule</span> {article.readingTime} min</p></div></div>
 
-            <div className="flex items-center justify-between py-6 border-y border-[#e5bdbb]">
-              <div className="hidden text-[12px] text-[#5f5e5e] sm:block">Par {editorialAuthor?.name || article.author}</div>
-              <div className="ml-auto text-right">
-                <p className="text-[11px] text-[#5c403f] uppercase">{new Date(article.publishedAt!).toLocaleDateString('fr-FR',{day:'numeric', month:'short', year:'numeric'})}</p>
-                <p className="text-[11px] text-[#5f5e5e] flex items-center justify-end gap-1"><span className="material-symbols-outlined text-[14px]">schedule</span> {article.readingTime} min • {article.language.toUpperCase()} {article.hasAudio&&"• 🔊"}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-6 py-4">
-              <button className="flex items-center gap-2 hover:text-[#9e001f] group text-[12px]"><span className="material-symbols-outlined text-[20px]">share</span> Partager</button>
-              <button className="flex items-center gap-2 hover:text-[#9e001f] group text-[12px]"><span className="material-symbols-outlined text-[20px]">favorite</span> {article.likes}</button>
-              <button className="flex items-center gap-2 hover:text-[#9e001f] text-[12px]"><span className="material-symbols-outlined text-[20px]">chat_bubble</span> 12</button>
-              <div className="flex-grow"></div>
-              {isSubscriber && article.hasAudio ? (
-                <div className="flex items-center gap-2 bg-[#e2dfde] text-[#1c1b1b] px-4 py-2 rounded-lg text-[11px] font-bold"><span className="material-symbols-outlined">headphones</span> Écouter (12 langues)</div>
-              ) : (
-                <div className="flex items-center gap-2 bg-[#f0eded] text-[#5c403f] px-4 py-2 rounded-lg text-[11px]">🔒 Audio réservé abonnés</div>
-              )}
-            </div>
+            <div className="flex items-center gap-6 py-4"><button className="flex items-center gap-2 text-[12px] hover:text-[#9e001f]"><span className="material-symbols-outlined text-[20px]">share</span> Partager</button><button className="flex items-center gap-2 text-[12px] hover:text-[#9e001f]"><span className="material-symbols-outlined text-[20px]">favorite</span> {article.likes}</button><button className="flex items-center gap-2 text-[12px] hover:text-[#9e001f]"><span className="material-symbols-outlined text-[20px]">chat_bubble</span> 12</button></div>
           </header>
 
           <figure className="mb-12">
@@ -76,15 +58,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             <figcaption className="mt-4 text-[12px] text-[#5f5e5e] italic text-center">{article.title} - {article.category} • {article.views.toLocaleString()} vues • © Envol Africa</figcaption>
           </figure>
 
-          {isSubscriber && article.hasAudio && (
-            <div className="mb-8 rounded-xl bg-[#303030] p-4 flex items-center gap-4 text-white">
-              <button className="w-12 h-12 rounded-full bg-[#9e001f] flex items-center justify-center"><span className="material-symbols-outlined">play_arrow</span></button>
-              <div className="flex-1"><div className="text-[11px] font-bold uppercase tracking-wider text-[#ffdad8]">Audio • 12 langues</div><div className="text-[13px] mt-1">Écoutez en {article.language.toUpperCase()} • Fongbé, Wolof, Swahili, Mina...</div><div className="mt-2 h-1.5 bg-white/10 rounded-full overflow-hidden"><div className="h-full w-[23%] bg-[#9e001f]"></div></div></div>
-              <select className="h-9 rounded-full bg-white/10 border border-white/10 px-3 text-[11px]"><option>FR</option><option>EN</option><option>ES</option><option>SW</option><option>FON</option></select>
-            </div>
-          )}
 
-          <ArticlePaywall summary={article.summary} isSubscriber={isSubscriber} isEncrypted={article.isEncrypted !== false} fullContent={article.content} />
 
           <ArticleActions articleId={article.id} initialLikes={article.likes} />
           </div>

@@ -80,3 +80,22 @@
 - [ ] Créer et pousser le commit de la boîte à outils mobile et de la refonte Magazine.
 - [ ] Fusionner dans `main`.
 - [ ] Vérifier le déploiement Production Vercel et son état `READY`.
+
+
+## Versions linguistiques et audio des articles Magazine
+
+- [ ] Auditer le modèle article, les API, le paywall et le compte utilisateur.
+- [ ] Vérifier les champs multilingues et audio déjà disponibles.
+- [ ] Définir la structure des versions par langue et du fichier audio associé.
+- [ ] Ajouter les champs dans la création et modification d’article.
+- [ ] Afficher la langue préférée et le lecteur audio pour les abonnés.
+- [ ] Tester l’accès non abonné, le changement de langue et l’écoute audio.
+
+
+## Déploiement Magazine multilingue et audio
+
+- [ ] Vérifier le diff, le build et la migration article-localizations.
+- [ ] Appliquer la migration Supabase en production.
+- [ ] Créer et pousser le commit de déploiement.
+- [ ] Vérifier Vercel Production en état READY.
+- [ ] Tester les routes de préférence et d’article après mise en ligne.

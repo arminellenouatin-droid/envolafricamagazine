@@ -67,8 +67,10 @@ export interface Article {
   createdAt: string;
   publishedAt?: string;
   language: string;
+  translations?: Record<string, { title?: string; summary?: string; content?: string }>;
   hasAudio: boolean;
   audioUrl?: string;
+  audioByLanguage?: Record<string, string>;
   readingTime: number;
   isVideo?: boolean;
   videoUrl?: string;
