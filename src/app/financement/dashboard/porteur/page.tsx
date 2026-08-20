@@ -11,7 +11,7 @@ export default function PorteurDashboard() {
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [rapports, setRapports] = useState<any[]>([]);
-  const [newRapport, setNewRapport] = useState({ type:"mensuel", periode:"", contenu:"" });
+  const [newRapport, setNewRapport] = useState({ type:"mensuel", periode:"", contenu:"", kpis:{ chiffreAffaires:"", tresorerieFin:"", depensesExploitation:"", clientsActifs:"", effectif:"", jalonsAtteints:"" } });
 
   useEffect(()=>{
     fetch("/api/crowdfunding/projects").then(r=>r.json()).then(d=>{
@@ -58,11 +58,11 @@ export default function PorteurDashboard() {
     if (!newRapport.contenu || !selectedProjet || !newRapport.periode) return;
     const [year, month] = newRapport.periode.split("-").map(Number);
     const lastDay = new Date(year, month, 0).getDate();
-    const response = await fetch("/api/crowdfunding/reports", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projetId: selectedProjet.id, periodeDebut: `${newRapport.periode}-01`, periodeFin: `${newRapport.periode}-${String(lastDay).padStart(2, "0")}`, resume: newRapport.contenu, soumettre: true }) });
+    const response = await fetch("/api/crowdfunding/reports", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projetId: selectedProjet.id, periodeDebut: `${newRapport.periode}-01`, periodeFin: `${newRapport.periode}-${String(lastDay).padStart(2, "0")}`, resume: newRapport.contenu, chiffreAffaires: Number(newRapport.kpis.chiffreAffaires) || null, tresorerieFin: Number(newRapport.kpis.tresorerieFin) || null, depensesExploitation: Number(newRapport.kpis.depensesExploitation) || null, clientsActifs: Number(newRapport.kpis.clientsActifs) || null, effectif: Number(newRapport.kpis.effectif) || null, jalonsAtteints: Number(newRapport.kpis.jalonsAtteints) || null, soumettre: true }) });
     const result = await response.json();
     if (!response.ok) { alert(result.error || "Impossible d’envoyer le rapport"); return; }
     setRapports((current) => [result.report, ...current.filter((report: any) => report.id !== result.report.id)]);
-    setNewRapport({ type:"mensuel", periode:"", contenu:"" });
+    setNewRapport({ type:"mensuel", periode:"", contenu:"", kpis:{ chiffreAffaires:"", tresorerieFin:"", depensesExploitation:"", clientsActifs:"", effectif:"", jalonsAtteints:"" } });
     alert("Rapport mensuel envoyé aux investisseurs autorisés.");
   };
 
@@ -139,7 +139,7 @@ export default function PorteurDashboard() {
                 <input type="month" value={newRapport.periode} onChange={e=>setNewRapport({...newRapport, periode:e.target.value})} className="h-10 rounded-full border bg-[#f6f3f2] px-4 text-[12px]" />
                 <button onClick={submitRapport} className="h-10 rounded-full bg-[#303030] text-white text-[12px] font-bold">Envoyer rapport</button>
               </div>
-              <textarea value={newRapport.contenu} onChange={e=>setNewRapport({...newRapport, contenu:e.target.value})} placeholder="Contenu rapport régulier - restez en contact avec investisseurs..." rows={3} className="mt-3 w-full rounded-xl border bg-[#f6f3f2] p-3 text-[12px]" />
+              <div className="mt-3 grid md:grid-cols-3 gap-3"><input type="number" value={newRapport.kpis.chiffreAffaires} onChange={e=>setNewRapport({...newRapport, kpis:{...newRapport.kpis, chiffreAffaires:e.target.value}})} placeholder="Chiffre d’affaires" className="h-10 rounded-full border bg-[#f6f3f2] px-4 text-[12px]" /><input type="number" value={newRapport.kpis.tresorerieFin} onChange={e=>setNewRapport({...newRapport, kpis:{...newRapport.kpis, tresorerieFin:e.target.value}})} placeholder="Trésorerie de fin" className="h-10 rounded-full border bg-[#f6f3f2] px-4 text-[12px]" /><input type="number" value={newRapport.kpis.depensesExploitation} onChange={e=>setNewRapport({...newRapport, kpis:{...newRapport.kpis, depensesExploitation:e.target.value}})} placeholder="Dépenses d’exploitation" className="h-10 rounded-full border bg-[#f6f3f2] px-4 text-[12px]" /><input type="number" value={newRapport.kpis.clientsActifs} onChange={e=>setNewRapport({...newRapport, kpis:{...newRapport.kpis, clientsActifs:e.target.value}})} placeholder="Clients actifs" className="h-10 rounded-full border bg-[#f6f3f2] px-4 text-[12px]" /><input type="number" value={newRapport.kpis.effectif} onChange={e=>setNewRapport({...newRapport, kpis:{...newRapport.kpis, effectif:e.target.value}})} placeholder="Effectif" className="h-10 rounded-full border bg-[#f6f3f2] px-4 text-[12px]" /><input type="number" value={newRapport.kpis.jalonsAtteints} onChange={e=>setNewRapport({...newRapport, kpis:{...newRapport.kpis, jalonsAtteints:e.target.value}})} placeholder="Jalons atteints" className="h-10 rounded-full border bg-[#f6f3f2] px-4 text-[12px]" /></div><textarea value={newRapport.contenu} onChange={e=>setNewRapport({...newRapport, contenu:e.target.value})} placeholder="Résumé, risques et prochaines actions..." rows={3} className="mt-3 w-full rounded-xl border bg-[#f6f3f2] p-3 text-[12px]" />
               <div className="mt-4 space-y-2">
                 {rapports.map((r:any)=><div key={r.id} className="border rounded-lg p-3 bg-[#f6f3f2]"><div className="font-bold text-[12px]">Rapport {r.period_start} → {r.period_end} · {r.status}</div><div className="text-[11px] text-[#5c403f] mt-1">{r.narrative || r.contenu}</div></div>)}
               </div>
