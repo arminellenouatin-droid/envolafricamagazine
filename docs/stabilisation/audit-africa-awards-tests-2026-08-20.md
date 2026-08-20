@@ -219,3 +219,10 @@ Dans l’en-tête mobile partagé, l’icône Traduction est maintenant remplac�
 La fenêtre contextuelle affiche des raccourcis adaptés au contexte : le visiteur peut découvrir les compétitions, voter et accéder aux lives ; un utilisateur connecté dispose en plus de son espace nominé et de son historique de votes ; un administrateur dispose du dashboard Africa Awards, de la création de compétition, de la validation des candidatures et de l’accès aux sessions live. Chaque raccourci ferme la fenêtre après navigation et le changement de route réinitialise l’état d’ouverture.
 
 La compilation TypeScript/Next.js a été relancée après cette modification. La mise à jour reste locale tant qu’un commit et un déploiement Production ne sont pas demandés.
+
+
+## Mise à jour — refonte de l’administration Magazine
+
+L’accueil de l’administration Magazine a été réorganisé sans supprimer les outils existants. Le nouvel écran présente un centre de pilotage avec indicateurs revenus, éditions, abonnés et demandes, un parcours recommandé et six cartes opérationnelles : Articles, Magazines/flipbooks, Abonnements/tarifs, Commandes/paiements, Rédacteurs/catégories et Réglages/sécurité.
+
+Chaque carte conserve l’onglet opérationnel correspondant et son action existante. La composition reprend l’esprit apprécié du dashboard Africa Awards : hiérarchie forte, numérotation des étapes, descriptions courtes, accès directs et contrôle rapide. La boîte à outils mobile Africa Awards reste incluse dans le même lot de travail. La compilation complète et `git diff --check` sont passés ; aucun déploiement supplémentaire n’a encore été effectué pour permettre le regroupement avec les prochaines modifications demandées.

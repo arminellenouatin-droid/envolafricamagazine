@@ -63,3 +63,20 @@
 - [ ] Synchroniser la branche puis fusionner dans main.
 - [ ] Attendre et vérifier le déploiement Production Vercel.
 - [ ] Confirmer le lien et l’état en ligne.
+
+
+## Refonte administration Magazine
+
+- [ ] Auditer la présentation actuelle et toutes les actions existantes.
+- [ ] Conserver les outils Magazine déjà disponibles et leurs routes.
+- [ ] Recomposer l’accueil avec une hiérarchie claire inspirée d’Africa Awards.
+- [ ] Ajouter des cartes de modules et un accès opérationnel lisible.
+- [ ] Vérifier les autres administrations avant le déploiement groupé avec Africa Awards.
+
+
+## Déploiement groupé Magazine + Africa Awards
+
+- [ ] Recompiler la version regroupée.
+- [ ] Créer et pousser le commit de la boîte à outils mobile et de la refonte Magazine.
+- [ ] Fusionner dans `main`.
+- [ ] Vérifier le déploiement Production Vercel et son état `READY`.

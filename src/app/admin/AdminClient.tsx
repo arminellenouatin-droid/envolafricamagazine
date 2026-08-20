@@ -213,6 +213,15 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
     if (res.ok) fetchComments();
   };
 
+  const magazineModules = [
+    { id: "articles", eyebrow: "01 · ÉDITORIAL", title: "Articles & publication", description: "Rédiger, enrichir, chiffrer, publier et piloter les performances des articles.", icon: "edit_note", tone: "#9e001f", action: "Gérer les articles" },
+    { id: "magazines", eyebrow: "02 · KIOSQUE", title: "Magazines & flipbooks", description: "Créer les éditions, gérer les couvertures, les PDF, les aperçus et la protection progressive.", icon: "menu_book", tone: "#b45309", action: "Gérer les magazines" },
+    { id: "abonnements", eyebrow: "03 · REVENUS", title: "Abonnements & tarifs", description: "Administrer les formules, les prix, les promotions et le revenu récurrent.", icon: "sell", tone: "#176b4d", action: "Gérer les abonnements" },
+    { id: "orders", eyebrow: "04 · COMMERCE", title: "Commandes & paiements", description: "Suivre les commandes, contrôler les statuts et vérifier les revenus encaissés.", icon: "receipt_long", tone: "#0A1931", action: "Voir les commandes" },
+    { id: "redacteurs", eyebrow: "05 · ÉQUIPE", title: "Rédacteurs & catégories", description: "Organiser les profils éditoriaux, les catégories et la qualité de publication.", icon: "groups", tone: "#5b3b8a", action: "Gérer l’équipe" },
+    { id: "settings", eyebrow: "06 · CONTRÔLE", title: "Réglages & sécurité", description: "Vérifier les paramètres, la protection des contenus et les règles de gouvernance.", icon: "security", tone: "#334155", action: "Ouvrir les réglages" },
+  ];
+
   return (
     <div className="bg-[#F8FAFC] min-h-screen pb-20">
       <div className="bg-[#0A1931] text-white sticky top-0 z-30">
@@ -258,34 +267,13 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
       <div className="max-w-[1440px] mx-auto px-6 xl:px-8 pt-6">
         {activePlatform !== "magazine" ? <PlatformAdminLanding platform={activePlatform} user={user} /> : <>
         {activeTab==="overview" && (
-          <div className="space-y-6">
-            <div className="grid md:grid-cols-4 gap-4">
-              <div className="bg-white rounded-[16px] border p-5"><div className="text-[10px] uppercase font-bold text-zinc-500">Revenu total</div><div className="font-black text-[22px] mt-1">{stats.totalRevenue.toLocaleString()} F</div><div className="text-[11px] text-green-600 mt-1">{stats.paidOrders}/{stats.orders} payées</div></div>
-              <div className="bg-white rounded-[16px] border p-5"><div className="text-[10px] uppercase font-bold text-zinc-500">Abonnés actifs</div><div className="font-black text-[22px] mt-1">{stats.subscribers}</div><div className="text-[11px] text-zinc-500">{stats.users} users • {db.articles.length} articles • {db.comments?.length||0} comments</div></div>
-              <div className="bg-white rounded-[16px] border p-5"><div className="text-[10px] uppercase font-bold text-zinc-500">Kiosque</div><div className="font-black text-[22px] mt-1">{stats.magazines} numéros</div><div className="text-[11px] text-zinc-500">{magazines.filter((m:any)=>m.featured).length} à la une</div></div>
-              <div className="bg-white rounded-[16px] border p-5"><div className="text-[10px] uppercase font-bold text-zinc-500">Affiliation + Service</div><div className="font-black text-[16px] mt-1">{stats.affiliateEarnings.toLocaleString()} F + {db.settings?.serviceRequests?.length||0} demandes</div></div>
-            </div>
-            <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
-              <div className="bg-white rounded-[18px] border p-6">
-                <h3 className="font-bold">Dernières commandes</h3>
-                <div className="mt-4 space-y-2">
-                  {orders.slice(0,6).map((o:any)=>(
-                    <div key={o.id} className="flex justify-between items-center p-3 rounded-[12px] bg-zinc-50 border text-[12px]"><span className="font-bold">{o.id.slice(0,8)} • {o.total.toLocaleString()} {o.currency} • {o.status}</span><button onClick={()=>handleChangeOrderStatus(o.id, o.status==="paid"?"shipped":"paid")} className="h-6 px-2 rounded-full bg-[#0A1931] text-white text-[10px]">{o.status==="paid"?"Expédier":"Payer"}</button></div>
-                  ))}
-                </div>
-              </div>
-              <div className="bg-white rounded-[18px] border p-6">
-                <h3 className="font-bold text-[14px]">Accès rapide</h3>
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <button onClick={()=>setActiveTab("articles")} className="h-10 rounded-full bg-[#0A1931] text-white text-[11px] font-bold">Gérer Articles</button>
-                  <button onClick={()=>setActiveTab("magazines")} className="h-10 rounded-full bg-[#9e001f] text-white text-[11px] font-bold">Gérer Magazines</button>
-                  <button onClick={()=>setActiveTab("abonnements")} className="h-10 rounded-full border text-[11px] font-bold">Gérer Abonnements</button>
-                  <button onClick={()=>setActiveTab("commentaires")} className="h-10 rounded-full border text-[11px] font-bold">Modérer Comments</button>
-                  <button onClick={()=>setActiveTab("users")} className="h-10 rounded-full border text-[11px] font-bold">Gérer Users</button>
-                  <button onClick={()=>setActiveTab("settings")} className="h-10 rounded-full border text-[11px] font-bold">Réglages Sécu</button>
-                </div>
-              </div>
-            </div>
+          <div className="space-y-7">
+            <section className="relative overflow-hidden rounded-[28px] bg-[#0A1931] p-7 text-white shadow-xl lg:p-10">
+              <div className="absolute -right-16 -top-24 h-72 w-72 rounded-full border border-[#D4AF37]/25" /><div className="absolute -bottom-36 right-24 h-72 w-72 rounded-full border border-[#D4AF37]/15" />
+              <div className="relative grid gap-8 lg:grid-cols-[1.35fr_.65fr] lg:items-end"><div><p className="text-[10px] font-black uppercase tracking-[.25em] text-[#f2b84b]">Magazine · centre de pilotage</p><h1 className="mt-3 max-w-2xl text-3xl font-black tracking-tight lg:text-5xl">Tout le contrôle éditorial, dans le bon ordre.</h1><p className="mt-4 max-w-2xl text-sm leading-6 text-white/70">Commencez par le contenu, structurez les éditions, puis contrôlez les revenus et la qualité de l’expérience lecteur. Chaque étape ouvre directement l’outil opérationnel existant.</p><button type="button" onClick={()=>setActiveTab("articles")} className="mt-6 inline-flex h-11 items-center gap-2 rounded-full bg-[#f2b84b] px-5 text-xs font-black text-[#0A1931]">Commencer par les articles <span aria-hidden="true">→</span></button></div><div className="grid grid-cols-2 gap-3"><div className="rounded-2xl border border-white/10 bg-white/10 p-4"><span className="text-[10px] uppercase tracking-wider text-white/55">Revenu encaissé</span><strong className="mt-2 block text-2xl font-black">{stats.totalRevenue.toLocaleString()} F</strong><span className="mt-1 block text-[10px] text-green-300">{stats.paidOrders}/{stats.orders} commandes payées</span></div><div className="rounded-2xl border border-white/10 bg-white/10 p-4"><span className="text-[10px] uppercase tracking-wider text-white/55">Éditions</span><strong className="mt-2 block text-2xl font-black">{stats.magazines}</strong><span className="mt-1 block text-[10px] text-white/55">{magazines.filter((m:any)=>m.featured).length} à la une</span></div><div className="rounded-2xl border border-white/10 bg-white/10 p-4"><span className="text-[10px] uppercase tracking-wider text-white/55">Abonnés</span><strong className="mt-2 block text-2xl font-black">{stats.subscribers}</strong><span className="mt-1 block text-[10px] text-white/55">actifs</span></div><div className="rounded-2xl border border-white/10 bg-white/10 p-4"><span className="text-[10px] uppercase tracking-wider text-white/55">À traiter</span><strong className="mt-2 block text-2xl font-black">{db.settings?.serviceRequests?.length||0}</strong><span className="mt-1 block text-[10px] text-white/55">demandes de service</span></div></div></div>
+            </section>
+            <section><div className="mb-4 flex items-end justify-between gap-4"><div><p className="text-[10px] font-black uppercase tracking-[.2em] text-[#9e001f]">Parcours recommandé</p><h2 className="mt-1 text-2xl font-black text-[#0A1931]">Les modules Magazine</h2></div><span className="hidden rounded-full bg-white px-3 py-2 text-[10px] font-bold text-zinc-500 shadow-sm md:inline-flex">6 espaces opérationnels</span></div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{magazineModules.map((module,index)=><button type="button" key={module.id} onClick={()=>setActiveTab(module.id as any)} className="group relative overflow-hidden rounded-[22px] border border-zinc-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl"><div className="flex items-start justify-between"><div className="grid h-11 w-11 place-items-center rounded-2xl text-white shadow-sm" style={{backgroundColor:module.tone}}><span className="material-symbols-outlined">{module.icon}</span></div><span className="text-[10px] font-black tracking-wider text-zinc-400">{module.eyebrow}</span></div><h3 className="mt-5 text-lg font-black text-[#0A1931]">{module.title}</h3><p className="mt-2 min-h-[48px] text-xs leading-5 text-zinc-600">{module.description}</p><span className="mt-5 inline-flex items-center gap-2 text-[11px] font-black" style={{color:module.tone}}>{module.action} <span className="transition group-hover:translate-x-1">→</span></span></button>)}</div></section>
+            <section className="grid gap-6 lg:grid-cols-[1.1fr_.9fr]"><div className="rounded-[22px] border border-zinc-200 bg-white p-6 shadow-sm"><div className="flex items-center justify-between"><div><p className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Derniers mouvements</p><h3 className="mt-1 text-lg font-black text-[#0A1931]">Commandes récentes</h3></div><button type="button" onClick={()=>setActiveTab("orders")} className="text-[11px] font-black text-[#9e001f]">Tout voir →</button></div><div className="mt-4 space-y-2">{orders.slice(0,5).map((o:any)=><div key={o.id} className="flex items-center justify-between gap-3 rounded-xl bg-zinc-50 p-3 text-[12px]"><div><span className="font-bold text-[#0A1931]">{o.id.slice(0,8)}</span><span className="ml-2 text-zinc-500">{o.total.toLocaleString()} {o.currency}</span></div><span className="rounded-full bg-white px-3 py-1 text-[10px] font-bold text-zinc-500">{o.status}</span></div>)}{orders.length===0&&<p className="py-6 text-center text-sm text-zinc-500">Aucune commande récente.</p>}</div></div><div className="rounded-[22px] border border-[#e1c98b] bg-[#fffaf0] p-6"><p className="text-[10px] font-black uppercase tracking-wider text-[#b45309]">Contrôle rapide</p><h3 className="mt-1 text-lg font-black text-[#0A1931]">Besoin d’une action ?</h3><p className="mt-2 text-xs leading-5 text-zinc-600">Choisissez directement l’espace à ouvrir. Vos outils et vos droits restent identiques.</p><button type="button" onClick={()=>setActiveTab("commentaires")} className="mt-5 inline-flex h-10 items-center rounded-full bg-[#0A1931] px-4 text-[11px] font-black text-white">Modérer les commentaires →</button></div></section>
           </div>
         )}
 
