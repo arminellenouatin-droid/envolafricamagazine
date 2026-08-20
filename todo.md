@@ -45,3 +45,21 @@
 - [ ] Déployer en Production Vercel et vérifier l’état READY.
 - [ ] Tester l’accès administration, Crowdfunding et Africa Awards sans paiement.
 - [ ] Documenter le lien de test et les limites restantes.
+
+
+## Boîte à outils mobile Africa Awards
+
+- [ ] Repérer l’en-tête mobile Africa Awards et le composant de fenêtre réutilisable.
+- [ ] Remplacer l’icône Traduction uniquement sur mobile Africa Awards.
+- [ ] Définir les raccourcis visiteur/votant, nominé et administrateur.
+- [ ] Implémenter l’ouverture, la fermeture et la navigation contextuelle.
+- [ ] Vérifier que le desktop et les autres plateformes restent inchangés.
+
+
+## Déploiement boîte à outils mobile Awards
+
+- [ ] Recompiler et vérifier le diff local.
+- [ ] Committer la boîte à outils mobile Africa Awards.
+- [ ] Synchroniser la branche puis fusionner dans main.
+- [ ] Attendre et vérifier le déploiement Production Vercel.
+- [ ] Confirmer le lien et l’état en ligne.
