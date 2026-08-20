@@ -184,3 +184,12 @@
 - [ ] Remplacer les chaînes prioritaires des en-têtes, menus, boutons et formulaires par le dictionnaire i18n.
 - [ ] Auditer les chaînes restantes par plateforme et documenter les exceptions non traduisibles.
 - [ ] Vérifier la cohérence de langue entre navigation, panier, paiement et compte utilisateur.
+
+
+## Correction article — photo avant titre ou résumé
+
+- [ ] Vérifier si le dernier lot international a été poussé et déployé en production.
+- [ ] Auditer la structure de la page article et localiser le bloc image actuellement trop bas.
+- [ ] Repositionner la photo dans le flux éditorial avant le titre ou entre le titre et le résumé.
+- [ ] Vérifier le rendu mobile, desktop, le mode sombre et les articles sans image.
+- [ ] Compiler, créer un commit réversible et communiquer séparément l’état de production.
