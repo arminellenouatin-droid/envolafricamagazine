@@ -240,3 +240,8 @@ La page article propose un sélecteur de langue et un lecteur audio HTML réserv
 ## Correction responsive du menu mobile inférieur
 
 La barre ouverte par le bouton « + » est maintenant une ligne unique avec `flex-nowrap`, largeur bornée à la largeur de l’écran, défilement horizontal contrôlé et libellés empêchés de passer sur deux lignes. Les trois raccourcis sont uniquement textuels. Les choix Pays et Devise utilisent des panneaux clairs et arrondis inspirés du sélecteur de plateforme mobile, au lieu des menus natifs sombres. Après sélection d’un pays ou d’une devise, le panneau puis la barre se referment automatiquement. Le mode sombre se ferme également après activation. Le comportement reste limité à la version mobile.
+
+
+## Bouton drapeau et réglages régionaux mobiles
+
+Dans la deuxième ligne de l’en-tête mobile, le menu d’actions situé avant la recherche est remplacé par le drapeau du pays actif. Un appui ouvre une fenêtre claire regroupant le mode sombre ou clair, la devise et la langue. Les choix de devise et de langue sont personnalisés, persistés avec la locale visiteur et referment automatiquement la fenêtre après sélection. Le comportement est limité à la version mobile.

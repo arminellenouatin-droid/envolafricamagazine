@@ -134,3 +134,11 @@
 - [ ] Restaurer uniquement le rendu et le comportement du menu inférieur.
 - [ ] Conserver le bandeau rouge langue-audio de la page article.
 - [ ] Compiler, déployer directement et vérifier l’état Production.
+
+
+## Drapeau et réglages mobiles
+
+- [ ] Remplacer le menu mobile avant la loupe par le drapeau du pays actif.
+- [ ] Regrouper mode sombre/clair, devise et langue dans la fenêtre du drapeau.
+- [ ] Vérifier la persistance du pays et la fermeture des réglages.
+- [ ] Compiler et déployer directement en Production.
