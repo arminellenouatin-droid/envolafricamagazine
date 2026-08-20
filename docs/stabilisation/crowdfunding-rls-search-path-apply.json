@@ -1,0 +1,5 @@
+{
+  "project_id": "rtfjwpytiuvoekomevpu",
+  "name": "crowdfunding_rls_search_path_hardening",
+  "query": "alter function public.crowdfunding_deny_all() set search_path = public, pg_temp;"
+}
