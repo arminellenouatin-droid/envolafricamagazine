@@ -296,3 +296,26 @@
 - [ ] Ajouter Consent Mode et le composant AdSense désactivé tant que l’identifiant Google n’est pas fourni.
 - [ ] Tester les parcours sensibles et compiler la version finale.
 - [ ] Enregistrer un checkpoint réversible et préparer la publication contrôlée.
+
+
+## Extension Marketplace — catalogue multi-type et publication groupée
+
+- [ ] Vérifier quelles configurations externes peuvent être faites directement sans exposer de secrets.
+- [ ] Auditer le modèle produit, le formulaire vendeur, le panier et les routes de commande Marketplace.
+- [ ] Ajouter les types : produit physique, service, formation, produit digital et fichier téléchargeable.
+- [ ] Ajouter les catégories de produits initiales et permettre leur gestion administrateur.
+- [ ] Ajouter l’upload sécurisé ou le lien de livraison pour les produits numériques.
+- [ ] Générer un accès de téléchargement uniquement après paiement confirmé, avec token expirant et usage contrôlé.
+- [ ] Vérifier panier, paiement Moneroo, confirmation webhook, accès client et espace vendeur.
+- [ ] Compiler, tester et regrouper avec le lot sécurité avant publication contrôlée.
+
+
+## Inspection finale avant publication
+
+- [ ] Vérifier l’état Git, les commits à publier et les modifications non incluses.
+- [ ] Vérifier les migrations Supabase appliquées et leur cohérence avec le code.
+- [ ] Auditer auth, 2FA, vérification e-mail, limitation des essais et permissions serveur.
+- [ ] Auditer paiements Moneroo, webhook, minimum 100 XOF et accès numériques Marketplace.
+- [ ] Auditer newsletter, KPI, AdSense désactivé par défaut et consentement.
+- [ ] Recompiler l’ensemble et corriger toute régression détectée.
+- [ ] Préparer le protocole de tests en ligne après publication.
