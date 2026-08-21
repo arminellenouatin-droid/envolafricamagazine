@@ -17,3 +17,9 @@ Le formulaire Marketplace distingue les offres physiques, services, formations, 
 L’envoi réel des e-mails nécessite encore un fournisseur configuré et une adresse de domaine vérifiée. L’activation réelle d’AdSense nécessite l’identifiant éditeur, un domaine de production validé et l’examen Google. Ces éléments ne peuvent pas être inventés ni déduits de façon fiable dans le code.
 
 La publication doit être déclenchée depuis l’interface de gestion du projet avec le dernier checkpoint validé. Après publication, il faut effectuer les tests réels de connexion, confirmation e-mail, TOTP, newsletter, création vendeur, création de fichier numérique, paiement Moneroo confirmé et téléchargement acheteur.
+
+## Campagne de tests avant publication
+
+La branche a été recompilée avec succès. Le serveur Next de production locale a démarré sans erreur bloquante. Les routes publiques `/auth/login`, `/auth/register`, `/auth/verify-email`, `/kiosque`, `/marketplace` et `/marketplace/commandes` ont répondu HTTP 200. Les routes protégées `/api/admin/kpis` et `/api/marketplace/downloads` ont correctement répondu HTTP 401 sans session. Les validations négatives des routes `/api/newsletter`, `/api/auth/login` et `/api/auth/register` ont correctement répondu HTTP 400 avec un corps vide, sans créer de données. La route GET du webhook Moneroo répond HTTP 200.
+
+La branche locale `stabilization/lot-4-finance-migration-audit` est au commit `bdda517` et contient douze commits d’avance sur sa branche distante correspondante. La seule modification non committée est le suivi local `todo.md`, qui n’appartient pas au code de livraison.
