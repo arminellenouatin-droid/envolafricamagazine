@@ -8,13 +8,15 @@ type Props = { name?: string; value?: string; defaultValue?: string; onChange?: 
 export default function RichTextEditor({ name, value, defaultValue = "", onChange, placeholder = "Écrivez ou collez votre texte…", className = "", minHeight = 180 }: Props) {
   const editorRef = useRef<HTMLDivElement>(null);
   const hiddenRef = useRef<HTMLInputElement>(null);
+  const lastEmittedRef = useRef<string | null>(null);
   const initial = value ?? defaultValue;
 
   useEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
     const next = /<[a-z][\s\S]*>/i.test(initial) ? sanitizeRichText(initial) : plainTextToRichHtml(initial);
-    if (editor.innerHTML !== next) editor.innerHTML = next;
+    const isEditing = editor.contains(document.activeElement);
+    if (!(isEditing && lastEmittedRef.current === next) && editor.innerHTML !== next) editor.innerHTML = next;
     if (hiddenRef.current) hiddenRef.current.value = next;
   }, [initial]);
 
@@ -23,6 +25,7 @@ export default function RichTextEditor({ name, value, defaultValue = "", onChang
     if (!editor) return;
     const html = sanitizeRichText(editor.innerHTML);
     if (editor.innerHTML !== html) editor.innerHTML = html;
+    lastEmittedRef.current = html;
     if (hiddenRef.current) hiddenRef.current.value = html;
     onChange?.(html);
   }

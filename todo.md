@@ -468,3 +468,29 @@
 - [ ] Brancher les recommandations personnes, réels, pages et groupes sur les sources réelles.
 - [ ] Ajouter les actions de suivi, abonnement, ouverture et rejoindre.
 - [ ] Tester le scroll infini, les états vides, les doublons et le responsive.
+
+
+## Promotion Production — carrousels WAB
+
+- [ ] Vérifier que la preview cible est bien le commit `2bdb993` et qu’elle est READY.
+- [ ] Fusionner la branche WAB validée vers `main` sans inclure d’autres modifications.
+- [ ] Contrôler le nouveau déploiement Production Vercel jusqu’à READY.
+- [ ] Vérifier l’URL publique et documenter les résultats.
+
+
+## Corrections WAB — partage, saisie, profils et fil suivi
+
+- [x] Auditer le bouton Partager et ajouter WhatsApp ainsi que les autres options sociales adaptées.
+- [x] Corriger la saisie de publication afin que le texte apparaisse normalement dès la frappe.
+- [x] Enregistrer le texte proprement sans exiger un détour par Modifier.
+- [x] Enrichir le profil public avec compte suivi, pages, contenus de pages, groupes et abonnement/rejoindre.
+- [x] Corriger la requête du fil pour inclure les publications des comptes suivis, sans supprimer les statuts existants.
+- [x] Tester droits, encodage, partage, feed et responsive avant publication.
+
+
+## Ajustement WAB confirmé — périmètre réduit
+
+- [x] Ignorer le point 3 : aucune modification demandée sur le passage par « Modifier ».
+- [x] Partager le lien exact de chaque publication, avec WhatsApp obligatoire.
+- [x] Corriger l’affichage du texte pendant la saisie d’une publication.
+- [x] Enrichir le profil public et corriger l’affichage des publications des comptes suivis.

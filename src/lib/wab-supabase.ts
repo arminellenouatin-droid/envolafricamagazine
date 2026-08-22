@@ -155,7 +155,7 @@ export async function listWabPosts(page: number, limit: number, filters: { count
     .eq("moderation_status", "published")
     .order("is_boosted", { ascending: false })
     .order("created_at", { ascending: false })
-    .range(0, 199);
+    .range(0, 999);
   if (error) return { configured: true as const, posts: null, error };
 
   let filteredData = (data as WabPostRow[]).filter((post) => {
