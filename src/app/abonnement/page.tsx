@@ -57,8 +57,12 @@ export default function AbonnementPage() {
         <div className="mt-12 grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-[1280px] mx-auto">
           {plans.map(plan=>{
             const isPopular = plan.popular;
-            const price = billing==="monthly" && (plan as any).firstMonthPrice && (plan.id==="mensuel" || plan.id==="entreprise") ? (plan as any).firstMonthPrice : plan.price;
-            const fullPrice = plan.price;
+            const monthlyPrice = Number(plan.monthlyPrice ?? (plan.interval === "month" ? plan.price : 0));
+            const annualPrice = Number(plan.annualPrice ?? (plan.interval === "year" ? plan.price : Math.round(monthlyPrice * 12 * (1 - Number(plan.annualDiscountPercent ?? 30) / 100))));
+            const annualDiscountPercent = Math.min(100, Math.max(0, Number(plan.annualDiscountPercent ?? 30)));
+            const regularMonthlyPrice = billing === "monthly" && plan.firstMonthPrice && (plan.id === "mensuel" || plan.id === "entreprise") ? Number(plan.firstMonthPrice) : monthlyPrice;
+            const price = billing === "yearly" ? annualPrice : regularMonthlyPrice;
+            const fullPrice = monthlyPrice;
             return (
               <div key={plan.id} className={`rounded-[24px] border p-6 md:p-7 bg-white relative flex flex-col ${isPopular ? "border-[#D4AF37] shadow-[0_20px_60px_rgba(212,175,55,0.15)] scale-[1.02] z-10" : "border-zinc-200"} ${selected===plan.id ? "ring-2 ring-[#0A1931]/10" : ""}`}>
                 {isPopular && <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#D4AF37] text-[#0A1931] text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">Le plus choisi</div>}
@@ -69,8 +73,8 @@ export default function AbonnementPage() {
                     <span className="font-serif font-black text-[36px] text-[#0A1931]">{formatPrice(Number(price || 0))}</span>
                     <span className="text-[11px] text-zinc-500">/{billing==="monthly" ? "mois" : "an"}</span>
                   </div>
-                  {price!==fullPrice && <div className="text-[12px] text-zinc-500 mt-1">Puis {formatPrice(Number(fullPrice || 0))} • Sans action de votre part</div>}
-                  {plan.id==="annuel" && billing==="monthly" && <div className="text-[12px] font-semibold text-green-700 bg-green-50 border border-green-100 rounded-full px-2.5 py-1 inline-block mt-2">Soit {formatPrice(3500)} / mois</div>}
+                  {billing === "yearly" && annualDiscountPercent > 0 && <div className="text-[12px] font-semibold text-green-700 bg-green-50 border border-green-100 rounded-full px-2.5 py-1 inline-block mt-2">Économie de {annualDiscountPercent}% • soit {formatPrice(Math.round(annualPrice / 12))} / mois</div>}
+                  {billing === "monthly" && plan.firstMonthPrice && Number(plan.firstMonthPrice) < monthlyPrice && <div className="text-[12px] text-zinc-500 mt-1">Puis {formatPrice(monthlyPrice)} / mois • Sans action de votre part</div>}
                   {plan.id==="soutien" && <div className="text-[11px] font-bold uppercase tracking-wide text-[#D4AF37] bg-amber-50 border border-amber-100 rounded-full px-2.5 py-1 inline-block mt-2">Pack Prestige inclus</div>}
                 </div>
                 <ul className="mt-6 space-y-2.5 flex-1">

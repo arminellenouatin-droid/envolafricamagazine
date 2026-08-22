@@ -10,6 +10,8 @@ function normalizePlan(value: any) {
     price: Math.max(0, Number(value.price) || 0),
     firstMonthPrice: value.firstMonthPrice == null || value.firstMonthPrice === "" ? null : Math.max(0, Number(value.firstMonthPrice) || 0),
     monthlyPrice: value.monthlyPrice == null || value.monthlyPrice === "" ? null : Math.max(0, Number(value.monthlyPrice) || 0),
+    annualPrice: value.annualPrice == null || value.annualPrice === "" ? null : Math.max(0, Number(value.annualPrice) || 0),
+    annualDiscountPercent: Math.min(100, Math.max(0, Number(value.annualDiscountPercent) || 0)),
     currency: String(value.currency || "XOF"),
     interval: value.interval === "year" ? "year" : "month",
     description: String(value.description || ""),
@@ -18,11 +20,11 @@ function normalizePlan(value: any) {
 }
 
 function toRow(plan: ReturnType<typeof normalizePlan>) {
-  return { id: plan.id, name: plan.name, price: plan.price, first_month_price: plan.firstMonthPrice, monthly_price: plan.monthlyPrice, currency: plan.currency, interval: plan.interval, description: plan.description, features: plan.features, updated_at: new Date().toISOString() };
+  return { id: plan.id, name: plan.name, price: plan.price, first_month_price: plan.firstMonthPrice, monthly_price: plan.monthlyPrice, annual_price: plan.annualPrice, annual_discount_percent: plan.annualDiscountPercent, currency: plan.currency, interval: plan.interval, description: plan.description, features: plan.features, updated_at: new Date().toISOString() };
 }
 
 function fromRow(row: any) {
-  return { id: row.id, name: row.name, price: Number(row.price || 0), firstMonthPrice: row.first_month_price == null ? null : Number(row.first_month_price), monthlyPrice: row.monthly_price == null ? null : Number(row.monthly_price), currency: row.currency || "XOF", interval: row.interval || "month", description: row.description || "", features: Array.isArray(row.features) ? row.features : [] };
+  return { id: row.id, name: row.name, price: Number(row.price || 0), firstMonthPrice: row.first_month_price == null ? null : Number(row.first_month_price), monthlyPrice: row.monthly_price == null ? null : Number(row.monthly_price), annualPrice: row.annual_price == null ? null : Number(row.annual_price), annualDiscountPercent: Number(row.annual_discount_percent ?? 30), currency: row.currency || "XOF", interval: row.interval || "month", description: row.description || "", features: Array.isArray(row.features) ? row.features : [] };
 }
 
 export async function GET() {
