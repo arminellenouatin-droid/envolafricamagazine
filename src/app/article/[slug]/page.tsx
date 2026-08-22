@@ -54,17 +54,16 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             <div className="mb-6 flex items-center gap-3 lg:hidden"><img src={editorialAuthor?.photoUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100"} alt={editorialAuthor?.name || article.author} className="h-9 w-9 rounded-full object-cover"/><div><p className="text-[12px] font-bold text-[#1b1c1c]">{editorialAuthor?.name || article.author}</p><p className="text-[10px] text-[#9e001f]">{editorialAuthor?.roleLabel || "Rédacteur"}</p></div></div>
             <div className="mb-6 flex items-center justify-between py-4 border-y border-[#e5bdbb]"><div className="hidden text-[12px] text-[#5f5e5e] sm:block">Par {editorialAuthor?.name || article.author}</div><div className="ml-auto text-right"><p className="text-[11px] uppercase text-[#5c403f]">{new Date(article.publishedAt!).toLocaleDateString('fr-FR',{day:'numeric', month:'short', year:'numeric'})}</p><p className="flex items-center justify-end gap-1 text-[11px] text-[#5f5e5e]"><span className="material-symbols-outlined text-[14px]">schedule</span> {article.readingTime} min</p></div></div>
 
-            <div className="flex items-center gap-6 py-4"><button className="flex items-center gap-2 text-[12px] hover:text-[#9e001f]"><span className="material-symbols-outlined text-[20px]">share</span> Partager</button><button className="flex items-center gap-2 text-[12px] hover:text-[#9e001f]"><span className="material-symbols-outlined text-[20px]">favorite</span> {article.likes}</button><button className="flex items-center gap-2 text-[12px] hover:text-[#9e001f]"><span className="material-symbols-outlined text-[20px]">chat_bubble</span> 12</button></div>
           </header>
 
-          <ArticleActions articleId={article.id} initialLikes={article.likes} />
+          <ArticleActions articleId={article.id} slug={article.slug} initialLikes={article.likes} initialViews={article.views} />
           </div>
         </article>
 
         <section className="mt-[80px] pt-[80px] border-t border-[#e5bdbb]">
           <h2 className="text-[28px] font-bold text-center md:text-left mb-12" style={{ fontFamily: "Montserrat" }}>À lire également</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {related.map((r:any)=>(
+            {related.map((r)=>(
               <Link key={r.id} href={`/article/${r.slug}`} className="group cursor-pointer">
                 <div className="aspect-video rounded-lg overflow-hidden mb-4 shadow-sm group-hover:shadow-lg transition-shadow"><img src={r.image} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /></div>
                 <span className="text-[12px] text-[#9e001f] uppercase font-bold tracking-wider">{r.category}</span>
