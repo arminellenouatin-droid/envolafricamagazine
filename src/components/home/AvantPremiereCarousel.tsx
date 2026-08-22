@@ -30,7 +30,7 @@ export default function AvantPremiereCarousel({ articles }: { articles: any[] })
           <div className="magazine-mobile-overlay-copy absolute bottom-0 z-20 w-full p-6 text-white md:p-8">
             <div className="magazine-mobile-overlay-categories mb-3 flex flex-wrap gap-2">{categories.map((category: string) => <span key={category} className="inline-block rounded-full bg-[#9e001f] px-3 py-1 text-[10px] font-bold uppercase tracking-wider">{category}</span>)}</div>
             <h2 className="magazine-mobile-overlay-title mb-2 line-clamp-2 text-[22px] font-bold leading-tight md:text-[28px]" style={{ fontFamily: "Montserrat" }}>{article.title}</h2>
-            <p className="magazine-mobile-overlay-summary mb-3 hidden line-clamp-2 text-[14px] opacity-90 md:block" style={{ fontFamily: "Source Serif 4" }}>{article.summary}</p>
+            <p className="magazine-mobile-overlay-summary mb-3 line-clamp-2 overflow-hidden text-[14px] opacity-90" style={{ fontFamily: "Source Serif 4" }}>{article.summary}</p>
             <div className="magazine-mobile-overlay-author flex items-center gap-2 text-[11px] opacity-80"><img src={article.authorProfilePhoto || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100"} alt="" className="h-6 w-6 rounded-full object-cover"/><span>{article.author}</span><span>•</span><span>{article.publishedAt ? new Date(article.publishedAt).toLocaleDateString("fr-FR") : "À la une"}</span></div>
           </div>
         </Link>;

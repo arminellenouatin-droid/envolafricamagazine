@@ -270,12 +270,12 @@ h1, h2, h3, h4, .font-display {
 @media (max-width: 767px) {
   .magazine-home .magazine-mobile-hero-carousel .magazine-mobile-overlay-copy { padding: 1rem; }
   .magazine-home .magazine-mobile-hero-carousel .magazine-mobile-overlay-categories { display: none; }
-  .magazine-home .magazine-mobile-hero-carousel .magazine-mobile-overlay-summary { display: block; }
+  .magazine-home .magazine-mobile-hero-carousel .magazine-mobile-overlay-summary { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; text-overflow: ellipsis; }
   .magazine-home .magazine-mobile-hero-carousel .magazine-mobile-overlay-author { display: flex; }
   .magazine-home .magazine-mobile-hero-carousel .magazine-mobile-overlay-title { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; margin: 0; font-size: 1.18rem; line-height: 1.08; text-overflow: ellipsis; }
   .magazine-home .magazine-mobile-overlay-story .magazine-mobile-overlay-author { display: flex; }
   .magazine-home .magazine-mobile-overlay-story .editorial-tag { display: none; }
-  .magazine-home .magazine-mobile-overlay-story .magazine-mobile-overlay-summary { display: block; }
+  .magazine-home .magazine-mobile-overlay-story .magazine-mobile-overlay-summary { display: none; }
   .magazine-home .magazine-mobile-overlay-story h2,
   .magazine-home .magazine-mobile-overlay-story h3 { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; text-overflow: ellipsis; }
   .magazine-home .magazine-mobile-overlay-story h2 { font-size: 1.35rem; line-height: 1.05; }
