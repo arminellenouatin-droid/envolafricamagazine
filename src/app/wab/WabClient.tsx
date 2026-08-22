@@ -210,7 +210,10 @@ export default function WabClient() {
       const data = await readJsonResponse<{ posts?: Post[]; pagination?: { hasMore?: boolean } }>(response);
       if (!response.ok) throw new Error((data as { error?: string }).error || `Impossible de charger le fil (HTTP ${response.status}).`);
       setPosts((items) => {
-        const nextPosts = reset ? data.posts ?? [] : [...items, ...(data.posts ?? [])];
+        const fetchedPosts = data.posts ?? [];
+        const sharedPost = sharedPostRef.current;
+        const withSharedPost = sharedPost && !fetchedPosts.some((post) => post.id === sharedPost.id) ? [sharedPost, ...fetchedPosts] : fetchedPosts;
+        const nextPosts = reset ? withSharedPost : [...items, ...fetchedPosts.filter((post) => !items.some((item) => item.id === post.id))];
         postsRef.current = nextPosts;
         if (reset) { pendingNewPostsRef.current = []; setNewPostCount(0); }
         return nextPosts;
