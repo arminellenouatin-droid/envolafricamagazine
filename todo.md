@@ -449,3 +449,22 @@
 - [ ] Revalider la build candidate avant publication.
 - [ ] Déclencher la mise en Production Vercel de la version complète.
 - [ ] Vérifier l’état READY et l’URL publique après publication.
+
+
+## Fil WAB — carrousels contextuels
+
+- [ ] Auditer le composant du fil et les sources réelles de comptes, réels, pages et groupes.
+- [ ] Insérer le premier carrousel après 5 publications.
+- [ ] Insérer ensuite un carrousel toutes les 10 publications.
+- [ ] Prévoir quatre types : personnes à connaître, réels, pages et groupes.
+- [ ] Ajouter abonnement/suivi et navigation sans données fictives ni doublons excessifs.
+- [ ] Tester scroll, rotation, états vides, mobile et desktop avant publication.
+
+
+## Implémentation en cours — carrousels WAB
+
+- [ ] Cartographier les données et composants du fil WAB avant modification.
+- [ ] Implémenter l’insertion après 5 publications puis toutes les 10 publications.
+- [ ] Brancher les recommandations personnes, réels, pages et groupes sur les sources réelles.
+- [ ] Ajouter les actions de suivi, abonnement, ouverture et rejoindre.
+- [ ] Tester le scroll infini, les états vides, les doublons et le responsive.
