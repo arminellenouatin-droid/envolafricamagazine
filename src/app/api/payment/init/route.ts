@@ -6,13 +6,27 @@ import { v4 as uuidv4 } from "uuid";
 import { SHIPPING_RATES } from "@/lib/constants";
 import { getMonerooMethodCodes } from "@/lib/payment-methods";
 import { validateMinimumPaymentAmount } from "@/lib/payment-policy";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
-const SUBSCRIPTION_PRICES: Record<string, number> = {
-  mensuel: 2000,
-  annuel: 42000,
-  entreprise: 15000,
-  soutien: 600000,
+const SUBSCRIPTION_PRICES: Record<string, { monthly: number; annual: number }> = {
+  mensuel: { monthly: 5000, annual: 42000 },
+  annuel: { monthly: 3500, annual: 42000 },
+  entreprise: { monthly: 20000, annual: 168000 },
+  soutien: { monthly: 50000, annual: 420000 },
 };
+
+async function getSubscriptionPrice(planId: string, billing: "monthly" | "yearly") {
+  const fallback = SUBSCRIPTION_PRICES[planId];
+  if (!fallback) return null;
+  const client = getSupabaseAdmin();
+  if (!client) return billing === "yearly" ? fallback.annual : fallback.monthly;
+  const result = await client.from("magazine_subscription_plans").select("price,monthly_price,annual_price,annual_discount_percent,first_month_price").eq("id", planId).maybeSingle();
+  if (result.error || !result.data) return billing === "yearly" ? fallback.annual : fallback.monthly;
+  const monthly = Number(result.data.monthly_price ?? result.data.price ?? fallback.monthly);
+  const annual = Number(result.data.annual_price ?? Math.round(monthly * 12 * (1 - Math.min(100, Math.max(0, Number(result.data.annual_discount_percent ?? 30))) / 100)));
+  if (!Number.isInteger(monthly) || monthly <= 0 || !Number.isInteger(annual) || annual <= 0) return null;
+  return billing === "yearly" ? annual : (planId === "mensuel" || planId === "entreprise" ? Number(result.data.first_month_price ?? monthly) : monthly);
+}
 
 const FORMAT_PRICES: Record<string, number> = {
   cd_audio: 5000,
@@ -54,7 +68,7 @@ export async function POST(req: NextRequest) {
     } else if (Array.isArray(items) && items.length > 0) {
       for (const item of items) {
         if (!item || typeof item !== "object") return NextResponse.json({ error: "Ligne de commande invalide" }, { status: 400 });
-        const line = item as { type?: string; magazineId?: string; format?: string; language?: string; planId?: string };
+        const line = item as { type?: string; magazineId?: string; format?: string; language?: string; planId?: string; billing?: "monthly" | "yearly" };
         if (line.type === "magazine") {
           const magazine = magazines.find((candidate) => candidate.id === line.magazineId);
           if (!magazine) return NextResponse.json({ error: "Magazine introuvable" }, { status: 404 });
@@ -62,11 +76,12 @@ export async function POST(req: NextRequest) {
           total += price;
           orderItems.push({ type: "magazine", magazineId: magazine.id, format: line.format ?? "numerique", language: line.language ?? "fr", price });
         } else if (line.type === "subscription") {
-          const price = SUBSCRIPTION_PRICES[line.planId ?? ""];
-          if (!price) return NextResponse.json({ error: "Plan d’abonnement invalide" }, { status: 400 });
+          const billing = line.billing === "yearly" ? "yearly" : "monthly";
+          const price = await getSubscriptionPrice(line.planId ?? "", billing);
+          if (!price) return NextResponse.json({ error: "Plan d’abonnement invalide ou tarif non configuré" }, { status: 400 });
           total += price;
-          orderItems.push({ type: "subscription", planId: line.planId, price });
-          description = `Abonnement ${line.planId} Envol Africa`;
+          orderItems.push({ type: "subscription", planId: line.planId, billing, price });
+          description = `Abonnement ${line.planId} ${billing === "yearly" ? "annuel" : "mensuel"} Envol Africa`;
         } else {
           return NextResponse.json({ error: "Type de produit invalide" }, { status: 400 });
         }

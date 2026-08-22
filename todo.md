@@ -319,3 +319,133 @@
 - [ ] Auditer newsletter, KPI, AdSense désactivé par défaut et consentement.
 - [ ] Recompiler l’ensemble et corriger toute régression détectée.
 - [ ] Préparer le protocole de tests en ligne après publication.
+
+
+## Publication des commits validés
+
+- [ ] Vérifier la branche, les commits présents et l’absence de modifications non contrôlées.
+- [ ] Relancer `git diff --check` et la build complète.
+- [ ] Vérifier les routes critiques auth, newsletter, KPI, Marketplace, téléchargement et webhook.
+- [ ] Contrôler les migrations et la configuration de production sans exposer de secrets.
+- [ ] Préparer la version exacte à publier et documenter les tests en ligne.
+
+
+## Publication demandée — version `181b881`
+
+- [ ] Vérifier la cible de production et la version exacte à publier.
+- [ ] Publier depuis l’interface de gestion avec le checkpoint validé.
+- [ ] Vérifier les pages publiques et les routes principales en ligne.
+- [ ] Tester inscription, e-mail, 2FA, newsletter, KPI, Marketplace et paiement numérique.
+
+
+## Archive téléchargeable du dépôt
+
+- [ ] Inclure le code source, migrations, documentation et fichiers de configuration non secrets.
+- [ ] Exclure `.env`, clés, tokens, `node_modules`, `.next`, caches et fichiers temporaires.
+- [ ] Ajouter un manifeste de contenu et les instructions de restauration.
+- [ ] Vérifier l’archive et calculer son empreinte SHA-256.
+- [ ] Livrer l’archive et le manifeste à l’utilisateur.
+
+
+## Audit exhaustif sécurité, performance, SEO et UX — consignes du master prompt
+
+- [ ] Cartographier la stack réelle, les services, les routes API et les variables d’environnement.
+- [ ] Auditer le code, les dépendances et tout l’historique Git à la recherche de secrets et défauts.
+- [ ] Vérifier Supabase/RLS, autorisations, authentification, paiements, uploads et stockage.
+- [ ] Tester performance, SEO technique, accessibilité, responsive et parcours critiques.
+- [ ] Rédiger un rapport avec preuves, criticité, exploitabilité, correctifs et tests de non-régression.
+- [ ] Soumettre toute correction sensible à validation avant application en production.
+
+
+## Publication contrôlée avant corrections d’audit
+
+- [ ] Identifier le dernier commit réellement visible sur GitHub et sa branche.
+- [ ] Identifier le projet Vercel cible et vérifier sa liaison GitHub.
+- [ ] Vérifier la build et les variables nécessaires sans exposer de secrets.
+- [ ] Demander confirmation explicite de la cible exacte avant toute publication.
+- [ ] Contrôler le statut du déploiement et fournir le lien de test.
+
+
+## Vérification en ligne du dernier commit
+
+- [ ] Tester le flipbook sur la preview et en production.
+- [ ] Vérifier la position de l’image d’article sur mobile.
+- [ ] Vérifier l’écran d’inscription et la présence du flux 2FA sans créer de fausse identité.
+- [ ] Tester la limitation des tentatives uniquement avec un compte de test autorisé ou un compte fourni par l’utilisateur.
+- [ ] Comparer preview et production et documenter chaque résultat.
+
+
+## Revalidation des accès MCP
+
+- [ ] Vérifier la disponibilité des serveurs MCP GitHub, Supabase et Vercel sans mutation.
+- [ ] Confirmer l’accès au dépôt GitHub et à la branche de stabilisation.
+- [ ] Confirmer l’accès au projet Supabase de production et ses métadonnées.
+- [ ] Confirmer l’accès au compte et aux projets Vercel.
+- [ ] Documenter séparément les accès en lecture et les capacités de modification/publication.
+
+
+## Publication de la version locale DERNIER COMMIT
+
+- [ ] Identifier les archives présentes sur l’ordinateur et leur contenu réel.
+- [ ] Vérifier l’empreinte et le manifeste de la version candidate.
+- [ ] Comparer la version candidate au dernier commit GitHub `4626b2e` et au déploiement Vercel.
+- [ ] Vérifier la build et les secrets exclus avant publication.
+- [ ] Publier uniquement la version candidate validée sur le projet Vercel cible.
+- [ ] Vérifier le statut READY et fournir le lien de test.
+
+
+## Publication Production confirmée par l’utilisateur
+
+- [ ] Promouvoir la version 181b881 de la preview vers la Production Vercel.
+- [ ] Vérifier le déploiement Production et l’URL publique.
+- [ ] Tester la connexion et les corrections articles après publication.
+- [ ] Documenter le flipbook qui réagit mais ne charge pas encore clairement.
+- [ ] Ne pas appliquer les corrections de l’audit avant un nouveau consentement.
+
+
+## Plan d’exécution de l’audit
+
+- [ ] Extraire chaque finding du rapport et le reformuler simplement.
+- [ ] Classer les findings par criticité, dépendances et impact.
+- [ ] Définir les lots de correction, les tests, les sauvegardes et les points de retour.
+- [ ] Définir les critères de passage en production pour chaque lot.
+- [ ] Livrer un document de pilotage compréhensible par le propriétaire non technique.
+
+
+## Règles permanentes de développement sécurisé
+
+- [ ] Appliquer les règles `regles-securite-agents.md` à chaque nouvelle modification.
+- [ ] Ajouter une vérification systématique secrets, accès serveur, validation, exposition API et rate limiting avant chaque livraison.
+- [ ] Corriger rapidement les écarts simples sans attendre la fin de tout l’audit, sans contourner les sauvegardes ni les validations.
+- [ ] Bloquer les changements sensibles lorsque secret, base, paiement, rôle ou production sont concernés jusqu’à validation dédiée.
+- [ ] Documenter les exceptions, les limites de test et les critères de fin de chaque lot.
+
+
+## Nouvelle évolution — header mobile et abonnements
+
+- [ ] Remplacer l’icône Live du header mobile par un raccourci Abonnement, sauf sur World Africa Business où Live reste présent.
+- [ ] Ouvrir depuis ce raccourci une fenêtre moderne donnant accès à l’abonnement et au don.
+- [ ] Vérifier la cohérence de cette règle sur Magazine, Jobs, Kiosque, Crowdfunding, Marketplace, Africa Awards, Salons et WAB.
+- [ ] Ajouter dans l’administration des prix mensuels et annuels par formule.
+- [ ] Ajouter le taux de réduction annuel et le calcul sécurisé du prix annuel.
+- [ ] Ajouter l’activation/désactivation des formules et la gestion de leurs options.
+- [ ] Préserver le prix serveur XOF et les flux Moneroo existants, avec affichage localisé uniquement côté présentation.
+- [ ] Tester mobile, abonnement, don, administration, responsive et non-régression paiement.
+
+
+## Publication preview — abonnement et header mobile confirmée
+
+- [ ] Appliquer la migration additive des prix annuels Supabase.
+- [ ] Vérifier les colonnes et valeurs des plans après migration.
+- [ ] Committer et pousser le header mobile et la Price Table.
+- [ ] Vérifier le build puis le déploiement preview Vercel.
+- [ ] Livrer le lien de test sans remplacer la Production.
+
+
+## Publication directe Production — abonnement et header mobile
+
+- [ ] Vérifier que le commit des corrections a bien été créé et poussé malgré l’interruption précédente.
+- [ ] Vérifier que la migration `subscription_annual_pricing` est appliquée.
+- [ ] Revalider la build candidate avant publication.
+- [ ] Déclencher la mise en Production Vercel de la version complète.
+- [ ] Vérifier l’état READY et l’URL publique après publication.
