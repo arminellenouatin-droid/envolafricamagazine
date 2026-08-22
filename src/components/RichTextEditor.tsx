@@ -8,21 +8,32 @@ type Props = { name?: string; value?: string; defaultValue?: string; onChange?: 
 export default function RichTextEditor({ name, value, defaultValue = "", onChange, placeholder = "Écrivez ou collez votre texte…", className = "", minHeight = 180 }: Props) {
   const editorRef = useRef<HTMLDivElement>(null);
   const hiddenRef = useRef<HTMLInputElement>(null);
+  const lastEmittedRef = useRef<string | null>(null);
   const initial = value ?? defaultValue;
 
   useEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
     const next = /<[a-z][\s\S]*>/i.test(initial) ? sanitizeRichText(initial) : plainTextToRichHtml(initial);
-    if (editor.innerHTML !== next) editor.innerHTML = next;
+    const isEditing = editor.contains(document.activeElement);
+    if (!(isEditing && lastEmittedRef.current === next) && editor.innerHTML !== next) editor.innerHTML = next;
     if (hiddenRef.current) hiddenRef.current.value = next;
   }, [initial]);
+
+  function readEditorValue(editor: HTMLDivElement) {
+    const hasFormatting = Boolean(editor.querySelector("strong,b,em,i,u,blockquote,h1,h2,h3,h4,h5,h6,ul,ol,li,a,sub,sup"));
+    if (!hasFormatting) {
+      const plainText = (editor.innerText || editor.textContent || "").replace(/\u00a0/g, " ");
+      return plainTextToRichHtml(plainText);
+    }
+    return sanitizeRichText(editor.innerHTML);
+  }
 
   function emit() {
     const editor = editorRef.current;
     if (!editor) return;
-    const html = sanitizeRichText(editor.innerHTML);
-    if (editor.innerHTML !== html) editor.innerHTML = html;
+    const html = readEditorValue(editor);
+    lastEmittedRef.current = html;
     if (hiddenRef.current) hiddenRef.current.value = html;
     onChange?.(html);
   }
