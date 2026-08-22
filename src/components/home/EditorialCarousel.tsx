@@ -41,7 +41,7 @@ export default function EditorialCarousel({ items, mode = "manual", visible = 4,
           {activeItems.map((item) => (
             <Link href={item.href} key={item.id} className="editorial-carousel__item group">
               {variant === "round" ? <div className="editorial-round-image"><img src={item.image} alt="" loading="lazy" decoding="async" /></div> : <div className="editorial-carousel__image"><img src={item.image} alt={item.title} loading="lazy" decoding="async" /><span className="editorial-carousel__veil" /></div>}
-              <div className="editorial-carousel__copy"><span className="editorial-tag">{item.eyebrow}</span><h3>{item.title}</h3>{item.description && <p>{item.description}</p>}{item.meta && <span className="editorial-carousel__meta">{item.meta}</span>}</div>
+              <div className="editorial-carousel__copy"><span className="editorial-tag">{item.eyebrow}</span><h3>{item.title}</h3>{item.meta && <span className="editorial-carousel__meta">{item.meta}</span>}{item.description && <p>{item.description}</p>}</div>
             </Link>
           ))}
         </div>
