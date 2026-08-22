@@ -195,6 +195,7 @@ export default function WabClient() {
   const feedTopRef = useRef<HTMLDivElement>(null);
   const postsRef = useRef<Post[]>([]);
   const pendingNewPostsRef = useRef<Post[]>([]);
+  const sharedPostRef = useRef<Post | null>(null);
 
   useEffect(() => { fetch("/api/auth/me").then((response) => response.json()).then((data) => setCurrentUser(data.user ?? null)).catch(() => setCurrentUser(null)); fetch("/api/wab/pages").then((response) => response.json()).then((data) => setPages(data.pages ?? [])).catch(() => setPages([])); fetch("/api/wab/groups").then((response) => response.json()).then((data) => setGroups(data.groups ?? [])).catch(() => setGroups([])); const draft = sessionStorage.getItem("wab-publish-draft"); if (draft) { try { const parsed = JSON.parse(draft) as { content?: string; type?: string }; setContent(parsed.content || ""); setType(parsed.type || "text"); setPublishOpen(true); } catch { sessionStorage.removeItem("wab-publish-draft"); } } }, []);
   useEffect(() => { fetch("/api/geo").then((response) => readJsonResponse<{ country?: string }>(response)).then((data) => setVisitorCountry(data.country ?? "")).catch(() => undefined); fetch("/api/wab/subscription").then((response) => response.json()).then((data) => setIsBusiness(Boolean(data.subscription))).catch(() => setIsBusiness(false)).finally(() => setAccountLoaded(true)); }, []);
@@ -220,6 +221,21 @@ export default function WabClient() {
   }, [visitorCountry]);
 
   useEffect(() => { loadFeed(1, true); }, [loadFeed]);
+  useEffect(() => {
+    const sharedPostId = window.location.hash.match(/^#post-(.+)$/)?.[1];
+    if (!sharedPostId) return;
+    let cancelled = false;
+    fetch(`/api/wab/posts/${encodeURIComponent(sharedPostId)}`)
+      .then((response) => response.json().then((data) => ({ response, data })))
+      .then(({ response, data }) => {
+        if (cancelled || !response.ok || !data.post) return;
+        sharedPostRef.current = data.post as Post;
+        setPosts((items) => items.some((post) => post.id === sharedPostId) ? items : [data.post as Post, ...items]);
+        window.requestAnimationFrame(() => document.getElementById(`post-${sharedPostId}`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, []);
   useEffect(() => {
     const node = marker.current;
     if (!node || !hasMore || loadingFeed) return;
@@ -346,7 +362,7 @@ export default function WabClient() {
           {upgradeRequired && <div className="fixed inset-0 z-[80] grid place-items-center bg-[#001325]/70 p-4" role="dialog" aria-modal="true" aria-labelledby="wab-upgrade-title"><div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff3dc] text-[#a36300]"><span className="material-symbols-outlined">workspace_premium</span></div><h2 id="wab-upgrade-title" className="mt-4 font-display text-xl font-extrabold text-[#082843]">Compte Entreprise WAB requis</h2><p className="mt-3 text-sm leading-6 text-[#43474d]">{upgradeRequired === "video" ? "Pour publier une vidéo, vous devez avoir un compte Entreprise WAB actif." : "Pour publier un média de plus de 10 Mo, vous devez avoir un compte Entreprise WAB actif."}</p><p className="mt-3 rounded-xl bg-[#eefcfa] p-3 text-xs leading-5 text-[#006874]">L’abonnement Entreprise coûte {WAB_BUSINESS_MONTHLY_PRICE.toLocaleString("fr-FR")} XOF par mois. Après le paiement, revenez dans WAB pour finaliser votre publication.</p><div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" onClick={() => setUpgradeRequired(null)} className="min-h-11 rounded-xl border border-[#c3c6ce] px-4 py-3 text-xs font-bold text-[#43474d]">Continuer sans publier</button><button type="button" disabled={wabSubscriptionLoading} onClick={startWabSubscription} className="min-h-11 rounded-xl bg-[#006874] px-4 py-3 text-xs font-bold text-white disabled:opacity-50">{wabSubscriptionLoading ? "Ouverture du paiement…" : "Créer mon compte Entreprise"}</button></div><SubscriptionMessage message={wabSubscriptionMessage} /></div></div>}
 
           <div className="flex flex-col gap-6">
-            {posts.map((post, index) => <Fragment key={post.id}><article key={post.id} className="relative flex flex-col gap-4 overflow-hidden rounded-3xl border border-[#d1e9e6] bg-white p-5 shadow-[0_2px_8px_rgba(8,40,67,0.08)] transition-shadow hover:shadow-[0_8px_24px_rgba(8,40,67,0.12)]">
+            {posts.map((post, index) => <Fragment key={post.id}><article id={`post-${post.id}`} key={post.id} className="relative flex flex-col gap-4 overflow-hidden rounded-3xl border border-[#d1e9e6] bg-white p-5 shadow-[0_2px_8px_rgba(8,40,67,0.08)] transition-shadow hover:shadow-[0_8px_24px_rgba(8,40,67,0.12)]">
                 {index === 0 || post.isBoosted ? <div className="premium-gradient absolute inset-x-0 top-0 h-1" /> : null}
                 {post.isBoosted && <span className="absolute right-5 top-5 rounded-full bg-[#fff0c7] px-2 py-1 text-[10px] font-bold text-[#875600]">Sponsored</span>}
                 {post.id === "model-sponsored" ? null : <PostViewTracker postId={post.id} />}
