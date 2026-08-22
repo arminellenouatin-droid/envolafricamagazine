@@ -5,6 +5,8 @@ import Link from "next/link";
 import { KIOSQUE_FORMATS, LANGUAGE_LABELS } from "@/lib/constants";
 import { getAvailablePaymentMethods } from "@/lib/payment-methods";
 import PreviewFlipbook from "@/components/kiosque/PreviewFlipbook";
+import RichTextContent from "@/components/RichTextContent";
+import { useLocale } from "@/components/LocaleProvider";
 
 type Magazine = {
   id: string;
@@ -31,9 +33,10 @@ export default function MagazineDetailPage() {
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [currency, setCurrency] = useState("XOF");
-  const [countryCode, setCountryCode] = useState("BJ");
-  const [localeLanguage, setLocaleLanguage] = useState("fr");
+  const { locale, formatPrice } = useLocale();
+  const currency = locale.currency;
+  const countryCode = locale.countryCode;
+  const localeLanguage = locale.language;
   const [paymentMethods, setPaymentMethods] = useState(() => getAvailablePaymentMethods("BJ", "XOF"));
 
   useEffect(()=>{
@@ -60,14 +63,6 @@ export default function MagazineDetailPage() {
     }).catch(() => setAllMagazines([]));
   }, []);
 
-  useEffect(() => {
-    fetch("/api/geo").then((response) => response.json()).then((data: { currency?: string; countryCode?: string; language?: string }) => {
-      setCurrency(data.currency || "XOF");
-      setCountryCode(data.countryCode || "BJ");
-      const detected = String(data.language || navigator.language || "fr").toLowerCase().split("-")[0];
-      setLocaleLanguage(["fr", "en", "es"].includes(detected) ? detected : "fr");
-    }).catch(() => { setCurrency("XOF"); setCountryCode("BJ"); });
-  }, []);
 
   const formatOptions = [
     { id: "numerique", label: "Numérique", icon: "tablet_android", desc: "Accès immédiat PDF/Web" },
@@ -78,10 +73,6 @@ export default function MagazineDetailPage() {
   ];
   const formatPriceInXof: Record<string, number> = Object.fromEntries(KIOSQUE_FORMATS.map((item) => [item.id, item.price]));
   const prices: Record<string, number> = { ...formatPriceInXof, ...(magazine?.prices || {}), ...(magazine?.priceOverrides || {}) };
-  const currencyRates: Record<string, number> = { XOF: 1, EUR: 0.00152, USD: 0.00165, NGN: 2.5, GHS: 0.025 };
-  const formatPrice = (value: number) => currency === "XOF"
-    ? `${Math.round(value).toLocaleString("fr-FR")} F CFA`
-    : `${new Intl.NumberFormat("fr-FR", { style: "currency", currency, maximumFractionDigits: 2 }).format(value * (currencyRates[currency] || 1))}`;
 
   const languagesForFormat = (formatId: string) => formatId.includes("audio") || formatId === "cd_audio"
     ? ["fr", "en", "es", "sw", "ha", "yo", "ig", "fon", "ff", "zu", "ee", "wo"]
@@ -90,9 +81,9 @@ export default function MagazineDetailPage() {
   const total = selections.reduce((sum, selection) => sum + (prices[selection.format] || 0), 0);
   const recommendedMagazines = allMagazines.filter((item) => item.id !== magazine?.id).slice(0, 6);
   useEffect(() => {
-    const fallback = getAvailablePaymentMethods(countryCode, currency);
+    const fallback = getAvailablePaymentMethods(countryCode, "XOF");
     setPaymentMethods(fallback);
-    fetch(`/api/payment/methods?country=${encodeURIComponent(countryCode)}&currency=${encodeURIComponent(currency)}`)
+    fetch(`/api/payment/methods?country=${encodeURIComponent(countryCode)}&currency=XOF`)
       .then((response) => response.json() as Promise<{ methods?: Array<{ code: string; label: string; logo?: string; icon?: string }> }>)
       .then((data) => {
         if (!data.methods?.length) return;
@@ -163,7 +154,7 @@ export default function MagazineDetailPage() {
                 <span className="text-[#5c403f] text-[12px] italic">N° {magazine.numero} — {magazine.year} • 124 pages</span>
               </div>
               <h1 className="text-[32px] md:text-[40px] font-bold leading-tight text-[#1b1c1c] mb-2" style={{ fontFamily: "Montserrat" }}>{magazine.title}</h1>
-              <p className="text-[18px] text-[#5f5e5e] leading-relaxed max-w-2xl" style={{ fontFamily: "Source Serif 4" }}>{magazine.description} Ce numéro inclut notre enquête sur la transformation locale du cacao, entretien CEO Wave, classement 50 entreprises les plus performantes.</p>
+              <div className="max-w-2xl text-[18px] leading-relaxed text-[#5f5e5e]" style={{ fontFamily: "Source Serif 4" }}><RichTextContent value={`${magazine.description || ""} Ce numéro inclut notre enquête sur la transformation locale du cacao, entretien CEO Wave, classement 50 entreprises les plus performantes.`} /></div>
             </header>
 
             <section className="p-6 bg-[#f0eded] rounded-xl">

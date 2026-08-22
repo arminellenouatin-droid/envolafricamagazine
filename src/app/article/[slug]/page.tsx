@@ -46,19 +46,16 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               {(article.categories?.length ? article.categories : [article.category]).map((category) => <span key={category} className="bg-[#9e001f]/10 text-[#9e001f] px-3 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold">{category}</span>)}
               <span className="bg-[#5f5e5e]/10 text-[#5f5e5e] px-3 py-1 rounded-full text-[11px] uppercase tracking-wider">Exclusif</span>
             </div>
+            <figure className="mb-8">
+              <img src={article.image} alt={article.title} className="w-full aspect-video object-cover rounded-xl shadow-lg" />
+              <figcaption className="mt-4 text-[12px] text-[#5f5e5e] italic text-center">{article.title} - {article.category} • {article.views.toLocaleString()} vues • © Envol Africa</figcaption>
+            </figure>
             <LocalizedArticleExperience article={article} isSubscriber={isSubscriber} preferredLanguage={preferredLanguage} />
             <div className="mb-6 flex items-center gap-3 lg:hidden"><img src={editorialAuthor?.photoUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100"} alt={editorialAuthor?.name || article.author} className="h-9 w-9 rounded-full object-cover"/><div><p className="text-[12px] font-bold text-[#1b1c1c]">{editorialAuthor?.name || article.author}</p><p className="text-[10px] text-[#9e001f]">{editorialAuthor?.roleLabel || "Rédacteur"}</p></div></div>
             <div className="mb-6 flex items-center justify-between py-4 border-y border-[#e5bdbb]"><div className="hidden text-[12px] text-[#5f5e5e] sm:block">Par {editorialAuthor?.name || article.author}</div><div className="ml-auto text-right"><p className="text-[11px] uppercase text-[#5c403f]">{new Date(article.publishedAt!).toLocaleDateString('fr-FR',{day:'numeric', month:'short', year:'numeric'})}</p><p className="flex items-center justify-end gap-1 text-[11px] text-[#5f5e5e]"><span className="material-symbols-outlined text-[14px]">schedule</span> {article.readingTime} min</p></div></div>
 
             <div className="flex items-center gap-6 py-4"><button className="flex items-center gap-2 text-[12px] hover:text-[#9e001f]"><span className="material-symbols-outlined text-[20px]">share</span> Partager</button><button className="flex items-center gap-2 text-[12px] hover:text-[#9e001f]"><span className="material-symbols-outlined text-[20px]">favorite</span> {article.likes}</button><button className="flex items-center gap-2 text-[12px] hover:text-[#9e001f]"><span className="material-symbols-outlined text-[20px]">chat_bubble</span> 12</button></div>
           </header>
-
-          <figure className="mb-12">
-            <img src={article.image} alt={article.title} className="w-full aspect-video object-cover rounded-xl shadow-lg" />
-            <figcaption className="mt-4 text-[12px] text-[#5f5e5e] italic text-center">{article.title} - {article.category} • {article.views.toLocaleString()} vues • © Envol Africa</figcaption>
-          </figure>
-
-
 
           <ArticleActions articleId={article.id} initialLikes={article.likes} />
           </div>

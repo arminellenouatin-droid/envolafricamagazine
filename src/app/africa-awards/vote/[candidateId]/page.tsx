@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { MIN_PAYMENT_AMOUNT_XOF } from "@/lib/payment-policy";
+import { useLocale } from "@/components/LocaleProvider";
 
 export default function VotePage() {
   const params = useParams();
@@ -12,6 +13,7 @@ export default function VotePage() {
   const [votes, setVotes] = useState(1);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { formatPrice } = useLocale();
 
   useEffect(()=>{
     fetch(`/api/awards/candidates`).then(r=>r.json()).then(d=>{
@@ -74,7 +76,7 @@ export default function VotePage() {
               <button onClick={()=>setVotes(Math.max(1, votes-1))} className="w-10 h-10 rounded-full bg-white/10 border border-white/10 flex items-center justify-center">-</button>
               <span className="text-[32px] font-black w-16 text-center">{votes}</span>
               <button onClick={()=>setVotes(votes+1)} className="w-10 h-10 rounded-full bg-white/10 border border-white/10 flex items-center justify-center">+</button>
-              <span className="text-[12px] text-[#A8A6A0]">= {votes} points • {total.toLocaleString("fr-FR")} F CFA</span>
+              <span className="text-[12px] text-[#A8A6A0]">= {votes} points • {formatPrice(total)}</span>
             </div>
           </div>
 
@@ -84,12 +86,12 @@ export default function VotePage() {
               <div className="flex justify-between"><span className="text-[#A8A6A0]">Candidat</span><span className="font-bold">{candidate.display_name}</span></div>
               <div className="flex justify-between"><span className="text-[#A8A6A0]">Nombre de votes</span><span>{votes}</span></div>
               <div className="flex justify-between"><span className="text-[#A8A6A0]">Points obtenus</span><span>{votes} pts</span></div>
-              <div className="flex justify-between font-bold border-t border-white/10 pt-2 mt-2"><span>Montant</span><span className="text-[#D4AF37]">{total.toLocaleString("fr-FR")} F CFA</span></div>
+              <div className="flex justify-between font-bold border-t border-white/10 pt-2 mt-2"><span>Montant</span><span className="text-[#D4AF37]">{formatPrice(total)}</span></div>
             </div>
           </div>
 
           <button onClick={handleVote} disabled={loading} className="mt-8 w-full h-12 rounded-full bg-[#D4AF37] text-black font-bold text-[14px] disabled:opacity-50 hover:bg-[#F4D976]">
-            {loading?"Redirection Moneroo...":`Payer ${total.toLocaleString("fr-FR")} F via Moneroo →`}
+            {loading?"Redirection Moneroo...":`Payer ${formatPrice(total)} via Moneroo →`}
           </button>
           <p className="text-[11px] text-[#A8A6A0] mt-3 text-center">Paiement via Moneroo Mobile Money/Carte/PayPal - Webhook vérifié signature obligatoire - Comptabilisation &lt;5s + classement temps réel - Historique dans /my-votes</p>
         </div>

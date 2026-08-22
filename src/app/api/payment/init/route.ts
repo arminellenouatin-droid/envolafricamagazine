@@ -33,8 +33,9 @@ export async function POST(req: NextRequest) {
   let createdOrderId: string | undefined;
   try {
     const body = await req.json();
-    const { items, currency = "XOF", shippingCountry, affiliateCode, donAmount, phone, metadata } = body;
-    const paymentCurrency = String(currency).toUpperCase();
+    const { items, shippingCountry, affiliateCode, donAmount, phone, metadata } = body;
+    // Les montants métier restent en XOF. La devise visiteur ne sert qu’à l’affichage ; Moneroo gère son propre parcours local.
+    const paymentCurrency = "XOF";
     const paymentCountry = String(shippingCountry || body.country || "BJ").toUpperCase();
     const paymentMethods = getMonerooMethodCodes(paymentCountry, paymentCurrency);
     const user = await getCurrentUserFromCookie();
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
       const amount = Number(donAmount);
       if (!Number.isInteger(amount) || amount <= 0) return NextResponse.json({ error: "Montant du don invalide" }, { status: 400 });
       total = amount;
-      description = `Don Envol Africa Magazine - ${amount} ${currency}`;
+      description = `Don Envol Africa Magazine - ${amount} ${paymentCurrency}`;
       orderItems.push({ type: "don", amount, price: amount });
     } else if (Array.isArray(items) && items.length > 0) {
       for (const item of items) {

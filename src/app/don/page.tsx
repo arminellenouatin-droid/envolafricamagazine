@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { MIN_PAYMENT_AMOUNT_XOF } from "@/lib/payment-policy";
+import { useLocale } from "@/components/LocaleProvider";
 
 const amounts = [5000,10000,25000,50000,100000];
 
@@ -11,11 +12,12 @@ export default function DonPage() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const { formatPrice } = useLocale();
 
   const finalAmount = custom ? parseInt(custom) : amount;
 
   const handleDon = async () => {
-    if (!Number.isInteger(finalAmount) || finalAmount < MIN_PAYMENT_AMOUNT_XOF) { alert(`Le montant minimum accepté est de ${MIN_PAYMENT_AMOUNT_XOF.toLocaleString("fr-FR")} F CFA.`); return; }
+    if (!Number.isInteger(finalAmount) || finalAmount < MIN_PAYMENT_AMOUNT_XOF) { alert(`Le montant minimum accepté est de ${formatPrice(MIN_PAYMENT_AMOUNT_XOF)}.`); return; }
     setLoading(true);
     try {
       const res = await fetch("/api/payment/init", {
@@ -48,14 +50,14 @@ export default function DonPage() {
             <div className="mt-4 grid grid-cols-3 gap-2">
               {amounts.map(a=>(
                 <button key={a} onClick={()=>{setAmount(a); setCustom("");}} className={`h-12 rounded-full border font-bold text-[14px] transition-all ${amount===a && !custom ? "bg-[#0A1931] border-[#0A1931] text-white" : "bg-zinc-50 border-zinc-200 hover:border-zinc-300"}`}>
-                  {a.toLocaleString()} F
+                  {formatPrice(a)}
                 </button>
               ))}
             </div>
             <div className="mt-4">
-              <label className="text-[12px] font-semibold uppercase tracking-wide text-zinc-600">Montant personnalisé (F CFA)</label>
-              <input type="number" min={MIN_PAYMENT_AMOUNT_XOF} value={custom} onChange={e=>setCustom(e.target.value)} placeholder={`Minimum ${MIN_PAYMENT_AMOUNT_XOF.toLocaleString("fr-FR")} F CFA`} className="mt-2 w-full h-12 rounded-full border border-zinc-200 bg-zinc-50 px-5 text-[15px] focus:bg-white focus:border-[#0A1931] outline-none" />
-              <p className="mt-2 text-[12px] text-zinc-500">Le montant minimum accepté est de {MIN_PAYMENT_AMOUNT_XOF.toLocaleString("fr-FR")} F CFA.</p>
+              <label className="text-[12px] font-semibold uppercase tracking-wide text-zinc-600">Montant personnalisé (montant de référence XOF)</label>
+              <input type="number" min={MIN_PAYMENT_AMOUNT_XOF} value={custom} onChange={e=>setCustom(e.target.value)} placeholder={`Minimum ${formatPrice(MIN_PAYMENT_AMOUNT_XOF)}`} className="mt-2 w-full h-12 rounded-full border border-zinc-200 bg-zinc-50 px-5 text-[15px] focus:bg-white focus:border-[#0A1931] outline-none" />
+              <p className="mt-2 text-[12px] text-zinc-500">Le montant minimum accepté est de {formatPrice(MIN_PAYMENT_AMOUNT_XOF)}.</p>
             </div>
 
             <div className="mt-8">
@@ -65,7 +67,7 @@ export default function DonPage() {
             </div>
 
             <button onClick={handleDon} disabled={loading} className="mt-8 w-full h-13 py-3.5 rounded-full bg-[#0A1931] text-white font-bold text-[15px] hover:bg-black disabled:opacity-60 flex items-center justify-center gap-2">
-              {loading ? "Redirection..." : <>Faire un don de {finalAmount?.toLocaleString()} F CFA → <span className="text-[11px] bg-white/15 rounded-full px-2 py-0.5">via Moneroo</span></>}
+              {loading ? "Redirection..." : <>Faire un don de {formatPrice(Number(finalAmount || 0))} → <span className="text-[11px] bg-white/15 rounded-full px-2 py-0.5">via Moneroo</span></>}
             </button>
             <div className="mt-3 text-center text-[11px] text-zinc-500">Don sécurisé • Reçu instantané • Mobile Money & Carte</div>
           </div>
@@ -74,10 +76,10 @@ export default function DonPage() {
             <div className="rounded-[18px] bg-[#0A1931] p-6 text-white">
               <div className="text-[13px] font-bold uppercase tracking-wide text-[#D4AF37]">Impact de votre don</div>
               <ul className="mt-4 space-y-3 text-[13px] leading-5 text-zinc-300">
-                <li className="flex gap-2"><span className="text-[#D4AF37]">•</span> 10 000 F = 1 journée de reportage terrain</li>
-                <li className="flex gap-2"><span className="text-[#D4AF37]">•</span> 25 000 F = Traduction en 3 langues africaines</li>
-                <li className="flex gap-2"><span className="text-[#D4AF37]">•</span> 100 000 F = 1 enquête complète financée</li>
-                <li className="flex gap-2"><span className="text-[#D4AF37]">•</span> 500 000 F = Bourse pour 1 jeune journaliste</li>
+                <li className="flex gap-2"><span className="text-[#D4AF37]">•</span> {formatPrice(10000)} = 1 journée de reportage terrain</li>
+                <li className="flex gap-2"><span className="text-[#D4AF37]">•</span> {formatPrice(25000)} = Traduction en 3 langues africaines</li>
+                <li className="flex gap-2"><span className="text-[#D4AF37]">•</span> {formatPrice(100000)} = 1 enquête complète financée</li>
+                <li className="flex gap-2"><span className="text-[#D4AF37]">•</span> {formatPrice(500000)} = Bourse pour 1 jeune journaliste</li>
               </ul>
             </div>
             <div className="rounded-[18px] bg-white border border-zinc-100 p-6">

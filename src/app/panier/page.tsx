@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SHIPPING_RATES } from "@/lib/constants";
+import { useLocale } from "@/components/LocaleProvider";
 
 export default function PanierPage() {
   const [cart, setCart] = useState<any[]>([]);
@@ -9,6 +10,7 @@ export default function PanierPage() {
   const [loading, setLoading] = useState(false);
   const [affiliate, setAffiliate] = useState<string>("");
   const [paymentMessage, setPaymentMessage] = useState<string>("");
+  const { formatPrice } = useLocale();
 
   useEffect(()=>{
     const saved = localStorage.getItem("eam_cart");
@@ -108,7 +110,7 @@ export default function PanierPage() {
                         <div className="flex items-center border border-[#e5bdbb] rounded-lg px-2 bg-white">
                           <button className="p-1 hover:text-[#9e001f]">-</button><span className="px-4 font-bold">1</span><button className="p-1 hover:text-[#9e001f]">+</button>
                         </div>
-                        <span className="text-[20px] font-bold" style={{ fontFamily: "Montserrat" }}>{item.price?.toLocaleString()} F CFA</span>
+                        <span className="text-[20px] font-bold" style={{ fontFamily: "Montserrat" }}>{formatPrice(Number(item.price || 0))}</span>
                       </div>
                     </div>
                   </div>
@@ -135,10 +137,10 @@ export default function PanierPage() {
             <div className="bg-[#f0eded] p-6 rounded-xl border border-[#e5bdbb] shadow-sm">
               <h3 className="text-[20px] font-bold mb-4 border-b border-[#e5bdbb] pb-2" style={{ fontFamily: "Montserrat" }}>Total</h3>
               <div className="space-y-2 mb-4 text-[14px]">
-                <div className="flex justify-between text-[#5c403f]"><span>Sous-total</span><span>{subtotal.toLocaleString()} F CFA</span></div>
-                {affiliate && <div className="flex justify-between text-[#9e001f]"><span>Remise partenaire</span><span>-{discount.toLocaleString()} F CFA</span></div>}
-                {hasPrint && <div className="flex justify-between text-[#5c403f]"><span>Livraison (Est.)</span><span>{shipping.toLocaleString()} F CFA</span><select value={country} onChange={e=>setCountry(e.target.value)} className="ml-2 text-[11px] border rounded px-1"><option value="BJ">BJ 2k</option><option value="CI">CI 2.5k</option><option value="SN">SN 3k</option><option value="NG">NG 4k</option><option value="FR">FR 8k</option><option value="US">US 12k</option></select></div>}
-                <div className="pt-2 border-t border-[#e5bdbb] flex justify-between font-bold text-[18px]"><span>NET À PAYER</span><span className="text-[#9e001f]">{total.toLocaleString()} F CFA</span></div>
+                <div className="flex justify-between text-[#5c403f]"><span>Sous-total</span><span>{formatPrice(subtotal)}</span></div>
+                {affiliate && <div className="flex justify-between text-[#9e001f]"><span>Remise partenaire</span><span>-{formatPrice(discount)}</span></div>}
+                {hasPrint && <div className="flex justify-between text-[#5c403f]"><span>Livraison (Est.)</span><span>{formatPrice(shipping)}</span><select value={country} onChange={e=>setCountry(e.target.value)} className="ml-2 text-[11px] border rounded px-1"><option value="BJ">BJ 2k</option><option value="CI">CI 2.5k</option><option value="SN">SN 3k</option><option value="NG">NG 4k</option><option value="FR">FR 8k</option><option value="US">US 12k</option></select></div>}
+                <div className="pt-2 border-t border-[#e5bdbb] flex justify-between font-bold text-[18px]"><span>NET À PAYER</span><span className="text-[#9e001f]">{formatPrice(total)}</span></div>
               </div>
 
               <button onClick={checkout} disabled={loading || cart.length===0} className="w-full bg-[#9e001f] text-white py-4 rounded-lg font-bold text-[16px] hover:brightness-90 transition-all shadow-md active:scale-95 disabled:opacity-50">
