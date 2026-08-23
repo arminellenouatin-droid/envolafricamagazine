@@ -9,7 +9,8 @@ import { translate } from "@/lib/i18n";
 import InboxToolbox, { type InboxToolboxTab } from "@/components/InboxToolbox";
 import CartToolbox from "@/components/CartToolbox";
 
-type FeaturedArticle = { slug: string; title: string };
+type FeaturedArticle = { slug: string; title: string; image?: string; category?: string; summary?: string };
+type MegaMenuConfig = { title?: string; description?: string; buyHref?: string; categories?: string[]; items?: Array<{ id?: string; title: string; mediaUrl?: string; href?: string; description?: string }> };
 
 const firstLineMenus = [
   { name: "S'abonner", href: "/abonnement", icon: "stars" },
@@ -60,30 +61,16 @@ const sidePanelLinks = [
   { name: "Courtage", href: "https://envolafrica.net/" },
 ];
 
-function MegaMenu({ platform, onClose }: { platform: PlatformConfig; onClose: () => void }) {
-  return (
-    <div className="absolute left-1/2 top-full z-[70] mt-3 w-[min(92vw,760px)] -translate-x-1/2 overflow-hidden rounded-2xl border border-[#e5bdbb] bg-white shadow-2xl">
-      <div className="border-b border-slate-100 px-5 py-4" style={{ backgroundColor: platform.accentSoft }}>
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: platform.accent }}>{platform.name}</p>
-            <h2 className="mt-1 font-display text-lg font-extrabold text-slate-950">{platform.megaTitle}</h2>
-            <p className="mt-1 text-sm text-slate-600">{platform.megaDescription}</p>
-          </div>
-          <button type="button" aria-label="Fermer le menu" onClick={onClose} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-slate-600 shadow-sm transition hover:text-slate-950">×</button>
-        </div>
-      </div>
-      <div className="grid gap-2 p-4 sm:grid-cols-2">
-        {platform.megaItems.map((item) => (
-          <Link key={item.label} href={item.href} onClick={onClose} className="group flex items-center gap-3 rounded-xl border border-slate-100 px-4 py-3 transition hover:-translate-y-0.5 hover:border-transparent hover:shadow-md" style={{ backgroundColor: `${platform.accentSoft}88` }}>
-            <span className="material-symbols-outlined text-[22px]" style={{ color: platform.accent }}>{item.icon}</span>
-            <span className="flex-1 text-sm font-bold text-slate-800">{item.label}</span>
-            <span className="text-slate-400 transition group-hover:translate-x-0.5" aria-hidden="true">→</span>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
+function MegaMenu({ platform, onClose, articles, config }: { platform: PlatformConfig; onClose: () => void; articles: FeaturedArticle[]; config?: MegaMenuConfig }) {
+  if (platform.key === "magazine") {
+    const configured = (config?.items || []).map((item) => ({ slug: "", title: item.title, image: item.mediaUrl, category: "À découvrir", href: item.href }));
+    const sourceArticles = configured.length ? configured : articles;
+    const main = sourceArticles.slice(0, 3);
+    const side = sourceArticles.slice(3, 6);
+    const categories = config?.categories?.length ? config.categories.slice(0, 6) : Array.from(new Set(articles.map((item) => item.category).filter(Boolean))).slice(0, 6);
+    return <div className="absolute left-1/2 top-full z-[70] mt-3 w-[min(94vw,1080px)] -translate-x-1/2 overflow-hidden rounded-[24px] border border-[#d8c3c1] bg-[#fffdfc] shadow-[0_26px_70px_rgba(55,23,24,.22)]" onClick={(event) => event.stopPropagation()}><div className="border-b border-[#ead8d5] bg-[linear-gradient(135deg,#fff8f3,#f5e3dc)] px-7 py-5"><div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#9e001f]">Magazine · édition en cours</p><h2 className="mt-1 font-serif text-3xl font-black text-[#2b2525]">{config?.title || "Nouveau numéro"}</h2><p className="mt-1 text-sm text-[#746665]">{config?.description || "Les idées, les visages et les analyses à ouvrir maintenant."}</p></div><button type="button" aria-label="Fermer le menu" onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-[#9e001f] shadow-sm">×</button></div></div><div className="grid gap-5 p-6 lg:grid-cols-[1.6fr_.8fr]"><div className="grid gap-3 md:grid-cols-3">{(main.length ? main : [{ slug: "", title: "Les analyses du nouveau numéro" }]).map((article, index) => <Link key={`${article.slug || "empty"}-${index}`} href={(article as FeaturedArticle & { href?: string }).href || (article.slug ? `/article/${encodeURIComponent(article.slug)}` : "/") } onClick={onClose} className="group overflow-hidden rounded-2xl border border-[#ead8d5] bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"><div className="h-28 overflow-hidden bg-[#ead8d5]">{article.image ? <img src={article.image} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center text-[#9e001f]"><span className="material-symbols-outlined text-3xl">menu_book</span></div>}</div><div className="p-3"><span className="text-[9px] font-black uppercase tracking-wider text-[#9e001f]">{article.category || "À découvrir"}</span><h3 className="mt-1 line-clamp-3 font-serif text-lg font-black leading-tight text-[#2b2525]">{article.title}</h3></div></Link>)}</div><div className="space-y-3">{(side.length ? side : main.slice(0, 3)).map((article, index) => <Link key={`${article.slug || "side"}-${index}`} href={(article as FeaturedArticle & { href?: string }).href || (article.slug ? `/article/${encodeURIComponent(article.slug)}` : "/") } onClick={onClose} className="group flex gap-3 border-b border-[#ead8d5] pb-3"><div className="h-16 w-20 shrink-0 overflow-hidden rounded-xl bg-[#ead8d5]">{article.image ? <img src={article.image} alt="" className="h-full w-full object-cover transition group-hover:scale-105" /> : <span className="grid h-full place-items-center text-[#9e001f]"><span className="material-symbols-outlined">article</span></span>}</div><div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-wider text-[#9e001f]">{article.category || "Article"}</p><h3 className="mt-1 line-clamp-2 font-serif text-base font-black leading-tight text-[#2b2525]">{article.title}</h3></div></Link>)}</div></div><div className="flex flex-col gap-4 border-t border-[#ead8d5] bg-white px-6 py-4 lg:flex-row lg:items-center lg:justify-between"><div className="flex min-w-0 flex-1 items-center gap-3 overflow-x-auto">{categories.length ? categories.map((category) => <Link key={category} href={`/recherche?q=${encodeURIComponent(category || "")}`} onClick={onClose} className="shrink-0 text-[10px] font-black uppercase tracking-wider text-[#746665] hover:text-[#9e001f]">{category}</Link>) : <span className="text-[10px] font-bold text-[#746665]">Analyses · Économie · Entrepreneuriat · Société</span>}<Link href="/recherche" onClick={onClose} className="shrink-0 text-[10px] font-black uppercase tracking-wider text-[#9e001f]">Voir plus →</Link></div><Link href={config?.buyHref || "/kiosque"} onClick={onClose} className="shrink-0 rounded-full bg-[#9e001f] px-5 py-3 text-center text-[11px] font-black text-white shadow-sm transition hover:bg-[#7f0019]">Acheter ce numéro</Link></div></div>;
+  }
+  return <div className="absolute left-1/2 top-full z-[70] mt-3 w-[min(92vw,760px)] -translate-x-1/2 overflow-hidden rounded-2xl border border-[#e5bdbb] bg-white shadow-2xl"><div className="border-b border-slate-100 px-5 py-4" style={{ backgroundColor: platform.accentSoft }}><div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: platform.accent }}>{platform.name}</p><h2 className="mt-1 font-display text-lg font-extrabold text-slate-950">{platform.megaTitle}</h2><p className="mt-1 text-sm text-slate-600">{platform.megaDescription}</p></div><button type="button" aria-label="Fermer le menu" onClick={onClose} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-slate-600 shadow-sm transition hover:text-slate-950">×</button></div></div><div className="grid gap-2 p-4 sm:grid-cols-2">{platform.megaItems.map((item) => <Link key={item.label} href={item.href} onClick={onClose} className="group flex items-center gap-3 rounded-xl border border-slate-100 px-4 py-3 transition hover:-translate-y-0.5 hover:border-transparent hover:shadow-md" style={{ backgroundColor: `${platform.accentSoft}88` }}><span className="material-symbols-outlined text-[22px]" style={{ color: platform.accent }}>{item.icon}</span><span className="flex-1 text-sm font-bold text-slate-800">{item.label}</span><span className="text-slate-400 transition group-hover:translate-x-0.5" aria-hidden="true">→</span></Link>)}</div></div>;
 }
 
 export default function Header({ user }: { user?: { id: string; nom?: string; prenom?: string; email?: string; role?: string; avatar?: string } }) {
@@ -128,6 +115,7 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
   const [profileOpen, setProfileOpen] = useState(false);
   const [visitorLocale, setVisitorLocale] = useState<VisitorLocale>(() => readPersistedVisitorLocale());
   const [featuredArticles, setFeaturedArticles] = useState<FeaturedArticle[]>([]);
+  const [megaMenuConfig, setMegaMenuConfig] = useState<MegaMenuConfig>();
 
   useEffect(() => {
     const refreshInboxCounts = async () => {
@@ -180,7 +168,8 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
   }, []);
 
   useEffect(() => {
-    if (platform.key !== "magazine" && platform.key !== "kiosque") { setFeaturedArticles([]); return; }
+    if (platform.key !== "magazine" && platform.key !== "kiosque") { setFeaturedArticles([]); setMegaMenuConfig(undefined); return; }
+    fetch("/api/magazine-landing", { cache: "no-store" }).then((response) => response.ok ? response.json() as Promise<{ blocks?: Array<{ blockKey?: string; config?: MegaMenuConfig }> }> : Promise.reject(new Error("Landing indisponible"))).then((data) => setMegaMenuConfig(data.blocks?.find((block) => block.blockKey === "mega_menu")?.config)).catch(() => setMegaMenuConfig(undefined));
     let cancelled = false;
     fetch("/api/articles?featured=true", { cache: "no-store" })
       .then((response) => response.ok ? response.json() as Promise<{ articles?: FeaturedArticle[] }> : Promise.reject(new Error("Articles indisponibles")))
@@ -315,7 +304,7 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
               <button type="button" aria-expanded={megaMenuOpen} onClick={() => setMegaMenuOpen((open) => !open)} className="flex items-center gap-1 rounded-full px-4 py-2 text-[13px] font-bold text-white transition-colors hover:brightness-110" style={{ backgroundColor: platform.accent }}>
                 {platform.megaLabel}<span className="material-symbols-outlined text-[18px]">expand_more</span>
               </button>
-              {megaMenuOpen && <MegaMenu platform={platform} onClose={() => setMegaMenuOpen(false)} />}
+              {megaMenuOpen && <MegaMenu platform={platform} articles={featuredArticles} config={megaMenuConfig} onClose={() => setMegaMenuOpen(false)} />}
             </div>
           </div>
 

@@ -104,12 +104,12 @@ h1, h2, h3, h4, .font-display {
 }
 .animate-ticker {
   white-space: nowrap;
-  animation: ticker 30s linear infinite;
+  animation: ticker 54s linear infinite;
 }
 .scrolling-ticker {
   display: inline-block;
   white-space: nowrap;
-  animation: ticker 30s linear infinite;
+  animation: ticker 54s linear infinite;
   animation-play-state: running;
 }
 .scrolling-ticker:hover,

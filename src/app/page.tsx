@@ -21,7 +21,7 @@ export default async function HomePage() {
   const [articles, magazines, landingBlocks] = await Promise.all([listPublishedArticles(), listMagazines(), listMagazineLandingBlocks().catch(() => [])]);
   const landingByKey = Object.fromEntries(landingBlocks.map((block) => [block.blockKey, block]));
   const normalizeTag = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[’']/g, "'").trim().toLowerCase();
-  const hasTag = (article: any, expected: string) => (article.tags || []).some((tag: string) => normalizeTag(tag) === normalizeTag(expected));
+  const hasTag = (article: any, expected: string) => { const tags = Array.isArray(article.tags) ? article.tags : typeof article.tags === "string" ? article.tags.split(",") : []; return [...tags, article.tag].filter(Boolean).some((tag: unknown) => normalizeTag(String(tag)) === normalizeTag(expected)); };
   const taggedArticles = (expected: string) => articles.filter((article) => hasTag(article, expected));
   const heroArticles = taggedArticles("Fil d’infos Image").length ? taggedArticles("Fil d’infos Image") : articles.filter((article) => article.isFeatured);
   const titleArticles = taggedArticles("Fil d’infos Titres");
