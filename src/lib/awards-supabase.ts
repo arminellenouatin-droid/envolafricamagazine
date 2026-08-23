@@ -48,15 +48,31 @@ export function awardsSupabaseConfigured() {
   return Boolean(getSupabaseAdmin());
 }
 
-export async function getSupabaseCompetitions(filters?: { slug?: string | null; status?: string | null }) {
+export async function getSupabaseCompetitions(filters?: { id?: string | null; slug?: string | null; status?: string | null; operationalOnly?: boolean }) {
   const client = getSupabaseAdmin();
   if (!client) return { configured: false as const, competitions: [] as AwardsCompetition[] };
   let query = client.from("awards_competitions").select("id,slug,title,description,category,category_id,status,vote_price_cents,points_per_vote,jury_weight,public_vote_weight,organizer_org_id,created_by,created_at,starts_at,ends_at,legacy_candidates_count,legacy_votes_count,legacy_pot_amount_cents,legacy_cover_image").order("created_at", { ascending: false }).limit(100);
+  if (filters?.id) query = query.eq("id", filters.id);
   if (filters?.slug) query = query.eq("slug", filters.slug);
   if (filters?.status) query = query.eq("status", filters.status);
+  if (filters?.operationalOnly) query = query.neq("status", "archived");
   const { data, error } = await query;
   if (error) throw error;
   return { configured: true as const, competitions: (data ?? []).map((row) => mapCompetition(row as Record<string, unknown>)) };
+}
+
+export async function getSupabaseAwardsAdminMetrics() {
+  const client = getSupabaseAdmin();
+  if (!client) return { configured: false as const, totalCompetitions: 0, archivedCompetitions: 0, candidates: 0, votes: 0, liveSessions: 0, pendingRequests: 0 };
+  const [{ count: totalCompetitions }, { count: archivedCompetitions }, { count: candidates }, { count: votes }, { count: liveSessions }, { count: pendingRequests }] = await Promise.all([
+    client.from("awards_competitions").select("id", { count: "exact", head: true }).neq("status", "archived"),
+    client.from("awards_competitions").select("id", { count: "exact", head: true }).eq("status", "archived"),
+    client.from("awards_candidates").select("id", { count: "exact", head: true }),
+    client.from("awards_votes").select("id", { count: "exact", head: true }),
+    client.from("awards_live_sessions").select("id", { count: "exact", head: true }).eq("status", "live_running"),
+    client.from("awards_competition_requests").select("id", { count: "exact", head: true }).eq("status", "submitted"),
+  ]);
+  return { configured: true as const, totalCompetitions: totalCompetitions ?? 0, archivedCompetitions: archivedCompetitions ?? 0, candidates: candidates ?? 0, votes: votes ?? 0, liveSessions: liveSessions ?? 0, pendingRequests: pendingRequests ?? 0 };
 }
 
 export async function getSupabaseCandidates(competitionId?: string | null) {

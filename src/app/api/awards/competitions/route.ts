@@ -11,12 +11,14 @@ async function getUser() {
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
   const slug = searchParams.get("slug");
   const status = searchParams.get("status");
+  const operationalOnly = searchParams.get("operational") === "1";
   const supabase = getSupabaseAdmin();
   if (supabase) {
-    const result = await getSupabaseCompetitions({ slug, status });
-    if (slug) {
+    const result = await getSupabaseCompetitions({ id, slug, status, operationalOnly });
+    if (id || slug) {
       const competition = result.competitions[0];
       if (!competition) return NextResponse.json({ error: "Compétition introuvable" }, { status: 404 });
       return NextResponse.json({ competition });
@@ -24,13 +26,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ competitions: result.competitions });
   }
   const db = readAwardsDB();
-  if (slug) {
-    const comp = db.competitions.find(c=>c.slug===slug);
+  if (id || slug) {
+    const comp = db.competitions.find(c=>id ? c.id===id : c.slug===slug);
     if (!comp) return NextResponse.json({ error: "Compétition introuvable" }, { status: 404 });
     return NextResponse.json({ competition: comp });
   }
   let comps = db.competitions;
   if (status) comps = comps.filter(c=>c.status===status);
+  if (operationalOnly) comps = comps.filter(c=>c.status !== "archived");
   return NextResponse.json({ competitions: comps.sort((a,b)=> new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) });
 }
 
@@ -108,14 +111,14 @@ export async function POST(req: NextRequest) {
       updated_by: user.id,
     }, { onConflict: "competition_id" });
     if (configError) return NextResponse.json({ error: configError.message }, { status: 500 });
-    const prizes = Array.isArray(body.prizes) ? body.prizes.slice(0, 3).map((prize: any, index: number) => ({ competition_id: data.id, rank: index + 1, title: String(prize.title || `Prix ${index + 1}`), amount_xof: Math.max(0, Number(prize.amount_xof) || 0), benefits: typeof prize.benefits === "string" ? prize.benefits.trim() : null, image_url: typeof prize.image_url === "string" && prize.image_url.trim() ? prize.image_url.trim() : null, is_active: prize.is_active !== false })) : [];
+    const prizes = Array.isArray(body.prizes) ? body.prizes.slice(0, 3).map((prize: Record<string, unknown>, index: number) => ({ competition_id: data.id, rank: index + 1, title: String(prize.title || `Prix ${index + 1}`), amount_xof: Math.max(0, Number(prize.amount_xof) || 0), benefits: typeof prize.benefits === "string" ? prize.benefits.trim() : null, image_url: typeof prize.image_url === "string" && prize.image_url.trim() ? prize.image_url.trim() : null, is_active: prize.is_active !== false })) : [];
     if (prizes.length) {
       const { error: prizesError } = await supabase.from("awards_prizes").upsert(prizes, { onConflict: "competition_id,rank" });
       if (prizesError) return NextResponse.json({ error: prizesError.message }, { status: 500 });
     }
     const customFields = Array.isArray(body.registration_fields) ? body.registration_fields : [];
     if (customFields.length) {
-      const { error: fieldsError } = await supabase.from("awards_registration_fields").insert(customFields.slice(0, 30).map((field: any, index: number) => ({ competition_id: data.id, field_key: String(field.field_key || `field_${index + 1}`), label: String(field.label || field.field_key || `Champ ${index + 1}`), field_type: ["text","textarea","phone","number","url","date","select","file"].includes(field.field_type) ? field.field_type : "text", is_required: Boolean(field.is_required), options: Array.isArray(field.options) ? field.options : [], sort_order: index })));
+      const { error: fieldsError } = await supabase.from("awards_registration_fields").insert(customFields.slice(0, 30).map((field: Record<string, unknown>, index: number) => ({ competition_id: data.id, field_key: String(field.field_key || `field_${index + 1}`), label: String(field.label || field.field_key || `Champ ${index + 1}`), field_type: typeof field.field_type === "string" && ["text","textarea","phone","number","url","date","select","file"].includes(field.field_type) ? field.field_type : "text", is_required: Boolean(field.is_required), options: Array.isArray(field.options) ? field.options : [], sort_order: index })));
       if (fieldsError) return NextResponse.json({ error: fieldsError.message }, { status: 500 });
     }
     return NextResponse.json({ success: true, competition: data });

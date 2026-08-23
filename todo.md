@@ -752,4 +752,9 @@ L’audit de Production montre que la plupart des articles ont `is_encrypted = t
 - [x] Ajouter un bouton d’image avec upload, URL et texte alternatif.
 - [x] Insérer l’image à la position du curseur entre les paragraphes.
 - [x] Autoriser et nettoyer les images intégrées côté serveur sans supprimer les balises sûres.
-- [ ] Tester la persistance et le rendu mobile dans la page article.
+- [ ] Tester la persistance et le rendu mobile dans la page article.## Dashboard Africa Awards — données et commandes
+- [x] Reproduire la page Production et relever les valeurs fictives affichées.
+- [x] Vérifier la source des KPIs et remplacer tout fallback local ou mocké.
+- [x] Charger uniquement les compétitions réellement présentes dans Supabase.
+- [x] Brancher Modifier, configuration, inscriptions, candidatures et finalisation.
+- [ ] Tester les deux compétitions existantes après déploiement..
