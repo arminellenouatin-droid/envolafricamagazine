@@ -8,7 +8,7 @@ import PostViewTracker from "./PostViewTracker";
 import StoriesReelsCarousel from "./StoriesReelsCarousel";
 import FollowButton from "./FollowButton";
 import DiscoveryCarousel from "./DiscoveryCarousel";
-import { WAB_BUSINESS_MONTHLY_PRICE } from "@/lib/wab-access";
+import { hasWabUnlimitedRole, WAB_BUSINESS_MONTHLY_PRICE } from "@/lib/wab-access";
 import { optimizeSelectedImages } from "@/lib/client-image-optimizer";
 import RichTextEditor from "@/components/RichTextEditor";
 import RichTextContent from "@/components/RichTextContent";
@@ -175,7 +175,7 @@ export default function WabClient() {
   const [loadingFeed, setLoadingFeed] = useState(false);
   const [isBusiness, setIsBusiness] = useState(false);
   const [accountLoaded, setAccountLoaded] = useState(false);
-  const [currentUser, setCurrentUser] = useState<{ id: string; nom?: string; prenom?: string; avatar?: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string; nom?: string; prenom?: string; avatar?: string; role?: string } | null>(null);
   const [pages, setPages] = useState<PublishPage[]>([]);
   const [groups, setGroups] = useState<PublishGroup[]>([]);
   const [publishTarget, setPublishTarget] = useState<"profile" | "page" | "group">("profile");
@@ -330,7 +330,7 @@ export default function WabClient() {
     if (!accountLoaded) { setMessage("Vérification de votre compte WAB en cours…"); return; }
     const hasVideo = selectedFiles.some((file) => file.type.startsWith("video/"));
     const hasLargeMedia = selectedFiles.some((file) => file.size > 10 * 1024 * 1024);
-    if (!isBusiness && (hasVideo || hasLargeMedia)) { setUpgradeRequired(hasVideo ? "video" : "large"); return; }
+    if (!isBusiness && !hasWabUnlimitedRole(currentUser?.role) && (hasVideo || hasLargeMedia)) { setUpgradeRequired(hasVideo ? "video" : "large"); return; }
     setBusy(true); setMessage("");
     try {
       let media: unknown[] = [];
