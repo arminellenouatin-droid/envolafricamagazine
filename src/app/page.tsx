@@ -21,14 +21,17 @@ export default async function HomePage() {
   const [articles, magazines, landingBlocks] = await Promise.all([listPublishedArticles(), listMagazines(), listMagazineLandingBlocks().catch(() => [])]);
   const landingByKey = Object.fromEntries(landingBlocks.map((block) => [block.blockKey, block]));
   const [mainFeatured, secondary, third, fourth] = articles;
-  const managerArticleId = landingByKey.manager_du_mois?.config?.article_id || landingByKey.manager_du_mois?.articleId;
+  const managerConfig = (landingByKey.manager_du_mois?.config || {}) as Record<string, unknown>;
+  const nextIssueConfig = (landingByKey.prochain_numero?.config || {}) as Record<string, unknown>;
+  const startupConfig = (landingByKey.startups?.config || {}) as Record<string, unknown>;
+  const managerArticleId = managerConfig.article_id || landingByKey.manager_du_mois?.articleId;
   const managerStory = articles.find((article) => article.id === managerArticleId) || articles[4];
   const readingLimit = landingByKey.magazine_fil?.itemLimit || 6;
   const readingList = articles.slice(5, 5 + readingLimit);
   const mostRead = [...articles].sort((a, b) => b.views - a.views).slice(0, landingByKey.most_lus?.itemLimit || 6);
-  const nextIssueTag = String(landingByKey.prochain_numero?.config?.tag || "dans le prochain numéro").toLowerCase();
+  const nextIssueTag = String(nextIssueConfig.tag || "dans le prochain numéro").toLowerCase();
   const nextIssueArticles = articles.filter((article) => article.tags.some((tag) => tag.toLowerCase() === nextIssueTag)).slice(0, landingByKey.prochain_numero?.itemLimit || 6);
-  const startupCategory = String(landingByKey.startups?.config?.category || "Start-up").toLowerCase();
+  const startupCategory = String(startupConfig.category || "Start-up").toLowerCase();
   const startupArticles = articles.filter((article) => [article.category, ...(article.categories || [])].some((category) => category.toLowerCase() === startupCategory)).slice(0, landingByKey.startups?.itemLimit || 4);
   const formations = ["Fondamentaux du Trading", "Blockchain et Fintech", "Leadership & Management Public", "Marketing Digital Afrique", "Finance Verte", "Agrobusiness 4.0"].slice(0, landingByKey.formations_certifiees?.itemLimit || 6);
       const opportunities = [

@@ -51,8 +51,19 @@ export async function listMagazineLandingBlocks(options: { includeInactive?: boo
     let query = client.from("landing_blocks").select("block_key,block_type,source_type,title,description,item_limit,config,\"order\",is_active,article_id,magazine_id,updated_at").order("order", { ascending: true });
     if (!options.includeInactive) query = query.eq("is_active", true);
     const { data, error } = await query;
-    if (error) throw error;
-    return (data ?? []).map((row) => mapBlock(row as Record<string, unknown>));
+    if (!error) return (data ?? []).map((row) => mapBlock(row as Record<string, unknown>));
+    // Production peut encore utiliser le schéma historique (block_key/article_id/magazine_id/order).
+    // On garde une lecture dégradée explicite en attendant l’application de la migration additive.
+    if (error.code !== "42703") throw error;
+    const legacy = await client.from("landing_blocks").select("block_key,article_id,magazine_id,\"order\"").order("order", { ascending: true });
+    if (legacy.error) throw legacy.error;
+    return (legacy.data ?? []).map((row) => ({
+      blockKey: String(row.block_key), blockType: String(row.block_key) === "manager_du_mois" ? "manager" : "article_list",
+      sourceType: String(row.block_key) === "manager_du_mois" ? "manual" : "articles",
+      title: String(row.block_key), itemLimit: 6, config: {}, order: Number(row.order ?? 0), isActive: true,
+      articleId: typeof row.article_id === "string" ? row.article_id : undefined,
+      magazineId: typeof row.magazine_id === "string" ? row.magazine_id : undefined,
+    } satisfies MagazineLandingBlock));
   }
   const settings = readDB().settings?.homeSections ?? {};
   return Object.entries(settings)

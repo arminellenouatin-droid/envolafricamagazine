@@ -612,3 +612,19 @@
 - [ ] Remplacer les tableaux statiques du Landing par les sources configurées.
 - [ ] Tester les droits, les erreurs, le rendu mobile et la régression du second bloc.
 - [ ] Créer un checkpoint et préparer la livraison par Pull Request.
+
+
+## Résolution conflit Pull Request Landing Magazine
+
+- [ ] Comparer la version `main` et la branche Landing de `src/components/RichTextEditor.tsx`.
+- [ ] Conserver les corrections de saisie et les fonctions gras/italique/souligné.
+- [ ] Recompiler après résolution et pousser une branche mise à jour.
+- [ ] Vérifier que GitHub n’affiche plus de conflit avant fusion.
+
+
+## Correctif erreur de lecture Landing Magazine en production
+
+- [ ] Vérifier si la migration `landing_blocks` a été appliquée à la base de production.
+- [ ] Capturer le message d’erreur réel renvoyé par Supabase ou le serveur.
+- [ ] Corriger la requête ou fournir un fallback contrôlé compatible avec le schéma actuel.
+- [ ] Recompiler, tester l’onglet administrateur et pousser la correction.
