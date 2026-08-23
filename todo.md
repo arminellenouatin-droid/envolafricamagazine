@@ -494,3 +494,121 @@
 - [x] Partager le lien exact de chaque publication, avec WhatsApp obligatoire.
 - [x] Corriger l’affichage du texte pendant la saisie d’une publication.
 - [x] Enrichir le profil public et corriger l’affichage des publications des comptes suivis.
+
+
+## Diagnostic fractionné du commit WAB 1606b7f
+
+- [ ] Sauvegarder l’état du commit complet `1606b7f` avant séparation.
+- [ ] Isoler le sous-lot partage et permalien WAB.
+- [ ] Isoler le sous-lot saisie RichTextEditor.
+- [ ] Isoler le sous-lot profil public et feed suivi.
+- [ ] Compiler et tester chaque sous-lot séparément.
+- [ ] Identifier la cause de la difficulté et documenter le résultat.
+- [ ] Préparer uniquement le sous-lot validé pour le prochain déploiement contrôlé.
+
+
+## Canal de livraison dédié RichTextEditor
+
+- [ ] Vérifier les droits de lecture et d’écriture sur GitHub et Vercel.
+- [ ] Préparer une branche propre ne contenant que `bdf6c46`.
+- [ ] Tenter la publication de la branche dédiée si le dépôt l’autorise.
+- [ ] Vérifier le commit distant et préparer le déploiement Vercel contrôlé.
+- [ ] Documenter précisément toute limite de permission restante.
+
+
+## Archive de livraison directe RichTextEditor
+
+- [ ] Vérifier que l’archive ne contient que le correctif `bdf6c46` et aucun `node_modules`, `.next` ou secret.
+- [ ] Générer le ZIP de livraison et son manifeste de contrôle.
+- [ ] Vérifier l’intégrité de l’archive et le hash SHA-256.
+- [ ] Documenter le remplacement local, la sauvegarde et la livraison Production directe.
+- [ ] Rappeler que le ZIP source ne remplace pas une sauvegarde complète de la base et des secrets.
+
+
+## Deuxième sous-lot WAB — partage et permalien
+
+- [ ] Synchroniser la branche locale avec `main` après validation RichTextEditor.
+- [ ] Créer une branche dédiée partage/permalien sans réintroduire l’ancien éditeur.
+- [ ] Compiler et tester WhatsApp, copie du lien et ouverture du post exact.
+- [ ] Pousser la branche et guider la Pull Request vers `main`.
+- [ ] Attendre la validation Production avant le sous-lot profil/feed.
+
+
+## Troisième sous-lot WAB — profil public et feed suivi
+
+- [ ] Synchroniser la branche locale sur `main` après validation du partage/permalien.
+- [ ] Créer une branche dédiée profil/feed sans retirer les deux corrections déjà validées.
+- [ ] Compiler et tester les pages, publications de pages, groupes publics et comptes suivis.
+- [ ] Pousser la branche et guider la Pull Request vers `main`.
+- [ ] Attendre la validation Production avant de considérer le lot WAB terminé.
+
+
+## Lot urgent Magazine — articles et landing
+
+- [ ] Auditer le partage et les métriques J’aime, vues et commentaires des articles.
+- [ ] Vérifier le paywall serveur selon abonnement et option « Ouvert à tout le monde ».
+- [ ] Séparer le sous-lot article du sous-lot carrousels.
+- [ ] Ajouter description et photo auteur au premier carrousel mobile.
+- [ ] Supprimer le fond blanc du second carrousel sur mobile et ordinateur.
+- [ ] Corriger l’ordre mobile du carrousel suivant : titre, auteur, description.
+- [ ] Compiler, tester les droits et les parcours article avant livraison contrôlée.
+
+
+## Séparation du lot Magazine
+
+- [ ] Créer une branche article contenant partage, métriques et paywall.
+- [ ] Créer une branche landing contenant uniquement les corrections de carrousels.
+- [ ] Vérifier les deux branches séparément avant fusion dans `main`.
+
+
+## Correctif urgent paywall Magazine
+
+- [ ] Masquer le corps de l’article dès la fin du résumé public pour les visiteurs non abonnés.
+- [ ] Rendre le bloc « S’abonner / Se connecter » visible, non recouvert et accessible au clavier et au tactile.
+- [ ] Vérifier les articles chiffrés, ouverts à tous et accessibles aux abonnés.
+- [ ] Livrer ce correctif dans une branche dédiée sans modifier le partage ni les carrousels déjà validés.
+
+
+## Sous-lot Landing Magazine après paywall
+
+- [ ] Vérifier le contenu exact de `diagnostic/magazine-landing-only`.
+- [ ] Tester le premier carrousel mobile avec description et photo auteur.
+- [ ] Tester le second carrousel sans fond blanc sur mobile et ordinateur.
+- [ ] Tester l’ordre titre, auteur, description du carrousel suivant.
+- [ ] Préparer la Pull Request et attendre la validation Production.
+
+
+## Correctif hiérarchie Landing Magazine
+
+- [ ] Premier bloc : titre, deux lignes du résumé avec points de suspension, puis auteur/éditeur.
+- [ ] Bloc suivant : image, titre et auteur/éditeur uniquement, sans résumé.
+- [ ] Vérifier mobile et ordinateur avant nouvelle fusion.
+
+
+## Finalisation Landing Magazine et administration
+
+- [ ] Replacer le titre et l’auteur du second bloc en bas de l’image.
+- [ ] Administrer le grand article et les articles 1 à 6 du fil d’actualité.
+- [ ] Administrer le bloc Manager du mois avec photo et article.
+- [ ] Alimenter automatiquement les formations depuis l’administration Formation avec image/logo, titre, date et format/lieu.
+- [ ] Supprimer l’onglet Formation du bloc Opportunités et administrer Financement, Emploi et Opportunités.
+- [ ] Administrer les vidéos par lien ou téléversement sécurisé.
+- [ ] Alimenter le bloc « Dans le prochain numéro » par l’étiquette dédiée, avec photo et titre uniquement.
+- [ ] Administrer le bloc Tout l’écosystème avec image et lien vers l’article.
+- [ ] Alimenter le bloc Start-up par la catégorie Start-up.
+- [ ] Alimenter le bloc Recrutement par les offres Jobs boostées.
+- [ ] Administrer le contenu sponsorisé photo ou vidéo avec destination adaptée.
+- [ ] Tester les permissions, le responsive et les parcours de publication avant fusion.
+
+
+## Lot Landing Magazine — administration et sourcing
+
+- [x] Cartographier chaque bloc du Landing et définir sa source de données.
+- [x] Définir le modèle persistant de configuration des blocs et les contrats API sécurisés.
+- [x] Ajouter l’onglet administrateur « Landing Magazine » avec un éditeur par bloc.
+- [x] Brancher les articles, le Manager du mois et le prochain numéro sur les données administrées.
+- [ ] Brancher les formations certifiées et les contenus Jobs/WAB boostés.
+- [ ] Ajouter la gestion des vidéos, de l’écosystème et des contenus sponsorisés.
+- [ ] Remplacer les tableaux statiques du Landing par les sources configurées.
+- [ ] Tester les droits, les erreurs, le rendu mobile et la régression du second bloc.
+- [ ] Créer un checkpoint et préparer la livraison par Pull Request.
