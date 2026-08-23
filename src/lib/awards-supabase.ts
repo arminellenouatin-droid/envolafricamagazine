@@ -69,6 +69,16 @@ export async function getSupabaseCandidates(competitionId?: string | null) {
   return { configured: true as const, candidates: (data ?? []).map((row) => mapCandidate(row as Record<string, unknown>)) };
 }
 
+export async function getSupabasePrizes(competitionId?: string | null) {
+  const client = getSupabaseAdmin();
+  if (!client) return { configured: false as const, prizes: [] as Array<{ id: string; competition_id: string; rank: number; title: string; amount_xof: number; benefits?: string; image_url?: string }> };
+  let query = client.from("awards_prizes").select("id,competition_id,rank,title,amount_xof,benefits,image_url,is_active").eq("is_active", true).order("rank", { ascending: true }).limit(300);
+  if (competitionId) query = query.eq("competition_id", competitionId);
+  const { data, error } = await query;
+  if (error) throw error;
+  return { configured: true as const, prizes: (data ?? []).map((row) => ({ id: String(row.id), competition_id: String(row.competition_id), rank: Number(row.rank), title: String(row.title), amount_xof: Number(row.amount_xof ?? 0), benefits: typeof row.benefits === "string" ? row.benefits : undefined, image_url: typeof row.image_url === "string" ? row.image_url : undefined })) };
+}
+
 export function shouldUseJsonFallback() {
   return !isProductionRuntime();
 }

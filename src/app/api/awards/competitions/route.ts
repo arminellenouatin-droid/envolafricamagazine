@@ -118,6 +118,11 @@ export async function POST(req: NextRequest) {
       updated_by: user.id,
     }, { onConflict: "competition_id" });
     if (configError) return NextResponse.json({ error: configError.message }, { status: 500 });
+    const prizes = Array.isArray(body.prizes) ? body.prizes.slice(0, 3).map((prize: any, index: number) => ({ competition_id: data.id, rank: index + 1, title: String(prize.title || `Prix ${index + 1}`), amount_xof: Math.max(0, Number(prize.amount_xof) || 0), benefits: typeof prize.benefits === "string" ? prize.benefits.trim() : null, image_url: typeof prize.image_url === "string" && prize.image_url.trim() ? prize.image_url.trim() : null, is_active: prize.is_active !== false })) : [];
+    if (prizes.length) {
+      const { error: prizesError } = await supabase.from("awards_prizes").upsert(prizes, { onConflict: "competition_id,rank" });
+      if (prizesError) return NextResponse.json({ error: prizesError.message }, { status: 500 });
+    }
     const customFields = Array.isArray(body.registration_fields) ? body.registration_fields : [];
     if (customFields.length) {
       const { error: fieldsError } = await supabase.from("awards_registration_fields").insert(customFields.slice(0, 30).map((field: any, index: number) => ({ competition_id: data.id, field_key: String(field.field_key || `field_${index + 1}`), label: String(field.label || field.field_key || `Champ ${index + 1}`), field_type: ["text","textarea","phone","number","url","date","select","file"].includes(field.field_type) ? field.field_type : "text", is_required: Boolean(field.is_required), options: Array.isArray(field.options) ? field.options : [], sort_order: index })));

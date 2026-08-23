@@ -1,10 +1,13 @@
 import Link from "next/link";
 
-import { getSupabaseCompetitions } from "@/lib/awards-supabase";
+import { getSupabaseCandidates, getSupabaseCompetitions, getSupabasePrizes } from "@/lib/awards-supabase";
 
 export default async function AfricaAwardsLanding() {
   const remote = await getSupabaseCompetitions();
   const competitions = remote.configured ? remote.competitions : [];
+  const [candidateRemote, prizeRemote] = await Promise.all([getSupabaseCandidates(), getSupabasePrizes()]);
+  const candidates = candidateRemote.configured ? candidateRemote.candidates.filter((candidate) => candidate.status === "accepted") : [];
+  const prizes = prizeRemote.configured ? prizeRemote.prizes : [];
   return (
     <div className="bg-[#0B0B0F] text-[#F5F3EE] min-h-screen">
       {/* Hero */}
@@ -55,6 +58,13 @@ export default async function AfricaAwardsLanding() {
           ))}
         </div>
       </section>
+
+      {candidates.length > 0 && <section className="max-w-[1280px] mx-auto px-5 md:px-[64px] py-14">
+        <div className="flex items-end justify-between gap-4 mb-7"><div><p className="text-[10px] uppercase tracking-[0.18em] text-[#D4AF37] font-bold">Les visages de la saison</p><h2 className="text-[28px] font-bold mt-2">Les candidats en lice</h2></div><Link href="/africa-awards/candidates" className="text-[#D4AF37] text-[13px] font-bold hover:underline">Voir tous →</Link></div>
+        <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory">{candidates.map((candidate) => { const competition = competitions.find((item) => item.id === candidate.competition_id); return <Link key={candidate.id} href={`/africa-awards/candidates/${candidate.id}`} className="group min-w-[150px] snap-start text-center"><div className="mx-auto h-32 w-32 overflow-hidden rounded-full border-2 border-[#D4AF37]/50 bg-[#16161D] transition group-hover:border-[#D4AF37]">{candidate.photo_url ? <img src={candidate.photo_url} alt={candidate.display_name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="grid h-full w-full place-items-center text-3xl font-black text-[#D4AF37]">{candidate.display_name.slice(0, 1).toUpperCase()}</div>}</div><p className="mt-4 truncate text-[11px] uppercase tracking-[0.14em] text-[#A8A6A0]">{competition?.title || "Africa Awards"}</p><h3 className="mt-1 font-bold">{candidate.display_name}</h3></Link>; })}</div>
+      </section>}
+
+      {prizes.length > 0 && <section className="bg-[#16161D] border-y border-white/5 py-14"><div className="max-w-[1280px] mx-auto px-5 md:px-[64px]"><div className="mb-7"><p className="text-[10px] uppercase tracking-[0.18em] text-[#D4AF37] font-bold">Récompenses officielles</p><h2 className="text-[28px] font-bold mt-2">Les prix à remporter</h2></div><div className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory">{prizes.map((prize) => { const competition = competitions.find((item) => item.id === prize.competition_id); return <article key={prize.id} className="min-w-[270px] max-w-[340px] snap-start overflow-hidden rounded-[20px] border border-white/10 bg-[#0B0B0F]"><div className="aspect-[16/9] bg-[#1B2A6B]/30">{prize.image_url ? <img src={prize.image_url} alt={prize.title} className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-5xl font-black text-[#D4AF37]">#{prize.rank}</div>}</div><div className="p-5"><p className="text-[10px] uppercase tracking-[0.14em] text-[#D4AF37]">{competition?.title || "Africa Awards"}</p><h3 className="mt-2 text-xl font-bold">{prize.title}</h3><p className="mt-3 text-2xl font-black">{prize.amount_xof.toLocaleString("fr-FR")} <span className="text-sm font-semibold text-[#A8A6A0]">XOF</span></p>{prize.benefits && <p className="mt-3 text-[13px] leading-5 text-[#A8A6A0]">{prize.benefits}</p>}</div></article>; })}</div></div></section>}
 
       {/* Comment ça marche 3 étapes */}
       <section className="bg-[#16161D] border-y border-white/5 py-16">
