@@ -628,3 +628,19 @@
 - [ ] Capturer le message d’erreur réel renvoyé par Supabase ou le serveur.
 - [ ] Corriger la requête ou fournir un fallback contrôlé compatible avec le schéma actuel.
 - [ ] Recompiler, tester l’onglet administrateur et pousser la correction.
+
+
+## Nouveau lot Magazine et UX globale
+
+- [x] Corriger les images de couverture des magazines sur le Landing.
+- [x] Afficher le prénom du compte connecté dans l’en-tête ordinateur avant « S’abonner ».
+- [x] Rendre les trois emplacements image du premier bloc éditorial cochables depuis la fiche de création/modification d’article.
+- [x] Refaire la bannière de consentement sur une ligne lisible et relier Cookies et Conditions aux pages dédiées.
+- [x] Réduire et moderniser les pop-ups d’alerte pour éviter le recouvrement de l’écran.
+- [ ] Tester ordinateur, mobile, connexion/déconnexion et absence d’images avant livraison.
+
+
+## Détail technique complémentaire
+
+- [ ] Ajouter au prompt de notification les liens juridiques et le mode compact.
+- [ ] Vérifier l’emplacement réel des cases de sélection dans les modales Article/Admin avant modification.

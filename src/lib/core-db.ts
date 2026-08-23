@@ -106,13 +106,26 @@ function mapArticle(row: Record<string, unknown>): Article {
   };
 }
 
+function normalizeMagazineAsset(value: unknown, fallback = "") {
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (!raw) return fallback;
+  try {
+    const parsed = new URL(raw);
+    if (parsed.pathname.startsWith("/covers/")) return parsed.pathname;
+  } catch {
+    if (raw.startsWith("/covers/")) return raw;
+  }
+  return raw;
+}
 function mapMagazine(row: Record<string, unknown>): Magazine {
+  const numero = Number(row.numero);
+  const coverFallback = numero > 0 ? `/covers/envol-africa-cover-${String(((numero - 1) % 4) + 1).padStart(2, "0")}.jpg` : "";
   return {
     id: String(row.id),
-    numero: Number(row.numero),
+    numero,
     title: String(row.title ?? ""),
-    cover: String(row.cover ?? ""),
-    coverBack: typeof row.cover_back === "string" ? row.cover_back : undefined,
+    cover: normalizeMagazineAsset(row.cover, coverFallback),
+    coverBack: normalizeMagazineAsset(row.cover_back) || undefined,
     date: row.date ? String(row.date).slice(0, 10) : "",
     year: Number(row.year ?? new Date().getFullYear()),
     description: String(row.description ?? ""),
