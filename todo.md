@@ -668,3 +668,15 @@ Le crawl de 90 routes internes a trouvé trois 404 réels à corriger : `/recher
 
 
 Le contrôle complémentaire a également identifié `/emploi/offres` comme index 404 non lié depuis la page publique. Ajouter une compatibilité vers `/emploi` avant la fusion de la Pull Request navigation.
+
+
+## Africa Awards — inscription, Landing et lives
+
+- [x] Reproduire le chargement infini de la configuration d’inscription.
+- [x] Vérifier les routes, tables et champs dynamiques des candidatures.
+- [x] Corriger le chargement infini et préparer le parcours candidat gratuit ou payant jusqu’à la confirmation.
+- [ ] Ajouter le carrousel des candidats validés avec compétition, photo et nom.
+- [ ] Ajouter le carrousel des prix configurés avec photo, montant et avantages.
+- [ ] Ajouter les blocs sponsorisés et écosystème au Landing Awards.
+- [ ] Vérifier le cycle des lives, interventions, votes, cadeaux, commentaires et fin de live.
+- [ ] Compiler, tester les parcours et préparer une Pull Request contrôlée.
