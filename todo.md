@@ -767,3 +767,14 @@ L’audit de Production montre que la plupart des articles ont `is_encrypted = t
 - [x] Ajouter une action serveur réservée à l’admin pour valider manuellement un compte.
 - [x] Afficher les filtres et compteurs « tous », « en attente » et « vérifiés » dans l’onglet Utilisateurs.
 - [ ] Tester les états, l’autorisation et la livraison par Pull Request.
+
+
+## Simplification Landing Magazine — quatre sous-onglets
+
+- [x] Vérifier les étiquettes article existantes et les blocs réellement utilisés.
+- [x] Créer ou normaliser les étiquettes Fil d’infos Image, Fil d’infos Titres, Manager du mois, Financement, Opportunités, Prochain numéro et Start’ups.
+- [x] Retirer la complexité de positionnement manuel des articles au profit des étiquettes.
+- [x] Séparer l’administration Landing en quatre sous-onglets : Vidéos, Contenus sponsorisés, Formations et Emploi.
+- [x] Prévoir Ajouter nouveau, Modifier et Supprimer pour chaque sous-onglet.
+- [x] Gérer les vidéos par URL ou téléversement et les contenus sponsorisés par image ou vidéo.
+- [ ] Tester le positionnement public et les actions d’administration avant livraison.
