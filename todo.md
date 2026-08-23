@@ -787,3 +787,13 @@ L’audit de Production montre que la plupart des articles ont `is_encrypted = t
 - [x] Enregistrer les trois vidéos fournies dans le bloc Vidéos du Landing.
 - [ ] Tester les miniatures, l’ouverture et la lecture au clic sur mobile et ordinateur.
 - [ ] Préparer la livraison par Pull Request et confirmer le déploiement.
+
+
+## Méga-menu Nouveau numéro et corrections desktop Magazine
+
+- [x] Auditer le header desktop, le mapping Manager du mois et les vitesses des carrousels Magazine/Kiosque.
+- [x] Ajouter le méga-menu desktop Nouveau numéro avec trois articles principaux, trois vignettes, catégories, Voir plus et Acheter ce numéro.
+- [x] Ajouter le sous-onglet d’administration Mega menu avec les champs nécessaires.
+- [x] Corriger la normalisation des étiquettes pour positionner directement Manager du mois.
+- [x] Ralentir le défilement À la une sur Magazine et Kiosque.
+- [ ] Tester le rendu desktop et livrer par Pull Request.
