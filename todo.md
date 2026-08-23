@@ -758,3 +758,12 @@ L’audit de Production montre que la plupart des articles ont `is_encrypted = t
 - [x] Charger uniquement les compétitions réellement présentes dans Supabase.
 - [x] Brancher Modifier, configuration, inscriptions, candidatures et finalisation.
 - [ ] Tester les deux compétitions existantes après déploiement..
+
+
+## Administration — utilisateurs et validation manuelle
+
+- [x] Auditer le modèle utilisateur, la route `/api/admin/users` et les permissions administrateur.
+- [x] Exposer les comptes vérifiés et non vérifiés sans retourner de données sensibles.
+- [x] Ajouter une action serveur réservée à l’admin pour valider manuellement un compte.
+- [x] Afficher les filtres et compteurs « tous », « en attente » et « vérifiés » dans l’onglet Utilisateurs.
+- [ ] Tester les états, l’autorisation et la livraison par Pull Request.
