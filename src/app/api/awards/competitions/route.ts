@@ -1,22 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readAwardsDB, writeAwardsDB } from "@/lib/awards-db";
 import { v4 as uuidv4 } from "uuid";
-import { cookies } from "next/headers";
-import { verifyToken, COOKIE_NAME } from "@/lib/auth";
-import { readDB } from "@/lib/db";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getSupabaseCompetitions } from "@/lib/awards-supabase";
+import { getCurrentUserFromCookie } from "@/lib/auth";
 
 async function getUser() {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get(COOKIE_NAME)?.value;
-    if (!token) return null;
-    const decoded = verifyToken(token);
-    if (!decoded) return null;
-    const db = readDB();
-    return db.users.find(u=>u.id===decoded.id) || null;
-  } catch { return null; }
+  return getCurrentUserFromCookie();
 }
 
 export async function GET(req: NextRequest) {
