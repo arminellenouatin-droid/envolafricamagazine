@@ -688,4 +688,14 @@ Le contrôle complémentaire a également identifié `/emploi/offres` comme inde
 - [ ] Vérifier les champs disponibles pour photo, nom, compétition, prix et avantages.
 - [ ] Ajouter le carrousel automatique des candidats validés sur le Landing Awards.
 - [ ] Ajouter le bloc défilant des prix configurés par compétition.
-- [ ] Vérifier les routes de live, les rôles hôte/candidat, commentaires, cadeaux et votes.
+- [x] Vérifier les routes de live, les rôles hôte/candidat, commentaires, cadeaux et votes.
+- [x] Ajouter la persistance des participants et des demandes de passage sur scène côté API et Animateur.
+- [ ] Appliquer la migration live participants en Production après fusion.
+
+
+## Incident Production après fusion PR #27
+
+- [x] Relever le statut du déploiement et le message runtime de `/africa-awards`.
+- [x] Vérifier si `awards_prizes` existe dans Supabase Production.
+- [x] Appliquer la migration additive `awards_prizes` selon la cause.
+- [x] Retester la page Africa Awards en HTTP 200 après migration.
