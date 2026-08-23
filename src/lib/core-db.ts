@@ -156,6 +156,37 @@ export async function findUserById(id: string): Promise<User | null> {
   return data ? mapUser(data as Record<string, unknown>) : null;
 }
 
+export async function listUsers(): Promise<User[]> {
+  const client = getAdminClient();
+  if (!client) return canUseJsonFallback() ? readDB().users : [];
+  const { data, error } = await client.from("users").select("id,nom,prenom,email,role,lang,currency,created_at,is_verified,two_factor_enabled,company,country,phone,affiliate_code,affiliate_accepted,referred_by,subscription,favorites,downloads").order("created_at", { ascending: false }).limit(1000);
+  if (error) throw error;
+  return (data ?? []).map((row) => mapUser(row as Record<string, unknown>));
+}
+
+export async function updateUserAdmin(id: string, updates: { role?: string; nom?: string; prenom?: string; email?: string; country?: string; isVerified?: boolean }): Promise<User> {
+  const client = getAdminClient();
+  if (!client) {
+    if (!canUseJsonFallback()) throw new ProductionDatabaseNotConfiguredError();
+    const db = readDB();
+    const user = db.users.find((item) => item.id === id);
+    if (!user) throw new Error("Utilisateur introuvable");
+    Object.assign(user, updates);
+    writeDB(db);
+    return user;
+  }
+  const payload: Record<string, unknown> = {};
+  if (updates.role !== undefined) payload.role = updates.role;
+  if (updates.nom !== undefined) payload.nom = updates.nom;
+  if (updates.prenom !== undefined) payload.prenom = updates.prenom;
+  if (updates.email !== undefined) payload.email = updates.email;
+  if (updates.country !== undefined) payload.country = updates.country;
+  if (updates.isVerified !== undefined) payload.is_verified = updates.isVerified;
+  const { data, error } = await client.from("users").update(payload).eq("id", id).select("*").single();
+  if (error) throw error;
+  return mapUser(data as Record<string, unknown>);
+}
+
 export async function createUser(input: Omit<User, "id" | "createdAt">): Promise<User> {
   const client = getAdminClient();
   const id = uuidv4();

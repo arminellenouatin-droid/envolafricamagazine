@@ -56,6 +56,7 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
   const [showMagModal, setShowMagModal] = useState(false);
   const [editingMag, setEditingMag] = useState<any>(null);
   const [showUserModal, setShowUserModal] = useState<any>(null);
+  const [userFilter, setUserFilter] = useState<"all" | "pending" | "verified">("all");
   const [message, setMessage] = useState<string>("");
   const [savingArticle, setSavingArticle] = useState(false);
   const [uploadingArticleImage, setUploadingArticleImage] = useState(false);
@@ -221,6 +222,14 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
     const data = await res.json();
     if (res.ok) { setMessage(`Rôle changé en ${role} ✅`); fetchUsers(); setShowUserModal(null); }
     else alert(data.error);
+  };
+
+  const handleVerifyUser = async (user: any) => {
+    const res = await fetch("/api/admin/users", { method: "PUT", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ id: user.id, isVerified: true }) });
+    const data = await readApiResponse(res);
+    if (!res.ok) { setMessage(`Validation impossible : ${data.error || "réessayez"}`); return; }
+    setUsers((items) => items.map((item) => item.id === user.id ? { ...item, isVerified: true } : item));
+    setMessage(`Compte de ${user.prenom || user.email} validé manuellement ✅`);
   };
 
   const handleChangeOrderStatus = async (id:string, status:string) => {
@@ -389,25 +398,17 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
           </div>
         )}
 
-        {activeTab==="users" && (
-          <div className="bg-white rounded-[18px] border p-6">
-            <h3 className="font-bold text-[18px]">Utilisateurs - Rôles + KPIs</h3>
-            <div className="mt-6 overflow-x-auto">
-              <table className="w-full text-[12px]"><thead className="text-[10px] uppercase text-zinc-500 border-b"><tr><th className="text-left py-2">Nom</th><th>Email</th><th>Rôle</th><th>Abo</th><th>2FA</th><th>Actions</th></tr></thead>
-                <tbody>{users.map((u:any)=>(<tr key={u.id} className="border-b hover:bg-zinc-50"><td className="py-2 font-medium">{u.prenom} {u.nom}</td><td className="text-[11px]">{u.email}</td><td><span className={`px-2 py-0.5 rounded-full text-[10px] ${u.role==="admin"?"bg-[#0A1931] text-white":"bg-zinc-100"}`}>{u.role}</span></td><td className="text-[10px]">{u.subscription?.planId||"—"}</td><td>{u.twoFactorEnabled?"✓":"⚠"}</td><td><button onClick={()=>setShowUserModal(u)} className="h-6 px-2 rounded-full border text-[10px]">Rôle</button></td></tr>))}</tbody>
-              </table>
-            </div>
-            {showUserModal && (
-              <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-                <div className="bg-white rounded-[20px] p-6 w-full max-w-[420px]">
-                  <h3 className="font-bold">Changer rôle - {showUserModal.prenom}</h3>
-                  <div className="mt-4 grid grid-cols-2 gap-2">{["user","subscriber","redacteur","redacteur_chef","gerant","admin"].map(r=>(<button key={r} onClick={()=>handleChangeRole(showUserModal.id, r)} className={`h-10 rounded-full border text-[12px] ${showUserModal.role===r?"bg-[#0A1931] text-white":"bg-zinc-50"}`}>{r}</button>))}</div>
-                  <button onClick={()=>setShowUserModal(null)} className="mt-4 w-full h-10 rounded-full border text-[13px]">Fermer</button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        {activeTab==="users" && (() => {
+          const pendingUsers = users.filter((user: any) => !user.isVerified);
+          const verifiedUsers = users.filter((user: any) => user.isVerified);
+          const visibleUsers = userFilter === "pending" ? pendingUsers : userFilter === "verified" ? verifiedUsers : users;
+          return <div className="rounded-[18px] border bg-white p-6">
+            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end"><div><p className="text-[10px] font-black uppercase tracking-wider text-[#9e001f]">Administration des comptes</p><h3 className="mt-1 text-[18px] font-black text-[#0A1931]">Utilisateurs et validation manuelle</h3><p className="mt-2 max-w-2xl text-xs leading-5 text-zinc-500">En attendant le service d’e-mails, l’administrateur peut contrôler les comptes non vérifiés et les activer manuellement. Aucun mot de passe n’est affiché ici.</p></div><div className="flex shrink-0 gap-2 text-[11px] font-bold"><span className="rounded-full bg-amber-50 px-3 py-2 text-amber-700">{pendingUsers.length} en attente</span><span className="rounded-full bg-green-50 px-3 py-2 text-green-700">{verifiedUsers.length} vérifiés</span></div></div>
+            <div className="mt-6 flex gap-2 overflow-x-auto border-b pb-3"><button type="button" onClick={() => setUserFilter("all")} className={`shrink-0 rounded-full px-4 py-2 text-[11px] font-bold ${userFilter === "all" ? "bg-[#0A1931] text-white" : "bg-zinc-100 text-zinc-600"}`}>Tous ({users.length})</button><button type="button" onClick={() => setUserFilter("pending")} className={`shrink-0 rounded-full px-4 py-2 text-[11px] font-bold ${userFilter === "pending" ? "bg-amber-500 text-black" : "bg-zinc-100 text-zinc-600"}`}>En attente ({pendingUsers.length})</button><button type="button" onClick={() => setUserFilter("verified")} className={`shrink-0 rounded-full px-4 py-2 text-[11px] font-bold ${userFilter === "verified" ? "bg-green-600 text-white" : "bg-zinc-100 text-zinc-600"}`}>Vérifiés ({verifiedUsers.length})</button></div>
+            <div className="mt-6 overflow-x-auto"><table className="w-full text-[12px]"><thead className="border-b text-[10px] uppercase text-zinc-500"><tr><th className="py-2 text-left">Nom</th><th>Email</th><th>Statut</th><th>Rôle</th><th>Abo</th><th>2FA</th><th>Actions</th></tr></thead><tbody>{visibleUsers.map((u:any)=>(<tr key={u.id} className="border-b hover:bg-zinc-50"><td className="py-3 font-medium">{u.prenom} {u.nom}</td><td className="text-[11px]">{u.email}</td><td>{u.isVerified ? <span className="rounded-full bg-green-50 px-2 py-1 text-[10px] font-bold text-green-700">Vérifié</span> : <span className="rounded-full bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-700">En attente</span>}</td><td><span className={`rounded-full px-2 py-1 text-[10px] ${u.role === "admin" ? "bg-[#0A1931] text-white" : "bg-zinc-100"}`}>{u.role}</span></td><td className="text-[10px]">{u.subscription?.planId || "—"}</td><td>{u.twoFactorEnabled ? "✓" : "⚠"}</td><td><div className="flex flex-wrap justify-end gap-2">{!u.isVerified && <button type="button" onClick={() => void handleVerifyUser(u)} className="rounded-full bg-green-600 px-3 py-1.5 text-[10px] font-bold text-white">Valider le compte</button>}<button type="button" onClick={() => setShowUserModal(u)} className="rounded-full border px-3 py-1.5 text-[10px]">Rôle</button></div></td></tr>))}</tbody></table>{visibleUsers.length === 0 && <p className="py-8 text-center text-sm text-zinc-500">Aucun utilisateur dans ce filtre.</p>}</div>
+            {showUserModal && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"><div className="w-full max-w-[420px] rounded-[20px] bg-white p-6"><h3 className="font-bold">Changer rôle - {showUserModal.prenom}</h3><div className="mt-4 grid grid-cols-2 gap-2">{["user","subscriber","redacteur","redacteur_chef","gerant","admin"].map(r=><button key={r} type="button" onClick={() => void handleChangeRole(showUserModal.id, r)} className={`h-10 rounded-full border text-[12px] ${showUserModal.role === r ? "bg-[#0A1931] text-white" : "bg-zinc-50"}`}>{r}</button>)}</div><button type="button" onClick={() => setShowUserModal(null)} className="mt-4 h-10 w-full rounded-full border text-[13px]">Fermer</button></div></div>}
+          </div>;
+        })()}
 
         {activeTab==="orders" && (
           <div className="bg-white rounded-[18px] border p-6">
