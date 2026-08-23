@@ -1,4 +1,4 @@
-const ALLOWED_TAGS = new Set(["p", "br", "div", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "strong", "b", "em", "i", "u", "blockquote", "a", "sub", "sup"]);
+const ALLOWED_TAGS = new Set(["p", "br", "div", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "strong", "b", "em", "i", "u", "blockquote", "a", "sub", "sup", "img"]);
 
 export function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#039;");
@@ -28,6 +28,13 @@ export function sanitizeRichText(value: string) {
         if (!/^(https?:|mailto:)/i.test(href)) return "<a>";
         return `<a href="${escapeHtml(href)}" rel="noopener noreferrer" target="_blank">`;
       }
+      if (tag === "img") {
+        const srcMatch = rawTag.match(/src\s*=\s*[\"']([^\"']+)[\"']/i);
+        const altMatch = rawTag.match(/alt\s*=\s*[\"']([^\"']*)[\"']/i);
+        const src = srcMatch?.[1] ?? "";
+        if (!/^(https?:|\/)/i.test(src)) return "";
+        return `<img src="${escapeHtml(src)}" alt="${escapeHtml(altMatch?.[1] ?? "")}" loading="lazy" decoding="async">`;
+      }
       return `<${tag}>`;
     })
     .replace(/\s+(style|class|id|title|align|face|color|size)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
@@ -35,5 +42,5 @@ export function sanitizeRichText(value: string) {
 }
 
 export function isRichText(value: string) {
-  return /<(p|br|div|h[1-6]|ul|ol|li|strong|b|em|i|u|blockquote|a)\b[^>]*>/i.test(value);
+  return /<(p|br|div|h[1-6]|ul|ol|li|strong|b|em|i|u|blockquote|a|img)\b[^>]*>/i.test(value);
 }
