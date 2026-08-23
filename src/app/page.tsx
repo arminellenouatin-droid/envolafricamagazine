@@ -20,7 +20,14 @@ const imageFallbacks = [
 export default async function HomePage() {
   const [articles, magazines, landingBlocks] = await Promise.all([listPublishedArticles(), listMagazines(), listMagazineLandingBlocks().catch(() => [])]);
   const landingByKey = Object.fromEntries(landingBlocks.map((block) => [block.blockKey, block]));
-  const [mainFeatured, secondary, third, fourth] = articles;
+  const heroArticles = articles.filter((article) => article.isFeatured);
+  const sentinelArticles = articles.filter((article) => article.isSentinelle);
+  const essorArticles = articles.filter((article) => article.isEssor);
+  const ombreDouceArticles = articles.filter((article) => article.isOmbreDouce);
+  const mainFeatured = heroArticles[0] || articles[0];
+  const secondary = sentinelArticles[0] || articles[1];
+  const third = essorArticles[0] || articles[2];
+  const fourth = ombreDouceArticles[0] || articles[3];
   const managerConfig = (landingByKey.manager_du_mois?.config || {}) as Record<string, unknown>;
   const nextIssueConfig = (landingByKey.prochain_numero?.config || {}) as Record<string, unknown>;
   const startupConfig = (landingByKey.startups?.config || {}) as Record<string, unknown>;
@@ -48,7 +55,7 @@ export default async function HomePage() {
       <section className="magazine-hero mx-auto max-w-[1380px] px-5 pb-14 pt-8 md:px-10 lg:px-16 lg:pt-12">
         <div className="mb-7 flex items-end justify-between gap-5 border-b border-[#d8c3c1] pb-5"><div><p className="editorial-kicker">Le guide des dirigeants, chefs et jeunes créateurs d'entreprise</p><h1 className="magazine-display mt-3 max-w-4xl text-4xl leading-[0.98] md:text-6xl lg:text-[76px]">Créer, Manager, Développer</h1></div><p className="hidden max-w-[230px] text-right font-sans text-xs leading-5 text-[#5f5352] md:block">Analyses, récits et opportunités pour celles et ceux qui construisent les économies africaines.</p></div>
         <div className="first-four-grid grid grid-cols-12 gap-5 lg:gap-6">
-          <div className="first-four-grid__lead col-span-12 lg:col-span-7"><AvantPremiereCarousel articles={articles} /></div>
+          <div className="first-four-grid__lead col-span-12 lg:col-span-7"><AvantPremiereCarousel articles={heroArticles.length ? heroArticles : articles} /></div>
           <div className="first-four-grid__side col-span-12 flex h-full flex-col gap-5 lg:col-span-5 lg:gap-6">
             {secondary && <Link href={`/article/${secondary.slug}`} className="magazine-mobile-overlay-story editorial-side-story editorial-side-story--tall group relative flex-[2] overflow-hidden rounded-[16px] border border-[#5c4b4a] bg-[#2b2525] text-white"><img src={secondary.image} alt={secondary.title} className="absolute inset-0 h-full w-full object-cover opacity-75 transition duration-700 group-hover:scale-105 group-hover:opacity-90" /><div className="absolute inset-0 bg-gradient-to-r from-[#171313]/90 via-[#171313]/55 to-[#171313]/10" /><div className="relative flex min-h-[270px] flex-col justify-end p-6"><div><div className="flex flex-wrap gap-2">{(secondary.categories?.length ? secondary.categories : [secondary.category]).slice(0, 2).map((category: string) => <span key={category} className="editorial-tag">{category}</span>)}</div><h2 className="mt-3 max-w-[310px] font-serif text-3xl leading-[0.98] text-white">{secondary.title}</h2><div className="magazine-mobile-overlay-author mt-3 flex items-center gap-2 font-sans text-[10px] font-semibold text-white/80"><img src={secondary.authorProfilePhoto || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100"} alt="" className="h-6 w-6 rounded-full object-cover"/><span>{secondary.author} · {dateLabel(secondary.publishedAt)}</span></div></div></div></Link>}
             <div className="first-four-grid__bottom grid flex-1 grid-cols-2 gap-5 lg:gap-6">
