@@ -744,3 +744,12 @@ L’audit de Production montre que la plupart des articles ont `is_encrypted = t
 - [x] Réduire la taille des titres dans les deux blocs.
 - [x] Limiter chaque titre à deux lignes avec ellipse automatique.
 - [x] Vérifier que les autres blocs du Landing restent inchangés.
+
+
+## Images intégrées dans l’éditeur d’articles
+
+- [x] Vérifier les outils et le format HTML pris en charge par `RichTextEditor`.
+- [x] Ajouter un bouton d’image avec upload, URL et texte alternatif.
+- [x] Insérer l’image à la position du curseur entre les paragraphes.
+- [x] Autoriser et nettoyer les images intégrées côté serveur sans supprimer les balises sûres.
+- [ ] Tester la persistance et le rendu mobile dans la page article.

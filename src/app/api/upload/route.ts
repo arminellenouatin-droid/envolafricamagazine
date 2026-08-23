@@ -11,6 +11,7 @@ const MAX_SIZE = 50 * 1024 * 1024;
 const ALLOWED_TYPES: Record<string, string[]> = {
   cover: ["image/jpeg", "image/png", "image/webp"],
   preview: ["image/jpeg", "image/png", "image/webp"],
+  "article-inline": ["image/jpeg", "image/png", "image/webp"],
   pdf: ["application/pdf"],
   audio: ["audio/mpeg", "audio/wav", "audio/mp3", "audio/ogg", "audio/webm"],
   video: ["video/mp4", "video/webm", "video/quicktime"],
