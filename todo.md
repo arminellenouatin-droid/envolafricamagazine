@@ -737,3 +737,10 @@ Le contrôle complémentaire a également identifié `/emploi/offres` comme inde
 ## Constat paywall — cause technique
 
 L’audit de Production montre que la plupart des articles ont `is_encrypted = true`, tandis qu’un article a explicitement `is_encrypted = false`. La cause de sécurité à corriger est que `LocalizedArticleExperience` reçoit encore le contenu complet dans ses props côté client, puis le masque seulement au rendu. La protection doit donc être appliquée côté serveur par redaction du contenu avant transmission au navigateur, sans changer les articles explicitement ouverts à tous.
+
+
+## Retouche titres Essor et Ombre douce
+
+- [x] Réduire la taille des titres dans les deux blocs.
+- [x] Limiter chaque titre à deux lignes avec ellipse automatique.
+- [x] Vérifier que les autres blocs du Landing restent inchangés.
