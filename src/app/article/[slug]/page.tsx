@@ -4,6 +4,7 @@ import { getCurrentUserFromCookie } from "@/lib/auth";
 import { findArticleBySlug, findEditorialAuthorById, listPublishedArticles } from "@/lib/core-db";
 import ArticleActions from "@/components/ArticleActions";
 import LocalizedArticleExperience from "@/components/LocalizedArticleExperience";
+import ArticleRecommendations from "@/components/ArticleRecommendations";
 
 async function getIsSubscribed() {
   try {
@@ -27,6 +28,13 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
   const articleCategorySet = new Set(article.categories?.length ? article.categories : [article.category]);
   const related = articles.filter((a) => a.id !== article.id && (a.categories || [a.category]).some((category) => articleCategorySet.has(category))).slice(0, 3);
+  const mostRead = [...articles].filter((a) => a.id !== article.id).sort((a, b) => b.views - a.views).slice(0, 6);
+  const canReadFullContent = !article.isEncrypted || isSubscriber;
+  const readerArticle = canReadFullContent ? article : {
+    ...article,
+    content: "",
+    translations: Object.fromEntries(Object.entries(article.translations || {}).map(([language, translation]) => [language, { ...translation, content: "" }]))
+  };
 
   return (
     <div className="bg-[#fcf9f8] min-h-screen">
@@ -50,7 +58,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               <img src={article.image} alt={article.title} className="w-full aspect-video object-cover rounded-xl shadow-lg" />
               <figcaption className="mt-4 text-[12px] text-[#5f5e5e] italic text-center">{article.title} - {article.category} • {article.views.toLocaleString()} vues • © Envol Africa</figcaption>
             </figure>
-            <LocalizedArticleExperience article={article} isSubscriber={isSubscriber} preferredLanguage={preferredLanguage} />
+            <LocalizedArticleExperience article={readerArticle} isSubscriber={isSubscriber} preferredLanguage={preferredLanguage} />
             <div className="mb-6 flex items-center gap-3 lg:hidden"><img src={editorialAuthor?.photoUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100"} alt={editorialAuthor?.name || article.author} className="h-9 w-9 rounded-full object-cover"/><div><p className="text-[12px] font-bold text-[#1b1c1c]">{editorialAuthor?.name || article.author}</p><p className="text-[10px] text-[#9e001f]">{editorialAuthor?.roleLabel || "Rédacteur"}</p></div></div>
             <div className="mb-6 flex items-center justify-between py-4 border-y border-[#e5bdbb]"><div className="hidden text-[12px] text-[#5f5e5e] sm:block">Par {editorialAuthor?.name || article.author}</div><div className="ml-auto text-right"><p className="text-[11px] uppercase text-[#5c403f]">{new Date(article.publishedAt!).toLocaleDateString('fr-FR',{day:'numeric', month:'short', year:'numeric'})}</p><p className="flex items-center justify-end gap-1 text-[11px] text-[#5f5e5e]"><span className="material-symbols-outlined text-[14px]">schedule</span> {article.readingTime} min</p></div></div>
 
@@ -60,19 +68,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           </div>
         </article>
 
-        <section className="mt-[80px] pt-[80px] border-t border-[#e5bdbb]">
-          <h2 className="text-[28px] font-bold text-center md:text-left mb-12" style={{ fontFamily: "Montserrat" }}>À lire également</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {related.map((r)=>(
-              <Link key={r.id} href={`/article/${r.slug}`} className="group cursor-pointer">
-                <div className="aspect-video rounded-lg overflow-hidden mb-4 shadow-sm group-hover:shadow-lg transition-shadow"><img src={r.image} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /></div>
-                <span className="text-[12px] text-[#9e001f] uppercase font-bold tracking-wider">{r.category}</span>
-                <h3 className="text-[18px] font-bold mt-2 group-hover:text-[#9e001f] transition-colors line-clamp-2 leading-tight" style={{ fontFamily: "Montserrat" }}>{r.title}</h3>
-                <div className="mt-3 flex items-center justify-between text-[#5f5e5e] text-[11px]"><span>{r.author}</span><span>{r.readingTime} min</span></div>
-              </Link>
-            ))}
-          </div>
-        </section>
+        <ArticleRecommendations mostRead={mostRead} sameSubject={related} />
       </main>
     </div>
   );

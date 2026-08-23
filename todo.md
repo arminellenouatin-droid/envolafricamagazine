@@ -723,3 +723,17 @@ Le contrôle complémentaire a également identifié `/emploi/offres` comme inde
 - [x] Restaurer le résumé et la taille initiale du carrousel Avant-première.
 - [x] Retirer le résumé du bloc `managerStory` dans Fil d’infos et réduire uniquement son titre.
 - [ ] Créer une nouvelle Pull Request ciblée après compilation.
+
+
+## Paywall et recommandations de fin d’article
+
+- [ ] Reproduire la désactivation du paywall et tracer la valeur de protection de l’administration à l’article public.
+- [x] Vérifier les fallbacks et les contrôles serveur pour les articles abonnés.
+- [x] Ajouter le carrousel par défaut « Nos articles les plus lus » en fin d’article.
+- [x] Ajouter le bouton de bascule « Dans le même sujet » avec filtrage par catégorie/tags.
+- [ ] Tester les parcours non-abonné, abonné et article ouvert à tous.
+
+
+## Constat paywall — cause technique
+
+L’audit de Production montre que la plupart des articles ont `is_encrypted = true`, tandis qu’un article a explicitement `is_encrypted = false`. La cause de sécurité à corriger est que `LocalizedArticleExperience` reçoit encore le contenu complet dans ses props côté client, puis le masque seulement au rendu. La protection doit donc être appliquée côté serveur par redaction du contenu avant transmission au navigateur, sans changer les articles explicitement ouverts à tous.
