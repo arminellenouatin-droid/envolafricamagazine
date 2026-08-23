@@ -665,3 +665,6 @@
 ## Résultats du crawl Production
 
 Le crawl de 90 routes internes a trouvé trois 404 réels à corriger : `/recherche`, `/crowdfunding` et `/contact`. Les autres routes testées ont répondu sans erreur HTTP bloquante ; les mentions génériques « This page could not be found » du bundle Next.js ont été exclues des résultats.
+
+
+Le contrôle complémentaire a également identifié `/emploi/offres` comme index 404 non lié depuis la page publique. Ajouter une compatibilité vers `/emploi` avant la fusion de la Pull Request navigation.
