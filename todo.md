@@ -708,3 +708,10 @@ Le contrôle complémentaire a également identifié `/emploi/offres` comme inde
 - [x] Vérifier les appels API de liste, détail, statut, candidatures, prix et lives.
 - [x] Corriger les handlers et afficher les erreurs au lieu de laisser les boutons silencieux.
 - [ ] Tester la gestion des deux compétitions existantes avant livraison.
+
+
+## Retouche premier bloc image Magazine
+
+- [x] Retirer le résumé du premier bloc image du fil d’informations.
+- [x] Conserver uniquement le titre et l’auteur.
+- [x] Réduire légèrement la taille du titre et compiler la retouche responsive.
