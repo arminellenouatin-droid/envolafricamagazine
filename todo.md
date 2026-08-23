@@ -699,3 +699,12 @@ Le contrôle complémentaire a également identifié `/emploi/offres` comme inde
 - [x] Vérifier si `awards_prizes` existe dans Supabase Production.
 - [x] Appliquer la migration additive `awards_prizes` selon la cause.
 - [x] Retester la page Africa Awards en HTTP 200 après migration.
+
+
+## Incident administration Africa Awards
+
+- [x] Reproduire l’écran admin et relever les boutons sans réaction.
+- [x] Vérifier le rôle détecté, la session et les protections des routes admin.
+- [x] Vérifier les appels API de liste, détail, statut, candidatures, prix et lives.
+- [x] Corriger les handlers et afficher les erreurs au lieu de laisser les boutons silencieux.
+- [ ] Tester la gestion des deux compétitions existantes avant livraison.

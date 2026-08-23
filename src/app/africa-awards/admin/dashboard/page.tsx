@@ -1,13 +1,18 @@
 import Link from "next/link";
 import { readAwardsDB } from "@/lib/awards-db";
+import { getSupabaseCandidates, getSupabaseCompetitions } from "@/lib/awards-supabase";
 
-export default function AdminDashboardAwards() {
+export default async function AdminDashboardAwards() {
   const db = readAwardsDB();
-  const totalVotes = db.votes.length;
-  const totalCompetitions = db.competitions.length;
-  const totalCandidates = db.candidates.length;
+  const remoteCompetitions = await getSupabaseCompetitions();
+  const remoteCandidates = await getSupabaseCandidates();
+  const competitions = remoteCompetitions.configured ? remoteCompetitions.competitions : db.competitions;
+  const candidates = remoteCandidates.configured ? remoteCandidates.candidates : db.candidates;
+  const totalVotes = competitions.reduce((sum, competition) => sum + Number(competition.votes_count ?? 0), 0) || db.votes.length;
+  const totalCompetitions = competitions.length;
+  const totalCandidates = candidates.length;
   const pendingRequests = db.requests.filter(r=>r.status==="submitted").length;
-  const liveCompetitions = db.competitions.filter(c=>c.status==="live_running").length;
+  const liveCompetitions = competitions.filter(c=>c.status==="live_running").length;
 
   return (
     <div className="bg-[#0B0B0F] text-white min-h-screen pb-20">
@@ -38,7 +43,7 @@ export default function AdminDashboardAwards() {
             <div className="font-bold mt-4">Valider les candidatures</div>
             <div className="text-[12px] text-[#A8A6A0] mt-2">Examiner les dossiers, approuver et créer les nominés officiels</div>
           </Link>
-          <Link href="/africa-awards/competitions" className="bg-[#16161D] border border-white/10 rounded-xl p-6 hover:border-[#D4AF37]/30">
+          <Link href="/africa-awards/admin/dashboard/competitions" className="bg-[#16161D] border border-white/10 rounded-xl p-6 hover:border-[#D4AF37]/30">
             <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-xl">🏆</div>
             <div className="font-bold mt-4">Gérer compétitions</div>
             <div className="text-[12px] text-[#A8A6A0] mt-2">Faire progresser statut cycle vie 14 états + attribution orga/animateurs/jury</div>
