@@ -644,3 +644,27 @@
 
 - [ ] Ajouter au prompt de notification les liens juridiques et le mode compact.
 - [ ] Vérifier l’emplacement réel des cases de sélection dans les modales Article/Admin avant modification.
+
+
+## Écart Preview / Production principale
+
+- [ ] Créer une Pull Request pour le commit `cd536d0` absent de `main`.
+- [ ] Vérifier les contrôles puis fusionner cette Pull Request.
+- [ ] Vérifier que `https://envolafricamagazinealokpe.vercel.app` sert bien le nouveau commit.
+
+
+## Audit routes et liens Production
+
+- [ ] Tester l’accueil et les pages principales Magazine/Kiosque/Article.
+- [ ] Tester Africa Awards et ses pages publiques liées.
+- [ ] Tester WAB, Jobs, Marketplace, Crowdfunding, compte, panier et service.
+- [ ] Tester les routes API publiques essentielles et relever les statuts anormaux.
+- [ ] Corriger les erreurs détectées, retester et préparer une livraison contrôlée.
+
+
+## Résultats du crawl Production
+
+Le crawl de 90 routes internes a trouvé trois 404 réels à corriger : `/recherche`, `/crowdfunding` et `/contact`. Les autres routes testées ont répondu sans erreur HTTP bloquante ; les mentions génériques « This page could not be found » du bundle Next.js ont été exclues des résultats.
+
+
+Le contrôle complémentaire a également identifié `/emploi/offres` comme index 404 non lié depuis la page publique. Ajouter une compatibilité vers `/emploi` avant la fusion de la Pull Request navigation.
