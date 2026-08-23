@@ -680,3 +680,12 @@ Le contrôle complémentaire a également identifié `/emploi/offres` comme inde
 - [ ] Ajouter les blocs sponsorisés et écosystème au Landing Awards.
 - [ ] Vérifier le cycle des lives, interventions, votes, cadeaux, commentaires et fin de live.
 - [ ] Compiler, tester les parcours et préparer une Pull Request contrôlée.
+
+
+## Sous-lot Awards suivant — nominés, prix et lives
+
+- [ ] Auditer les tables et routes candidates approuvées, votes et paramètres de compétition.
+- [ ] Vérifier les champs disponibles pour photo, nom, compétition, prix et avantages.
+- [ ] Ajouter le carrousel automatique des candidats validés sur le Landing Awards.
+- [ ] Ajouter le bloc défilant des prix configurés par compétition.
+- [ ] Vérifier les routes de live, les rôles hôte/candidat, commentaires, cadeaux et votes.
