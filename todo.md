@@ -778,3 +778,12 @@ L’audit de Production montre que la plupart des articles ont `is_encrypted = t
 - [x] Prévoir Ajouter nouveau, Modifier et Supprimer pour chaque sous-onglet.
 - [x] Gérer les vidéos par URL ou téléversement et les contenus sponsorisés par image ou vidéo.
 - [ ] Tester le positionnement public et les actions d’administration avant livraison.
+
+
+## Correctif vidéos YouTube — Landing Magazine
+
+- [x] Auditer la normalisation des URL YouTube dans le formulaire et le rendu public.
+- [x] Transformer les URL YouTube en identifiants et lecteurs compatibles sans perdre les paramètres de partage.
+- [x] Enregistrer les trois vidéos fournies dans le bloc Vidéos du Landing.
+- [ ] Tester les miniatures, l’ouverture et la lecture au clic sur mobile et ordinateur.
+- [ ] Préparer la livraison par Pull Request et confirmer le déploiement.
