@@ -1,72 +1,61 @@
 import Link from "next/link";
-import { readAwardsDB } from "@/lib/awards-db";
-import { getSupabaseCandidates, getSupabaseCompetitions } from "@/lib/awards-supabase";
+import { getSupabaseAwardsAdminMetrics } from "@/lib/awards-supabase";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardAwards() {
-  const db = readAwardsDB();
-  const remoteCompetitions = await getSupabaseCompetitions();
-  const remoteCandidates = await getSupabaseCandidates();
-  const competitions = remoteCompetitions.configured ? remoteCompetitions.competitions : db.competitions;
-  const candidates = remoteCandidates.configured ? remoteCandidates.candidates : db.candidates;
-  const totalVotes = competitions.reduce((sum, competition) => sum + Number(competition.votes_count ?? 0), 0) || db.votes.length;
-  const totalCompetitions = competitions.length;
-  const totalCandidates = candidates.length;
-  const pendingRequests = db.requests.filter(r=>r.status==="submitted").length;
-  const liveCompetitions = competitions.filter(c=>c.status==="live_running").length;
+  const metrics = await getSupabaseAwardsAdminMetrics();
+  const unavailable = !metrics.configured;
+  const value = (number: number) => (unavailable ? "—" : number.toLocaleString("fr-FR"));
 
   return (
-    <div className="bg-[#0B0B0F] text-white min-h-screen pb-20">
-      <div className="max-w-[1280px] mx-auto px-5 md:px-[64px] py-10">
-        <h1 className="text-[32px] font-black" style={{ fontFamily: "Fraunces" }}>Admin Dashboard - Africa Awards</h1>
-        <p className="text-[#A8A6A0] text-[13px] mt-2">Vue d'ensemble, validation demandes, création/lancement compétitions, gestion utilisateurs, paiements, rapports, paramètres - Statistiques globales - Chiffre d'affaires global, nombre lives, utilisateurs actifs, répartition par pays - Export CSV</p>
-
-        <div className="mt-8 grid md:grid-cols-4 gap-4">
-          <div className="bg-[#16161D] border border-white/10 rounded-xl p-5"><div className="text-[11px] uppercase tracking-wider text-[#A8A6A0]">Compétitions totales</div><div className="text-[28px] font-black mt-1">{totalCompetitions}</div><div className="text-[11px] text-[#D4AF37] mt-1">{liveCompetitions} en live</div></div>
-          <div className="bg-[#16161D] border border-white/10 rounded-xl p-5"><div className="text-[11px] uppercase tracking-wider text-[#A8A6A0]">Candidats</div><div className="text-[28px] font-black mt-1">{totalCandidates}</div><div className="text-[11px] text-[#A8A6A0] mt-1">12 pays représentés</div></div>
-          <div className="bg-[#16161D] border border-white/10 rounded-xl p-5"><div className="text-[11px] uppercase tracking-wider text-[#A8A6A0]">Votes totaux</div><div className="text-[28px] font-black mt-1 text-[#D4AF37]">{totalVotes}</div><div className="text-[11px] text-green-400 mt-1">+12% ce mois</div></div>
-          <div className="bg-[#16161D] border border-white/10 rounded-xl p-5"><div className="text-[11px] uppercase tracking-wider text-[#A8A6A0]">Demandes en attente</div><div className="text-[28px] font-black mt-1">{pendingRequests}</div><div className="text-[11px] text-amber-400 mt-1">À valider</div></div>
+    <div className="min-h-screen bg-[#0B0B0F] pb-20 text-white">
+      <div className="mx-auto max-w-[1280px] px-5 py-10 md:px-[64px]">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#D4AF37]">Pilotage Africa Awards</p>
+            <h1 className="mt-2 text-[32px] font-black" style={{ fontFamily: "Fraunces" }}>Dashboard administrateur</h1>
+            <p className="mt-2 max-w-3xl text-[13px] text-[#A8A6A0]">Vue opérationnelle alimentée par les données réelles Supabase. Les archives sont séparées des compétitions actuellement gérables.</p>
+          </div>
+          <Link href="/africa-awards/admin/dashboard/competitions/new" className="rounded-full bg-[#D4AF37] px-5 py-3 text-sm font-black text-black transition hover:bg-[#F4D976]">Créer une compétition</Link>
         </div>
 
-        <div className="mt-8 grid md:grid-cols-3 gap-4">
-          <Link href="/africa-awards/admin/dashboard/requests" className="bg-[#16161D] border border-white/10 rounded-xl p-6 hover:border-[#D4AF37]/30">
-            <div className="w-12 h-12 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center text-xl">📋</div>
-            <div className="font-bold mt-4">Validation demandes</div>
-            <div className="text-[12px] text-[#A8A6A0] mt-2">{pendingRequests} demandes en attente • Étude + validation/refus avec motif</div>
-          </Link>
-          <Link href="/africa-awards/admin/dashboard/competitions/new" className="bg-[#D4AF37] text-black rounded-xl p-6 hover:bg-[#F4D976]">
-            <div className="w-12 h-12 rounded-full bg-black/10 flex items-center justify-center text-xl">➕</div>
-            <div className="font-bold mt-4">Créer compétition (ADMIN UNIQUEMENT)</div>
-            <div className="text-[12px] text-black/70 mt-2">Seul admin peut créer/lancer - Test 403 organizer - Règle absolue gouvernance</div>
-          </Link>
-          <Link href="/africa-awards/admin/dashboard/applications" className="bg-[#16161D] border border-white/10 rounded-xl p-6 hover:border-[#D4AF37]/30">
-            <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-xl">🧾</div>
-            <div className="font-bold mt-4">Valider les candidatures</div>
-            <div className="text-[12px] text-[#A8A6A0] mt-2">Examiner les dossiers, approuver et créer les nominés officiels</div>
-          </Link>
-          <Link href="/africa-awards/admin/dashboard/competitions" className="bg-[#16161D] border border-white/10 rounded-xl p-6 hover:border-[#D4AF37]/30">
-            <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-xl">🏆</div>
-            <div className="font-bold mt-4">Gérer compétitions</div>
-            <div className="text-[12px] text-[#A8A6A0] mt-2">Faire progresser statut cycle vie 14 états + attribution orga/animateurs/jury</div>
-          </Link>
+        <div className="mt-8 grid gap-4 md:grid-cols-4">
+          <Metric label="Compétitions actives" value={value(metrics.totalCompetitions)} detail={`${value(metrics.archivedCompetitions)} archive(s) séparée(s)`} />
+          <Metric label="Candidats réels" value={value(metrics.candidates)} detail="Lignes awards_candidates" />
+          <Metric label="Votes enregistrés" value={value(metrics.votes)} detail="Lignes awards_votes" accent />
+          <Metric label="Lives en cours" value={value(metrics.liveSessions)} detail={`${value(metrics.pendingRequests)} demande(s) à traiter`} />
         </div>
 
-        <div className="mt-8 grid md:grid-cols-2 gap-6">
-          <div className="bg-[#16161D] border border-white/10 rounded-xl p-6">
-            <h3 className="font-bold">Statistiques avancées - Recharts à venir</h3>
-            <div className="mt-4 h-[160px] bg-[#0B0B0F] rounded-lg flex items-center justify-center text-[#A8A6A0] text-[12px]">Graphique CA global par mois - Recharts BarChart (Phase 3)</div>
-            <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
-              <div className="bg-[#0B0B0F] rounded-lg p-3 text-center"><div className="font-black text-[16px]">2.5M F</div><div className="text-[#A8A6A0]">CA global</div></div>
-              <div className="bg-[#0B0B0F] rounded-lg p-3 text-center"><div className="font-black text-[16px]">150</div><div className="text-[#A8A6A0]">Lives</div></div>
-              <div className="bg-[#0B0B0F] rounded-lg p-3 text-center"><div className="font-black text-[16px]">5k</div><div className="text-[#A8A6A0]">Users actifs</div></div>
-            </div>
-          </div>
-          <div className="bg-[#16161D] border border-white/10 rounded-xl p-6">
-            <h3 className="font-bold">Sponsors & Publicité</h3>
-            <p className="text-[12px] text-[#A8A6A0] mt-2">Gérer sponsors par compétition (logo, financement, cadeaux), espaces pub bannière/vidéo sponsorisée/pre-roll</p>
-            <Link href="/africa-awards/admin/dashboard/sponsors" className="mt-4 inline-block h-9 px-4 rounded-full bg-white/10 border border-white/10 text-white text-[12px] font-bold">Gérer sponsors →</Link>
-          </div>
+        {unavailable && <div className="mt-6 rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-200">La connexion Supabase n’est pas disponible dans cet environnement. Aucun chiffre de démonstration n’est affiché.</div>}
+
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          <ActionCard href="/africa-awards/admin/dashboard/requests" icon="📋" title="Validation demandes" description={`${value(metrics.pendingRequests)} demande(s) soumise(s) à examiner avec motif de décision.`} />
+          <ActionCard href="/africa-awards/admin/dashboard/competitions" icon="🏆" title="Gérer les compétitions" description="Modifier les paramètres, ouvrir les inscriptions et faire progresser le cycle de vie." />
+          <ActionCard href="/africa-awards/admin/dashboard/applications" icon="🧾" title="Valider les candidatures" description="Examiner les dossiers et convertir uniquement les candidatures approuvées en nominés." />
+        </div>
+
+        <div className="mt-8 grid gap-6 md:grid-cols-2">
+          <section className="rounded-xl border border-white/10 bg-[#16161D] p-6">
+            <h2 className="font-bold">Indicateurs financiers</h2>
+            <p className="mt-3 text-sm leading-6 text-[#A8A6A0]">Le chiffre d’affaires n’est pas affiché tant qu’une agrégation fiable des transactions Awards n’est pas branchée. Cela évite de présenter une estimation comme un résultat réel.</p>
+            <Link href="/africa-awards/admin/dashboard/sponsors" className="mt-5 inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white transition hover:border-[#D4AF37]/50">Sponsors et publicité →</Link>
+          </section>
+          <section className="rounded-xl border border-white/10 bg-[#16161D] p-6">
+            <h2 className="font-bold">Source des données</h2>
+            <p className="mt-3 text-sm leading-6 text-[#A8A6A0]">Les compteurs affichés proviennent des tables opérationnelles. Les compétitions archivées restent conservées dans la base mais ne sont plus mélangées au pilotage courant.</p>
+            <Link href="/africa-awards/admin/dashboard/competitions" className="mt-5 inline-flex rounded-full bg-[#D4AF37] px-4 py-2 text-xs font-black text-black">Ouvrir le module opérationnel →</Link>
+          </section>
         </div>
       </div>
     </div>
   );
+}
+
+function Metric({ label, value, detail, accent = false }: { label: string; value: string; detail: string; accent?: boolean }) {
+  return <div className="rounded-xl border border-white/10 bg-[#16161D] p-5"><div className="text-[11px] uppercase tracking-wider text-[#A8A6A0]">{label}</div><div className={`mt-1 text-[28px] font-black ${accent ? "text-[#D4AF37]" : "text-white"}`}>{value}</div><div className="mt-1 text-[11px] text-[#A8A6A0]">{detail}</div></div>;
+}
+
+function ActionCard({ href, icon, title, description }: { href: string; icon: string; title: string; description: string }) {
+  return <Link href={href} className="rounded-xl border border-white/10 bg-[#16161D] p-6 transition hover:border-[#D4AF37]/40 hover:bg-[#1b1b23]"><div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-xl">{icon}</div><div className="mt-4 font-bold">{title}</div><div className="mt-2 text-[12px] leading-5 text-[#A8A6A0]">{description}</div></Link>;
 }
