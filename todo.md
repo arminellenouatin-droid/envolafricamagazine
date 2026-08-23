@@ -715,3 +715,11 @@ Le contrôle complémentaire a également identifié `/emploi/offres` comme inde
 - [x] Retirer le résumé du premier bloc image du fil d’informations.
 - [x] Conserver uniquement le titre et l’auteur.
 - [x] Réduire légèrement la taille du titre et compiler la retouche responsive.
+
+
+## Correction de ciblage — Fil d’infos Magazine
+
+- [x] Ne pas fusionner la Pull Request #29, qui cible le mauvais composant.
+- [x] Restaurer le résumé et la taille initiale du carrousel Avant-première.
+- [x] Retirer le résumé du bloc `managerStory` dans Fil d’infos et réduire uniquement son titre.
+- [ ] Créer une nouvelle Pull Request ciblée après compilation.
