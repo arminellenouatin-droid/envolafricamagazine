@@ -42,7 +42,9 @@ const contactLinks = [
   { name: "Applications", href: "https://envolafrica.net/" },
   { name: "Contact Régie", href: "/service" },
   { name: "Mentions Légales", href: "/conditions" },
-  { name: "CGU / Confidentialité", href: "/conditions" },
+  { name: "Conditions d’utilisation", href: "/conditions" },
+  { name: "Politique de confidentialité", href: "/confidentialite" },
+  { name: "Politique cookies", href: "/cookies" },
 ];
 
 function ExternalLink({ href, children, className = "" }: { href: string; children: ReactNode; className?: string }) {
@@ -151,7 +153,7 @@ export default function Footer() {
           { title: "Publicité & Suivi", items: contactLinks },
         ]} />
       </div>
-      <div className="bg-[#eae7e7] px-5 py-5 md:px-[64px]"><div className="mx-auto flex max-w-[1280px] flex-col items-center justify-between gap-4 md:flex-row"><p className="text-[12px] text-[#1c1b1b]">©2026 <ExternalLink href="https://envolafrica.net/" className="font-bold hover:text-[#9e001f]">Envol Africa</ExternalLink> Groupe. Tous droits réservés</p><div className="flex items-center gap-4 text-[12px] text-[#474646]"><Link href="/conditions" className="hover:text-[#9e001f]">Conditions</Link><span className="text-[#e5bdbb]">;</span><Link href="/conditions" className="hover:text-[#9e001f]">Confidentialité</Link><span className="text-[#e5bdbb]">;</span><Link href="/cookies" className="hover:text-[#9e001f]">Cookies</Link><span className="hidden items-center gap-2 md:flex"><span className="h-2 w-2 rounded-full bg-green-600" />Paiement Moneroo sécurisé</span></div></div></div>
+      <div className="bg-[#eae7e7] px-5 py-5 md:px-[64px]"><div className="mx-auto flex max-w-[1280px] flex-col items-center justify-between gap-4 md:flex-row"><p className="text-[12px] text-[#1c1b1b]">©2026 <ExternalLink href="https://envolafrica.net/" className="font-bold hover:text-[#9e001f]">Envol Africa</ExternalLink> Groupe. Tous droits réservés</p><div className="flex items-center gap-4 text-[12px] text-[#474646]"><Link href="/conditions" className="hover:text-[#9e001f]">Conditions</Link><span className="text-[#e5bdbb]">;</span><Link href="/confidentialite" className="hover:text-[#9e001f]">Confidentialité</Link><span className="text-[#e5bdbb]">;</span><Link href="/cookies" className="hover:text-[#9e001f]">Cookies</Link><span className="hidden items-center gap-2 md:flex"><span className="h-2 w-2 rounded-full bg-green-600" />Paiement Moneroo sécurisé</span></div></div></div>
     </footer>
   );
 }
