@@ -5,11 +5,17 @@ import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type SocialProvider = "google" | "facebook" | "tiktok";
-const socialProviders: Array<{ id: SocialProvider; label: string; mark: string; className: string }> = [
-  { id: "google", label: "Google", mark: "G", className: "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-400" },
-  { id: "facebook", label: "Facebook", mark: "f", className: "border-[#d9e6ff] bg-[#f5f8ff] text-[#1877f2] hover:border-[#1877f2]" },
-  { id: "tiktok", label: "TikTok", mark: "♪", className: "border-zinc-200 bg-zinc-950 text-white hover:bg-zinc-800" },
+const socialProviders: Array<{ id: SocialProvider; label: string; className: string }> = [
+  { id: "google", label: "Google", className: "border-[#c63d32] bg-[#ea4335] text-white hover:bg-[#c63d32]" },
+  { id: "facebook", label: "Facebook", className: "border-[#1769d1] bg-[#1877f2] text-white hover:bg-[#1769d1]" },
+  { id: "tiktok", label: "TikTok", className: "border-[#111827] bg-[#111827] text-white hover:bg-black" },
 ];
+
+function SocialLogo({ provider }: { provider: SocialProvider }) {
+  if (provider === "google") return <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 rounded-full bg-white p-0.5"><path fill="#4285F4" d="M21.35 12.23c0-.72-.06-1.42-.18-2.09H12v3.96h5.24a4.48 4.48 0 0 1-1.94 2.94v2.41h3.14c1.84-1.69 2.91-4.18 2.91-7.22Z"/><path fill="#34A853" d="M12 21.7c2.63 0 4.84-.87 6.45-2.35l-3.14-2.41c-.87.58-1.98.93-3.31.93-2.54 0-4.7-1.72-5.47-4.03H3.28v2.49A9.74 9.74 0 0 0 12 21.7Z"/><path fill="#FBBC05" d="M6.53 13.84A5.84 5.84 0 0 1 6.22 12c0-.64.11-1.27.31-1.84V7.67H3.28A9.74 9.74 0 0 0 2.25 12c0 1.57.38 3.05 1.03 4.33l3.25-2.49Z"/><path fill="#EA4335" d="M12 6.13c1.43 0 2.71.49 3.72 1.46l2.79-2.79C16.84 3.2 14.63 2.3 12 2.3a9.74 9.74 0 0 0-8.72 5.37l3.25 2.49C7.3 7.85 9.46 6.13 12 6.13Z"/></svg>;
+  if (provider === "facebook") return <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 fill-current"><path d="M13.5 21v-8h2.7l.4-3h-3.1V8.1c0-.87.24-1.46 1.5-1.46h1.7V3.96c-.3-.04-1.33-.13-2.54-.13-2.51 0-4.23 1.53-4.23 4.34V10H7.1v3h2.83v8h3.57Z"/></svg>;
+  return <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 fill-current"><path d="M17.1 4.25c.84 1.02 2.08 1.77 3.5 1.84v3.05a8.2 8.2 0 0 1-3.5-.8v5.5c0 3.73-2.63 5.91-5.8 5.91-3.05 0-5.3-2.18-5.3-5.04 0-3.19 2.73-5.36 6.12-4.88v3.16c-1.52-.42-2.92.35-2.92 1.78 0 1.02.83 1.8 1.98 1.8 1.35 0 2.38-.91 2.38-2.7V3h3.54v1.25Z"/></svg>;
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -105,7 +111,7 @@ export default function LoginPage() {
           {twoFactorChallenge ? <form onSubmit={handleTwoFactorSubmit} className="space-y-5"><div className="rounded-2xl border border-[var(--outline-variant)] bg-[var(--surface-container-low)] p-4 text-center"><span className="material-symbols-outlined text-3xl text-[#0A1931]">shield_lock</span><h2 className="mt-2 font-display text-lg font-black text-[var(--on-surface)]">Vérification en deux étapes</h2><p className="mt-1 text-xs text-[var(--on-surface-variant)]">Saisissez le code à 6 chiffres de votre application d’authentification ou un code de récupération.</p></div><div><label htmlFor="two-factor-code" className="text-[12px] font-semibold uppercase tracking-wide text-[var(--on-surface-variant)]">Code de sécurité</label><input id="two-factor-code" inputMode="numeric" autoComplete="one-time-code" pattern="[A-Za-z0-9]{6,}" minLength={6} maxLength={12} required autoFocus value={twoFactorCode} onChange={(e) => setTwoFactorCode(e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase())} className="mt-1.5 h-12 w-full rounded-full border border-[#cbdedb] bg-[#f6fbfa] px-5 text-center text-[18px] tracking-[0.3em] text-[#082843] focus:border-[#006874] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#006874]/10" /></div><button disabled={loading} className="h-12 w-full rounded-full bg-[#0A1931] text-[14px] font-bold text-white transition-colors hover:bg-black disabled:opacity-60">{loading ? "Vérification…" : "Valider la connexion →"}</button><button type="button" onClick={() => { setTwoFactorChallenge(null); setTwoFactorCode(""); setError(""); }} className="w-full text-center text-xs text-[var(--on-surface-variant)] hover:underline">Revenir à la connexion</button></form> : <><div className="grid gap-2.5 sm:grid-cols-3">
             {socialProviders.map((provider) => (
               <button key={provider.id} type="button" onClick={() => handleSocialLogin(provider.id)} disabled={loading || socialLoading !== null} className={`flex h-11 items-center justify-center gap-2 rounded-full border px-3 text-[13px] font-bold transition disabled:cursor-wait disabled:opacity-60 ${provider.className}`}>
-                <span className="text-lg font-black leading-none">{socialLoading === provider.id ? "…" : provider.mark}</span><span className="hidden md:inline">{provider.label}</span>
+                <SocialLogo provider={provider.id} /><span>{socialLoading === provider.id ? "Connexion…" : provider.label}</span>
               </button>
             ))}
           </div></>}
