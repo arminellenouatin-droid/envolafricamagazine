@@ -63,6 +63,11 @@ export default function LoginPage() {
   const handleSocialLogin = async (provider: SocialProvider) => {
     setSocialLoading(provider);
     setError("");
+    if (provider !== "google") {
+      setError(`Connexion ${provider} indisponible : ce fournisseur n’est pas encore configuré.`);
+      setSocialLoading(null);
+      return;
+    }
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
       setError("La connexion sociale n’est pas encore configurée sur cet environnement.");
@@ -70,7 +75,7 @@ export default function LoginPage() {
       return;
     }
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
-      provider: provider as never,
+      provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback`, queryParams: { prompt: "select_account" } },
     });
     if (oauthError) {
