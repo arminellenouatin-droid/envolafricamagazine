@@ -5,12 +5,34 @@ import Footer from "@/components/FooterShell";
 import PromoPopup from "@/components/PromoPopup";
 import { LocaleProvider } from "@/components/LocaleProvider";
 import { getCurrentUserFromCookie } from "@/lib/auth";
+import { absoluteSiteUrl, getSiteUrl } from "@/lib/site-metadata";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Envol Africa Magazine | Le magazine économique panafricain de référence",
+  metadataBase: new URL(getSiteUrl()),
+  title: {
+    default: "Envol Africa Magazine | Le magazine économique panafricain de référence",
+    template: "%s | Envol Africa",
+  },
   description: "Envol Africa Magazine est le futur site de presse économique consacré à l'Afrique. Analyses, enquêtes exclusives, Kiosque, abonnements, financement, emploi. Afrique qui gagne.",
+  applicationName: "Envol Africa",
+  manifest: "/manifest.webmanifest",
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: "/",
+    siteName: "Envol Africa",
+    title: "Envol Africa Magazine | Le magazine économique panafricain de référence",
+    description: "Analyses, magazines, opportunités et services pour les dirigeants et créateurs d’entreprise africains.",
+    images: [{ url: absoluteSiteUrl("/logo-couleur-entete.png"), width: 1408, height: 768, alt: "Envol Africa" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Envol Africa Magazine",
+    description: "Analyses, magazines, opportunités et services pour les dirigeants et créateurs d’entreprise africains.",
+    images: [absoluteSiteUrl("/logo-couleur-entete.png")],
+  },
 };
 
 async function getUserFromCookie() {

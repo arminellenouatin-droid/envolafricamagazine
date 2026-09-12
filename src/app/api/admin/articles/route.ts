@@ -78,12 +78,12 @@ export async function POST(req: NextRequest) {
       const relationIds = Array.isArray(categoryIds) ? categoryIds.filter(Boolean) : (categoryId ? [categoryId] : []);
       if (relationIds.length) await client.from("article_categories").insert(relationIds.map((category_id: string, index: number) => ({ article_id: newArticle.id, category_id, is_primary: index === 0 })));
       const republication = newArticle.isPublished ? await publishArticleToWab(newArticle, user!.id) : { published: false, reason: "article_draft" };
-      const notifications = newArticle.isPublished ? await notifyPushSubscribers({ platform: "magazine", type: "new_article", title: "Nouvel article Envol Africa", body: newArticle.title, link: `/article/${newArticle.slug}`, entityType: "article", entityId: newArticle.id, dedupePrefix: `article:${newArticle.id}` }) : { count: 0 };
+      const notifications = newArticle.isPublished ? await notifyPushSubscribers({ platform: "magazine", type: "new_article", title: "Nouvel article Envol Africa", body: newArticle.title, link: `/article/${newArticle.slug}`, image: newArticle.image, entityType: "article", entityId: newArticle.id, dedupePrefix: `article:${newArticle.id}` }) : { count: 0 };
       return NextResponse.json({ success: true, article, republication, notifications });
     }
     db!.articles.push(newArticle); writeDB(db!);
     const republication = newArticle.isPublished ? await publishArticleToWab(newArticle, user!.id) : { published: false, reason: "article_draft" };
-    const notifications = newArticle.isPublished ? await notifyPushSubscribers({ platform: "magazine", type: "new_article", title: "Nouvel article Envol Africa", body: newArticle.title, link: `/article/${newArticle.slug}`, entityType: "article", entityId: newArticle.id, dedupePrefix: `article:${newArticle.id}` }) : { count: 0 };
+    const notifications = newArticle.isPublished ? await notifyPushSubscribers({ platform: "magazine", type: "new_article", title: "Nouvel article Envol Africa", body: newArticle.title, link: `/article/${newArticle.slug}`, image: newArticle.image, entityType: "article", entityId: newArticle.id, dedupePrefix: `article:${newArticle.id}` }) : { count: 0 };
     return NextResponse.json({ success: true, article: newArticle, republication, notifications });
   } catch (e) {
     console.error(e);
@@ -124,7 +124,7 @@ export async function PUT(req: NextRequest) {
       if (result.error) return NextResponse.json({ error: `Impossible d’enregistrer l’article : ${result.error.message}` }, { status: 503 });
       if (Object.prototype.hasOwnProperty.call(updates, "categoryIds") || Object.prototype.hasOwnProperty.call(updates, "categoryId")) { await client.from("article_categories").delete().eq("article_id", id); const relationIds = Array.isArray(updates.categoryIds) ? updates.categoryIds.filter(Boolean) : (updates.categoryId ? [updates.categoryId] : []); if (relationIds.length) await client.from("article_categories").insert(relationIds.map((category_id: string, index: number) => ({ article_id: id, category_id, is_primary: index === 0 }))); }
       const article = result.data ? { ...result.data, isPublished: Boolean(result.data.is_published), isEncrypted: Boolean(result.data.is_encrypted ?? true), isFeatured: Boolean(result.data.is_featured), isSentinelle: Boolean(result.data.is_sentinelle), isEssor: Boolean(result.data.is_essor), isOmbreDouce: Boolean(result.data.is_ombre_douce), authorId: result.data.author_id, publishedAt: result.data.published_at, createdAt: result.data.created_at } : result.data;
-      const notifications = isPublishing && article ? await notifyPushSubscribers({ platform: "magazine", type: "new_article", title: "Nouvel article Envol Africa", body: article.title, link: `/article/${article.slug}`, entityType: "article", entityId: article.id, dedupePrefix: `article:${article.id}` }) : { count: 0 };
+      const notifications = isPublishing && article ? await notifyPushSubscribers({ platform: "magazine", type: "new_article", title: "Nouvel article Envol Africa", body: article.title, link: `/article/${article.slug}`, image: article.image, entityType: "article", entityId: article.id, dedupePrefix: `article:${article.id}` }) : { count: 0 };
       return NextResponse.json({ success: true, article, notifications });
     }
     const article = existing as Article;
@@ -134,7 +134,7 @@ export async function PUT(req: NextRequest) {
     if (publishedAt) localUpdates.publishedAt = publishedAt;
     Object.assign(article, localUpdates);
     writeDB(db!);
-    const notifications = isPublishing ? await notifyPushSubscribers({ platform: "magazine", type: "new_article", title: "Nouvel article Envol Africa", body: article.title, link: `/article/${article.slug}`, entityType: "article", entityId: article.id, dedupePrefix: `article:${article.id}` }) : { count: 0 };
+    const notifications = isPublishing ? await notifyPushSubscribers({ platform: "magazine", type: "new_article", title: "Nouvel article Envol Africa", body: article.title, link: `/article/${article.slug}`, image: article.image, entityType: "article", entityId: article.id, dedupePrefix: `article:${article.id}` }) : { count: 0 };
     return NextResponse.json({ success: true, article, notifications });
   } catch (e) {
     console.error(e);
