@@ -8,6 +8,7 @@ type NotificationInput = {
   title: string;
   body: string;
   link?: string;
+  image?: string;
   entityType?: string;
   entityId?: string;
   dedupeKey?: string;
@@ -59,10 +60,16 @@ export async function createGlobalNotification(input: NotificationInput) {
   };
   const { data, error } = await supabase.from("notifications").upsert(row, { onConflict: "dedupe_key", ignoreDuplicates: Boolean(input.dedupeKey) }).select("id").maybeSingle();
   if (error) return { configured: true as const, created: false, error };
+  let pushSent = 0;
   if (data?.id) {
-    await sendPushToUser(input.userId, { title: input.title, body: input.body, href: input.link, tag: input.dedupeKey || `${input.platform}-${input.type}` });
+    try {
+      const delivery = await sendPushToUser(input.userId, { title: input.title, body: input.body, href: input.link, image: input.image, tag: input.dedupeKey || `${input.platform}-${input.type}` });
+      pushSent = delivery.sent;
+    } catch (pushError) {
+      console.error("[notifications] Push delivery failed after notification creation", pushError instanceof Error ? pushError.message : "Unknown provider error");
+    }
   }
-  return { configured: true as const, created: Boolean(data?.id), id: data?.id ?? null };
+  return { configured: true as const, created: Boolean(data?.id), id: data?.id ?? null, pushSent };
 }
 
 function mapNotification(item: { id: string; platform?: string | null; type: string | null; title: string | null; body: string | null; link?: string | null; href?: string | null; read_at: string | null; created_at: string | null; actor_id?: string | null; actor_name?: string | null; actor_avatar?: string | null }, fallbackPlatform: string): UnifiedNotification {
