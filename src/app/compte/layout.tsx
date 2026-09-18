@@ -3,7 +3,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { getPlatformContext, PLATFORM_CONTEXTS, resolvePlatformRole, type PlatformKey } from "@/lib/platform-context";
-import { unregisterFirebaseMessaging } from "@/lib/firebase-messaging-client";
 
 export default function CompteLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -16,7 +15,7 @@ export default function CompteLayout({ children }: { children: React.ReactNode }
 
   useEffect(() => { const params = new URLSearchParams(window.location.search); const nextPlatform = getPlatformContext(params.get("platform")); setPlatform(nextPlatform); const requestedRole = params.get("role"); setRole(requestedRole || PLATFORM_CONTEXTS[nextPlatform].roles[0].id); fetch("/api/auth/me").then((response) => response.json()).then((data) => { if (!data.user) router.push(`/auth/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`); else { setUser(data.user); setRole(resolvePlatformRole(nextPlatform, data.user.role)); } }); }, [router]);
   const changePlatform = (next: PlatformKey) => router.push(`/compte?platform=${next}`);
-  const logout = async () => { await unregisterFirebaseMessaging(); await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); router.refresh(); };
+  const logout = async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); router.refresh(); };
 
   return <div className="min-h-screen bg-[#FFFCF5] pb-20">
     <div className="mx-auto max-w-[1280px] px-4 pt-8 sm:px-6 xl:px-8">

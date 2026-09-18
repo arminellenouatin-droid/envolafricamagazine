@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUserFromCookie } from "@/lib/auth";
@@ -6,36 +5,6 @@ import { findArticleBySlug, findEditorialAuthorById, listPublishedArticles } fro
 import ArticleActions from "@/components/ArticleActions";
 import LocalizedArticleExperience from "@/components/LocalizedArticleExperience";
 import ArticleRecommendations from "@/components/ArticleRecommendations";
-import { absoluteSiteUrl, metadataText } from "@/lib/site-metadata";
-
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const { slug } = await params;
-  const article = await findArticleBySlug(slug).catch(() => null);
-  if (!article?.isPublished) return { title: "Article introuvable | Envol Africa", robots: { index: false, follow: false } };
-
-  const title = `${article.title} | Envol Africa Magazine`;
-  const description = metadataText(article.summary || article.content);
-  const image = absoluteSiteUrl(article.image);
-  const canonical = `/article/${encodeURIComponent(article.slug)}`;
-
-  return {
-    title: { absolute: title },
-    description,
-    alternates: { canonical },
-    openGraph: {
-      title,
-      description,
-      type: "article",
-      url: canonical,
-      siteName: "Envol Africa Magazine",
-      publishedTime: article.publishedAt,
-      authors: article.author ? [article.author] : undefined,
-      images: [{ url: image, alt: article.title }],
-      ...(article.isVideo && article.videoUrl ? { videos: [{ url: absoluteSiteUrl(article.videoUrl), type: "video/mp4" }] } : {}),
-    },
-    twitter: { card: "summary_large_image", title, description, images: [image] },
-  };
-}
 
 async function getIsSubscribed() {
   try {
@@ -54,7 +23,7 @@ async function getIsSubscribed() {
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const [article, articles] = await Promise.all([findArticleBySlug(slug), listPublishedArticles()]);
-  if (!article?.isPublished) return notFound();
+  if (!article) return notFound();
   const [editorialAuthor, isSubscriber, preferredLanguage] = await Promise.all([findEditorialAuthorById(article.authorProfileId), getIsSubscribed(), (async () => { const user = await getCurrentUserFromCookie(); return user?.lang || "fr"; })()]);
 
   const articleCategorySet = new Set(article.categories?.length ? article.categories : [article.category]);

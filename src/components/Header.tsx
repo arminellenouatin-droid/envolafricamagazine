@@ -8,7 +8,6 @@ import { normalizeVisitorLocale, persistVisitorLocale, readPersistedVisitorLocal
 import { translate } from "@/lib/i18n";
 import InboxToolbox, { type InboxToolboxTab } from "@/components/InboxToolbox";
 import CartToolbox from "@/components/CartToolbox";
-import { canUseFirebaseMessaging, listenForForegroundFirebaseMessages, registerFirebaseMessaging } from "@/lib/firebase-messaging-client";
 
 type FeaturedArticle = { slug: string; title: string; image?: string; category?: string; summary?: string };
 type MegaMenuConfig = { title?: string; description?: string; buyHref?: string; categories?: string[]; items?: Array<{ id?: string; title: string; mediaUrl?: string; href?: string; description?: string }> };
@@ -41,6 +40,13 @@ const mobileSecondaryNav = [
 const COUNTRY_FLAGS: Record<string, string> = { "Bénin": "🇧🇯", Ghana: "🇬🇭", Nigeria: "🇳🇬", Togo: "🇹🇬", "Côte d’Ivoire": "🇨🇮", Sénégal: "🇸🇳", Cameroun: "🇨🇲", Kenya: "🇰🇪", Rwanda: "🇷🇼", Afrique: "🌍" };
 const LANGUAGE_OPTIONS = [{ code: "fr", label: "Français" }, { code: "en", label: "English" }, { code: "es", label: "Español" }];
 const CURRENCY_OPTIONS = ["XOF", "GHS", "NGN", "EUR", "USD"];
+
+function urlBase64ToUint8Array(value: string) {
+  const padding = "=".repeat((4 - (value.length % 4)) % 4);
+  const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = window.atob(base64);
+  return Uint8Array.from([...raw].map((char) => char.charCodeAt(0)));
+}
 
 const sidePanelLinks = [
   { name: "Montage de plan d'affaires", href: "https://envolafrica.net/" },
@@ -187,6 +193,11 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
     setDarkMode(shouldUseDark);
     document.documentElement.classList.toggle("dark", shouldUseDark);
 
+    const storedNotifications = localStorage.getItem("eam_notifications_enabled") === "true";
+    setNotificationsEnabled(storedNotifications);
+    const canNotify = "Notification" in window;
+    if (canNotify && Notification.permission === "default" && !localStorage.getItem("eam_notifications_prompted")) setNotificationPrompt(true);
+
     const fetchWeather = async () => {
       try {
         const response = await fetch("https://ipapi.co/json/", { cache: "no-store" });
@@ -202,41 +213,6 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
     };
   }, []);
 
-  useEffect(() => {
-    if (!user?.id) return;
-
-    let active = true;
-    let stopForegroundListener: (() => void) | undefined;
-    const setupNotifications = async () => {
-      if (!(await canUseFirebaseMessaging()) || !active) return;
-      const serviceEnabled = await fetch("/api/notifications/subscribe", { cache: "no-store", credentials: "include" })
-        .then((response) => response.ok ? response.json() as Promise<{ enabled?: boolean }> : { enabled: false })
-        .then((result) => Boolean(result.enabled))
-        .catch(() => false);
-      if (!serviceEnabled || !active) return;
-      const permission = Notification.permission;
-      if (permission === "granted") {
-        const registered = await registerFirebaseMessaging().then(() => true).catch(() => false);
-        if (!active) return;
-        setNotificationsEnabled(registered);
-        if (!registered) return;
-        stopForegroundListener = await listenForForegroundFirebaseMessages(() => {
-          setNotificationCount((count) => count + 1);
-        });
-        return;
-      }
-      if (permission === "default") {
-        const promptedAt = Number(localStorage.getItem(`eam_notifications_prompted_at:${user.id}`) || 0);
-        if (!promptedAt || Date.now() - promptedAt > 7 * 24 * 60 * 60 * 1000) setNotificationPrompt(true);
-      }
-    };
-    void setupNotifications();
-    return () => {
-      active = false;
-      stopForegroundListener?.();
-    };
-  }, [user?.id]);
-
   const toggleDarkMode = () => {
     const next = !darkMode;
     setDarkMode(next);
@@ -245,22 +221,25 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
   };
 
   const requestNotifications = async () => {
-    if (!user?.id || !("Notification" in window)) { setNotificationPrompt(false); return; }
-    localStorage.setItem(`eam_notifications_prompted_at:${user.id}`, String(Date.now()));
+    localStorage.setItem("eam_notifications_prompted", "true");
+    if (!("Notification" in window)) { setNotificationPrompt(false); return; }
     const permission = await Notification.requestPermission();
-    if (permission === "granted") {
-      const registered = await registerFirebaseMessaging().then(() => true).catch(() => false);
-      setNotificationsEnabled(registered);
-      localStorage.setItem("eam_notifications_enabled", String(registered));
-    } else {
-      setNotificationsEnabled(false);
-      localStorage.setItem("eam_notifications_enabled", "false");
+    const enabled = permission === "granted";
+    setNotificationsEnabled(enabled);
+    localStorage.setItem("eam_notifications_enabled", String(enabled));
+    if (enabled && "serviceWorker" in navigator && "PushManager" in window && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
+      try {
+        const registration = await navigator.serviceWorker.register("/sw.js");
+        const existing = await registration.pushManager.getSubscription();
+        const subscription = existing || await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) });
+        await fetch("/api/notifications/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(subscription) });
+      } catch { /* Le consentement navigateur reste valide même si le push serveur est indisponible. */ }
     }
     setNotificationPrompt(false);
   };
 
   const dismissNotificationPrompt = () => {
-    if (user?.id) localStorage.setItem(`eam_notifications_prompted_at:${user.id}`, String(Date.now()));
+    localStorage.setItem("eam_notifications_prompted", "true");
     setNotificationPrompt(false);
   };
 
@@ -400,7 +379,7 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
         </div>
       </div>
 
-      {notificationPrompt && user && <div className="fixed bottom-20 left-1/2 z-[120] w-[min(94vw,720px)] -translate-x-1/2 rounded-xl border border-[#e5bdbb] bg-white/95 px-3 py-2.5 shadow-[0_12px_40px_rgba(54,19,24,.18)] backdrop-blur md:bottom-5"><div className="flex items-center gap-2"><span className="material-symbols-outlined shrink-0 text-[20px] text-[#9e001f]">notifications_active</span><p className="min-w-0 flex-1 truncate font-sans text-[11px] font-semibold text-[#443a39]">Recevoir les alertes importantes d’Envol Africa.</p><Link href="/conditions" className="hidden shrink-0 font-sans text-[10px] font-bold text-[#746665] underline sm:inline">Conditions</Link><Link href="/cookies" className="hidden shrink-0 font-sans text-[10px] font-bold text-[#746665] underline sm:inline">Cookies</Link><button type="button" onClick={dismissNotificationPrompt} className="shrink-0 rounded-lg px-2.5 py-1.5 font-sans text-[10px] font-bold text-[#746665] hover:bg-[#f6f3f2]">Plus tard</button><button type="button" onClick={requestNotifications} className="shrink-0 rounded-lg bg-[#9e001f] px-3 py-1.5 font-sans text-[10px] font-bold text-white hover:bg-[#c8102e]">Accepter</button></div></div>}
+      {notificationPrompt && <div className="fixed bottom-20 left-1/2 z-[120] w-[min(94vw,720px)] -translate-x-1/2 rounded-xl border border-[#e5bdbb] bg-white/95 px-3 py-2.5 shadow-[0_12px_40px_rgba(54,19,24,.18)] backdrop-blur md:bottom-5"><div className="flex items-center gap-2"><span className="material-symbols-outlined shrink-0 text-[20px] text-[#9e001f]">notifications_active</span><p className="min-w-0 flex-1 truncate font-sans text-[11px] font-semibold text-[#443a39]">Recevoir les alertes importantes d’Envol Africa.</p><Link href="/conditions" className="hidden shrink-0 font-sans text-[10px] font-bold text-[#746665] underline sm:inline">Conditions</Link><Link href="/cookies" className="hidden shrink-0 font-sans text-[10px] font-bold text-[#746665] underline sm:inline">Cookies</Link><button type="button" onClick={dismissNotificationPrompt} className="shrink-0 rounded-lg px-2.5 py-1.5 font-sans text-[10px] font-bold text-[#746665] hover:bg-[#f6f3f2]">Plus tard</button><button type="button" onClick={requestNotifications} className="shrink-0 rounded-lg bg-[#9e001f] px-3 py-1.5 font-sans text-[10px] font-bold text-white hover:bg-[#c8102e]">Accepter</button></div></div>}
 
       {sideMenuOpen && <div className="fixed inset-0 z-[100] flex justify-end"><button type="button" aria-label="Fermer le fond du menu" className="absolute inset-0 cursor-default bg-black/40" onClick={() => setSideMenuOpen(false)} /><aside className="relative h-full w-[min(92vw,420px)] overflow-y-auto bg-white p-6 shadow-2xl"><div className="mb-6 flex items-center justify-between"><Link href={platform.homeHref} onClick={() => setSideMenuOpen(false)}><img src={platform.logoSrc} alt={platform.logoAlt} className="h-12 w-auto" /></Link><button type="button" onClick={() => setSideMenuOpen(false)} aria-label="Fermer le menu" className="grid h-9 w-9 place-items-center rounded-full bg-zinc-100">×</button></div><p className="text-[13px] leading-6 text-[#5c403f]">Une chaîne regroupant toutes les valeurs pour votre succès en entreprise. Plus qu'un magazine, Envol Africa accompagne les projets et les talents africains.</p><Link href="/don" onClick={() => setSideMenuOpen(false)} className="mt-6 flex h-11 w-full items-center justify-center rounded-full bg-[#9e001f] text-[13px] font-bold text-white">Soutenir ENVOL AFRICA</Link><div className="mt-8 space-y-1">{sidePanelLinks.map((item) => { const internalHref = internalBrowserHref(item.href); return <Link key={item.name} href={internalHref || item.href} target={internalHref ? undefined : "_blank"} rel={internalHref ? undefined : "noreferrer"} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-[13px] hover:bg-[#f6f3f2]"><span className="h-1.5 w-1.5 rounded-full bg-[#9e001f]" />{item.name}</Link>; })}</div><div className="mt-8 rounded-2xl border border-[#e5bdbb] bg-[#f0eded] p-5"><h2 className="font-display text-base font-extrabold">{platform.name}</h2><p className="mt-2 text-[13px] leading-5 text-[#5c403f]">Accédez directement à l’espace {platform.name} et retrouvez votre compte partagé.</p><Link href={platform.homeHref} onClick={() => setSideMenuOpen(false)} className="mt-4 flex h-10 w-full items-center justify-center rounded-full bg-[#303030] text-[12px] font-bold text-white">Accéder à l’espace</Link></div></aside></div>}
     </>
