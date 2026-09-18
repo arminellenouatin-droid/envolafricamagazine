@@ -46,6 +46,19 @@ function isInvalidFirebaseRegistration(code?: string) {
   );
 }
 
+export function toAbsoluteUrl(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
+    return url;
+  }
+  const baseUrl = (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://envolafricamagazinealokpe.vercel.app")
+  ).replace(/\/$/, "");
+  const path = url.startsWith("/") ? url : `/${url}`;
+  return `${baseUrl}${path}`;
+}
+
 /**
  * Envoie une notification Chrome / Web Push à TOUS les abonnés ayant accepté les notifications
  * lors de la publication d'un article ou d'un événement global.
@@ -72,6 +85,12 @@ export async function sendPushToAllSubscribers(payload: PushPayload) {
     new Set((fcmSubs || []).map((s) => s.fcm_fid).filter((t): t is string => Boolean(t)))
   );
 
+  const absoluteImage = toAbsoluteUrl(payload.image);
+  const absoluteLogo = toAbsoluteUrl("/mobile-header-logo.png");
+  // L'icône réduite demandée : l'image de la publication si disponible, sinon le logo du site
+  const notificationIcon = absoluteImage || absoluteLogo;
+  const targetHref = payload.href || "/";
+
   if (messaging && tokens.length > 0) {
     for (const batch of chunks(tokens, 500)) {
       try {
@@ -80,18 +99,34 @@ export async function sendPushToAllSubscribers(payload: PushPayload) {
           notification: {
             title: payload.title,
             body: payload.body,
-            imageUrl: payload.image,
+            imageUrl: absoluteImage,
           },
           data: {
-            title: payload.title,
-            body: payload.body,
-            href: payload.href || "/",
-            ...(payload.image ? { image: payload.image } : {}),
-            tag: payload.tag || "envol-africa",
+            title: String(payload.title || "Envol Africa"),
+            body: String(payload.body || ""),
+            href: String(targetHref),
+            link: String(targetHref),
+            image: String(absoluteImage || ""),
+            imageUrl: String(absoluteImage || ""),
+            icon: String(notificationIcon || ""),
+            badge: String(absoluteLogo || ""),
+            tag: String(payload.tag || "envol-africa"),
           },
           webpush: {
+            headers: {
+              Urgency: "high",
+            },
+            notification: {
+              title: payload.title,
+              body: payload.body,
+              icon: notificationIcon,
+              image: absoluteImage,
+              badge: absoluteLogo,
+              tag: payload.tag || "envol-africa",
+              requireInteraction: true,
+            },
             fcmOptions: {
-              link: payload.href || "/",
+              link: targetHref,
             },
           },
         });
@@ -125,12 +160,22 @@ export async function sendPushToAllSubscribers(payload: PushPayload) {
 
     if (legacySubs?.length) {
       webpush.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
+      const legacyPayload = {
+        title: payload.title,
+        body: payload.body,
+        href: targetHref,
+        link: targetHref,
+        image: absoluteImage,
+        icon: notificationIcon,
+        badge: absoluteLogo,
+        tag: payload.tag || "envol-africa",
+      };
       for (const row of legacySubs as PushSubscriptionRow[]) {
         if (!row.endpoint || !row.keys?.p256dh || !row.keys.auth) continue;
         try {
           await webpush.sendNotification(
             { endpoint: row.endpoint, keys: { p256dh: row.keys.p256dh, auth: row.keys.auth } },
-            JSON.stringify(payload)
+            JSON.stringify(legacyPayload)
           );
           legacySent += 1;
         } catch (error: any) {
@@ -175,6 +220,12 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
     new Set(rows.map((r) => r.fcm_fid).filter((t): t is string => Boolean(t)))
   );
 
+  const absoluteImage = toAbsoluteUrl(payload.image);
+  const absoluteLogo = toAbsoluteUrl("/mobile-header-logo.png");
+  // L'icône réduite demandée : l'image de la publication si disponible, sinon le logo du site
+  const notificationIcon = absoluteImage || absoluteLogo;
+  const targetHref = payload.href || "/";
+
   if (messaging && fcmTokens.length > 0) {
     try {
       const response = await messaging.sendEachForMulticast({
@@ -182,18 +233,34 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
         notification: {
           title: payload.title,
           body: payload.body,
-          imageUrl: payload.image,
+          imageUrl: absoluteImage,
         },
         data: {
-          title: payload.title,
-          body: payload.body,
-          href: payload.href || "/",
-          ...(payload.image ? { image: payload.image } : {}),
-          tag: payload.tag || "envol-africa",
+          title: String(payload.title || "Envol Africa"),
+          body: String(payload.body || ""),
+          href: String(targetHref),
+          link: String(targetHref),
+          image: String(absoluteImage || ""),
+          imageUrl: String(absoluteImage || ""),
+          icon: String(notificationIcon || ""),
+          badge: String(absoluteLogo || ""),
+          tag: String(payload.tag || "envol-africa"),
         },
         webpush: {
+          headers: {
+            Urgency: "high",
+          },
+          notification: {
+            title: payload.title,
+            body: payload.body,
+            icon: notificationIcon,
+            image: absoluteImage,
+            badge: absoluteLogo,
+            tag: payload.tag || "envol-africa",
+            requireInteraction: true,
+          },
           fcmOptions: {
-            link: payload.href || "/",
+            link: targetHref,
           },
         },
       });
@@ -207,12 +274,22 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
   const vapid = getVapidConfig();
   if (vapid) {
     webpush.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
+    const legacyPayload = {
+      title: payload.title,
+      body: payload.body,
+      href: targetHref,
+      link: targetHref,
+      image: absoluteImage,
+      icon: notificationIcon,
+      badge: absoluteLogo,
+      tag: payload.tag || "envol-africa",
+    };
     for (const row of rows) {
       if (!row.endpoint || !row.keys?.p256dh || !row.keys.auth) continue;
       try {
         await webpush.sendNotification(
           { endpoint: row.endpoint, keys: { p256dh: row.keys.p256dh, auth: row.keys.auth } },
-          JSON.stringify(payload)
+          JSON.stringify(legacyPayload)
         );
         sent += 1;
       } catch (error: any) {

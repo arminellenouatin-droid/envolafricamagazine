@@ -16,18 +16,44 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
+function toAbsoluteUrl(url) {
+  if (!url) return undefined;
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
+    return url;
+  }
+  try {
+    return new URL(url, self.location.origin).href;
+  } catch (e) {
+    return url;
+  }
+}
+
 messaging.onBackgroundMessage((payload) => {
   const data = payload.data || {};
   const notification = payload.notification || {};
   const title = notification.title || data.title || "Envol Africa Magazine";
+  const body = notification.body || data.body || "Un nouvel article est disponible sur Envol Africa.";
+
+  // Image principale du média (article, magazine, etc.)
+  const mediaImage = toAbsoluteUrl(notification.image || notification.imageUrl || data.image || data.imageUrl);
+  const defaultLogo = toAbsoluteUrl("/mobile-header-logo.png");
+
+  // Remplacement de l'icône réduite (favicon) par l'image de la publication
+  const iconUrl = mediaImage || toAbsoluteUrl(notification.icon || data.icon) || defaultLogo;
+  const badgeUrl = toAbsoluteUrl(notification.badge || data.badge) || defaultLogo;
+  const targetHref = data.href || data.link || "/";
+
   const options = {
-    body: notification.body || data.body || "Un nouvel article est disponible sur Envol Africa.",
-    icon: notification.icon || data.icon || "/mobile-header-logo.png",
-    badge: "/mobile-header-logo.png",
-    image: notification.image || data.image || undefined,
+    body,
+    icon: iconUrl,
+    badge: badgeUrl,
+    image: mediaImage,
     tag: data.tag || "envol-africa-article",
+    requireInteraction: true,
     data: {
-      href: data.href || data.link || "/",
+      href: targetHref,
+      link: targetHref,
+      image: mediaImage,
     },
   };
 

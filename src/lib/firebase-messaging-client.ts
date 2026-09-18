@@ -108,6 +108,21 @@ export async function unregisterFirebaseMessaging() {
   }
 }
 
+function toAbsoluteClientUrl(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
+    return url;
+  }
+  if (typeof window !== "undefined") {
+    try {
+      return new URL(url, window.location.origin).href;
+    } catch {
+      return url;
+    }
+  }
+  return url;
+}
+
 export async function listenForForegroundMessages(callback?: (payload: MessagePayload) => void) {
   if (!(await canUseFirebaseMessaging()) || Notification.permission !== "granted") {
     return () => undefined;
@@ -123,14 +138,23 @@ export async function listenForForegroundMessages(callback?: (payload: MessagePa
     const body = notification.body || data.body || "Nouvelle notification";
     const href = data.href || data.link || "/";
 
+    const mediaImage = toAbsoluteClientUrl(
+      notification.image || (notification as { imageUrl?: string }).imageUrl || data.image || data.imageUrl
+    );
+    const defaultLogo = toAbsoluteClientUrl("/mobile-header-logo.png");
+    const iconUrl = mediaImage || toAbsoluteClientUrl((notification as any).icon || data.icon) || defaultLogo;
+    const badgeUrl = toAbsoluteClientUrl((notification as any).badge || data.badge) || defaultLogo;
+
     if ("serviceWorker" in navigator) {
       const registration = await navigator.serviceWorker.ready;
       registration.showNotification(title, {
         body,
-        icon: "/mobile-header-logo.png",
-        badge: "/mobile-header-logo.png",
-        image: notification.image || data.image || undefined,
-        data: { href },
+        icon: iconUrl,
+        badge: badgeUrl,
+        image: mediaImage,
+        tag: data.tag || "envol-africa-article",
+        requireInteraction: true,
+        data: { href, link: href, image: mediaImage },
       } as NotificationOptions & { image?: string });
     }
   });
