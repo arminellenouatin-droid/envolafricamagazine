@@ -9,8 +9,34 @@ import { getCurrentUserFromCookie } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Envol Africa Magazine | Le magazine économique panafricain de référence",
-  description: "Envol Africa Magazine est le futur site de presse économique consacré à l'Afrique. Analyses, enquêtes exclusives, Kiosque, abonnements, financement, emploi. Afrique qui gagne.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://envolafricamagazinealokpe.vercel.app"),
+  title: {
+    default: "Envol Africa Magazine | Le magazine économique panafricain de référence",
+    template: "%s | Envol Africa",
+  },
+  description: "Envol Africa Magazine est la plateforme de référence consacrée à l'économie et aux opportunités en Afrique : actualités, analyses exclusives, Kiosque numérique, Marketplace panafricaine, emploi et financement.",
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: "/",
+    siteName: "Envol Africa",
+    title: "Envol Africa Magazine | Le magazine économique panafricain de référence",
+    description: "Analyses exclusives, enquêtes économiques, Kiosque numérique, Marketplace et opportunités panafricaines.",
+    images: [
+      {
+        url: "/mobile-header-logo.png",
+        width: 800,
+        height: 800,
+        alt: "Logo Envol Africa Magazine",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Envol Africa Magazine",
+    description: "Le magazine économique panafricain de référence.",
+    images: ["/mobile-header-logo.png"],
+  },
 };
 
 async function getUserFromCookie() {

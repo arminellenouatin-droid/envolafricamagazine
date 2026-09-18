@@ -1,8 +1,54 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { readAwardsDB } from "@/lib/awards-db";
 import { getSupabaseCandidates, getSupabaseCompetitions } from "@/lib/awards-supabase";
 import VisitorPrice from "@/components/VisitorPrice";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const remote = await getSupabaseCompetitions({ slug });
+  const comp = remote.configured ? remote.competitions[0] : readAwardsDB().competitions.find((item) => item.slug === slug);
+  if (!comp) {
+    return {
+      title: "Compétition Africa Awards",
+      description: "Découvrez les compétitions et votez pour vos talents préférés.",
+    };
+  }
+
+  const title = `${comp.title} • Africa Awards`;
+  const description = (comp.description || "Votez et soutenez les candidats de cette compétition sur Envol Africa Awards.")
+    .replace(/<[^>]*>/g, "")
+    .slice(0, 180)
+    .trim();
+  const image = comp.cover_image || "https://images.unsplash.com/photo-1511578314322-379afb476865?w=800";
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `/africa-awards/competitions/${encodeURIComponent(slug)}`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `/africa-awards/competitions/${encodeURIComponent(slug)}`,
+      type: "website",
+      images: [
+        {
+          url: image,
+          alt: comp.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [image],
+    },
+  };
+}
 
 export default async function CompetitionDetail({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

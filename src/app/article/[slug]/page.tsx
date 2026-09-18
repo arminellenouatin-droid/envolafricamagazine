@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUserFromCookie } from "@/lib/auth";
@@ -6,10 +7,55 @@ import ArticleActions from "@/components/ArticleActions";
 import LocalizedArticleExperience from "@/components/LocalizedArticleExperience";
 import ArticleRecommendations from "@/components/ArticleRecommendations";
 
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const article = await findArticleBySlug(slug);
+  if (!article) {
+    return {
+      title: "Article introuvable",
+      description: "L'article demandé n'existe pas ou a été déplacé.",
+    };
+  }
+
+  const cleanDescription = (article.summary || article.content || "")
+    .replace(/<[^>]*>/g, "")
+    .slice(0, 180)
+    .trim() || "Article publié sur Envol Africa Magazine.";
+
+  const image = article.image || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800";
+
+  return {
+    title: article.title,
+    description: cleanDescription,
+    alternates: {
+      canonical: `/article/${encodeURIComponent(article.slug)}`,
+    },
+    openGraph: {
+      title: article.title,
+      description: cleanDescription,
+      url: `/article/${encodeURIComponent(article.slug)}`,
+      type: "article",
+      publishedTime: article.publishedAt || article.createdAt,
+      authors: [article.author || "Envol Africa"],
+      images: [
+        {
+          url: image,
+          alt: article.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: article.title,
+      description: cleanDescription,
+      images: [image],
+    },
+  };
+}
+
 async function getIsSubscribed() {
   try {
     const user = await getCurrentUserFromCookie();
-    if (!user) return false;
     if (!user) return false;
     if (user.role==="admin" || user.role==="gerant" || user.role==="redacteur_chef") return true;
     if (user.subscription?.status==="active") {

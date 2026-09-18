@@ -1,11 +1,70 @@
+import type { Metadata } from "next";
 import { readAwardsDB } from "@/lib/awards-db";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  let candidate: any = null;
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const { data } = await supabase.from("awards_candidates").select("id, display_name, bio, photo_url, country").eq("id", id).maybeSingle();
+    candidate = data;
+  }
+  if (!candidate) {
+    candidate = readAwardsDB().candidates.find((c) => c.id === id);
+  }
+  if (!candidate) {
+    return {
+      title: "Candidat Africa Awards",
+      description: "Profil et projet du candidat aux Africa Awards.",
+    };
+  }
+
+  const title = `${candidate.display_name} • Candidat Africa Awards`;
+  const description = (candidate.bio || candidate.project_description || "Votez et soutenez ce candidat aux Africa Awards.")
+    .replace(/<[^>]*>/g, "")
+    .slice(0, 180)
+    .trim();
+  const image = candidate.photo_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800";
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `/africa-awards/candidates/${encodeURIComponent(id)}`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `/africa-awards/candidates/${encodeURIComponent(id)}`,
+      type: "profile",
+      images: [
+        {
+          url: image,
+          alt: candidate.display_name,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [image],
+    },
+  };
+}
 
 export default async function CandidateProfile({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const db = readAwardsDB();
-  const candidate = db.candidates.find(c=>c.id===id);
+  let candidate = db.candidates.find(c=>c.id===id);
+  const supabase = getSupabaseAdmin();
+  if (!candidate && supabase) {
+    const { data } = await supabase.from("awards_candidates").select("*").eq("id", id).maybeSingle();
+    if (data) candidate = data as any;
+  }
   if (!candidate) return notFound();
   const comp = db.competitions.find(c=>c.id===candidate.competition_id);
 

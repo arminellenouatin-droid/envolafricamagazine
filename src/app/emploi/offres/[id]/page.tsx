@@ -1,9 +1,50 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { canSeeEmployerDetails, readJobsDB } from "@/lib/jobs-db";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import ApplyButton from "./ApplyButton";
 import OfferViewTracker from "./OfferViewTracker";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const offer = readJobsDB().offers.find((item) => item.id === id && item.status === "published");
+  if (!offer) {
+    return {
+      title: "Offre d'emploi | Envol Africa Jobs",
+      description: "Découvrez les opportunités professionnelles sur Envol Africa Jobs.",
+    };
+  }
+
+  const title = `${offer.title} • Envol Africa Jobs`;
+  const description = `${offer.sector} · ${offer.contractType} · ${offer.city}, ${offer.country}. ${offer.description.slice(0, 140)}...`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `/emploi/offres/${encodeURIComponent(id)}`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `/emploi/offres/${encodeURIComponent(id)}`,
+      type: "website",
+      images: [
+        {
+          url: "/mobile-header-logo.png",
+          alt: offer.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ["/mobile-header-logo.png"],
+    },
+  };
+}
 
 export default async function JobOfferPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
