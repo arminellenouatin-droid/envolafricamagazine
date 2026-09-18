@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-import { sendPushToUser } from "@/lib/push";
+import { sendPushToUser, sendPushToAllSubscribers } from "@/lib/push";
 
 type NotificationInput = {
   userId: string;
@@ -8,6 +8,7 @@ type NotificationInput = {
   title: string;
   body: string;
   link?: string;
+  image?: string;
   entityType?: string;
   entityId?: string;
   dedupeKey?: string;
@@ -81,14 +82,38 @@ function mapNotification(item: { id: string; platform?: string | null; type: str
   };
 }
 
-export async function notifyPushSubscribers(input: Omit<NotificationInput, "userId"> & { dedupePrefix: string }) {
+export async function notifyPushSubscribers(input: Omit<NotificationInput, "userId"> & { dedupePrefix: string; image?: string }) {
+  // 1. Diffusion immédiate via Firebase Cloud Messaging & Web Push à TOUS les appareils abonnés
+  const pushPromise = sendPushToAllSubscribers({
+    title: input.title,
+    body: input.body,
+    href: input.link,
+    image: input.image,
+    tag: input.dedupePrefix,
+  }).catch((err) => {
+    console.error("[notifyPushSubscribers] Erreur envoi push broadcast :", err);
+    return { sent: 0, total: 0 };
+  });
+
   const supabase = getSupabaseAdmin();
-  if (!supabase) return { configured: false as const, count: 0 };
+  if (!supabase) {
+    const pushResult = await pushPromise;
+    return { configured: false as const, count: pushResult?.sent ?? 0 };
+  }
+
+  // 2. Notification in-app pour les profils enregistrés
   const { data: subscriptions, error } = await supabase.from("push_subscriptions").select("profile_id").not("profile_id", "is", null).limit(5000);
-  if (error) return { configured: true as const, count: 0, error };
+  if (error) {
+    console.error("[notifyPushSubscribers] Erreur récupération abonnés in-app :", error.message);
+  }
+
   const userIds = Array.from(new Set((subscriptions ?? []).map((item) => item.profile_id).filter((id): id is string => typeof id === "string")));
-  const results = await Promise.all(userIds.map((userId) => createGlobalNotification({ ...input, userId, dedupeKey: `${input.dedupePrefix}:${userId}` })));
-  return { configured: true as const, count: results.filter((result) => result.created).length };
+  const [pushResult] = await Promise.all([
+    pushPromise,
+    Promise.all(userIds.map((userId) => createGlobalNotification({ ...input, userId, dedupeKey: `${input.dedupePrefix}:${userId}` }))),
+  ]);
+
+  return { configured: true as const, count: pushResult?.sent ?? 0, inAppCount: userIds.length };
 }
 
 export async function getUnifiedNotifications(userId: string) {

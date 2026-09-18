@@ -8,6 +8,7 @@ import { normalizeVisitorLocale, persistVisitorLocale, readPersistedVisitorLocal
 import { translate } from "@/lib/i18n";
 import InboxToolbox, { type InboxToolboxTab } from "@/components/InboxToolbox";
 import CartToolbox from "@/components/CartToolbox";
+import { registerFirebaseMessaging, listenForForegroundMessages } from "@/lib/firebase-messaging-client";
 
 type FeaturedArticle = { slug: string; title: string; image?: string; category?: string; summary?: string };
 type MegaMenuConfig = { title?: string; description?: string; buyHref?: string; categories?: string[]; items?: Array<{ id?: string; title: string; mediaUrl?: string; href?: string; description?: string }> };
@@ -196,7 +197,13 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
     const storedNotifications = localStorage.getItem("eam_notifications_enabled") === "true";
     setNotificationsEnabled(storedNotifications);
     const canNotify = "Notification" in window;
-    if (canNotify && Notification.permission === "default" && !localStorage.getItem("eam_notifications_prompted")) setNotificationPrompt(true);
+    if (canNotify && Notification.permission === "default" && !localStorage.getItem("eam_notifications_prompted")) {
+      setNotificationPrompt(true);
+    } else if (canNotify && Notification.permission === "granted") {
+      setNotificationsEnabled(true);
+      registerFirebaseMessaging().catch(() => {});
+      listenForForegroundMessages().catch(() => {});
+    }
 
     const fetchWeather = async () => {
       try {
@@ -222,20 +229,43 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
 
   const requestNotifications = async () => {
     localStorage.setItem("eam_notifications_prompted", "true");
-    if (!("Notification" in window)) { setNotificationPrompt(false); return; }
-    const permission = await Notification.requestPermission();
-    const enabled = permission === "granted";
-    setNotificationsEnabled(enabled);
-    localStorage.setItem("eam_notifications_enabled", String(enabled));
-    if (enabled && "serviceWorker" in navigator && "PushManager" in window && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
-      try {
-        const registration = await navigator.serviceWorker.register("/sw.js");
-        const existing = await registration.pushManager.getSubscription();
-        const subscription = existing || await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) });
-        await fetch("/api/notifications/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(subscription) });
-      } catch { /* Le consentement navigateur reste valide même si le push serveur est indisponible. */ }
-    }
     setNotificationPrompt(false);
+    if (!("Notification" in window)) return;
+
+    let fcmSuccess = false;
+    try {
+      await registerFirebaseMessaging();
+      fcmSuccess = true;
+      setNotificationsEnabled(true);
+      localStorage.setItem("eam_notifications_enabled", "true");
+      listenForForegroundMessages().catch(() => {});
+    } catch {
+      // Si Firebase Messaging n'est pas encore prêt ou en cas d'erreur de token, tentative Web Push fallback
+    }
+
+    if (!fcmSuccess) {
+      try {
+        const permission = await Notification.requestPermission();
+        const enabled = permission === "granted";
+        setNotificationsEnabled(enabled);
+        localStorage.setItem("eam_notifications_enabled", String(enabled));
+        if (enabled && "serviceWorker" in navigator && "PushManager" in window && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
+          const registration = await navigator.serviceWorker.register("/sw.js");
+          const existing = await registration.pushManager.getSubscription();
+          const subscription = existing || await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY),
+          });
+          await fetch("/api/notifications/subscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(subscription),
+          });
+        }
+      } catch {
+        /* Le consentement navigateur reste valide même si le push serveur est indisponible. */
+      }
+    }
   };
 
   const dismissNotificationPrompt = () => {

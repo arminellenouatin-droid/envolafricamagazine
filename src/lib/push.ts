@@ -1,7 +1,22 @@
 import webpush from "web-push";
+import { getFirebaseAdminMessaging, isFirebaseAdminConfigured } from "@/lib/firebase-admin";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
-type PushSubscriptionRow = { endpoint: string; keys: { p256dh: string; auth: string } };
+export type PushPayload = {
+  title: string;
+  body: string;
+  href?: string;
+  tag?: string;
+  image?: string;
+};
+
+type PushSubscriptionRow = {
+  id?: string;
+  endpoint: string | null;
+  keys: { p256dh?: string; auth?: string } | null;
+  fcm_fid: string | null;
+  profile_id?: string | null;
+};
 
 function getVapidConfig() {
   const subject = process.env.VAPID_SUBJECT;
@@ -15,23 +30,198 @@ export function getVapidPublicKey() {
   return process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || null;
 }
 
-export async function sendPushToUser(userId: string, payload: { title: string; body: string; href?: string; tag?: string }) {
-  const vapid = getVapidConfig();
-  const supabase = getSupabaseAdmin();
-  if (!vapid || !supabase) return { sent: 0, skipped: true };
-  webpush.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
-  const { data, error } = await supabase.from("push_subscriptions").select("endpoint,keys").eq("profile_id", userId).limit(50);
-  if (error || !data?.length) return { sent: 0, skipped: Boolean(error) };
+function chunks<T>(items: T[], size: number): T[][] {
+  const result: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    result.push(items.slice(i, i + size));
+  }
+  return result;
+}
 
-  let sent = 0;
-  for (const row of data as PushSubscriptionRow[]) {
-    try {
-      await webpush.sendNotification({ endpoint: row.endpoint, keys: row.keys }, JSON.stringify(payload));
-      sent += 1;
-    } catch (error: unknown) {
-      const statusCode = typeof error === "object" && error && "statusCode" in error ? Number((error as { statusCode?: number }).statusCode) : 0;
-      if (statusCode === 404 || statusCode === 410) await supabase.from("push_subscriptions").delete().eq("endpoint", row.endpoint);
+function isInvalidFirebaseRegistration(code?: string) {
+  return (
+    code === "messaging/registration-token-not-registered" ||
+    code === "messaging/invalid-registration-token" ||
+    code === "messaging/invalid-argument"
+  );
+}
+
+/**
+ * Envoie une notification Chrome / Web Push à TOUS les abonnés ayant accepté les notifications
+ * lors de la publication d'un article ou d'un événement global.
+ */
+export async function sendPushToAllSubscribers(payload: PushPayload) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { sent: 0, total: 0, skipped: true };
+
+  const messaging = getFirebaseAdminMessaging();
+  let fcmSent = 0;
+
+  // 1. Récupération de tous les abonnements FCM (visiteurs + connectés)
+  const { data: fcmSubs, error: fcmError } = await supabase
+    .from("push_subscriptions")
+    .select("fcm_fid")
+    .not("fcm_fid", "is", null)
+    .limit(5000);
+
+  if (fcmError) {
+    console.error("[push] Erreur lecture push_subscriptions :", fcmError.message);
+  }
+
+  const tokens = Array.from(
+    new Set((fcmSubs || []).map((s) => s.fcm_fid).filter((t): t is string => Boolean(t)))
+  );
+
+  if (messaging && tokens.length > 0) {
+    for (const batch of chunks(tokens, 500)) {
+      try {
+        const response = await messaging.sendEachForMulticast({
+          tokens: batch,
+          notification: {
+            title: payload.title,
+            body: payload.body,
+            imageUrl: payload.image,
+          },
+          data: {
+            title: payload.title,
+            body: payload.body,
+            href: payload.href || "/",
+            ...(payload.image ? { image: payload.image } : {}),
+            tag: payload.tag || "envol-africa",
+          },
+          webpush: {
+            fcmOptions: {
+              link: payload.href || "/",
+            },
+          },
+        });
+
+        fcmSent += response.successCount;
+
+        // Nettoyage automatique des tokens expirés ou invalidés par les utilisateurs
+        const invalidTokens = response.responses.flatMap((res, idx) =>
+          !res.success && isInvalidFirebaseRegistration(res.error?.code) ? [batch[idx]] : []
+        );
+
+        if (invalidTokens.length > 0) {
+          await supabase.from("push_subscriptions").delete().in("fcm_fid", invalidTokens);
+        }
+      } catch (err) {
+        console.error("[push] Erreur envoi multicast FCM :", err);
+      }
     }
   }
-  return { sent, skipped: false };
+
+  // 2. Envoi aux abonnés Web Push classiques (fallback)
+  let legacySent = 0;
+  const vapid = getVapidConfig();
+  if (vapid) {
+    const { data: legacySubs } = await supabase
+      .from("push_subscriptions")
+      .select("endpoint, keys")
+      .is("fcm_fid", null)
+      .not("endpoint", "is", null)
+      .limit(1000);
+
+    if (legacySubs?.length) {
+      webpush.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
+      for (const row of legacySubs as PushSubscriptionRow[]) {
+        if (!row.endpoint || !row.keys?.p256dh || !row.keys.auth) continue;
+        try {
+          await webpush.sendNotification(
+            { endpoint: row.endpoint, keys: { p256dh: row.keys.p256dh, auth: row.keys.auth } },
+            JSON.stringify(payload)
+          );
+          legacySent += 1;
+        } catch (error: any) {
+          if (error?.statusCode === 404 || error?.statusCode === 410) {
+            await supabase.from("push_subscriptions").delete().eq("endpoint", row.endpoint);
+          }
+        }
+      }
+    }
+  }
+
+  return {
+    sent: fcmSent + legacySent,
+    total: tokens.length,
+    firebaseSent: fcmSent,
+    legacySent,
+    skipped: !messaging && !vapid,
+  };
+}
+
+/**
+ * Envoie une notification push ciblée à un utilisateur spécifique.
+ */
+export async function sendPushToUser(userId: string, payload: PushPayload) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { sent: 0, skipped: true };
+
+  const { data, error } = await supabase
+    .from("push_subscriptions")
+    .select("endpoint, keys, fcm_fid")
+    .eq("profile_id", userId)
+    .limit(100);
+
+  if (error || !data?.length) return { sent: 0, skipped: Boolean(error) };
+
+  const rows = data as PushSubscriptionRow[];
+  const messaging = getFirebaseAdminMessaging();
+  let sent = 0;
+
+  // Envoi FCM
+  const fcmTokens = Array.from(
+    new Set(rows.map((r) => r.fcm_fid).filter((t): t is string => Boolean(t)))
+  );
+
+  if (messaging && fcmTokens.length > 0) {
+    try {
+      const response = await messaging.sendEachForMulticast({
+        tokens: fcmTokens,
+        notification: {
+          title: payload.title,
+          body: payload.body,
+          imageUrl: payload.image,
+        },
+        data: {
+          title: payload.title,
+          body: payload.body,
+          href: payload.href || "/",
+          ...(payload.image ? { image: payload.image } : {}),
+          tag: payload.tag || "envol-africa",
+        },
+        webpush: {
+          fcmOptions: {
+            link: payload.href || "/",
+          },
+        },
+      });
+      sent += response.successCount;
+    } catch (err) {
+      console.error("[push] Erreur envoi individuel FCM :", err);
+    }
+  }
+
+  // Envoi Legacy
+  const vapid = getVapidConfig();
+  if (vapid) {
+    webpush.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
+    for (const row of rows) {
+      if (!row.endpoint || !row.keys?.p256dh || !row.keys.auth) continue;
+      try {
+        await webpush.sendNotification(
+          { endpoint: row.endpoint, keys: { p256dh: row.keys.p256dh, auth: row.keys.auth } },
+          JSON.stringify(payload)
+        );
+        sent += 1;
+      } catch (error: any) {
+        if (error?.statusCode === 404 || error?.statusCode === 410) {
+          await supabase.from("push_subscriptions").delete().eq("endpoint", row.endpoint);
+        }
+      }
+    }
+  }
+
+  return { sent, skipped: !messaging && !vapid };
 }

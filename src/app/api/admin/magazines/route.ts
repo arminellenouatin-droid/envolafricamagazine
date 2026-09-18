@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
       writeDB(db!);
     }
     const republication = await publishMagazineToWab(persistedMagazine as any, user?.id || "");
-    const notifications = await notifyPushSubscribers({ platform: "magazine", type: "new_magazine", title: "Nouveau magazine Envol Africa", body: newMag.title, link: `/kiosque`, entityType: "magazine", entityId: newMag.id, dedupePrefix: `magazine:${newMag.id}` });
+    const notifications = await notifyPushSubscribers({ platform: "magazine", type: "new_magazine", title: "Nouveau magazine Envol Africa", body: newMag.title, link: `/kiosque`, image: newMag.cover, entityType: "magazine", entityId: newMag.id, dedupePrefix: `magazine:${newMag.id}` });
     return NextResponse.json({ success: true, magazine: persistedMagazine, republication, notifications });
   } catch (e) {
     console.error(e);
