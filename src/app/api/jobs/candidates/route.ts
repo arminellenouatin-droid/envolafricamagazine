@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
   const input = { userId: user.id, firstName: payload.firstName.trim(), lastName: payload.lastName.trim(), contactEmail: payload.contactEmail.trim(), contactPhone: payload.contactPhone?.trim(), description: payload.description.trim(), skills: Array.isArray(payload.skills) ? payload.skills.filter((skill: unknown) => typeof skill === "string").slice(0, 15) : [], desiredRole: payload.desiredRole.trim(), country: payload.country.trim(), city: payload.city.trim(), availability: payload.availability.trim(), cvPath: payload.cvUrl?.trim() };
   const persisted = await upsertJobsCandidateInSupabase(input);
   if (persisted.configured) {
-    if (!persisted.candidate) return NextResponse.json({ error: "Impossible dâ€™enregistrer cette candidature dans la base sÃ©curisÃ©e." }, { status: 503 });
+    if (!persisted.candidate) return NextResponse.json({ error: "Impossible d’enregistrer cette candidature dans la base sécurisée." }, { status: 503 });
     return NextResponse.json({ candidate: persisted.candidate }, { status: 201 });
   }
   const database = readJobsDB();

@@ -159,12 +159,36 @@ export async function listWabPosts(page: number, limit: number, filters: { count
   if (error) return { configured: true as const, posts: null, error };
 
   let filteredData = (data as WabPostRow[]).filter((post) => {
-    if (post.visibility === "public" || post.is_boosted) return true;
-    if (post.visibility === "group") return Boolean(viewerUserId && post.group_id && groupIds.includes(post.group_id));
-    return Boolean(viewerUserId && post.wab_profiles?.user_id && followedUserIds.has(post.wab_profiles.user_id));
+    // 1. Group posts: only if user is member of the group or the author
+    if (post.group_id) {
+      return Boolean(viewerUserId && (groupIds.includes(post.group_id) || post.wab_profiles?.user_id === viewerUserId));
+    }
+    // 2. Author's own post is always visible in their feed
+    if (viewerUserId && post.wab_profiles?.user_id === viewerUserId) {
+      return true;
+    }
+    // 3. Public or community posts are visible to all users
+    if (!post.visibility || post.visibility === "public" || post.visibility === "community" || post.is_boosted) {
+      return true;
+    }
+    // 4. Posts by followed users
+    if (viewerUserId && post.wab_profiles?.user_id && followedUserIds.has(post.wab_profiles.user_id)) {
+      return true;
+    }
+    return false;
   });
-  if (filters.country) filteredData = filteredData.filter((post) => post.wab_profiles?.country_code?.toLowerCase() === filters.country?.toLowerCase());
-  if (filters.industry) filteredData = filteredData.filter((post) => post.wab_profiles?.industry?.toLowerCase() === filters.industry?.toLowerCase());
+  if (filters.country) {
+    filteredData = filteredData.filter((post) => {
+      if (viewerUserId && post.wab_profiles?.user_id === viewerUserId) return true;
+      return post.wab_profiles?.country_code?.toLowerCase() === filters.country?.toLowerCase();
+    });
+  }
+  if (filters.industry) {
+    filteredData = filteredData.filter((post) => {
+      if (viewerUserId && post.wab_profiles?.user_id === viewerUserId) return true;
+      return post.wab_profiles?.industry?.toLowerCase() === filters.industry?.toLowerCase();
+    });
+  }
   const start = (page - 1) * limit;
   return { configured: true as const, posts: filteredData.slice(start, start + limit), pagination: { hasMore: start + limit < filteredData.length } };
 }
@@ -198,10 +222,10 @@ export async function createWabPostInSupabase(profileId: string, input: {
       shares_count: 0,
       page_id: input.pageId ?? null,
       group_id: input.groupId ?? null,
-      visibility: input.visibility ?? "community",
+      visibility: input.visibility ?? "public",
       audience: input.audience ?? {}
     })
-    .select()
+    .select("*, wab_pages:page_id(id, name, slug, logo_url, owner_user_id), wab_groups:group_id(id, name, slug, logo_url, owner_user_id), wab_profiles:author_id(id, user_id, headline, avatar_url, city, country_code, users:user_id(prenom, nom, full_name, avatar))")
     .single();
 
   if (error) return { configured: true as const, post: null, error };
@@ -239,7 +263,7 @@ export async function addCommentToPost(postId: string, profileId: string, conten
 
   if (error) return { configured: true as const, comment: null, error };
 
-  // IncrÃ©menter le compteur de commentaires du post
+  // Incrémenter le compteur de commentaires du post
   const { data: post } = await supabase.from("wab_posts").select("comments_count").eq("id", postId).single();
   if (post) {
     await supabase.from("wab_posts").update({ comments_count: (post.comments_count || 0) + 1 }).eq("id", postId);

@@ -30,6 +30,7 @@ export async function publishArticleToWab(article: Article, authorUserId: string
     media: article.image ? [{ path: article.image, mimeType: "image/*", name: sourceTitle }] : [],
     moderation_status: "published",
     is_boosted: false,
+    visibility: "public",
     source_type: "magazine_article",
     source_id: article.id,
     source_url: sourceUrl,

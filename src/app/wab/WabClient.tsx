@@ -216,7 +216,6 @@ export default function WabClient() {
     setLoadingFeed(true);
     try {
       const params = new URLSearchParams({ page: String(nextPage) });
-      if (visitorCountry) params.set("country", visitorCountry);
       const response = await fetch(`/api/wab/posts?${params}`);
       const data = await readJsonResponse<{ posts?: Post[]; pagination?: { hasMore?: boolean } }>(response);
       if (!response.ok) throw new Error((data as { error?: string }).error || `Impossible de charger le fil (HTTP ${response.status}).`);
@@ -232,7 +231,7 @@ export default function WabClient() {
       setPage(nextPage);
       setHasMore(Boolean(data.pagination?.hasMore));
     } finally { setLoadingFeed(false); }
-  }, [visitorCountry]);
+  }, []);
 
   useEffect(() => { loadFeed(1, true); }, [loadFeed]);
 
@@ -264,7 +263,6 @@ export default function WabClient() {
     const poll = async () => {
       try {
         const params = new URLSearchParams({ page: "1" });
-        if (visitorCountry) params.set("country", visitorCountry);
         const response = await fetch(`/api/wab/posts?${params}`, { cache: "no-store" });
         const data = await readJsonResponse<{ posts?: Post[] }>(response);
         if (!response.ok || !Array.isArray(data.posts) || !data.posts.length) return;
@@ -284,7 +282,7 @@ export default function WabClient() {
     };
     const timer = window.setInterval(poll, 30000);
     return () => window.clearInterval(timer);
-  }, [visitorCountry]);
+  }, []);
 
   function revealNewPosts() {
     const pending = pendingNewPostsRef.current;
@@ -822,13 +820,27 @@ export default function WabClient() {
                         >
                           {post.pageLogoUrl ? (
                             <img src={post.pageLogoUrl} alt={post.pageName || "Page WAB"} className="h-full w-full object-contain p-1" />
-                          ) : (
-                            <ModelAvatar
-                              src={post.authorAvatarUrl || (index === 0 ? MODEL_COMPANY : MODEL_AUTHOR)}
-                              alt={`Photo de ${post.author}`}
-                              className="h-full w-full object-cover"
-                            />
-                          )}
+                          ) : (() => {
+                            const effectiveAvatar =
+                              (currentUser && post.authorUserId === currentUser.id && currentUser.avatar)
+                                ? currentUser.avatar
+                                : post.authorAvatarUrl;
+                            if (effectiveAvatar) {
+                              return (
+                                <img
+                                  src={effectiveAvatar}
+                                  alt={`Photo de ${post.author}`}
+                                  className="h-full w-full object-cover"
+                                />
+                              );
+                            }
+                            const initial = (post.author || "W").trim().charAt(0).toUpperCase();
+                            return (
+                              <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[#006874] to-[#0b8790] text-sm font-bold text-white">
+                                {initial}
+                              </div>
+                            );
+                          })()}
                         </a>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 truncate">

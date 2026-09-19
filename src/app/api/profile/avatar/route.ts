@@ -27,6 +27,37 @@ export async function POST(request: Request) {
     if (upload.error) throw upload.error;
     const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(filePath);
     const updatedUser = await updateUserAvatar(user.id, publicData.publicUrl);
+    try {
+      await supabase
+        .from("wab_profiles")
+        .upsert(
+          {
+            user_id: user.id,
+            avatar_url: publicData.publicUrl,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+    } catch {
+      // ignore
+    }
+
+    try {
+      const { readWabDB, writeWabDB } = await import("@/lib/wab-db");
+      const wdb = readWabDB();
+      wdb.posts.forEach((post) => {
+        if (post.authorUserId === user.id) {
+          post.authorAvatarUrl = publicData.publicUrl;
+        }
+      });
+      const p = wdb.profiles.find((x) => x.userId === user.id);
+      if (p) {
+        (p as unknown as { avatarUrl?: string }).avatarUrl = publicData.publicUrl;
+      }
+      writeWabDB(wdb);
+    } catch {
+      // ignore
+    }
 
     return NextResponse.json({ success: true, avatar: updatedUser.avatar });
   } catch (error) {

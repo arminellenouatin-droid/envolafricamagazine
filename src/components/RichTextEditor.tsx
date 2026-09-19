@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { escapeHtml, plainTextToRichHtml, sanitizeRichText } from "@/lib/rich-text";
+import { escapeHtml, fixMojibake, plainTextToRichHtml, sanitizeRichText } from "@/lib/rich-text";
 
 type Props = { name?: string; value?: string; defaultValue?: string; onChange?: (value: string) => void; placeholder?: string; className?: string; minHeight?: number };
 
@@ -17,10 +17,13 @@ export default function RichTextEditor({ name, value, defaultValue = "", onChang
   useEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
+    // Ne jamais écraser si le contenu provient de l'éditeur lui-même
+    if (initial === lastEmittedRef.current) return;
     const isEditing = editor.contains(document.activeElement);
     // Ne jamais écraser le contenu pendant que l'utilisateur est en train d'écrire
     if (isEditing) return;
-    const next = /<[a-z][\s\S]*>/i.test(initial) ? sanitizeRichText(initial) : plainTextToRichHtml(initial);
+    const healed = fixMojibake(initial);
+    const next = /<[a-z][\s\S]*>/i.test(healed) ? sanitizeRichText(healed) : plainTextToRichHtml(healed);
     if (editor.innerHTML !== next) editor.innerHTML = next;
     if (hiddenRef.current) hiddenRef.current.value = next;
   }, [initial]);
@@ -97,7 +100,7 @@ export default function RichTextEditor({ name, value, defaultValue = "", onChang
     event.preventDefault();
     const html = event.clipboardData.getData("text/html");
     const text = event.clipboardData.getData("text/plain");
-    const safe = html ? sanitizeRichText(html) : plainTextToRichHtml(text);
+    const safe = html ? sanitizeRichText(fixMojibake(html)) : plainTextToRichHtml(fixMojibake(text));
     document.execCommand("insertHTML", false, safe);
     emit();
   }

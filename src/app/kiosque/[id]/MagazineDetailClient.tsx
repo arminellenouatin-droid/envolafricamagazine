@@ -47,7 +47,7 @@ export default function MagazineDetailPage() {
       setMagazine({
         id,
         numero: 25,
-        title: `Envol Africa N┬░25 - Sp├®cial Investissements 2026`,
+        title: `Envol Africa N°25 - Spécial Investissements 2026`,
         cover: "/covers/envol-africa-cover-01.jpg",
         date: "2026-01-01",
         description: "Notre grand dossier investissements, 40 pages d'analyses exclusives.",
@@ -65,11 +65,11 @@ export default function MagazineDetailPage() {
 
 
   const formatOptions = [
-    { id: "numerique", label: "Num├®rique", icon: "tablet_android", desc: "Acc├¿s imm├®diat PDF/Web" },
-    { id: "papier", label: "Papier", icon: "auto_stories", desc: "Livraison ├á domicile" },
-    { id: "audio_pdf", label: "Audio + PDF", icon: "headphones", desc: "Lecture & ├®coute" },
+    { id: "numerique", label: "Numérique", icon: "tablet_android", desc: "Accès immédiat PDF/Web" },
+    { id: "papier", label: "Papier", icon: "auto_stories", desc: "Livraison à domicile" },
+    { id: "audio_pdf", label: "Audio + PDF", icon: "headphones", desc: "Lecture & écoute" },
     { id: "cd_audio", label: "CD Audio", icon: "album", desc: "Version collector" },
-    { id: "audio_papier", label: "Audio + Papier", icon: "auto_awesome", desc: "Exp├®rience compl├¿te" },
+    { id: "audio_papier", label: "Audio + Papier", icon: "auto_awesome", desc: "Expérience complète" },
   ];
   const formatPriceInXof: Record<string, number> = Object.fromEntries(KIOSQUE_FORMATS.map((item) => [item.id, item.price]));
   const prices: Record<string, number> = { ...formatPriceInXof, ...(magazine?.prices || {}), ...(magazine?.priceOverrides || {}) };
@@ -133,7 +133,7 @@ export default function MagazineDetailPage() {
         <nav className="mb-8 flex items-center gap-2 text-[#5c403f]/70 text-[12px]">
           <Link href="/" className="hover:text-[#9e001f]">Accueil</Link><span className="material-symbols-outlined text-[14px]">chevron_right</span>
           <Link href="/kiosque" className="hover:text-[#9e001f]">Kiosque</Link><span className="material-symbols-outlined text-[14px]">chevron_right</span>
-          <span className="text-[#1b1c1c] font-semibold">Num├®ro {magazine.numero} - {new Date(magazine.date).toLocaleDateString('fr-FR',{month:'long', year:'numeric'})}</span>
+          <span className="text-[#1b1c1c] font-semibold">Numéro {magazine.numero} - {new Date(magazine.date).toLocaleDateString('fr-FR',{month:'long', year:'numeric'})}</span>
         </nav>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
@@ -151,16 +151,16 @@ export default function MagazineDetailPage() {
             <header>
               <div className="flex items-center gap-3 mb-2">
                 <span className="px-3 py-1 bg-[#ffdad8] text-[#9e001f] rounded-full text-[11px] uppercase tracking-wider font-bold">Magazine Mensuel</span>
-                <span className="text-[#5c403f] text-[12px] italic">N┬░ {magazine.numero} ÔÇö {magazine.year} ÔÇó 124 pages</span>
+                <span className="text-[#5c403f] text-[12px] italic">N° {magazine.numero} ÔÇö {magazine.year} • 124 pages</span>
               </div>
               <h1 className="text-[32px] md:text-[40px] font-bold leading-tight text-[#1b1c1c] mb-2" style={{ fontFamily: "Montserrat" }}>{magazine.title}</h1>
-              <div className="max-w-2xl text-[18px] leading-relaxed text-[#5f5e5e]" style={{ fontFamily: "Source Serif 4" }}><RichTextContent value={`${magazine.description || ""} Ce num├®ro inclut notre enqu├¬te sur la transformation locale du cacao, entretien CEO Wave, classement 50 entreprises les plus performantes.`} /></div>
+              <div className="max-w-2xl text-[18px] leading-relaxed text-[#5f5e5e]" style={{ fontFamily: "Source Serif 4" }}><RichTextContent value={`${magazine.description || ""} Ce numéro inclut notre enquête sur la transformation locale du cacao, entretien CEO Wave, classement 50 entreprises les plus performantes.`} /></div>
             </header>
 
             <section className="p-6 bg-[#f0eded] rounded-xl">
-              <h3 className="text-[14px] font-bold uppercase tracking-widest mb-4">Au sommaire de ce num├®ro</h3>
+              <h3 className="text-[14px] font-bold uppercase tracking-widest mb-4">Au sommaire de ce numéro</h3>
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[#5c403f] text-[14px]">
-                <li className="flex items-start gap-2"><span className="material-symbols-outlined text-[#9e001f] text-[20px] mt-0.5">check_circle</span><span><strong>├ëconomie :</strong> Les nouveaux corridors commerciaux de l&apos;Est.</span></li>
+                <li className="flex items-start gap-2"><span className="material-symbols-outlined text-[#9e001f] text-[20px] mt-0.5">check_circle</span><span><strong>Économie :</strong> Les nouveaux corridors commerciaux de l&apos;Est.</span></li>
                 <li className="flex items-start gap-2"><span className="material-symbols-outlined text-[#9e001f] text-[20px]">check_circle</span><span><strong>Finance :</strong> Pourquoi les banques misent sur la Fintech.</span></li>
                 <li className="flex items-start gap-2"><span className="material-symbols-outlined text-[#9e001f] text-[20px]">check_circle</span><span><strong>Tech :</strong> L&apos;IA au service de l&apos;agriculture.</span></li>
                 <li className="flex items-start gap-2"><span className="material-symbols-outlined text-[#9e001f] text-[20px]">check_circle</span><span><strong>Focus :</strong> Portrait de 10 leaders tech africains.</span></li>
@@ -168,11 +168,11 @@ export default function MagazineDetailPage() {
             </section>
 
             <section className="rounded-xl border border-[#e5bdbb] bg-white p-4 sm:p-6" aria-labelledby="purchase-options-title">
-              <p className="mb-4 text-right text-[11px] text-[#746665]">Pays d├®tect├® : {countryCode} ┬À Devise : {currency}</p>
+              <p className="mb-4 text-right text-[11px] text-[#746665]">Pays détecté : {countryCode} · Devise : {currency}</p>
               <div className="mb-5 flex items-end justify-between gap-4 border-b border-[#eadad8] pb-4">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[#9e001f]">Personnalisez votre achat</p>
-                  <h2 id="purchase-options-title" className="mt-1 text-[20px] font-bold text-[#1b1c1c]">Choisissez vos ├®ditions</h2>
+                  <h2 id="purchase-options-title" className="mt-1 text-[20px] font-bold text-[#1b1c1c]">Choisissez vos éditions</h2>
                 </div>
                 <div className="text-right">
                   <span className="block text-[11px] uppercase tracking-wider text-[#5c403f]">Total</span>
@@ -195,7 +195,7 @@ export default function MagazineDetailPage() {
                         <label className="block text-[12px] font-bold text-[#2b2525]">
                           <span className="mb-1.5 block uppercase tracking-wider text-[#5c403f]">Choix de langue</span>
                           <select value={selection.language} onChange={(event) => updateSelection(index, "language", event.target.value)} className="min-h-11 w-full rounded-md border border-[#cdb7b4] bg-white px-3 text-[14px] text-[#2b2525] outline-none focus:border-[#9e001f] focus:ring-2 focus:ring-[#9e001f]/15">
-                            {availableLanguages.map((code) => <option key={code} value={code}>{LANGUAGE_LABELS[code]} ÔÇó {code.toUpperCase()}</option>)}
+                            {availableLanguages.map((code) => <option key={code} value={code}>{LANGUAGE_LABELS[code]} • {code.toUpperCase()}</option>)}
                           </select>
                         </label>
                         <div className="flex items-center justify-between gap-3 sm:min-w-[116px] sm:justify-end">
@@ -213,18 +213,18 @@ export default function MagazineDetailPage() {
 
               <div className="mt-5 flex flex-col gap-4 border-t border-[#eadad8] pt-5 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <span className="block text-[11px] uppercase tracking-wider text-[#5c403f]">Total de votre s├®lection</span>
+                  <span className="block text-[11px] uppercase tracking-wider text-[#5c403f]">Total de votre sélection</span>
                   <strong className="text-[36px] font-bold text-[#9e001f]" style={{ fontFamily: "Montserrat" }}>{formatPrice(total)}</strong>
                 </div>
                 <div className="w-full sm:w-auto">
                   <button onClick={addToCart} disabled={adding} className="flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-[#9e001f] px-8 py-4 text-[15px] font-bold text-white shadow-lg shadow-[#9e001f]/20 transition hover:brightness-110 active:scale-[.98] disabled:opacity-60 sm:w-auto">
                     <span className="material-symbols-outlined">shopping_cart</span> {adding ? "Ajout..." : "AJOUTER AU PANIER"}
                   </button>
-                  <p className="mt-2 text-center text-[11px] text-[#5f5e5e]">Livraison offerte Papier en zone CEDEAO ÔÇó Lien s├®curis├® 24h</p>
+                  <p className="mt-2 text-center text-[11px] text-[#5f5e5e]">Livraison offerte Papier en zone CEDEAO • Lien sécurisé 24h</p>
                 </div>
               </div>
 
-              <div className="mt-5 border-t border-[#eadad8] pt-4" aria-label="Options de paiement accept├®es">
+              <div className="mt-5 border-t border-[#eadad8] pt-4" aria-label="Options de paiement acceptées">
                 <div className="flex w-full flex-nowrap items-center justify-between gap-3 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   {paymentMethods.map((method) => <span key={method.code} role="img" aria-label={method.label} title={method.label} className={`inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-md border border-[#d8c3c1] bg-white px-2 ${method.tone}`}>{method.logo ? <img src={method.logo} alt="" className="max-h-7 max-w-14 object-contain" /> : <span className="material-symbols-outlined text-[23px]" aria-hidden="true">{method.icon}</span>}</span>)}
                 </div>
@@ -233,12 +233,12 @@ export default function MagazineDetailPage() {
 
             <div className="mt-12 border-t border-[#e5bdbb]/30 pt-8">
               <div className="flex gap-8 border-b border-[#e5bdbb]/30 mb-8">
-                <button className="pb-4 border-b-2 border-[#9e001f] text-[#9e001f] text-[14px] font-bold">Description d├®taill├®e</button>
-                <button className="pb-4 border-b-2 border-transparent text-[#5f5e5e] text-[14px]">Sp├®cifications</button>
+                <button className="pb-4 border-b-2 border-[#9e001f] text-[#9e001f] text-[14px] font-bold">Description détaillée</button>
+                <button className="pb-4 border-b-2 border-transparent text-[#5f5e5e] text-[14px]">Spécifications</button>
                 <button className="pb-4 border-b-2 border-transparent text-[#5f5e5e] text-[14px]">Avis (12)</button>
               </div>
               <div className="max-w-3xl">
-                <p className="text-[16px] leading-loose">Ce num├®ro sp├®cial de {magazine.year} dresse un ├®tat des lieux sans concession de la maturit├® num├®rique sur le continent. Alors que les c├óbles sous-marins multiplient les points d&apos;ancrage, comment les entreprises locales s&apos;approprient-elles ces nouvelles capacit├®s ? Nos journalistes ont voyag├® de Nairobi ├á Lagos. Inclus : guide pratique 12 pages s├®curisation transactions.</p>
+                <p className="text-[16px] leading-loose">Ce numéro spécial de {magazine.year} dresse un état des lieux sans concession de la maturité numérique sur le continent. Alors que les câbles sous-marins multiplient les points d&apos;ancrage, comment les entreprises locales s&apos;approprient-elles ces nouvelles capacités ? Nos journalistes ont voyagé de Nairobi à Lagos. Inclus : guide pratique 12 pages sécurisation transactions.</p>
               </div>
             </div>
           </div>
@@ -247,21 +247,21 @@ export default function MagazineDetailPage() {
         {recommendedMagazines.length > 0 && <section className="mt-16 border-t border-[#e5bdbb]/40 pt-10" aria-labelledby="recommended-magazines-title">
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[#9e001f]">├Ç d├®couvrir aussi</p>
-              <h2 id="recommended-magazines-title" className="mt-2 font-serif text-3xl leading-tight text-[#2b2525] md:text-4xl">Compl├®tez votre collection</h2>
+              <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[#9e001f]">À découvrir aussi</p>
+              <h2 id="recommended-magazines-title" className="mt-2 font-serif text-3xl leading-tight text-[#2b2525] md:text-4xl">Complétez votre collection</h2>
             </div>
-            <Link href="/kiosque" className="hidden text-[11px] font-bold uppercase tracking-[.12em] text-[#9e001f] hover:underline sm:block">Voir tous les num├®ros Ôåù</Link>
+            <Link href="/kiosque" className="hidden text-[11px] font-bold uppercase tracking-[.12em] text-[#9e001f] hover:underline sm:block">Voir tous les numéros →</Link>
           </div>
           <div className="flex snap-x gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {recommendedMagazines.map((item) => <Link key={item.id} href={`/kiosque/${item.id}`} aria-label={`D├®couvrir ${item.title}`} className="group w-[138px] shrink-0 snap-start sm:w-[160px]">
+            {recommendedMagazines.map((item) => <Link key={item.id} href={`/kiosque/${item.id}`} aria-label={`Découvrir ${item.title}`} className="group w-[138px] shrink-0 snap-start sm:w-[160px]">
               <div className="aspect-[3/4] overflow-hidden rounded-lg bg-[#eae7e7] shadow-[0_10px_24px_rgba(66,28,34,0.12)]">
                 <img src={item.cover} alt={item.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
               </div>
               <p className="mt-3 line-clamp-2 font-serif text-[15px] leading-tight text-[#2b2525] transition-colors group-hover:text-[#9e001f]">{item.title}</p>
-              <span className="mt-1 block text-[10px] font-bold uppercase tracking-[.12em] text-[#746665]">N┬░ {item.numero}</span>
+              <span className="mt-1 block text-[10px] font-bold uppercase tracking-[.12em] text-[#746665]">N° {item.numero}</span>
             </Link>)}
           </div>
-          <Link href="/kiosque" className="mt-2 block text-center text-[11px] font-bold uppercase tracking-[.12em] text-[#9e001f] hover:underline sm:hidden">Voir tous les num├®ros Ôåù</Link>
+          <Link href="/kiosque" className="mt-2 block text-center text-[11px] font-bold uppercase tracking-[.12em] text-[#9e001f] hover:underline sm:hidden">Voir tous les numéros →</Link>
         </section>}
       </main>
       {previewOpen && (() => { const selectedPdf = magazine.pdfs?.[localeLanguage] || magazine.pdfs?.fr; const protectedPdf = selectedPdf?.startsWith("private-pdf://") ? `/api/magazines/${encodeURIComponent(id)}/preview?lang=${encodeURIComponent(localeLanguage)}` : undefined; return <PreviewFlipbook title={magazine.title} cover={magazine.cover} pages={magazine.previewImages} pdfUrl={protectedPdf ? undefined : selectedPdf} previewUrl={protectedPdf} language={localeLanguage} onClose={() => setPreviewOpen(false)} onPurchase={() => { setPreviewOpen(false); document.getElementById("purchase-options-title")?.scrollIntoView({ behavior: "smooth", block: "center" }); }} />; })()}

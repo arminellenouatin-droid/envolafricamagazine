@@ -149,7 +149,7 @@ export async function updateJobsApplicationStatus(applicationId: string, userId:
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false as const, application: null };
 
-  // 1. Lire la candidature et l'offre associÃ©e
+  // 1. Lire la candidature et l'offre associée
   const { data: application, error: readError } = await supabase
     .from("jobs_applications")
     .select("*, jobs_offers(created_by)")
@@ -158,7 +158,7 @@ export async function updateJobsApplicationStatus(applicationId: string, userId:
 
   if (readError || !application) return { configured: true as const, application: null, error: readError || new Error("Candidature introuvable") };
 
-  // 2. VÃ©rifier si l'utilisateur connectÃ© est le crÃ©ateur de l'offre
+  // 2. Vérifier si l'utilisateur connecté est le créateur de l'offre
   const offerCreatedBy = (application.jobs_offers as { created_by?: string } | null)?.created_by;
   if (offerCreatedBy !== userId) {
     return { configured: true as const, application: null, unauthorized: true };

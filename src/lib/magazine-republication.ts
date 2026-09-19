@@ -65,6 +65,7 @@ export async function publishMagazineToWab(magazine: Magazine, authorUserId: str
     media: coverPath ? [{ path: coverPath, mimeType: "image/jpeg", name: sourceTitle }] : [],
     moderation_status: "published",
     is_boosted: false,
+    visibility: "public",
     source_type: "magazine_issue",
     source_id: magazine.id,
     source_url: sourceUrl,

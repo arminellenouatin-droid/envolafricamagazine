@@ -1,7 +1,75 @@
 const ALLOWED_TAGS = new Set(["p", "br", "div", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "strong", "b", "em", "i", "u", "blockquote", "a", "sub", "sup", "img"]);
 
+export function fixMojibake(text: string): string {
+  if (!text || typeof text !== "string") return "";
+  return text
+    // CP437 / Windows-1252 to UTF-8 mojibake
+    .replace(/├®/g, "é")
+    .replace(/├¿/g, "è")
+    .replace(/├á/g, "à")
+    .replace(/├¬/g, "ê")
+    .replace(/├º/g, "ç")
+    .replace(/├ë/g, "É")
+    .replace(/├Ç/g, "À")
+    .replace(/├«/g, "î")
+    .replace(/├»/g, "ï")
+    .replace(/├┤/g, "ô")
+    .replace(/├╣/g, "ù")
+    .replace(/├╗/g, "û")
+    .replace(/├╝/g, "ü")
+    .replace(/c├ó/g, "câ")
+    .replace(/├ó/g, "â")
+    .replace(/┬░/g, "°")
+    .replace(/ÔÇó/g, "•")
+    .replace(/Ôåù/g, "→")
+    .replace(/ÔåÆ/g, "→")
+    .replace(/┬À/g, "·")
+    // Latin-1 (ISO-8859-1) to UTF-8 mojibake
+    .replace(/Ã©/g, "é")
+    .replace(/Ã¨/g, "è")
+    .replace(/Ã /g, "à")
+    .replace(/Ãª/g, "ê")
+    .replace(/Ã§/g, "ç")
+    .replace(/Ã‰/g, "É")
+    .replace(/Ãˆ/g, "È")
+    .replace(/Ã€/g, "À")
+    .replace(/Ã®/g, "î")
+    .replace(/Ã¯/g, "ï")
+    .replace(/Ã´/g, "ô")
+    .replace(/Ã¹/g, "ù")
+    .replace(/Ã»/g, "û")
+    .replace(/Ã¼/g, "ü")
+    .replace(/dâ€™/g, "d’")
+    .replace(/lâ€™/g, "l’")
+    .replace(/nâ€™/g, "n’")
+    .replace(/quâ€™/g, "qu’")
+    .replace(/sâ€™/g, "s’")
+    .replace(/jâ€™/g, "j’")
+    .replace(/câ€™/g, "c’")
+    .replace(/mâ€™/g, "m’")
+    .replace(/tâ€™/g, "t’")
+    .replace(/â€™/g, "’")
+    .replace(/â€œ/g, "“")
+    .replace(/â€\x9d/g, "”")
+    .replace(/â€¢/g, "•")
+    .replace(/â€¦/g, "…")
+    .replace(/â‚¬/g, "€")
+    .replace(/Å“/g, "œ")
+    // Leaked HTML entity strings in text
+    .replace(/&amp;#039;/g, "'")
+    .replace(/&#039;/g, "'")
+    .replace(/&amp;quot;/g, '"')
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;amp;/g, "&")
+    .replace(/&amp;lt;/g, "<")
+    .replace(/&amp;gt;/g, ">");
+}
+
 export function escapeHtml(value: string) {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#039;");
+  return fixMojibake(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 export function plainTextToRichHtml(value: string) {

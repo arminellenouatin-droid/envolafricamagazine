@@ -14,9 +14,9 @@ export async function POST(request: NextRequest) {
   if (persisted.configured) {
     if (persisted.application) return NextResponse.json({ success: true, application: persisted.application }, { status: 201 });
     if (persisted.reason === "offer") return NextResponse.json({ error: "Offre introuvable." }, { status: 404 });
-    if (persisted.reason === "candidate") return NextResponse.json({ error: "Publiez dâ€™abord votre candidature afin de postuler." }, { status: 400 });
-    if (persisted.reason === "access") return NextResponse.json({ error: "DÃ©cryptez cette offre ou activez un abonnement candidat avant de postuler." }, { status: 403 });
-    return NextResponse.json({ error: "Impossible dâ€™enregistrer votre candidature." }, { status: 503 });
+    if (persisted.reason === "candidate") return NextResponse.json({ error: "Publiez d’abord votre candidature afin de postuler." }, { status: 400 });
+    if (persisted.reason === "access") return NextResponse.json({ error: "Décryptez cette offre ou activez un abonnement candidat avant de postuler." }, { status: 403 });
+    return NextResponse.json({ error: "Impossible d’enregistrer votre candidature." }, { status: 503 });
   }
 
   const db = readJobsDB();
@@ -24,10 +24,10 @@ export async function POST(request: NextRequest) {
   if (!offer) return NextResponse.json({ error: "Offre introuvable." }, { status: 404 });
   const unlocked = db.unlocks.some((item) => item.userId === user.id && item.offerId === offerId && item.status === "paid");
   const subscription = db.subscriptions.some((item) => item.userId === user.id && item.audience === "candidate" && item.status === "active" && (!item.endsAt || new Date(item.endsAt) > new Date()));
-  if (!unlocked && !subscription) return NextResponse.json({ error: "DÃ©cryptez cette offre ou activez un abonnement candidat avant de postuler." }, { status: 403 });
+  if (!unlocked && !subscription) return NextResponse.json({ error: "Décryptez cette offre ou activez un abonnement candidat avant de postuler." }, { status: 403 });
   const candidate = db.candidates.find((item) => item.createdBy === user.id);
-  if (!candidate) return NextResponse.json({ error: "Publiez dâ€™abord votre candidature afin de postuler." }, { status: 400 });
-  if (db.applications.some((item) => item.offerId === offerId && item.userId === user.id)) return NextResponse.json({ error: "Vous avez dÃ©jÃ  postulÃ© Ã  cette offre." }, { status: 409 });
+  if (!candidate) return NextResponse.json({ error: "Publiez d’abord votre candidature afin de postuler." }, { status: 400 });
+  if (db.applications.some((item) => item.offerId === offerId && item.userId === user.id)) return NextResponse.json({ error: "Vous avez déjÃ  postulé Ã  cette offre." }, { status: 409 });
   db.applications.push({ id: uuid(), offerId, userId: user.id, message: typeof message === "string" ? message.trim().slice(0, 2000) : undefined, status: "sent", createdAt: new Date().toISOString() });
   offer.applications += 1;
   writeJobsDB(db);
@@ -43,7 +43,7 @@ export async function PATCH(request: NextRequest) {
 
   const persisted = await updateJobsApplicationStatus(applicationId, user.id, status as ApplicationStatus);
   if (persisted.configured) {
-    if (persisted.unauthorized) return NextResponse.json({ error: "Action non autorisÃ©e." }, { status: 403 });
+    if (persisted.unauthorized) return NextResponse.json({ error: "Action non autorisée." }, { status: 403 });
     if (!persisted.application) return NextResponse.json({ error: "Candidature introuvable." }, { status: 404 });
     return NextResponse.json({ application: persisted.application });
   }
@@ -52,7 +52,7 @@ export async function PATCH(request: NextRequest) {
   const application = db.applications.find((item) => item.id === applicationId);
   if (!application) return NextResponse.json({ error: "Candidature introuvable." }, { status: 404 });
   const offer = db.offers.find((item) => item.id === application.offerId && item.createdBy === user.id);
-  if (!offer) return NextResponse.json({ error: "Action non autorisÃ©e." }, { status: 403 });
+  if (!offer) return NextResponse.json({ error: "Action non autorisée." }, { status: 403 });
   application.status = status as ApplicationStatus;
   writeJobsDB(db);
   return NextResponse.json({ application });
