@@ -1,4 +1,4 @@
-﻿import { Volet } from "./constants";
+import { Volet } from "./constants";
 
 export interface AffiliateRecord {
   id: string;
@@ -75,14 +75,41 @@ export interface TreeNode {
   id: string;
   referralCode: string;
   level: number;
+  relativeLevel?: number;
   userName: string;
   userEmail: string;
+  userPhone?: string;
   totalEarnings: number;
   directCount: number;
   magazineEnrolled: boolean;
   marketplaceEnrolled: boolean;
+  isActive?: boolean;
   isFounder: boolean;
+  createdAt?: string;
+  sponsorName?: string;
+  sponsorCode?: string;
   children: TreeNode[];
+}
+
+export interface DownlineMember {
+  id: string;
+  referralCode: string;
+  level: number;
+  relativeLevel: number;
+  userName: string;
+  userEmail: string;
+  userPhone?: string;
+  totalEarnings: number;
+  directCount: number;
+  magazineEnrolled: boolean;
+  marketplaceEnrolled: boolean;
+  isActive: boolean;
+  isFounder: boolean;
+  createdAt?: string;
+  sponsorName: string;
+  sponsorCode: string;
+  branchRootName: string;
+  branchRootCode: string;
 }
 
 export interface AffiliateStats {

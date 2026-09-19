@@ -1,7 +1,7 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-import { getNetworkTree, getNetworkDepth } from "@/lib/affiliation/matrix";
+import { getNetworkTree, getNetworkDepth, flattenDownline } from "@/lib/affiliation/matrix";
 
 export async function GET() {
   const user = await getCurrentUserFromCookie();
@@ -26,26 +26,52 @@ export async function GET() {
 
   const tree = await getNetworkTree(affiliate.id, 5);
   const depth = await getNetworkDepth(affiliate.id, 5);
+  const flatMembers = tree ? flattenDownline(tree) : [];
 
-  // Filleuls directs
-  const { data: directReferrals } = await supabase
-    .from("affiliates")
-    .select("id, referral_code, level, total_earnings, created_at, users:user_id(prenom, nom, email)")
-    .eq("sponsor_id", affiliate.id)
-    .order("created_at", { ascending: false });
+  const byLevel: Record<number, typeof flatMembers> = {
+    1: [],
+    2: [],
+    3: [],
+    4: [],
+    5: [],
+  };
+
+  for (const m of flatMembers) {
+    if (byLevel[m.relativeLevel]) {
+      byLevel[m.relativeLevel].push(m);
+    }
+  }
+
+  const branches = (tree?.children || []).map((branchRoot) => {
+    const branchMembers = flatMembers.filter(
+      (m) => m.branchRootCode === branchRoot.referralCode
+    );
+    return {
+      branchRootId: branchRoot.id,
+      branchRootCode: branchRoot.referralCode,
+      branchRootName: branchRoot.userName,
+      branchRootEmail: branchRoot.userEmail,
+      branchRootEarnings: branchRoot.totalEarnings,
+      totalBranchMembers: branchMembers.length,
+      members: branchMembers,
+    };
+  });
 
   return NextResponse.json({
     networkDepth: depth,
-    directCount: directReferrals?.length || 0,
+    directCount: tree?.children.length || 0,
     maxDirect: 5,
-    directReferrals: (directReferrals || []).map((r: any) => ({
-      id: r.id,
-      referralCode: r.referral_code,
-      name: r.users ? `${r.users.prenom} ${r.users.nom}`.trim() : "Affilié",
-      email: r.users?.email || "",
-      totalEarnings: Number(r.total_earnings || 0),
-      createdAt: r.created_at,
-    })),
+    totalNetworkCount: flatMembers.length,
+    countsByLevel: {
+      1: byLevel[1].length,
+      2: byLevel[2].length,
+      3: byLevel[3].length,
+      4: byLevel[4].length,
+      5: byLevel[5].length,
+    },
+    byLevel,
+    branches,
+    flatMembers,
     tree,
   });
 }

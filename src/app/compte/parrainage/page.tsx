@@ -35,9 +35,20 @@ export default function ParrainageCompte(){
           <h1 className="font-serif font-black text-[24px] text-[#0A1931]">Parrainage & gains</h1>
           <p className="text-xs text-zinc-500 mt-1">Partagez votre lien officiel et recevez vos commissions en direct.</p>
         </div>
-        <Link href="/affiliation" className="rounded-full border border-[#0A1931] px-4 py-2 text-xs font-bold text-[#0A1931] hover:bg-[#0A1931] hover:text-white transition">
-          Espace affiliation complet →
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/affiliation?tab=policy"
+            className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 transition"
+          >
+            📜 Politique de Gratification
+          </Link>
+          <Link
+            href="/affiliation?tab=network"
+            className="rounded-full bg-[#0A1931] text-white px-4 py-2 text-xs font-bold hover:bg-black transition shadow-sm"
+          >
+            🌳 Voir Mon Réseau 5×5 (N1 à N5) →
+          </Link>
+        </div>
       </div>
 
       {affiliateLink && (

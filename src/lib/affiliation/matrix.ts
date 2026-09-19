@@ -1,7 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { prisma } from "@/lib/prisma";
 import { MAX_DIRECT_REFERRALS, MAX_LEVELS } from "./constants";
-import { AffiliateRecord, TreeNode } from "./types";
+import { AffiliateRecord, TreeNode, DownlineMember } from "./types";
 
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -257,19 +257,27 @@ export async function getNetworkTree(
   // Récupérer le nœud racine
   const { data: root } = await supabase
     .from("affiliates")
-    .select("*, users:user_id(id, nom, prenom, email)")
+    .select("*, users:user_id(id, nom, prenom, email, phone)")
     .eq("id", rootAffiliateId)
     .single();
 
   if (!root) return null;
 
+  const rootName = root.users ? `${root.users.prenom} ${root.users.nom}`.trim() : "Fondateur";
+  const rootCode = root.referral_code;
+
   // Fonction récursive pour construire les branches jusqu'à maxDepth
-  async function buildSubTree(parentId: string, currentDepth: number): Promise<TreeNode[]> {
+  async function buildSubTree(
+    parentId: string,
+    currentDepth: number,
+    parentName: string,
+    parentCode: string
+  ): Promise<TreeNode[]> {
     if (currentDepth > maxDepth) return [];
 
     const { data: children } = await supabase!
       .from("affiliates")
-      .select("*, users:user_id(id, nom, prenom, email)")
+      .select("*, users:user_id(id, nom, prenom, email, phone)")
       .eq("sponsor_id", parentId)
       .order("created_at", { ascending: true })
       .limit(MAX_DIRECT_REFERRALS);
@@ -278,18 +286,26 @@ export async function getNetworkTree(
 
     const nodes: TreeNode[] = [];
     for (const child of children) {
-      const subChildren = await buildSubTree(child.id, currentDepth + 1);
+      const childName = child.users ? `${child.users.prenom} ${child.users.nom}`.trim() : "Affilié";
+      const childCode = child.referral_code;
+      const subChildren = await buildSubTree(child.id, currentDepth + 1, childName, childCode);
       nodes.push({
         id: child.id,
-        referralCode: child.referral_code,
+        referralCode: childCode,
         level: child.level,
-        userName: child.users ? `${child.users.prenom} ${child.users.nom}`.trim() : "Affilié",
+        relativeLevel: currentDepth,
+        userName: childName,
         userEmail: child.users?.email || "",
+        userPhone: child.users?.phone || "",
         totalEarnings: Number(child.total_earnings || 0),
-        directCount: children.length,
+        directCount: subChildren.length,
         magazineEnrolled: Boolean(child.magazine_enrolled),
         marketplaceEnrolled: Boolean(child.marketplace_enrolled),
+        isActive: Boolean(child.is_active),
         isFounder: Boolean(child.is_founder),
+        createdAt: child.created_at,
+        sponsorName: parentName,
+        sponsorCode: parentCode,
         children: subChildren,
       });
     }
@@ -297,19 +313,66 @@ export async function getNetworkTree(
     return nodes;
   }
 
-  const childNodes = await buildSubTree(root.id, 1);
+  const childNodes = await buildSubTree(root.id, 1, rootName, rootCode);
 
   return {
     id: root.id,
     referralCode: root.referral_code,
     level: root.level,
-    userName: root.users ? `${root.users.prenom} ${root.users.nom}`.trim() : "Fondateur",
+    relativeLevel: 0,
+    userName: rootName,
     userEmail: root.users?.email || "",
+    userPhone: root.users?.phone || "",
     totalEarnings: Number(root.total_earnings || 0),
     directCount: childNodes.length,
     magazineEnrolled: Boolean(root.magazine_enrolled),
     marketplaceEnrolled: Boolean(root.marketplace_enrolled),
+    isActive: Boolean(root.is_active),
     isFounder: Boolean(root.is_founder),
+    createdAt: root.created_at,
     children: childNodes,
   };
+}
+
+/**
+ * Aplatit l'arbre généalogique pour une consultation tabulaire et par niveau
+ * permettant de voir chaque filleul, son niveau (1 à 5), sa branche et son parrain direct.
+ */
+export function flattenDownline(tree: TreeNode): DownlineMember[] {
+  const members: DownlineMember[] = [];
+
+  function traverse(node: TreeNode, branchRootName: string, branchRootCode: string) {
+    if (!node.children || node.children.length === 0) return;
+
+    for (const child of node.children) {
+      const currentBranchRootName = branchRootName || child.userName;
+      const currentBranchRootCode = branchRootCode || child.referralCode;
+
+      members.push({
+        id: child.id,
+        referralCode: child.referralCode,
+        level: child.level,
+        relativeLevel: child.relativeLevel || 1,
+        userName: child.userName,
+        userEmail: child.userEmail,
+        userPhone: child.userPhone,
+        totalEarnings: child.totalEarnings,
+        directCount: child.directCount,
+        magazineEnrolled: child.magazineEnrolled,
+        marketplaceEnrolled: child.marketplaceEnrolled,
+        isActive: child.isActive ?? true,
+        isFounder: child.isFounder,
+        createdAt: child.createdAt,
+        sponsorName: child.sponsorName || node.userName,
+        sponsorCode: child.sponsorCode || node.referralCode,
+        branchRootName: currentBranchRootName,
+        branchRootCode: currentBranchRootCode,
+      });
+
+      traverse(child, currentBranchRootName, currentBranchRootCode);
+    }
+  }
+
+  traverse(tree, "", "");
+  return members;
 }
