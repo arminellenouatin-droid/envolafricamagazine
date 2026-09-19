@@ -10,6 +10,7 @@ function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const ref = searchParams.get("ref");
+  const redirect = searchParams.get("redirect") || "/";
 
   useEffect(()=>{
     if (ref) localStorage.setItem("eam_affiliate", ref);
@@ -27,7 +28,7 @@ function RegisterForm() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erreur");
-      router.push("/");
+      router.push(redirect);
       router.refresh();
     } catch (err:any) {
       setError(err.message);
@@ -73,7 +74,7 @@ function RegisterForm() {
           </form>
 
           <div className="mt-6 text-center text-[13px] text-zinc-500">
-            Déjà membre ? <Link href="/auth/login" className="font-semibold text-[#0A1931] hover:underline">Se connecter</Link>
+            Déjà membre ? <Link href={`/auth/login${redirect !== "/" ? `?redirect=${encodeURIComponent(redirect)}` : ""}`} className="font-semibold text-[#0A1931] hover:underline">Se connecter</Link>
           </div>
         </div>
       </div>

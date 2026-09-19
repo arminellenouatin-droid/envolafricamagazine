@@ -9,6 +9,7 @@ type Tab = "dashboard" | "network" | "link" | "commissions" | "payout" | "policy
 
 export default function AffiliationPage() {
   const [user, setUser] = useState<any>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
   const [earnings, setEarnings] = useState<any[]>([]);
   const [networkData, setNetworkData] = useState<any>(null);
   const [loadingNetwork, setLoadingNetwork] = useState(false);
@@ -31,6 +32,7 @@ export default function AffiliationPage() {
       }
     }
 
+    setLoadingUser(true);
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((data) => {
@@ -48,7 +50,9 @@ export default function AffiliationPage() {
             })
             .finally(() => setLoadingNetwork(false));
         }
-      });
+      })
+      .catch(() => setUser(null))
+      .finally(() => setLoadingUser(false));
   }, []);
 
   const isAffiliate =
@@ -132,7 +136,102 @@ export default function AffiliationPage() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  // ÉCRAN ONBOARDING : Utilisateur non affilié voulant s'affilier
+  // CHARGEMENT INITIAL
+  if (loadingUser) {
+    return (
+      <main className="min-h-screen bg-[#FFFCF5] flex items-center justify-center p-6">
+        <div className="text-center space-y-3">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#0A1931] border-r-transparent align-[-0.125em]" />
+          <p className="font-serif text-sm font-bold text-[#0A1931]">Chargement de votre espace...</p>
+        </div>
+      </main>
+    );
+  }
+
+  // ÉCRAN 1 : Visiteur NON connecté (pas encore de compte)
+  if (!user) {
+    return (
+      <main className="min-h-screen bg-[#FFFCF5] px-4 py-12">
+        <div className="mx-auto max-w-4xl space-y-8">
+          {/* En-tête d'accueil */}
+          <div className="rounded-[28px] border border-zinc-200 bg-white p-8 text-center shadow-sm">
+            <span className="inline-block rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/40 px-4 py-1 text-xs font-black uppercase tracking-wider text-[#0A1931]">
+              Programme Partenaire & Ambassadeurs
+            </span>
+            <h1 className="mt-4 font-serif text-3xl md:text-4xl font-black text-[#0A1931]">
+              Devenez Ambassadeur Envol Africa
+            </h1>
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-zinc-600">
+              Rejoignez notre réseau exclusif 5×5, recommandez l’excellence éditoriale et générez des revenus récurrents sur 5 générations complètes sur les ventes de magazines et abonnements.
+            </p>
+
+            {/* Piliers du programme */}
+            <div className="mt-8 grid gap-4 text-left sm:grid-cols-3">
+              <div className="rounded-2xl border border-zinc-100 bg-[#FFFCF5] p-5 shadow-xs">
+                <span className="material-symbols-outlined text-[28px] text-[#D4AF37]">account_tree</span>
+                <h3 className="mt-2 text-sm font-black text-[#0A1931]">Matrice MLM 5×5</h3>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                  5 filleuls directs max. Le débordement profite à toute votre équipe descendante.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-zinc-100 bg-[#FFFCF5] p-5 shadow-xs">
+                <span className="material-symbols-outlined text-[28px] text-[#0A1931]">payments</span>
+                <h3 className="mt-2 text-sm font-black text-[#0A1931]">15% Reversement Global</h3>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                  70% reversés sur 5 niveaux (40%, 25%, 15%, 12%, 8%), 10% prime annuelle, 20% cérémonie.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-zinc-100 bg-[#FFFCF5] p-5 shadow-xs">
+                <span className="material-symbols-outlined text-[28px] text-[#16a34a]">phone_iphone</span>
+                <h3 className="mt-2 text-sm font-black text-[#0A1931]">Retraits Mobile Money</h3>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                  Paiements rapides dès 10 000 XOF (MTN, Moov, Orange, Wave). 0 frais d’adhésion.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Politique Intégrale de Gratification */}
+          <GratificationPolicy />
+
+          {/* Bloc Inscription & Connexion */}
+          <div className="rounded-[28px] border border-[#e5bdbb] bg-white p-8 md:p-10 text-center shadow-lg space-y-5">
+            <span className="inline-block rounded-full bg-[#9e001f]/10 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#9e001f]">
+              Adhésion 100% Gratuite
+            </span>
+            <h2 className="font-serif text-2xl md:text-3xl font-black text-[#0A1931]">
+              Inscrivez-vous pour rejoindre le réseau
+            </h2>
+            <p className="mx-auto max-w-xl text-sm leading-relaxed text-zinc-600">
+              Pour obtenir votre lien d'affiliation officiel, créer votre descendance 5×5 et percevoir vos commissions, créez un compte en 1 minute ou connectez-vous.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+              <Link
+                href="/auth/register?redirect=/affiliation"
+                className="w-full sm:w-auto rounded-full bg-[#0A1931] hover:bg-black px-8 py-4 text-sm font-black text-white shadow-md transition flex items-center justify-center gap-2"
+              >
+                <span>Créer mon compte & M'affilier</span>
+                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+              </Link>
+              <Link
+                href="/auth/login?redirect=/affiliation"
+                className="w-full sm:w-auto rounded-full border border-zinc-300 hover:bg-zinc-50 px-8 py-4 text-sm font-bold text-[#0A1931] transition"
+              >
+                Déjà un compte ? Se connecter
+              </Link>
+            </div>
+
+            <p className="text-xs text-zinc-400">
+              Aucun frais d’entrée • Vente réelle de magazines et abonnements uniquement
+            </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // ÉCRAN 2 : Utilisateur connecté mais NON encore affilié (Onboarding & Activation)
   if (user && !isAffiliate) {
     return (
       <main className="min-h-screen bg-[#FFFCF5] px-4 py-12">

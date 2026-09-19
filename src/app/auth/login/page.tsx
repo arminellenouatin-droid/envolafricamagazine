@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -21,7 +21,15 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [twoFactorChallenge, setTwoFactorChallenge] = useState<{ challenge: string; userId: string } | null>(null);
   const [twoFactorCode, setTwoFactorCode] = useState("");
+  const [redirectParam, setRedirectParam] = useState("");
   const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const r = new URLSearchParams(window.location.search).get("redirect");
+      if (r) setRedirectParam(r);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +43,7 @@ export default function LoginPage() {
         setTwoFactorChallenge({ challenge: data.challenge, userId: data.userId });
         return;
       }
-      router.push("/");
+      router.push(redirectParam || "/");
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erreur de connexion");
@@ -53,7 +61,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/2fa/verify-login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...twoFactorChallenge, code: twoFactorCode }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Code 2FA invalide");
-      router.push("/");
+      router.push(redirectParam || "/");
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Vérification 2FA impossible");
@@ -117,7 +125,7 @@ export default function LoginPage() {
             <div><div className="flex items-center justify-between"><label htmlFor="password" className="text-[12px] font-semibold uppercase tracking-wide text-[var(--on-surface-variant)]">Mot de passe</label><Link href="#" className="text-[11px] text-[var(--on-surface-variant)] hover:text-[#0A1931]">Oublié ?</Link></div><input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="mt-1.5 h-12 w-full rounded-full border border-[#cbdedb] bg-[#f6fbfa] px-5 text-[14px] text-[#082843] transition-colors focus:border-[#006874] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#006874]/10" /></div>
             <button disabled={loading || socialLoading !== null} className="h-12 w-full rounded-full bg-[#0A1931] text-[14px] font-bold text-white transition-colors hover:bg-black disabled:opacity-60">{loading ? "Connexion…" : "Se connecter →"}</button>
           </form>
-          </>} {!twoFactorChallenge && <div className="mt-6 text-center text-[13px] text-[var(--on-surface-variant)]">Pas encore de compte ? <Link href="/auth/register" className="font-semibold text-[#0A1931] hover:underline">Créer un compte</Link></div>}
+          </>} {!twoFactorChallenge && <div className="mt-6 text-center text-[13px] text-[var(--on-surface-variant)]">Pas encore de compte ? <Link href={`/auth/register${redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ""}`} className="font-semibold text-[#0A1931] hover:underline">Créer un compte</Link></div>}
         </section>
           <div className="mt-6 text-center text-[11px] text-[#718184]">Accès sécurisé • Paiements protégés par Moneroo • Aucune donnée bancaire stockée</div>
         </div>
