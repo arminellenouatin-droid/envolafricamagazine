@@ -103,5 +103,30 @@ export default function PromoPopup() {
   if (!show || !current) return null;
   const congratulations = visitCount <= 1 ? "Félicitations, vous commencez votre découverte de l’écosystème." : visitCount < 4 ? "Bravo, votre parcours Envol Africa prend forme." : "Félicitations, vous explorez déjà les différentes facettes d’Envol Africa.";
 
-  return <div className="fixed bottom-20 right-4 z-[110] w-[min(92vw,420px)] md:bottom-5" role="status" aria-labelledby="ecosystem-popup-title"><div className="relative overflow-hidden rounded-[18px] border border-[#e6c9c7] bg-[#fffdfc] shadow-[0_16px_48px_rgba(54,19,24,.2)]"><button type="button" onClick={close} aria-label="Fermer la découverte" className="absolute right-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full bg-white/80 text-[#4a3433] shadow-sm backdrop-blur transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#9e001f]"><span className="material-symbols-outlined">close</span></button><div className="relative overflow-hidden px-6 pb-7 pt-8" style={{ backgroundColor: current.soft }}><div className="absolute -right-16 -top-20 h-48 w-48 rounded-full border-[20px] border-white/50" /><div className="relative"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-white shadow-sm" style={{ color: current.accent }}><span className="material-symbols-outlined text-[26px]">{current.icon}</span></div><p className="mt-5 font-sans text-[10px] font-black uppercase tracking-[0.17em]" style={{ color: current.accent }}>Une nouvelle étape dans votre parcours</p><p className="mt-2 max-w-[360px] font-serif text-[25px] font-semibold leading-[1.05] text-[#292323]">{congratulations}</p></div></div><div className="p-6"><div className="flex items-center gap-2 font-sans text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: current.accent }}><span className="material-symbols-outlined text-[18px]">arrow_forward</span> À découvrir : {current.name}</div><h2 id="ecosystem-popup-title" className="mt-3 font-display text-[22px] font-extrabold leading-tight text-[#292323]">{current.title}</h2><p className="mt-3 text-[14px] leading-6 text-[#635655]">{current.body}</p><div className="mt-6 flex flex-col gap-2 sm:flex-row"><Link href={current.href} onClick={close} className="flex h-12 flex-1 items-center justify-center rounded-xl px-5 font-sans text-[12px] font-black text-white transition hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" style={{ backgroundColor: current.accent }}>Découvrir {current.name} <span className="ml-2">→</span></Link><button type="button" onClick={close} className="h-12 rounded-xl border border-[#ead9d7] px-5 font-sans text-[12px] font-bold text-[#635655] transition hover:border-[#9e001f] hover:text-[#9e001f]">Continuer ici</button></div><p className="mt-4 text-center font-sans text-[10px] text-[#9b8987]">Nous vous proposerons une autre découverte plus tard, sans interrompre votre lecture.</p></div></div></div>;
+  return (
+    <div className="fixed bottom-20 left-3 right-3 z-[110] sm:left-auto sm:right-4 sm:w-[360px] md:bottom-5" role="status" aria-labelledby="ecosystem-popup-title">
+      <div className="relative overflow-hidden rounded-2xl border border-[#e6c9c7] bg-white shadow-[0_16px_40px_rgba(54,19,24,.18)]">
+        <div className="flex items-center justify-between border-b border-[#f0dedd] px-3.5 py-2.5" style={{ backgroundColor: current.soft }}>
+          <div className="flex items-center gap-2">
+            <div className="grid h-7 w-7 place-items-center rounded-lg bg-white shadow-xs" style={{ color: current.accent }}>
+              <span className="material-symbols-outlined text-[18px]">{current.icon}</span>
+            </div>
+            <div>
+              <span className="block text-[9px] font-black uppercase tracking-wider" style={{ color: current.accent }}>Découverte Écosystème</span>
+              <span className="block font-sans text-[11px] font-bold text-[#302829]">{current.name}</span>
+            </div>
+          </div>
+          <button type="button" onClick={close} aria-label="Fermer la suggestion" className="grid h-7 w-7 place-items-center rounded-full bg-white/90 text-[#4a3433] shadow-xs transition hover:bg-white hover:text-[#9e001f]"><span className="material-symbols-outlined text-[16px]">close</span></button>
+        </div>
+        <div className="p-3.5">
+          <h2 id="ecosystem-popup-title" className="font-display text-[13px] font-black leading-snug text-[#292323] line-clamp-1">{current.title}</h2>
+          <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[#635655]">{current.body}</p>
+          <div className="mt-3 flex items-center gap-2">
+            <Link href={current.href} onClick={close} className="flex h-8 flex-1 items-center justify-center gap-1 rounded-xl px-3 font-sans text-[11px] font-black text-white shadow-xs transition hover:brightness-105" style={{ backgroundColor: current.accent }}>Explorer {current.name} <span className="text-[12px]">→</span></Link>
+            <button type="button" onClick={close} className="h-8 rounded-xl border border-[#ead9d7] px-3 font-sans text-[11px] font-bold text-[#635655] transition hover:border-[#9e001f] hover:text-[#9e001f]">Plus tard</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
