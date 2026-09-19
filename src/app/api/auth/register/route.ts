@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { User, generateAffiliateCode } from "@/lib/db";
-import { createUser, findUserByEmail, ProductionDatabaseNotConfiguredError } from "@/lib/core-db";
+import { createUser, findUserByEmail, findUserByAffiliateCode, ProductionDatabaseNotConfiguredError } from "@/lib/core-db";
 import { hashPassword } from "@/lib/auth";
 import { issueEmailVerificationToken } from "@/lib/security-db";
 import { normalizeEmail, isPlausibleEmail } from "@/lib/security-crypto";
@@ -17,7 +17,9 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await hashPassword(password);
     const affiliateCode = generateAffiliateCode(String(prenom), String(nom));
-    const refAffiliate = affiliateRef ? await findUserByEmail(normalizeEmail(affiliateRef)) : null;
+    const refAffiliate = affiliateRef
+      ? (await findUserByAffiliateCode(affiliateRef)) || (await findUserByEmail(normalizeEmail(affiliateRef)))
+      : null;
     const newUserInput: Omit<User, "id" | "createdAt"> = {
       nom: String(nom).trim(), prenom: String(prenom).trim(), email, passwordHash, role: "user", lang: "fr", currency: "XOF",
       isVerified: false, twoFactorEnabled: false, country: "BJ", affiliateCode, referredBy: refAffiliate?.id, favorites: [], downloads: [],

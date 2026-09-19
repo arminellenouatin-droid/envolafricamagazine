@@ -1,5 +1,5 @@
-﻿import { getSupabaseAdmin } from "@/lib/supabase-admin";
-import { MARKETPLACE_PLATFORM_FEE } from "./constants";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { MARKETPLACE_PLATFORM_FEE, DEFAULT_SITE_URL } from "./constants";
 import { round2 } from "./commission";
 
 export class MarketplaceAffiliationError extends Error {}
@@ -128,9 +128,10 @@ export async function listAffiliatableProducts() {
 export async function addProductToWallet(params: {
   affiliateId: string;
   productAffiliationId: string;
-  baseUrl: string;
+  baseUrl?: string;
 }) {
-  const { affiliateId, productAffiliationId, baseUrl } = params;
+  const { affiliateId, productAffiliationId, baseUrl = DEFAULT_SITE_URL } = params;
+  const cleanBaseUrl = (baseUrl || DEFAULT_SITE_URL).replace(/\/$/, "");
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error("Base de données indisponible.");
 
@@ -156,7 +157,7 @@ export async function addProductToWallet(params: {
   }
 
   const referralToken = generateToken(10);
-  const referralLink = `${baseUrl}/p/${affiliation.product_id}?ref=${referralToken}`;
+  const referralLink = `${cleanBaseUrl}/marketplace/produits/${affiliation.product_id}?ref=${referralToken}`;
 
   const { data, error } = await supabase
     .from("affiliate_product_wallets")

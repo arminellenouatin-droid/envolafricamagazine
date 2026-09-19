@@ -156,6 +156,24 @@ export async function findUserById(id: string): Promise<User | null> {
   return data ? mapUser(data as Record<string, unknown>) : null;
 }
 
+export async function findUserByAffiliateCode(code: string): Promise<User | null> {
+  const cleanCode = code.trim().toUpperCase();
+  const client = getAdminClient();
+  if (!client) {
+    if (!canUseJsonFallback()) return null;
+    const db = readDB();
+    const user = db.users.find((u) => (u.affiliateCode || "").toUpperCase() === cleanCode);
+    return user ?? null;
+  }
+  const { data, error } = await client
+    .from("users")
+    .select("*")
+    .ilike("affiliate_code", cleanCode)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? mapUser(data as Record<string, unknown>) : null;
+}
+
 export async function listUsers(): Promise<User[]> {
   const client = getAdminClient();
   if (!client) return canUseJsonFallback() ? readDB().users : [];

@@ -1,17 +1,67 @@
-﻿import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { prisma } from "@/lib/prisma";
 import { MAX_DIRECT_REFERRALS, MAX_LEVELS } from "./constants";
 import { AffiliateRecord, TreeNode } from "./types";
 
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-/** Génère un code de parrainage unique, ex: "EAM-7K3PQXWM" */
-export function generateReferralCode(): string {
-  let code = "EAM-";
-  for (let i = 0; i < 8; i++) {
-    code += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
+/**
+ * Génère un code de parrainage hiérarchique au format EAM-XXXXX
+ * en fonction du niveau du parrain :
+ * - Niveau 0 (Fondateur / Racine) : tranche 10000 (ex: EAM-10000)
+ * - Niveau 1 (Filleuls du fondateur) : tranche 11000 (ex: EAM-11001, EAM-11002...)
+ * - Niveau 2 (Génération 2) : tranche 12000 (ex: EAM-12001, EAM-12002...)
+ * - Niveau 3 (Génération 3) : tranche 13000 (ex: EAM-13001, EAM-13002...)
+ * - Niveau 4 (Génération 4) : tranche 14000 (ex: EAM-14001, EAM-14002...)
+ * - Niveau 5 (Génération 5) : tranche 15000 (ex: EAM-15001, EAM-15002...)
+ */
+export async function generateReferralCodeByLevel(sponsorLevel?: number | null): Promise<string> {
+  let baseNumber = 10000;
+  if (sponsorLevel !== undefined && sponsorLevel !== null && sponsorLevel >= 0) {
+    const childLevel = sponsorLevel + 1;
+    baseNumber = 10000 + childLevel * 1000;
   }
-  return code;
+
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const prefix = `EAM-${baseNumber.toString().slice(0, 2)}`;
+    const { data: existing } = await supabase
+      .from("affiliates")
+      .select("referral_code")
+      .like("referral_code", `${prefix}%`);
+
+    let maxNum = baseNumber;
+    if (existing && existing.length > 0) {
+      for (const row of existing) {
+        const numPart = parseInt(row.referral_code.replace("EAM-", ""), 10);
+        if (!isNaN(numPart) && numPart >= maxNum && numPart < baseNumber + 1000) {
+          maxNum = numPart;
+        }
+      }
+    }
+
+    if (maxNum === baseNumber) {
+      const { data: foundExact } = await supabase
+        .from("affiliates")
+        .select("referral_code")
+        .eq("referral_code", `EAM-${baseNumber}`)
+        .maybeSingle();
+
+      if (!foundExact) {
+        return `EAM-${baseNumber}`;
+      }
+    }
+
+    const nextNum = maxNum + 1;
+    return `EAM-${nextNum}`;
+  }
+
+  const randomSuffix = Math.floor(1 + Math.random() * 999);
+  return `EAM-${baseNumber + randomSuffix}`;
+}
+
+export function generateReferralCode(): string {
+  return `EAM-${Math.floor(10000 + Math.random() * 89999)}`;
 }
 
 /**

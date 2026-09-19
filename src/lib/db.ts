@@ -233,8 +233,8 @@ export function getUserById(id: string): User | undefined {
   return db.users.find(u => u.id === id);
 }
 
-export function generateAffiliateCode(prenom: string, nom: string) {
-  return `${prenom.substring(0,3).toUpperCase()}${nom.substring(0,3).toUpperCase()}${Math.floor(1000 + Math.random()*9000)}`;
+export function generateAffiliateCode(prenom?: string, nom?: string) {
+  return `EAM-${Math.floor(11000 + Math.random() * 88000)}`;
 }
 
 export function getArticleBySlug(slug: string): Article | undefined {

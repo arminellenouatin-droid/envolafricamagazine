@@ -1,5 +1,5 @@
-﻿import { getSupabaseAdmin } from "@/lib/supabase-admin";
-import { generateReferralCode, canAcceptDirectReferral } from "./matrix";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { generateReferralCode, generateReferralCodeByLevel, canAcceptDirectReferral } from "./matrix";
 import { WITHDRAWAL_THRESHOLD } from "./constants";
 
 export class AffiliationError extends Error {}
@@ -80,7 +80,9 @@ export async function enrollAffiliate(params: {
     level = foundSponsor.level + 1;
   }
 
-  const finalCode = customReferralCode?.trim().toUpperCase() || generateReferralCode();
+  const finalCode =
+    customReferralCode?.trim().toUpperCase() ||
+    (await generateReferralCodeByLevel(sponsor ? sponsor.level : (isFounder ? null : 0)));
 
   if (!existingAffiliate) {
     const { data, error } = await supabase
@@ -105,6 +107,10 @@ export async function enrollAffiliate(params: {
       }
       throw error;
     }
+
+    // Garder le code utilisateur synchronisé
+    await supabase.from("users").update({ affiliate_code: finalCode }).eq("id", userId);
+
     return data;
   } else {
     const { data, error } = await supabase

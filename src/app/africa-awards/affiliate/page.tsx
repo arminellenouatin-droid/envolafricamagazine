@@ -44,8 +44,8 @@ export default function AffiliateAwards() {
           <div className="mt-4 space-y-3">
             {links.map((l:any)=>(
               <div key={l.id} className="bg-[#0B0B0F] border border-white/10 rounded-lg p-4 flex justify-between items-center">
-                <div><div className="font-mono text-[13px] font-bold text-[#D4AF37]">https://envolafrica.mag/?ref={l.short_code}</div><div className="text-[11px] text-[#A8A6A0] mt-1">{l.target_type} • {l.clicks} clics • {l.conversions} conversions</div></div>
-                <button onClick={()=>{navigator.clipboard.writeText(`https://envolafrica.mag/?ref=${l.short_code}`); alert("Lien copié !");}} className="h-8 px-3 rounded-full bg-white/10 text-white text-[11px]">Copier</button>
+                <div><div className="font-mono text-[13px] font-bold text-[#D4AF37]">https://envolafrica.site/?ref={l.short_code}</div><div className="text-[11px] text-[#A8A6A0] mt-1">{l.target_type} • {l.clicks} clics • {l.conversions} conversions</div></div>
+                <button onClick={()=>{navigator.clipboard.writeText(`https://envolafrica.site/?ref=${l.short_code}`); alert("Lien copié !");}} className="h-8 px-3 rounded-full bg-white/10 text-white text-[11px]">Copier</button>
               </div>
             ))}
           </div>

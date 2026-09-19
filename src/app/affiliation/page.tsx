@@ -24,7 +24,8 @@ export default function AffiliationPage() {
   }, []);
 
   const isAffiliate = Boolean(user?.affiliateAccepted) || ["admin", "gerant", "redacteur", "redacteur_chef"].includes(user?.role);
-  const affiliateLink = typeof window !== "undefined" && user ? `${window.location.origin}?ref=${user.affiliateCode}` : "";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://envolafrica.site";
+  const affiliateLink = user?.affiliateCode ? `${siteUrl}?ref=${user.affiliateCode}` : "";
   const total = useMemo(() => earnings.reduce((sum, item) => sum + Number(item.commission || 0), 0), [earnings]);
   const available = useMemo(() => earnings.filter((item) => item.status === "available").reduce((sum, item) => sum + Number(item.commission || 0), 0), [earnings]);
 

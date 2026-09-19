@@ -51,6 +51,7 @@ const nextConfig: NextConfig = {
       { source: "/rest/v1/magazines", destination: "/api/magazines" },
       { source: "/rest/v1/orders", destination: "/api/orders" },
       { source: "/rest/v1/:path*", destination: "/api/:path*" },
+      { source: "/p/:id", destination: "/marketplace/produits/:id" },
     ];
   },
 };
