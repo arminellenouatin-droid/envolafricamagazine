@@ -24,10 +24,16 @@ Mettre à jour et unifier le système d'affiliation d'Envol Africa Magazine en i
 4. **Zéro régression UI** : Remplacement ciblé du panneau `activeTab === "affiliate"` dans `AdminClient.tsx` sans toucher aux 530+ autres lignes des autres modules.
 
 ## Plan d'exécution
-- [ ] 1. Migration SQL dans Supabase (création des 9 tables + contraintes + index)
-- [ ] 2. Mise à jour de `prisma/schema.prisma` et régénération client
-- [ ] 3. Implémentation des modules métier dans `src/lib/affiliation/`
-- [ ] 4. Création des routes API affilié et admin
-- [ ] 5. Interface d'administration riche dans `AdminClient.tsx`
-- [ ] 6. Déclenchement de la commission à la finalisation de vente
-- [ ] 7. Vérification TypeScript, tests de build Next.js, déploiement Git
+- [x] 1. Migration SQL dans Supabase (création des 9 tables + contraintes + index)
+- [x] 2. Mise à jour de `prisma/schema.prisma` et régénération client
+- [x] 3. Implémentation des modules métier dans `src/lib/affiliation/`
+- [x] 4. Création des routes API affilié et admin
+- [x] 5. Interface d'administration riche dans `AdminClient.tsx`
+- [x] 6. Déclenchement de la commission à la finalisation de vente
+- [x] 7. Visualiseur complet d'arbre 5×5 et lignée de filleuls N1-N5 (`NetworkExplorer.tsx`)
+- [x] 8. Politique intégrale de gratification des ambassadeurs (`GratificationPolicy.tsx`)
+- [x] 9. Remplacement du 1er bouton de la 1ère ligne desktop par "S'affilier" (`/affiliation`)
+- [x] 10. Ajout du 3ème bouton "S'affilier" dans le menu d'actions mobile
+- [x] 11. Refonte UI/UX compacte des popups sur mobile (`PromoPopup.tsx`, boîtes à outils)
+- [x] 12. Vérification TypeScript (`npx tsc --noEmit`), tests de build (`npx next build`), déploiement Git
+
