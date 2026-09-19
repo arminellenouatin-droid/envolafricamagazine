@@ -4,6 +4,7 @@ import Link from "next/link";
 import { SUBSCRIPTION_PLANS } from "@/lib/constants";
 import MagazineModal from "./MagazineModal";
 import RichTextEditor from "@/components/RichTextEditor";
+import AffiliateManager from "@/components/admin/AffiliateManager";
 
 async function readApiResponse(response: Response) {
   const raw = await response.text();
@@ -495,19 +496,7 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
         )}
 
         {activeTab==="affiliate" && (
-          <div className="space-y-6">
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="bg-white rounded-[16px] border p-5"><div className="text-[10px] uppercase font-bold text-zinc-500">Total commissions</div><div className="font-black text-[20px] mt-1">{earnings.reduce((s:any,e:any)=>s+e.commission,0).toLocaleString()} F</div></div>
-              <div className="bg-white rounded-[16px] border p-5"><div className="text-[10px] uppercase font-bold text-zinc-500">À payer (≥150k)</div><div className="font-black text-[20px] mt-1">{earnings.filter((e:any)=>e.status==="available").reduce((s:any,e:any)=>s+e.commission,0).toLocaleString()} F</div></div>
-              <div className="bg-white rounded-[16px] border p-5"><div className="text-[10px] uppercase font-bold text-zinc-500">Taux moyen</div><div className="font-black text-[20px] mt-1">{earnings.length ? Math.round(earnings.reduce((s:any,e:any)=>s+e.rate,0)/earnings.length*100) : 0}%</div></div>
-            </div>
-            <div className="bg-white rounded-[18px] border p-6">
-              <h3 className="font-bold">Commissions - KPIs + Gestion retraits (Gérant/Admin valide)</h3>
-              <div className="mt-4 space-y-2">
-                {earnings.map((e:any)=>(<div key={e.id} className="p-3 rounded-[12px] bg-zinc-50 border flex justify-between text-[12px]"><span>Affilié: {e.affiliateId.slice(0,8)} • Cmd: {e.orderId.slice(0,8)} • {e.rate*100}% • {e.status}</span><span className="font-bold">{e.commission.toLocaleString()} F</span></div>))}
-              </div>
-            </div>
-          </div>
+          <AffiliateManager initialEarnings={earnings} />
         )}
 
         {activeTab==="service" && (

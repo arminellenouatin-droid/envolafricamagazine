@@ -32,6 +32,7 @@ model User {
 
   affiliateEarnings AffiliateEarning[]
   comments          Comment[]
+  affiliate         Affiliate?
 
   @@map("users")
 }
@@ -154,3 +155,169 @@ model Comment {
 
   @@map("comments")
 }
+
+// ============================================================================
+// MODULE AFFILIATION — Envol Africa Magazine (Programme Magazine MLM + Marketplace)
+// ============================================================================
+
+model Affiliate {
+  id                  String   @id @default(uuid())
+  userId              String   @unique @map("user_id")
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  sponsorId           String?  @map("sponsor_id")
+  sponsor             Affiliate?  @relation("SponsorTree", fields: [sponsorId], references: [id])
+  referrals           Affiliate[] @relation("SponsorTree")
+
+  referralCode        String   @unique @map("referral_code")
+  level               Int      @default(0)
+
+  totalEarnings       Decimal  @default(0) @map("total_earnings") @db.Decimal(14, 2)
+  withdrawnTotal      Decimal  @default(0) @map("withdrawn_total") @db.Decimal(14, 2)
+
+  isRoot              Boolean  @default(false) @map("is_root")
+  isFounder           Boolean  @default(false) @map("is_founder")
+  isActive            Boolean  @default(true) @map("is_active")
+
+  magazineEnrolled    Boolean  @default(false) @map("magazine_enrolled")
+  marketplaceEnrolled Boolean  @default(false) @map("marketplace_enrolled")
+
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  commissions         Commission[]
+  withdrawals         Withdrawal[]
+  productWallets      AffiliateProductWallet[]
+
+  @@index([sponsorId])
+  @@index([referralCode])
+  @@index([userId])
+  @@map("affiliates")
+}
+
+model Commission {
+  id                    String   @id @default(uuid())
+
+  sourceSaleId          String   @map("source_sale_id")
+  sourceVolet           String   @map("source_volet")
+  saleAmount            Decimal  @map("sale_amount") @db.Decimal(14, 2)
+  commissionRate        Decimal  @map("commission_rate") @db.Decimal(5, 4)
+  commissionTotal       Decimal  @map("commission_total") @db.Decimal(14, 2)
+
+  networkShareAmount    Decimal  @map("network_share_amount") @db.Decimal(14, 2)
+  networkSizeFundAmount Decimal  @map("network_size_fund_amount") @db.Decimal(14, 2)
+  ceremonyFundAmount    Decimal  @map("ceremony_fund_amount") @db.Decimal(14, 2)
+
+  beneficiaryId         String   @map("beneficiary_id")
+  beneficiary           Affiliate @relation(fields: [beneficiaryId], references: [id], onDelete: Cascade)
+  levelPaid             Int      @map("level_paid")
+  amountPaid            Decimal  @map("amount_paid") @db.Decimal(14, 2)
+
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  @@index([beneficiaryId])
+  @@index([sourceVolet])
+  @@index([sourceSaleId])
+  @@map("commissions")
+}
+
+model UnallocatedFund {
+  id              String   @id @default(uuid())
+  amount          Decimal  @db.Decimal(14, 2)
+  sourceSaleId    String   @map("source_sale_id")
+  levelMissing    Int      @map("level_missing")
+  reason          String
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("unallocated_funds")
+}
+
+model NetworkSizeFund {
+  id              String   @id @default(uuid())
+  year            Int      @unique
+  totalAmount     Decimal  @default(0) @map("total_amount") @db.Decimal(14, 2)
+  distributed     Boolean  @default(false)
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("network_size_funds")
+}
+
+model CeremonyFund {
+  id              String   @id @default(uuid())
+  year            Int      @unique
+  totalAmount     Decimal  @default(0) @map("total_amount") @db.Decimal(14, 2)
+  distributed     Boolean  @default(false)
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("ceremony_funds")
+}
+
+model Withdrawal {
+  id                  String   @id @default(uuid())
+  affiliateId         String   @map("affiliate_id")
+  affiliate           Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  amount              Decimal  @db.Decimal(14, 2)
+  mobileMoneyProvider String   @map("mobile_money_provider")
+  mobileMoneyNumber   String   @map("mobile_money_number")
+  status              String   @default("PENDING")
+  createdAt           DateTime @default(now()) @map("created_at")
+  processedAt         DateTime? @map("processed_at")
+
+  @@index([affiliateId])
+  @@index([status])
+  @@map("withdrawals")
+}
+
+model ProductAffiliation {
+  id                String   @id @default(uuid())
+  productId         String   @unique @map("product_id")
+  vendorId          String   @map("vendor_id")
+  commissionRate    Decimal  @map("commission_rate") @db.Decimal(5, 4)
+  isActive          Boolean  @default(true) @map("is_active")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  wallets           AffiliateProductWallet[]
+
+  @@index([vendorId])
+  @@map("product_affiliations")
+}
+
+model AffiliateProductWallet {
+  id                    String   @id @default(uuid())
+  affiliateId           String   @map("affiliate_id")
+  affiliate             Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  productAffiliationId  String   @map("product_affiliation_id")
+  productAffiliation    ProductAffiliation @relation(fields: [productAffiliationId], references: [id], onDelete: Cascade)
+
+  lockedCommissionRate  Decimal  @map("locked_commission_rate") @db.Decimal(5, 4)
+  referralLink          String   @unique @map("referral_link")
+  clicks                Int      @default(0)
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  marketplaceCommissions MarketplaceCommission[]
+
+  @@unique([affiliateId, productAffiliationId])
+  @@index([affiliateId])
+  @@index([productAffiliationId])
+  @@map("affiliate_product_wallets")
+}
+
+model MarketplaceCommission {
+  id                    String   @id @default(uuid())
+  sourceSaleId          String   @unique @map("source_sale_id")
+  walletId              String   @map("wallet_id")
+  wallet                AffiliateProductWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  saleAmount            Decimal  @map("sale_amount") @db.Decimal(14, 2)
+  commissionRate        Decimal  @map("commission_rate") @db.Decimal(5, 4)
+  commissionGross       Decimal  @map("commission_gross") @db.Decimal(14, 2)
+  platformFeeAmount     Decimal  @map("platform_fee_amount") @db.Decimal(14, 2)
+  commissionNet         Decimal  @map("commission_net") @db.Decimal(14, 2)
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  @@index([walletId])
+  @@map("marketplace_commissions")
+}
+

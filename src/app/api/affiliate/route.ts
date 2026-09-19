@@ -27,10 +27,27 @@ export async function GET() {
 
   if (error) {
     console.error("Affiliate earnings lookup failed", error);
-    return NextResponse.json({ error: "Impossible de charger les gains" }, { status: 500 });
   }
 
-  const earnings = (data ?? []).map((earning) => ({
+  // Requêter également la nouvelle table commissions
+  const { data: affiliate } = await client
+    .from("affiliates")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  let modernCommissions: any[] = [];
+  if (affiliate) {
+    const { data: comms } = await client
+      .from("commissions")
+      .select("id, beneficiary_id, source_sale_id, sale_amount, amount_paid, commission_rate, created_at")
+      .eq("beneficiary_id", affiliate.id)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    modernCommissions = comms || [];
+  }
+
+  const legacyEarnings = (data ?? []).map((earning) => ({
     id: String(earning.id),
     affiliateId: String(earning.affiliate_id),
     orderId: String(earning.order_id),
@@ -40,6 +57,19 @@ export async function GET() {
     status: String(earning.status),
     createdAt: String(earning.created_at),
   }));
+
+  const newEarnings = modernCommissions.map((c) => ({
+    id: String(c.id),
+    affiliateId: String(c.beneficiary_id),
+    orderId: String(c.source_sale_id),
+    amount: Number(c.sale_amount),
+    commission: Number(c.amount_paid),
+    rate: Number(c.commission_rate),
+    status: "available",
+    createdAt: String(c.created_at),
+  }));
+
+  const earnings = [...newEarnings, ...legacyEarnings];
 
   return NextResponse.json({ earnings });
 }

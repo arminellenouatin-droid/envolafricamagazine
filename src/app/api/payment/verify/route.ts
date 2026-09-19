@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { activateMonerooEntitlements } from "@/lib/moneroo-entitlements";
 import { verifyMonerooPayment } from "@/lib/moneroo";
 import { confirmOrderPayment, findOrderById, findUserById, recordDonation, updateUserSubscription, ProductionDatabaseNotConfiguredError } from "@/lib/core-db";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { calculateAndDistributeCommission } from "@/lib/affiliation/commission";
 
 function isSuccessStatus(status: unknown) {
   return typeof status === "string" && ["success", "succeeded", "paid", "confirmed", "completed"].includes(status.toLowerCase());
@@ -53,6 +55,31 @@ async function verifyAndConfirm(orderId: string, requestedPaymentId?: string) {
 
   await recordDonation({ order: confirmedOrder, paymentId: providerRef });
   await activateMonerooEntitlements(providerRef);
+
+  if (!alreadyPaid && confirmedOrder.affiliateCode) {
+    try {
+      const supabase = getSupabaseAdmin();
+      if (supabase) {
+        const { data: aff } = await supabase
+          .from("affiliates")
+          .select("id")
+          .eq("referral_code", confirmedOrder.affiliateCode.trim().toUpperCase())
+          .maybeSingle();
+
+        if (aff) {
+          await calculateAndDistributeCommission({
+            sourceSaleId: confirmedOrder.id,
+            volet: "MAGAZINE",
+            sellerAffiliateId: aff.id,
+            amount: confirmedOrder.total,
+          });
+        }
+      }
+    } catch (affError) {
+      console.error("[payment/verify] Failed to distribute affiliate commission:", affError);
+    }
+  }
+
   return { response: NextResponse.json({ success: true, order: confirmedOrder, verification }) };
 }
 

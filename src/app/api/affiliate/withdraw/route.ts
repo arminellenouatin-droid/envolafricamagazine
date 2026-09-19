@@ -1,37 +1,82 @@
-import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { verifyToken, COOKIE_NAME } from "@/lib/auth";
-import { readDB, writeDB } from "@/lib/db";
+﻿import { NextRequest, NextResponse } from "next/server";
+import { getCurrentUserFromCookie } from "@/lib/auth";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { requestWithdrawal, AffiliationError } from "@/lib/affiliation/enrollment";
+import { WITHDRAWAL_THRESHOLD } from "@/lib/affiliation/constants";
 
 export async function POST(req: NextRequest) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  if (!token) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-  const decoded = verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Token invalide" }, { status: 401 });
-  const db = readDB();
-  const user = db.users.find(u=>u.id===decoded.id);
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  const user = await getCurrentUserFromCookie();
+  if (!user) {
+    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  }
 
-  const earnings = db.affiliateEarnings.filter(e=>e.affiliateId===user.id && e.status==="available");
-  const total = earnings.reduce((s,e)=>s+e.commission,0);
-  if (total < 150000) return NextResponse.json({ error: `Minimum 150 000 F CFA requis, vous avez ${total.toLocaleString()} F` }, { status: 400 });
+  try {
+    const body = await req.json();
+    const { amount, mobileMoneyProvider, mobileMoneyNumber } = body;
 
-  const { method, details } = await req.json(); // method: mtn_bj, orange_ci, wave, virement
-  if (!method) return NextResponse.json({ error: "Méthode de retrait requise" }, { status: 400 });
+    const numAmount = Number(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      return NextResponse.json({ error: "Montant invalide" }, { status: 400 });
+    }
 
-  // Marquer comme paid (en attente de traitement manuel par gérant)
-  earnings.forEach(e=> e.status = "paid" as any);
-  if (!db.settings.withdrawRequests) db.settings.withdrawRequests = [];
-  db.settings.withdrawRequests.push({
-    id: Date.now().toString(),
-    userId: user.id,
-    amount: total,
-    method,
-    details,
-    createdAt: new Date().toISOString(),
-    status: "pending",
-  });
-  writeDB(db);
-  return NextResponse.json({ success: true, amount: total, message: "Demande de retrait envoyée, traitement 24h" });
+    if (numAmount < WITHDRAWAL_THRESHOLD) {
+      return NextResponse.json(
+        { error: `Le montant minimum de retrait est de ${WITHDRAWAL_THRESHOLD.toLocaleString()} XOF.` },
+        { status: 400 }
+      );
+    }
+
+    if (!mobileMoneyProvider || !mobileMoneyNumber) {
+      return NextResponse.json(
+        { error: "Veuillez préciser l'opérateur Mobile Money et votre numéro." },
+        { status: 400 }
+      );
+    }
+
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return NextResponse.json({ error: "Base de données indisponible" }, { status: 503 });
+    }
+
+    const { data: affiliate } = await supabase
+      .from("affiliates")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!affiliate) {
+      return NextResponse.json(
+        { error: "Vous n'avez pas de compte affilié actif." },
+        { status: 400 }
+      );
+    }
+
+    const withdrawal = await requestWithdrawal({
+      affiliateId: affiliate.id,
+      amount: numAmount,
+      mobileMoneyProvider,
+      mobileMoneyNumber,
+    });
+
+    return NextResponse.json({
+      success: true,
+      withdrawal: {
+        id: withdrawal.id,
+        amount: Number(withdrawal.amount),
+        provider: withdrawal.mobile_money_provider,
+        number: withdrawal.mobile_money_number,
+        status: withdrawal.status,
+      },
+      message: "Demande de retrait enregistrée avec succès. Traitement sous 24h à 48h.",
+    });
+  } catch (err: any) {
+    if (err instanceof AffiliationError) {
+      return NextResponse.json({ error: err.message }, { status: 400 });
+    }
+    console.error("[api/affiliate/withdraw] Error:", err);
+    return NextResponse.json(
+      { error: err.message || "Erreur lors de la demande de retrait" },
+      { status: 500 }
+    );
+  }
 }
