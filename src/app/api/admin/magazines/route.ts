@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const { db, error, status } = await getCurrentUserForAdmin('redacteur_chef');
+  const { db, user, error, status } = await getCurrentUserForAdmin('redacteur_chef');
   if (error) return NextResponse.json({ error }, { status });
   try {
     const body = await req.json();
@@ -95,14 +95,17 @@ export async function PUT(req: NextRequest) {
       if (updates.previewImages) patch.preview_pages = Array.isArray(updates.previewImages) ? updates.previewImages.length : 0;
       const result = await client.from("magazines").update(patch).eq("id", id).select("*").single();
       if (result.error) return NextResponse.json({ error: `Impossible d’enregistrer le magazine : ${result.error.message}` }, { status: 503 });
-      return NextResponse.json({ success: true, magazine: mapMagazine(result.data) });
+      const persistedMagazine = mapMagazine(result.data);
+      const republication = await publishMagazineToWab(persistedMagazine as any, user?.id || "");
+      return NextResponse.json({ success: true, magazine: persistedMagazine, republication });
     }
     const mag = db!.magazines.find(m=>m.id===id);
     if (!mag) return NextResponse.json({ error: "Magazine introuvable" }, { status: 404 });
     Object.assign(mag, updates);
     if (updates.previewImages) (mag as any).previewPages = updates.previewImages.length;
     writeDB(db!);
-    return NextResponse.json({ success: true, magazine: mag });
+    const republication = await publishMagazineToWab(mag as any, user?.id || "");
+    return NextResponse.json({ success: true, magazine: mag, republication });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

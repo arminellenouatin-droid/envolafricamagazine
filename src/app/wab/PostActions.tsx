@@ -34,7 +34,8 @@ export default function PostActions({ postId, initialLikes, initialComments, ini
   }
 
   async function shareTo(destination: "story" | "feed" | "friend" | "whatsapp" | "copy") {
-    const url = `${window.location.origin}/wab#post-${postId}`;
+    const canonicalBase = process.env.NEXT_PUBLIC_SITE_URL || "https://envolafrica.site";
+    const url = `${canonicalBase}/wab/posts/${postId}`;
     const shareText = "Découvrez cette publication sur WAB";
     if (destination === "whatsapp") {
       window.open(`https://wa.me/?text=${encodeURIComponent(`${shareText} : ${url}`)}`, "_blank", "noopener,noreferrer");

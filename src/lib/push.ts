@@ -53,7 +53,7 @@ export function toAbsoluteUrl(url?: string | null): string | undefined {
   }
   const baseUrl = (
     process.env.NEXT_PUBLIC_SITE_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://envolafricamagazinealokpe.vercel.app")
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://envolafrica.site")
   ).replace(/\/$/, "");
   const path = url.startsWith("/") ? url : `/${url}`;
   return `${baseUrl}${path}`;

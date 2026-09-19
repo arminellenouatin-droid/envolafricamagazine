@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import CommentsPanel from "./CommentsPanel";
@@ -373,7 +373,11 @@ export default function WabClient() {
                 <div className="text-sm leading-6 text-[#111e1d]"><ExpandablePostText value={post.content} />{post.sourceUrl && <a href={post.sourceUrl} className="mb-3 flex items-center gap-2 rounded-xl bg-[#eefcfa] px-4 py-3 text-xs font-extrabold text-[#006874] transition hover:bg-[#d7f2ee] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006874]"><span className="material-symbols-outlined text-[18px]">open_in_new</span><span>{post.sourceTitle ? `Lire : ${post.sourceTitle}` : "Lire l’article complet"}</span></a>}<div className="mb-3 flex flex-wrap gap-2">{post.tags.map((tag) => <span key={tag} className="rounded-full bg-[#e6f2f3] px-3 py-1 text-[11px] font-semibold text-[#006874]">#{tag}</span>)}</div>{post.media && <PostMedia postId={post.id} media={post.media} />}</div><PostActions postId={post.id} initialLikes={post.likes} initialComments={post.comments} initialShares={post.shares} views={post.views} canBoost={Boolean(currentUser && (post.authorUserId === currentUser.id || (post.pageId && pages.some((ownedPage) => ownedPage.id === post.pageId))))} onComment={() => openComments(post.id)} /><CommentsPanel postId={post.id} openSignal={commentSignals[post.id] ?? 0} onCountChange={(count) => setPosts((items) => items.map((item) => item.id === post.id ? { ...item, comments: count } : item))} /></article>{discoveryTypeForInsertion(index + 1) && <DiscoveryCarousel type={discoveryTypeForInsertion(index + 1)!} />} </Fragment>)}
             {loadingFeed && <p className="py-8 text-center text-sm font-semibold text-[#43474d]">Chargement du fil professionnel…</p>}
             {!loadingFeed && posts.length === 0 && <div className="rounded-3xl border border-dashed border-[#c3c6ce] bg-white p-10 text-center"><h2 className="font-display text-lg font-bold">Le réseau se construit avec vous</h2><p className="mt-2 text-sm text-[#43474d]">Soyez le premier à partager une opportunité ou une expertise.</p></div>}
-            <div ref={marker} className="flex justify-center py-8"><span className="material-symbols-outlined animate-spin text-3xl text-[#006874]">refresh</span></div>
+            {hasMore ? (
+              <div ref={marker} className="flex justify-center py-8"><span className="material-symbols-outlined animate-spin text-3xl text-[#006874]">refresh</span></div>
+            ) : posts.length > 0 ? (
+              <div className="py-8 text-center text-xs font-semibold text-[#687274]">Vous avez vu toutes les publications récentes</div>
+            ) : null}
           </div>
           {message && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{message}</p>}
           {wabSubscriptionMessage && <p className="rounded-xl bg-[#fff3dc] p-3 text-sm font-semibold text-[#875600]">{wabSubscriptionMessage}</p>}

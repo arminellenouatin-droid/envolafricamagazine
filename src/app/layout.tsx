@@ -9,7 +9,7 @@ import { getCurrentUserFromCookie } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://envolafricamagazinealokpe.vercel.app"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://envolafrica.site"),
   title: {
     default: "Envol Africa Magazine | Le magazine économique panafricain de référence",
     template: "%s | Envol Africa",
