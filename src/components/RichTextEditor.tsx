@@ -17,17 +17,18 @@ export default function RichTextEditor({ name, value, defaultValue = "", onChang
   useEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
-    const next = /<[a-z][\s\S]*>/i.test(initial) ? sanitizeRichText(initial) : plainTextToRichHtml(initial);
     const isEditing = editor.contains(document.activeElement);
-    if (!(isEditing && lastEmittedRef.current === next) && editor.innerHTML !== next) editor.innerHTML = next;
+    // Ne jamais écraser le contenu pendant que l'utilisateur est en train d'écrire
+    if (isEditing) return;
+    const next = /<[a-z][\s\S]*>/i.test(initial) ? sanitizeRichText(initial) : plainTextToRichHtml(initial);
+    if (editor.innerHTML !== next) editor.innerHTML = next;
     if (hiddenRef.current) hiddenRef.current.value = next;
   }, [initial]);
 
   function emit() {
     const editor = editorRef.current;
     if (!editor) return;
-    const html = sanitizeRichText(editor.innerHTML);
-    if (editor.innerHTML !== html) editor.innerHTML = html;
+    const html = editor.innerHTML;
     lastEmittedRef.current = html;
     if (hiddenRef.current) hiddenRef.current.value = html;
     onChange?.(html);

@@ -56,12 +56,13 @@ export async function publishMagazineToWab(magazine: Magazine, authorUserId: str
   const pageResult = await ensureWabPage(authorUserId, { name: "ENVOL AFRICA", slug: "envol-africa", logoUrl: "/envol-africa-page-logo.png", avatarUrl: "/envol-africa-page-logo.png", description: "La page officielle d’Envol Africa dans le réseau WAB." });
   const sourceUrl = `/kiosque/${magazine.id}`;
   const sourceTitle = magazine.title || `Envol Africa Magazine N°${magazine.numero}`;
+  const coverPath = magazine.cover ? (magazine.cover.includes("/covers/") ? (magazine.cover.match(/\/covers\/[^?#\s]+/)?.[0] || magazine.cover) : magazine.cover) : "";
   const payload = {
     author_id: profile.id,
     page_id: pageResult.page?.id ?? null,
     content: `Nouveau numéro disponible : ${sourceTitle}\n\n${magazine.description || "Découvrez les analyses, enquêtes et opportunités du nouveau numéro."}\n\nAcheter et feuilleter : ${sourceUrl}`,
     content_type: "document",
-    media: magazine.cover ? [{ path: magazine.cover, mimeType: "image/*", name: sourceTitle }] : [],
+    media: coverPath ? [{ path: coverPath, mimeType: "image/jpeg", name: sourceTitle }] : [],
     moderation_status: "published",
     is_boosted: false,
     source_type: "magazine_issue",

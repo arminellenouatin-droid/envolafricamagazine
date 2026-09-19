@@ -24,13 +24,28 @@ export async function GET(request: NextRequest) {
   }
 
   if (!media) return NextResponse.json({ error: "Média indisponible." }, { status: 404 });
-  if (/^https?:\/\//.test(media.path)) return NextResponse.json({ url: media.path, mimeType: media.mimeType, name: media.name });
+
+  let mediaPath = media.path || "";
+  // Normalisation des couvertures de magazines ou chemins locaux
+  if (mediaPath.includes("/covers/")) {
+    const match = mediaPath.match(/\/covers\/[^?#\s]+/);
+    if (match) mediaPath = match[0];
+  }
+  if (mediaPath.startsWith("/")) {
+    return NextResponse.json({ url: mediaPath, mimeType: media.mimeType || "application/octet-stream", name: media.name });
+  }
+  if (/^https?:\/\//i.test(mediaPath)) {
+    return NextResponse.json({ url: mediaPath, mimeType: media.mimeType || "application/octet-stream", name: media.name });
+  }
 
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
   const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!key || !url) return NextResponse.json({ error: "Stockage indisponible." }, { status: 503 });
   const storage = createClient(url, key, { auth: { persistSession: false } });
-  const { data, error } = await storage.storage.from("wab-media").createSignedUrl(media.path, 300);
-  if (error || !data?.signedUrl) return NextResponse.json({ error: "Impossible de préparer ce média." }, { status: 502 });
+  const { data, error } = await storage.storage.from("wab-media").createSignedUrl(mediaPath, 3600);
+  if (error || !data?.signedUrl) {
+    const publicUrl = storage.storage.from("wab-media").getPublicUrl(mediaPath).data.publicUrl;
+    return NextResponse.json({ url: publicUrl, mimeType: media.mimeType, name: media.name });
+  }
   return NextResponse.json({ url: data.signedUrl, mimeType: media.mimeType, name: media.name });
 }
