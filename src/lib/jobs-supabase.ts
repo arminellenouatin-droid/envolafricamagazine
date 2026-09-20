@@ -25,7 +25,54 @@ export async function listPublishedJobsOffers() {
 }
 
 export type CreateJobsOfferInput = { userId: string; title: string; description: string; companyName: string; companyLogo?: string; contactEmail: string; contactPhone?: string; address?: string; country: string; city: string; region?: string; sector: string; contractType: "CDI" | "CDD" | "Stage" | "Freelance" | "Remote"; salary?: string; skills: string[]; expiresAt: string };
-export async function createJobsOfferInSupabase(input: CreateJobsOfferInput) { const supabase = getSupabaseAdmin(); if (!supabase) return { configured: false as const, offer: null }; const matchedCountry = AFRICA_COUNTRIES.find((item) => item.name === input.country); if (!matchedCountry) return { configured: true as const, offer: null, error: new Error("Pays Jobs invalide") }; const { count, error: countError } = await supabase.from("jobs_offers").select("id", { count: "exact", head: true }).eq("created_by", input.userId); if (countError) return { configured: true as const, offer: null, error: countError }; if ((count ?? 0) >= 2) return { configured: true as const, offer: null, quotaReached: true as const }; const { data, error } = await supabase.from("jobs_offers").insert({ created_by: input.userId, title: input.title, description: input.description, company_name: input.companyName, company_logo_url: input.companyLogo, contact_email: input.contactEmail, contact_phone: input.contactPhone, address: input.address, country_code: matchedCountry.code, country_name: matchedCountry.name, city: input.city, region: input.region, sector: input.sector, contract_type: input.contractType, salary_text: input.salary, skills: input.skills, expires_at: input.expiresAt }).select().single(); if (error) return { configured: true as const, offer: null, error }; return { configured: true as const, offer: data }; }
+export async function createJobsOfferInSupabase(input: CreateJobsOfferInput) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false as const, offer: null };
+  const matchedCountry = AFRICA_COUNTRIES.find((item) => item.name === input.country);
+  if (!matchedCountry) return { configured: true as const, offer: null, error: new Error("Pays Jobs invalide") };
+
+  const { count, error: countError } = await supabase.from("jobs_offers").select("id", { count: "exact", head: true }).eq("created_by", input.userId);
+  if (countError) return { configured: true as const, offer: null, error: countError };
+
+  if ((count ?? 0) >= 2) {
+    const { data: activeSub } = await supabase
+      .from("jobs_subscriptions")
+      .select("id")
+      .eq("user_id", input.userId)
+      .eq("audience", "employer")
+      .eq("status", "active")
+      .or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`)
+      .maybeSingle();
+
+    if (!activeSub) {
+      return { configured: true as const, offer: null, quotaReached: true as const };
+    }
+  }
+
+  const { data, error } = await supabase.from("jobs_offers").insert({
+    created_by: input.userId,
+    title: input.title,
+    description: input.description,
+    company_name: input.companyName,
+    company_logo_url: input.companyLogo,
+    contact_email: input.contactEmail,
+    contact_phone: input.contactPhone,
+    address: input.address,
+    country_code: matchedCountry.code,
+    country_name: matchedCountry.name,
+    city: input.city,
+    region: input.region,
+    sector: input.sector,
+    contract_type: input.contractType,
+    salary_text: input.salary,
+    skills: input.skills,
+    status: "published",
+    expires_at: input.expiresAt
+  }).select().single();
+
+  if (error) return { configured: true as const, offer: null, error };
+  return { configured: true as const, offer: data };
+}
 
 export type CreateJobsCandidateInput = { userId: string; firstName: string; lastName: string; contactEmail: string; contactPhone?: string; description: string; skills: string[]; desiredRole: string; country: string; city: string; availability: string; cvPath?: string };
 export async function upsertJobsCandidateInSupabase(input: CreateJobsCandidateInput) { const supabase = getSupabaseAdmin(); if (!supabase) return { configured: false as const, candidate: null }; const matchedCountry = AFRICA_COUNTRIES.find((item) => item.name === input.country); if (!matchedCountry) return { configured: true as const, candidate: null, error: new Error("Pays Jobs invalide") }; const { data, error } = await supabase.from("jobs_candidates").upsert({ created_by: input.userId, first_name: input.firstName, last_name: input.lastName, contact_email: input.contactEmail, contact_phone: input.contactPhone, description: input.description, skills: input.skills, desired_role: input.desiredRole, country_code: matchedCountry.code, country_name: matchedCountry.name, city: input.city, availability: input.availability, cv_path: input.cvPath, status: "published" }, { onConflict: "created_by" }).select().single(); if (error) return { configured: true as const, candidate: null, error }; return { configured: true as const, candidate: data }; }
@@ -220,3 +267,84 @@ export async function incrementJobsOfferView(offerId: string, userId?: string) {
   if (updateError) return { configured: true as const, found: true, error: updateError };
   return { configured: true as const, found: true };
 }
+
+export async function getJobsDashboardData(userId: string) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false as const, data: null };
+  const [offersRes, candidateRes, unlocksRes, subsRes, boostsRes] = await Promise.all([
+    supabase.from("jobs_offers").select("*").eq("created_by", userId).order("created_at", { ascending: false }),
+    supabase.from("jobs_candidates").select("*").eq("created_by", userId).maybeSingle(),
+    supabase.from("jobs_unlocks").select("*").eq("user_id", userId).eq("status", "paid"),
+    supabase.from("jobs_subscriptions").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+    supabase.from("jobs_boosts").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+  ]);
+  return {
+    configured: true as const,
+    data: {
+      offers: (offersRes.data || []).map((row) => ({
+        id: row.id,
+        title: row.title,
+        city: row.city,
+        country: row.country_name,
+        views: row.views_count || 0,
+        applications: row.applications_count || 0,
+        isBoosted: Boolean(row.is_boosted),
+      })),
+      candidate: candidateRes.data ? {
+        id: candidateRes.data.id,
+        desiredRole: candidateRes.data.desired_role,
+        city: candidateRes.data.city,
+        country: candidateRes.data.country_name,
+        views: candidateRes.data.views_count || 0,
+        isBoosted: Boolean(candidateRes.data.is_boosted),
+      } : null,
+      unlocksCount: unlocksRes.data?.length || 0,
+      subscriptions: (subsRes.data || []).map((sub) => ({
+        id: sub.id,
+        planId: sub.plan_code,
+        status: sub.status,
+      })),
+      boostsCount: boostsRes.data?.length || 0,
+    }
+  };
+}
+
+export async function getOfferApplicationsForEmployer(offerId: string, userId: string) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false as const, offer: null, applications: [] };
+  const { data: offer, error: offerError } = await supabase.from("jobs_offers").select("*").eq("id", offerId).eq("created_by", userId).maybeSingle();
+  if (offerError || !offer) return { configured: true as const, offer: null, applications: [] };
+
+  const { data: applications, error: appsError } = await supabase
+    .from("jobs_applications")
+    .select("*, jobs_candidates(*)")
+    .eq("offer_id", offerId)
+    .order("created_at", { ascending: false });
+
+  if (appsError) return { configured: true as const, offer, applications: [] };
+
+  return {
+    configured: true as const,
+    offer,
+    applications: (applications || []).map((app) => ({
+      id: app.id,
+      status: app.status,
+      message: app.message,
+      createdAt: app.created_at,
+      candidate: app.jobs_candidates ? {
+        id: app.jobs_candidates.id,
+        firstName: app.jobs_candidates.first_name,
+        lastName: app.jobs_candidates.last_name,
+        desiredRole: app.jobs_candidates.desired_role,
+        city: app.jobs_candidates.city,
+        country: app.jobs_candidates.country_name,
+        description: app.jobs_candidates.description,
+        skills: app.jobs_candidates.skills || [],
+        contactEmail: app.jobs_candidates.contact_email,
+        contactPhone: app.jobs_candidates.contact_phone,
+        cvUrl: app.jobs_candidates.cv_path,
+      } : null,
+    })),
+  };
+}
+

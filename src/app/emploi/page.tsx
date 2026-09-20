@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import JobsClient from "./JobsClient";
 
 export const metadata: Metadata = {
-  title: "Envol Africa Jobs | Emploi & Recrutement dans les 54 pays d’Afrique",
+  title: {
+    absolute: "Envol Africa Jobs | Emploi & Recrutement dans les 54 pays d’Afrique",
+  },
   description: "Trouvez une opportunité professionnelle, publiez votre candidature ou recrutez les meilleurs talents africains avec Envol Africa Jobs.",
   alternates: {
     canonical: "/emploi",

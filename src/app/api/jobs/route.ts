@@ -19,12 +19,12 @@ export async function GET(request: NextRequest) {
   const interests = (searchParams.get("interests") ?? "").split(",").map(normalize).filter(Boolean).slice(0, 10);
   const supabaseOffers = await listPublishedJobsOffers();
   if (isProductionRuntime() && !supabaseOffers.configured) return NextResponse.json({ error: "Le service Jobs est temporairement indisponible, la persistance Supabase doit être configurée." }, { status: 503 });
-  const database = isProductionRuntime() ? { offers: [] } : readJobsDB();
-  // En environnement avec migration Supabase appliquée, la base est prioritaire.
-  // Le fallback JSON reste temporairement utile au développement local et à la recette avant migration.
-  const sourceOffers = supabaseOffers.offers ?? database.offers
+  const fallbackOffers = (readJobsDB().offers || [])
     .filter((offer) => offer.status === "published")
     .map(({ id, title, description, country, city, sector, contractType, salary, skills, publishedAt, expiresAt, isBoosted, views, applications }) => ({ id, title, description, country, city, sector, contractType, salary, skills, publishedAt, expiresAt, isBoosted, views, applications }));
+  const sourceOffers = (supabaseOffers.offers && supabaseOffers.offers.length > 0)
+    ? supabaseOffers.offers
+    : fallbackOffers;
 
   const filtered = sourceOffers
     .filter((offer) => !query || normalize(`${offer.title} ${offer.description} ${offer.sector} ${offer.skills.join(" ")}`).includes(query))
