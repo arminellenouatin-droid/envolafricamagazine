@@ -14,19 +14,24 @@ type Product = {
 const labels: Record<string, string> = { BJ: "Bénin", CI: "Côte d’Ivoire", CM: "Cameroun", BF: "Burkina Faso", SN: "Sénégal", ML: "Mali", TG: "Togo" };
 const money = (value: number) => new Intl.NumberFormat("fr-FR").format(value) + " XOF";
 
-export default function ProductDetailClient({ id }: { id: string }) {
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function ProductDetailClient({ id, initialProduct }: { id: string; initialProduct?: Product | null }) {
+  const [product, setProduct] = useState<Product | null>(initialProduct || null);
+  const [loading, setLoading] = useState(!initialProduct);
   const [mode, setMode] = useState<"full" | "installment">("full");
   const [orderLoading, setOrderLoading] = useState(false);
   const [orderError, setOrderError] = useState("");
 
   useEffect(() => {
+    if (initialProduct && initialProduct.id === id) {
+      setProduct(initialProduct);
+      setLoading(false);
+      return;
+    }
     fetch(`/api/marketplace/products?id=${encodeURIComponent(id)}`, { cache: "no-store" })
       .then((response) => response.json())
       .then((data) => setProduct(data.products?.[0] || null))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, initialProduct]);
 
   if (loading) return <main className="mx-auto max-w-5xl px-5 py-24 text-center">Chargement du produit…</main>;
   if (!product) return <main className="mx-auto max-w-5xl px-5 py-24 text-center"><h1 className="text-2xl font-black">Produit introuvable</h1><Link className="mt-4 inline-block text-[#9e001f]" href="/marketplace">Retour au Marketplace</Link></main>;

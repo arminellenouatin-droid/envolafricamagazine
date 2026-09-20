@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -24,13 +24,13 @@ type Magazine = {
 
 type MagazineResponse = { magazine?: Magazine; magazines?: Magazine[] };
 
-export default function MagazineDetailPage() {
+export default function MagazineDetailPage({ initialMagazine }: { initialMagazine?: Magazine | null }) {
   const params = useParams();
-  const id = params.id as string;
-  const [magazine, setMagazine] = useState<Magazine | null>(null);
+  const id = (params?.id as string) || initialMagazine?.id || "";
+  const [magazine, setMagazine] = useState<Magazine | null>(initialMagazine ?? null);
   const [allMagazines, setAllMagazines] = useState<Magazine[]>([]);
   const [selections, setSelections] = useState<Array<{ format: string; language: string }>>([{ format: "numerique", language: "fr" }]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialMagazine);
   const [adding, setAdding] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const { locale, formatPrice } = useLocale();
@@ -40,6 +40,11 @@ export default function MagazineDetailPage() {
   const [paymentMethods, setPaymentMethods] = useState(() => getAvailablePaymentMethods("BJ", "XOF"));
 
   useEffect(()=>{
+    if (initialMagazine && initialMagazine.id === id) {
+      setMagazine(initialMagazine);
+      setLoading(false);
+      return;
+    }
     fetch(`/api/magazines?id=${id}`).then((response) => response.json() as Promise<MagazineResponse>).then((data) => {
       setMagazine(data.magazine ?? data.magazines?.find((item) => item.id === id) ?? null);
       setLoading(false);

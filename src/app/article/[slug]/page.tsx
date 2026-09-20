@@ -6,6 +6,7 @@ import { findArticleBySlug, findEditorialAuthorById, listPublishedArticles } fro
 import ArticleActions from "@/components/ArticleActions";
 import LocalizedArticleExperience from "@/components/LocalizedArticleExperience";
 import ArticleRecommendations from "@/components/ArticleRecommendations";
+import { getNewsArticleSchema, getBreadcrumbSchema } from "@/lib/schema-org";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -82,8 +83,36 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     translations: Object.fromEntries(Object.entries(article.translations || {}).map(([language, translation]) => [language, { ...translation, content: "" }]))
   };
 
+  const articleSchema = getNewsArticleSchema({
+    title: article.title,
+    slug: article.slug,
+    summary: article.summary,
+    content: article.content,
+    image: article.image,
+    publishedAt: article.publishedAt,
+    createdAt: article.createdAt,
+    updatedAt: (article as any).updatedAt || article.publishedAt || article.createdAt,
+    author: article.author,
+    category: article.category,
+    isAccessibleForFree: !article.isEncrypted,
+  });
+
+  const breadcrumbSchema = getBreadcrumbSchema([
+    { name: "Accueil", url: "/" },
+    { name: article.category || "Économie", url: "/#articles" },
+    { name: article.title, url: `/article/${encodeURIComponent(article.slug)}` },
+  ]);
+
   return (
     <div className="bg-[#fcf9f8] min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       <main className="max-w-[1280px] mx-auto px-5 md:px-[64px] py-12">
         <article className="mx-auto grid max-w-[980px] items-start gap-8 lg:grid-cols-[190px_minmax(0,720px)] lg:gap-10">
           <aside className="hidden lg:sticky lg:top-28 lg:block">

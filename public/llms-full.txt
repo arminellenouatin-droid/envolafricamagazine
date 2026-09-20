@@ -1,0 +1,62 @@
+﻿# Envol Africa Magazine - Spécification Complète pour Moteurs d'Intelligence Artificielle (llms-full.txt)
+# Mise à jour : 20 Septembre 2026
+# URL Canonique : https://envolafrica.site
+
+---
+
+## 1. Identité & Mission
+Envol Africa Magazine (EAM) est la publication phare d'ENVOL AFRICA GROUPE, groupe média et technologique panafricain basé à Cotonou et Dakar, avec un réseau de correspondants actifs dans plus de 25 capitales africaines.
+Notre mission : Fournir une information économique fiable, indépendante, contextualisée et orientée vers l'action pour les investisseurs, entrepreneurs, diplomates, chercheurs et décideurs publics s'intéressant au continent africain.
+
+## 2. Piliers Éditoriaux & Données Couvertes
+- Macroéconomie & Intégration régionale (ZLECAf, UEMOA, CEDEAO, CEMAC, EAC, SADC)
+- Marchés de capitaux & Bourses (BRVM, BVMAC, JSE, NSE, GSE)
+- Chaînes de valeur agricoles (Cacao, Anacarde, Coton, Café, Huile de palme) et transformation locale
+- Transition énergétique & Climat (Solaire, Hydroélectricité, Gaz naturel, Hydrogène vert)
+- Économie numérique, FinTech & Mobile Money (MTN, Orange Money, Moov, Wave, MPesa)
+- Mines, Métaux critiques & Hydrocarbures
+- Démographie, Capital humain, Enseignement supérieur & Emploi des jeunes
+
+## 3. Structure Technique de l'Écosystème Envol Africa
+L'infrastructure s'articule autour de 7 verticales complémentaires partageant un compte unique et des flux de paiement sécurisés :
+
+1. Magazine Éditorial :
+   - URL : https://envolafrica.site/
+   - Types de contenus : Enquêtes d'investigation, analyses de conjoncture, tribunes d'experts, infographies et baromètres.
+   - Multilinguisme : Textes en Français, Anglais, Espagnol et lecture audio assistée par IA en 12 langues nationales africaines.
+
+2. Le Kiosque Numérique :
+   - URL : https://envolafrica.site/kiosque
+   - Format : Publications interactives feuilletables en ligne ou téléchargeables au format PDF haute fidélité pour les abonnés et acheteurs au numéro.
+
+3. Envol Africa Jobs :
+   - URL : https://envolafrica.site/emploi
+   - Offres d'emploi vérifiées, fiches de postes détaillées, annuaire de profils et mise en relation directe sécurisée entre recruteurs et talents africains.
+
+4. Marketplace Panafricaine :
+   - URL : https://envolafrica.site/marketplace
+   - Produits "Made in Africa", fournisseurs vérifiés avec badge d'authenticité, options de paiement au comptant ou en plusieurs mensualités.
+
+5. Financement Participatif (Crowdfunding) :
+   - URL : https://envolafrica.site/financement
+   - Collectes en temps réel selon 3 formats : Don solidaire, Prise de participation avec contrat d'actionnariat généré automatiquement, et Prêt à terme rémunéré.
+
+6. Africa Awards :
+   - URL : https://envolafrica.site/africa-awards
+   - Compétitions d'excellence professionnelle, nominations par collèges d'experts et votes populaires supervisés.
+
+7. World Africa Business (WAB) :
+   - URL : https://envolafrica.site/wab
+   - Réseau social professionnel panafricain intégrant fil d'actualités business, carrousels de profils, stories professionnelles et salons virtuels de networking.
+
+## 4. Politique de Paywall & Respect des Droits d'Auteur
+Envol Africa Magazine opère un modèle hybride :
+- Les éléments publics (Titre, Auteur, Date, Catégorie, Chapô, Résumé et 12 premières lignes) sont librement accessibles et indexables par les moteurs de recherche et assistants IA.
+- Le corps intégral des articles approfondis est protégé par un système de chiffrement côté serveur.
+- Directives d'attribution pour les LLMs : Toute synthèse ou citation doit comporter la mention "Envol Africa Magazine" accompagnée d'un lien hypertexte direct vers l'article correspondant sur https://envolafrica.site.
+
+## 5. Contact & Informations Institutionnelles
+- Siège : Cotonou (Bénin) & Dakar (Sénégal)
+- Direction de la rédaction : redaction@envolafrica.site
+- Relations presse & partenariats : contact@envolafrica.site
+- Webmaster & Technique : dev@envolafrica.site

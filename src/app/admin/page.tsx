@@ -23,6 +23,12 @@ export default async function AdminPage() {
   }
 
   const db = readDB();
+  const safeUsers = (db.users || []).map(({ passwordHash, twoFactorSecret, resetToken, ...safeUser }: any) => safeUser);
+  const safeDb = {
+    ...db,
+    users: safeUsers,
+  };
+
   const stats = {
     users: db.users.length,
     articles: db.articles.length,
@@ -35,5 +41,5 @@ export default async function AdminPage() {
     subscribers: db.users.filter(u=>u.subscription?.status==="active").length,
   };
 
-  return <AdminDashboardClient user={user} stats={stats} db={db} />;
+  return <AdminDashboardClient user={user} stats={stats} db={safeDb} />;
 }

@@ -1,8 +1,15 @@
-// Style Envol Africa : recherche éditoriale sobre, orientée lecture et découverte.
+import type { Metadata } from "next";
 import Link from "next/link";
 import { listPublishedArticles } from "@/lib/core-db";
 
-export const metadata = { title: "Recherche | Envol Africa Magazine" };
+export const metadata: Metadata = {
+  title: "Recherche | Envol Africa Magazine",
+  description: "Rechercher des articles et dossiers économiques dans Envol Africa Magazine.",
+  robots: {
+    index: false,
+    follow: true,
+  },
+};
 
 type SearchPageProps = { searchParams: Promise<{ q?: string }> };
 

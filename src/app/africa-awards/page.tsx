@@ -1,9 +1,25 @@
 import Link from "next/link";
 import { getSupabaseCandidates, getSupabaseCompetitions, getSupabasePrizes } from "@/lib/awards-supabase";
 
-export const metadata = {
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
   title: "Africa Awards | Célébrons l'Excellence et les Talents d'Afrique",
   description: "La plus grande plateforme panafricaine de compétitions en direct, votes et cérémonies officielles de remise de prix.",
+  alternates: {
+    canonical: "/africa-awards",
+  },
+  openGraph: {
+    title: "Africa Awards | Célébrons l'Excellence et les Talents d'Afrique",
+    description: "Compétitions panafricaines en direct, votes transparents et galas de distinction.",
+    url: "/africa-awards",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Africa Awards",
+    description: "Célébrons l'excellence et les talents d'Afrique.",
+  },
 };
 
 const CATEGORIES = [

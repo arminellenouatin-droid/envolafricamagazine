@@ -6,6 +6,7 @@ import Footer from "@/components/FooterShell";
 import PromoPopup from "@/components/PromoPopup";
 import { LocaleProvider } from "@/components/LocaleProvider";
 import { getCurrentUserFromCookie } from "@/lib/auth";
+import { getOrganizationSchema, getWebSiteSchema } from "@/lib/schema-org";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +80,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             `,
           }}
         />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(getOrganizationSchema()) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(getWebSiteSchema()) }}
+        />
+        <link rel="alternate" type="application/rss+xml" title="Flux RSS - Envol Africa Magazine" href="/feed.xml" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />

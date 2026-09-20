@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { findMagazineById } from "@/lib/core-db";
+import { getMagazineProductSchema, getBreadcrumbSchema } from "@/lib/schema-org";
 import MagazineDetailClient from "./MagazineDetailClient";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -48,6 +49,31 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
-export default function MagazineDetailPage() {
-  return <MagazineDetailClient />;
+export default async function MagazineDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const magazine = await findMagazineById(id).catch(() => null);
+
+  const magazineSchema = magazine ? getMagazineProductSchema(magazine) : null;
+  const breadcrumbSchema = getBreadcrumbSchema([
+    { name: "Accueil", url: "/" },
+    { name: "Kiosque", url: "/kiosque" },
+    { name: magazine?.title || "Magazine", url: `/kiosque/${encodeURIComponent(id)}` },
+  ]);
+
+  return (
+    <>
+      {magazineSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(magazineSchema) }}
+        />
+      )}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <MagazineDetailClient initialMagazine={magazine} />
+    </>
+  );
 }
+

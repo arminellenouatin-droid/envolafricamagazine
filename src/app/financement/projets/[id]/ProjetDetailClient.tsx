@@ -1,24 +1,34 @@
-﻿"use client";
+"use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 
-export default function ProjetDetail() {
+export default function ProjetDetail({ id: propId, initialProjet }: { id?: string; initialProjet?: any }) {
   const params = useParams();
-  const id = params.id as string;
-  const [projet, setProjet] = useState<any>(null);
+  const id = (params?.id as string) || propId || initialProjet?.id || "";
+  const [projet, setProjet] = useState<any>(initialProjet || null);
   const [tab, setTab] = useState<"don"|"prise_part"|"pret">("don");
   const [montant, setMontant] = useState(10000);
   const [pourcentage, setPourcentage] = useState(1);
   const [paying, setPaying] = useState(false);
-  const [daysRemaining, setDaysRemaining] = useState(0);
+  const [daysRemaining, setDaysRemaining] = useState(() => {
+    if (!initialProjet?.dateFin) return 0;
+    return Math.max(0, Math.ceil((new Date(initialProjet.dateFin).getTime() - Date.now()) / 86400000));
+  });
 
   useEffect(()=>{
+    if (initialProjet && initialProjet.id === id) {
+      setProjet(initialProjet);
+      setDaysRemaining(Math.max(0, Math.ceil((new Date(initialProjet.dateFin).getTime() - Date.now()) / 86400000)));
+      return;
+    }
     fetch(`/api/crowdfunding/projects?id=${id}`).then(r=>r.json()).then(d=>{
-      setProjet(d.projet);
-      setDaysRemaining(Math.max(0, Math.ceil((new Date(d.projet.dateFin).getTime() - Date.now()) / 86400000)));
+      if (d?.projet) {
+        setProjet(d.projet);
+        setDaysRemaining(Math.max(0, Math.ceil((new Date(d.projet.dateFin).getTime() - Date.now()) / 86400000)));
+      }
     });
-  },[id]);
+  },[id, initialProjet]);
 
   if (!projet) return <div className="p-10 text-center">Chargement projet...</div>;
 

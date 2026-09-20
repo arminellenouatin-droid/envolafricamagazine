@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { marketplaceSeed } from "@/lib/marketplace-seed";
+import { getMarketplaceProductSchema, getBreadcrumbSchema } from "@/lib/schema-org";
 import ProductDetailClient from "./ProductDetailClient";
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  const { id } = await params;
+async function getProduct(id: string) {
   const supabase = getSupabaseAdmin();
   let product: any = null;
 
   if (supabase) {
     const { data } = await supabase
       .from("marketplace_products")
-      .select("id, title, description, media, price_xof")
+      .select("*, marketplace_suppliers(*)")
       .eq("id", id)
       .maybeSingle();
     product = data;
@@ -20,6 +20,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   if (!product) {
     product = marketplaceSeed.find((item) => item.id === id);
   }
+
+  return product;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const product = await getProduct(id);
 
   if (!product) {
     return {
@@ -71,5 +78,28 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function MarketplaceProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return <ProductDetailClient id={id} />;
+  const product = await getProduct(id);
+
+  const productSchema = product ? getMarketplaceProductSchema(product) : null;
+  const breadcrumbSchema = getBreadcrumbSchema([
+    { name: "Accueil", url: "/" },
+    { name: "Marketplace", url: "/marketplace" },
+    { name: product?.title || "Produit", url: `/marketplace/produits/${encodeURIComponent(id)}` },
+  ]);
+
+  return (
+    <>
+      {productSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+        />
+      )}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <ProductDetailClient id={id} initialProduct={product} />
+    </>
+  );
 }

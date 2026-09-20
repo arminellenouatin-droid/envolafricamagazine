@@ -4,15 +4,14 @@ import { getCrowdProjects } from "@/lib/crowdfunding-supabase";
 import { readCrowdDB } from "@/lib/crowdfunding-db";
 import ProjetDetailClient from "./ProjetDetailClient";
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  const { id } = await params;
+async function getProjet(id: string) {
   let projet: any = null;
   const supabase = getSupabaseAdmin();
 
   if (supabase) {
     try {
       const res = await getCrowdProjects({ id });
-      projet = res.projets[0];
+      projet = res?.projets?.[0] || null;
     } catch {
       // Ignorer l'erreur et tenter la base locale
     }
@@ -25,6 +24,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       // Ignorer l'erreur
     }
   }
+
+  return projet;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const projet = await getProjet(id);
 
   if (!projet) {
     return {
@@ -67,6 +73,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
-export default function ProjetDetail() {
-  return <ProjetDetailClient />;
+export default async function ProjetDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const projet = await getProjet(id);
+  return <ProjetDetailClient id={id} initialProjet={projet} />;
 }

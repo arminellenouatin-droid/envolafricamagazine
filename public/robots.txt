@@ -1,57 +1,86 @@
+﻿# Envol Africa Magazine - Robots.txt
+# Domaine de production officiel : https://envolafrica.site
+
 User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /admin/
 Disallow: /compte/
-Disallow: /panier?*
-Disallow: /2fa/
+Disallow: /panier
 Disallow: /auth/
-Sitemap: https://envolafricamag.com/sitemap.xml
-Sitemap: https://envolafricamag.com/server-sitemap.xml
+Disallow: /2fa/
+Disallow: /recherche
+Disallow: /emploi/dashboard
+Disallow: /emploi/admin
+Disallow: /emploi/publier-
+Disallow: /emploi/offres/*/decrypter
+Disallow: /financement/dashboard
+Disallow: /marketplace/admin
+Disallow: /marketplace/commandes
+Disallow: /marketplace/messages
+Disallow: /africa-awards/admin/
+Disallow: /africa-awards/host/
+Disallow: /africa-awards/jury/
+Disallow: /africa-awards/organizer/
+Disallow: /africa-awards/candidate/
+Disallow: /africa-awards/vote/
+Disallow: /africa-awards/apply/
+Disallow: /africa-awards/search
+Disallow: /wab/admin
+Disallow: /wab/campagnes
+Disallow: /wab/createur
+Disallow: /wab/messages
+Disallow: /wab/notifications
+Disallow: /wab/profil
+Disallow: /wab/recherche
+Disallow: /navigateur
 
-# Gestion robots IA - Arbitrage stratégique en attente validation Quentin §17.3 / DECISIONS.md #5
-# Proposition: autoriser métadonnées + contenu gratuit (chapo + 12 lignes) pour visibilité IA, bloquer contenu payant complet
-# En attente validation: actuellement AUTORISE tout sauf paywall complet via isAccessibleForFree
+# Directives d'indexation pour Moteurs IA & Assistants Génératifs (GEO / AEO)
+# Autorisation pleine et entière des contenus publics pour citation, synthèse et visibilité IA
 
 User-agent: GPTBot
-Allow: /$
-Allow: /kiosque
-Allow: /abonnement
-Allow: /don
-Allow: /affiliation
-Allow: /article/*?preview=1
-Disallow: /article/
-Disallow: /api/
-Disallow: /compte/
-Disallow: /admin/
-# GPTBot peut crawler chapo + 12 lignes visibles (= partie citable pour GEO §17.3) mais pas body complet
-
-User-agent: Google-Extended
-Allow: /$
-Allow: /kiosque
-Disallow: /article/
-Disallow: /api/
-
-User-agent: PerplexityBot
-Allow: /$
-Allow: /kiosque
-Disallow: /article/
-Disallow: /api/
-
-User-agent: ClaudeBot
-Allow: /$
-Allow: /kiosque
-Disallow: /article/
-Disallow: /api/
-
-User-agent: CCBot
 Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /compte/
+Disallow: /panier
+Disallow: /auth/
+Disallow: /2fa/
 
 User-agent: ChatGPT-User
 Allow: /
 
-# Paywall Google balisage
-# isAccessibleForFree: false sur partie verrouillée, hasPart avec isAccessibleForFree false
-# Voir schema.org NewsArticle
+User-agent: Google-Extended
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /compte/
+Disallow: /panier
 
-# Vitesse indexation: soumettre via Indexing API à chaque publication §17.1
+User-agent: PerplexityBot
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /compte/
+Disallow: /panier
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /compte/
+Disallow: /panier
+
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /compte/
+
+User-agent: CCBot
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+Sitemap: https://envolafrica.site/sitemap.xml
