@@ -59,12 +59,28 @@ export default async function HomePage() {
   ];
   const startups = ["AgriTrace", "KoriPay", "MobiClinic", "TerraLoop"];
   const recruitment = managedRecruitment.length ? managedRecruitment.map((item) => ({ title: item.title, description: item.description || "Rejoindre une équipe qui construit les usages de demain.", href: item.href || "/emploi", meta: [item.date, item.location].filter(Boolean).join(" · ") })) : ["Directeur.trice commercial.e", "Responsable programme", "Product manager Afrique"].map((title) => ({ title, description: "Rejoindre une équipe qui construit les usages de demain.", href: "/emploi", meta: "Poste ouvert" }));
-  const youtubeId = (value: string) => { const match = value.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/i); return match?.[1] || ""; };
+  const fallbackVideoTitles = [
+    "Grand Entretien Économique : Bâtir des champions panafricains",
+    "Immersion au cœur de l’innovation et des PME d’Afrique",
+    "Stratégies d’investissement et souveraineté économique",
+  ];
   const videoItems = (managedVideos.length ? managedVideos : [
-    { id: "youtube-1", title: "Grand Entretien Économique : Bâtir des champions panafricains", mediaUrl: "https://www.youtube.com/watch?v=IRVeiw1zFfI", mediaType: "youtube", href: "https://www.youtube.com/watch?v=IRVeiw1zFfI" },
-    { id: "youtube-2", title: "Immersion au cœur de l’innovation et des PME d’Afrique", mediaUrl: "https://www.youtube.com/watch?v=VYciXP_kDzw&t=1s", mediaType: "youtube", href: "https://www.youtube.com/watch?v=VYciXP_kDzw&t=1s" },
-    { id: "youtube-3", title: "Stratégies d’investissement et souveraineté économique", mediaUrl: "https://www.youtube.com/watch?v=jY9vMkJoc90", mediaType: "youtube", href: "https://www.youtube.com/watch?v=jY9vMkJoc90" },
-  ]).map((item, index) => { const source = item.mediaUrl || item.href || ""; const id = youtubeId(source); return { title: item.title, image: id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : item.mediaUrl || imageFallbacks[(index + 2) % imageFallbacks.length], href: id ? `https://www.youtube.com/watch?v=${id}` : item.href || "/wab", embedUrl: id ? `https://www.youtube-nocookie.com/embed/${id}?rel=0` : "", description: item.description || "" }; });
+    { id: "youtube-1", title: fallbackVideoTitles[0], mediaUrl: "https://www.youtube.com/watch?v=IRVeiw1zFfI", mediaType: "youtube", href: "https://www.youtube.com/watch?v=IRVeiw1zFfI" },
+    { id: "youtube-2", title: fallbackVideoTitles[1], mediaUrl: "https://www.youtube.com/watch?v=VYciXP_kDzw&t=1s", mediaType: "youtube", href: "https://www.youtube.com/watch?v=VYciXP_kDzw&t=1s" },
+    { id: "youtube-3", title: fallbackVideoTitles[2], mediaUrl: "https://www.youtube.com/watch?v=jY9vMkJoc90", mediaType: "youtube", href: "https://www.youtube.com/watch?v=jY9vMkJoc90" },
+  ]).map((item, index) => {
+    const source = item.mediaUrl || item.href || "";
+    const id = youtubeId(source);
+    const rawTitle = String(item.title || "").trim();
+    const cleanTitle = !rawTitle || /vid[eé]o\s+youtube/i.test(rawTitle) ? fallbackVideoTitles[index % fallbackVideoTitles.length] : rawTitle;
+    return {
+      title: cleanTitle,
+      image: id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : item.mediaUrl || imageFallbacks[(index + 2) % imageFallbacks.length],
+      href: id ? `https://www.youtube.com/watch?v=${id}` : item.href || "/wab",
+      embedUrl: id ? `https://www.youtube-nocookie.com/embed/${id}?rel=0` : "",
+      description: item.description || "",
+    };
+  });
   const sponsorItems = managedSponsors.length ? managedSponsors.map((item) => ({ title: item.title, image: item.mediaUrl || imageFallbacks[0], href: item.href || "/recherche", description: item.description || "" })) : ["Regards croisés sur l’industrie africaine", "Dossier spécial finance durable", "L’Afrique des nouvelles chaînes de valeur"].map((title, index) => ({ title, image: imageFallbacks[(index + 1) % imageFallbacks.length], href: "/contact", description: "Une proposition de partenariat éditorial à découvrir." }));
 
   return (
