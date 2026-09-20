@@ -314,9 +314,36 @@ export async function listMagazines(): Promise<Magazine[]> {
 export async function findMagazineById(id: string): Promise<Magazine | null> {
   const client = getPublicClient();
   if (!client) return canUseJsonFallback() ? getJsonMagazineById(id) ?? null : null;
-  const { data, error } = await client.from("magazines").select("*").eq("id", id).maybeSingle();
-  if (error) throw error;
-  return data ? mapMagazine(data as Record<string, unknown>) : null;
+
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  const num = Number(id);
+
+  try {
+    let data: Record<string, unknown> | null = null;
+    if (isUuid) {
+      const res = await client.from("magazines").select("*").eq("id", id).maybeSingle();
+      if (res.error) throw res.error;
+      data = res.data as Record<string, unknown> | null;
+    } else if (!isNaN(num) && num > 0) {
+      const res = await client.from("magazines").select("*").eq("numero", num).maybeSingle();
+      if (res.error) throw res.error;
+      data = res.data as Record<string, unknown> | null;
+    } else {
+      const res = await client.from("magazines").select("*").ilike("title", `%${id}%`).maybeSingle();
+      if (!res.error) data = res.data as Record<string, unknown> | null;
+    }
+
+    if (!data && canUseJsonFallback()) {
+      return getJsonMagazineById(id) ?? null;
+    }
+
+    return data ? mapMagazine(data) : null;
+  } catch (error) {
+    if (canUseJsonFallback()) {
+      return getJsonMagazineById(id) ?? null;
+    }
+    throw error;
+  }
 }
 
 export async function createPendingOrder(input: Omit<Order, "createdAt">): Promise<Order> {

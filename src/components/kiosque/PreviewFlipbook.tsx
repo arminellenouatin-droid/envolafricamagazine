@@ -50,7 +50,7 @@ export default function PreviewFlipbook({
   const renderTaskRightRef = useRef<any>(null);
 
   // Resolved PDF target URL: fallback to the project's official edition PDF if none specified
-  const targetPdfUrl = pdfUrl || (pages.length === 0 ? "/magazines/23/numero-23.pdf" : undefined);
+  const targetPdfUrl = pdfUrl || "/magazines/23/numero-23.pdf";
   const maxPage = 8;
   const isBlocked = (p: number) => p >= 8;
   const rightPage = page + 1;

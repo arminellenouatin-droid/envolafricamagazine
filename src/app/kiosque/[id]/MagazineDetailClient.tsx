@@ -40,27 +40,28 @@ export default function MagazineDetailPage({ initialMagazine }: { initialMagazin
   const [paymentMethods, setPaymentMethods] = useState(() => getAvailablePaymentMethods("BJ", "XOF"));
 
   useEffect(()=>{
-    if (initialMagazine && initialMagazine.id === id) {
+    if (initialMagazine && (initialMagazine.id === id || String(initialMagazine.numero) === id)) {
       setMagazine(initialMagazine);
       setLoading(false);
       return;
     }
     fetch(`/api/magazines?id=${id}`).then((response) => response.json() as Promise<MagazineResponse>).then((data) => {
-      setMagazine(data.magazine ?? data.magazines?.find((item) => item.id === id) ?? null);
+      setMagazine(data.magazine ?? data.magazines?.find((item) => item.id === id || String(item.numero) === id) ?? null);
       setLoading(false);
     }).catch(()=>{
       setMagazine({
         id,
-        numero: 25,
-        title: `Envol Africa N°25 - Spécial Investissements 2026`,
-        cover: "/covers/envol-africa-cover-01.jpg",
+        numero: 23,
+        title: `Envol Africa N°23 - L'Afrique qui gagne`,
+        cover: "/magazines/23/page-01.jpg",
         date: "2026-01-01",
-        description: "Notre grand dossier investissements, 40 pages d'analyses exclusives.",
+        description: "Notre grand dossier économique, 40 pages d'analyses exclusives.",
         year: 2026,
+        pdfs: { fr: "/magazines/23/numero-23.pdf" },
       });
       setLoading(false);
     });
-  },[id]);
+  },[id, initialMagazine]);
 
   useEffect(() => {
     fetch("/api/magazines").then((response) => response.json() as Promise<MagazineResponse>).then((data) => {
@@ -270,7 +271,7 @@ export default function MagazineDetailPage({ initialMagazine }: { initialMagazin
         </section>}
       </main>
       {previewOpen && (() => {
-        const selectedPdf = magazine.pdfs?.[localeLanguage] || magazine.pdfs?.fr;
+        const selectedPdf = magazine.pdfs?.[localeLanguage] || magazine.pdfs?.fr || "/magazines/23/numero-23.pdf";
         const protectedPdf = selectedPdf?.startsWith("private-pdf://")
           ? `/api/magazines/${encodeURIComponent(id)}/preview?lang=${encodeURIComponent(localeLanguage)}`
           : undefined;

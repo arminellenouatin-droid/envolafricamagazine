@@ -85,7 +85,7 @@ export default function KiosquePage({ initialMagazines = [] }: { initialMagazine
       {previewOpen && (previewMagazine || featured) && (() => {
         const currentMagazine = previewMagazine || featured;
         const language = locale.language || "fr";
-        const selectedPdf = currentMagazine.pdfs?.[language] || currentMagazine.pdfs?.fr;
+        const selectedPdf = currentMagazine.pdfs?.[language] || currentMagazine.pdfs?.fr || "/magazines/23/numero-23.pdf";
         const protectedPdf = selectedPdf?.startsWith("private-pdf://")
           ? `/api/magazines/${encodeURIComponent(currentMagazine.id)}/preview?lang=${encodeURIComponent(language)}`
           : undefined;
