@@ -15,7 +15,7 @@
 - Design premium professionnel (navy #0A1931 + gold #D4AF37) fidèle à Jeune Afrique
 - Homepage complète avec toutes sections nommées (Sentinelles, Essor, Ombre Douce, etc.)
 - Paywall sécurisé serveur (full text jamais envoyé sans abonnement) - conforme
-- Kiosque + panier + paiement Moneroo (clé pvk_4lf37v|01KZ7F2SRWWFQ70JCRASB8YHEC) fonctionnel avec fallback mock
+- Kiosque + panier + paiement Moneroo (configuré via variable d'environnement MONEROO_API_KEY) fonctionnel avec fallback mock
 - Abonnements 4 formules, affiliation 10/25%, dons, espace perso, admin dashboard de base
 - Build Next.js 16.3.0 OK, déploiement Vercel OK (après fix Prisma v5)
 - Admin DAVAKAN Quentin opérationnel

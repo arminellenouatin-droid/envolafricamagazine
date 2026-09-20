@@ -81,7 +81,7 @@ export function sanitizeRichText(value: string) {
   if (!/<[a-z][\s\S]*>/i.test(source)) return source;
   return source
     .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/<\s*(script|style|iframe|object|embed|form|input|textarea|button)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
+    .replace(/<\s*(script|style|iframe|object|embed|form|input|textarea|button|svg|math|base|link|meta)[\s\S]*?(?:<\s*\/\s*\1\s*>|\/?>)/gi, "")
     .replace(/<\s*([^>]+)>/g, (full, rawTag: string) => {
       const closing = /^\s*\//.test(rawTag);
       const tagMatch = rawTag.match(/^\s*\/?\s*([a-z0-9]+)/i);
@@ -92,15 +92,15 @@ export function sanitizeRichText(value: string) {
       if (tag === "br") return "<br>";
       if (tag === "a") {
         const hrefMatch = rawTag.match(/href\s*=\s*[\"']([^\"']+)[\"']/i);
-        const href = hrefMatch?.[1] ?? "";
-        if (!/^(https?:|mailto:)/i.test(href)) return "<a>";
+        const href = (hrefMatch?.[1] ?? "").trim();
+        if (!/^(https?:\/\/|mailto:)/i.test(href)) return "<a>";
         return `<a href="${escapeHtml(href)}" rel="noopener noreferrer" target="_blank">`;
       }
       if (tag === "img") {
         const srcMatch = rawTag.match(/src\s*=\s*[\"']([^\"']+)[\"']/i);
         const altMatch = rawTag.match(/alt\s*=\s*[\"']([^\"']*)[\"']/i);
-        const src = srcMatch?.[1] ?? "";
-        if (!/^(https?:|\/)/i.test(src)) return "";
+        const src = (srcMatch?.[1] ?? "").trim();
+        if (!/^(https?:\/\/|\/)/i.test(src)) return "";
         return `<img src="${escapeHtml(src)}" alt="${escapeHtml(altMatch?.[1] ?? "")}" loading="lazy" decoding="async">`;
       }
       return `<${tag}>`;

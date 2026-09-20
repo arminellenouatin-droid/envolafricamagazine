@@ -18,8 +18,8 @@ composer require moneroo/moneroo-php vlucas/phpdotenv
 
 `.env` exemple (ne jamais committer):
 ```
-MONEROO_API_KEY=pvk_4lf37v|01KZ7F2SRWWFQ70JCRASB8YHEC
-MONEROO_SECRET_KEY=pvk_4lf37v|01KZ7F2SRWWFQ70JCRASB8YHEC
+MONEROO_API_KEY=<MONEROO_API_KEY>
+MONEROO_SECRET_KEY=<MONEROO_SECRET_KEY>
 MONEROO_WEBHOOK_URL=https://envolafricamag.com/moneroo/webhook.php
 MONEROO_WEBHOOK_SECRET=whsec_ton_secret
 NEXT_PUBLIC_BASE_URL=https://envolafricamag.com

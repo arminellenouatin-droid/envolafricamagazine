@@ -76,7 +76,7 @@
 2. Si rouge, Redeploy + voir logs (devrait être vert maintenant avec prisma v5 fix)
 3. Settings > Environment Variables → Vérifier :
    ```
-   MONEROO_API_KEY=pvk_4lf37v|01KZ7F2SRWWFQ70JCRASB8YHEC
+   MONEROO_API_KEY=<MONEROO_API_KEY_DE_PRODUCTION>
    JWT_SECRET=...
    NEXT_PUBLIC_BASE_URL=https://ton-projet.vercel.app
    SUPABASE_URL=https://rtfjwpytiuvoekomevpu.supabase.co

@@ -3,6 +3,7 @@ import { getCurrentUserFromCookie } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { readDB, writeDB } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 function mapComment(comment: Record<string, unknown>) {
   return {
@@ -45,6 +46,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  const rl = rateLimit(`comment:${ip}`, 5, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Trop de commentaires soumis. Veuillez patienter une minute." }, { status: 429 });
+  }
   const user = await getCurrentUserFromCookie();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 

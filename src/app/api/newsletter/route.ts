@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { createOpaqueToken, hashOpaqueToken, normalizeEmail, isPlausibleEmail } from "@/lib/security-crypto";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 function hashEmail(email: string) {
   return hashOpaqueToken(`${process.env.NEWSLETTER_HASH_SECRET || process.env.JWT_SECRET || "local-newsletter-salt"}:${email}`);
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rl = rateLimit(`newsletter:${ip}`, 5, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Trop de requêtes. Veuillez patienter avant de réessayer." }, { status: 429 });
+  }
   try {
     const body = await request.json().catch(() => ({}));
     const email = normalizeEmail(body.email);

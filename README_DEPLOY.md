@@ -36,7 +36,7 @@ Supabase Dashboard > `https://supabase.com/dashboard/project/rtfjwpytiuvoekomevp
   Dans Supabase > Settings > Database > Connection string > **Transaction mode** (port 6543) / Session mode
   Format attendu :
   ```
-  postgresql://postgres.rtfjwpytiuvoekomevpu:3r+j9XtJuSRxUbh@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+  postgresql://postgres.rtfjwpytiuvoekomevpu:<DATABASE_PASSWORD>@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?pgbouncer=true
   ```
   Vérifie la région exacte (aws-0-eu-central-1, us-east-1, etc.) dans ton dashboard > Database > Region
 

@@ -24,7 +24,27 @@ async function resolveMedia(postId: string, index: number) {
     }
   }
   if (!media) return null;
-  if (/^https?:\/\//.test(media.path)) return { media, url: media.path };
+  if (/^https?:\/\//.test(media.path)) {
+    try {
+      const parsed = new URL(media.path);
+      const allowedHosts = [
+        "rtfjwpytiuvoekomevpu.supabase.co",
+        "envolafricamagazine.com",
+        "www.envolafricamagazine.com",
+        "localhost"
+      ];
+      const supabaseHost = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL);
+      if (supabaseHost) {
+        try { allowedHosts.push(new URL(supabaseHost).hostname); } catch {}
+      }
+      if (!allowedHosts.includes(parsed.hostname) && !parsed.hostname.endsWith(".supabase.co")) {
+        return null;
+      }
+      return { media, url: media.path };
+    } catch {
+      return null;
+    }
+  }
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
   const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!key || !url) return null;

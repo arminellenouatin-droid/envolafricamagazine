@@ -4,8 +4,14 @@ import { createUser, findUserByEmail, findUserByAffiliateCode, ProductionDatabas
 import { hashPassword } from "@/lib/auth";
 import { issueEmailVerificationToken } from "@/lib/security-db";
 import { normalizeEmail, isPlausibleEmail } from "@/lib/security-crypto";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  const rl = rateLimit(`register:${ip}`, 5, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Trop de tentatives d'inscription. Veuillez patienter avant de réessayer." }, { status: 429 });
+  }
   try {
     const body = await req.json();
     const { nom, prenom, password, affiliateRef } = body;

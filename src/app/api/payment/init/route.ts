@@ -7,6 +7,7 @@ import { SHIPPING_RATES } from "@/lib/constants";
 import { getMonerooMethodCodes } from "@/lib/payment-methods";
 import { validateMinimumPaymentAmount } from "@/lib/payment-policy";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 const SUBSCRIPTION_PRICES: Record<string, { monthly: number; annual: number }> = {
   mensuel: { monthly: 5000, annual: 42000 },
@@ -44,6 +45,11 @@ function getMagazinePrice(magazine: { prices?: Record<string, number>; priceOver
 }
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  const rl = rateLimit(`payment_init:${ip}`, 15, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Trop de requêtes de paiement. Veuillez patienter un instant." }, { status: 429 });
+  }
   let createdOrderId: string | undefined;
   try {
     const body = await req.json();
