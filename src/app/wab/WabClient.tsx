@@ -1155,7 +1155,7 @@ export default function WabClient() {
                 <a href="/contact" className="hover:underline">Assistance</a>
               </div>
               <p className="mt-2 text-[10px] text-[#a0a5aa]">
-                Envol Africa Magazine © 2025 · World Africa Business
+                Envol Africa Magazine © 2026 · World Africa Business
               </p>
             </footer>
           </aside>

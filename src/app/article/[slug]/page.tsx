@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUserFromCookie } from "@/lib/auth";
-import { findArticleBySlug, findEditorialAuthorById, listPublishedArticles } from "@/lib/core-db";
+import { findArticleBySlug, findEditorialAuthorById, listPublishedArticles, stripArticleContent } from "@/lib/core-db";
 import ArticleActions from "@/components/ArticleActions";
 import LocalizedArticleExperience from "@/components/LocalizedArticleExperience";
 import ArticleRecommendations from "@/components/ArticleRecommendations";
@@ -20,6 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   const cleanDescription = (article.summary || article.content || "")
     .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;|\u00a0/g, " ")
     .slice(0, 180)
     .trim() || "Article publié sur Envol Africa Magazine.";
 
@@ -74,20 +75,29 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   const [editorialAuthor, isSubscriber, preferredLanguage] = await Promise.all([findEditorialAuthorById(article.authorProfileId), getIsSubscribed(), (async () => { const user = await getCurrentUserFromCookie(); return user?.lang || "fr"; })()]);
 
   const articleCategorySet = new Set(article.categories?.length ? article.categories : [article.category]);
-  const related = articles.filter((a) => a.id !== article.id && (a.categories || [a.category]).some((category) => articleCategorySet.has(category))).slice(0, 3);
-  const mostRead = [...articles].filter((a) => a.id !== article.id).sort((a, b) => b.views - a.views).slice(0, 6);
+  const related = articles
+    .filter((a) => a.id !== article.id && (a.categories || [a.category]).some((category) => articleCategorySet.has(category)))
+    .slice(0, 3)
+    .map(stripArticleContent);
+  const mostRead = [...articles]
+    .filter((a) => a.id !== article.id)
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 6)
+    .map(stripArticleContent);
   const canReadFullContent = !article.isEncrypted || isSubscriber;
-  const readerArticle = canReadFullContent ? article : {
+  const cleanSummary = (article.summary || "").replace(/&nbsp;|\u00a0/g, " ").trim();
+  const readerArticle = canReadFullContent ? { ...article, summary: cleanSummary } : {
     ...article,
+    summary: cleanSummary,
     content: "",
-    translations: Object.fromEntries(Object.entries(article.translations || {}).map(([language, translation]) => [language, { ...translation, content: "" }]))
+    translations: Object.fromEntries(Object.entries(article.translations || {}).map(([language, translation]) => [language, { ...translation, summary: (translation.summary || "").replace(/&nbsp;|\u00a0/g, " ").trim(), content: "" }]))
   };
 
   const articleSchema = getNewsArticleSchema({
     title: article.title,
     slug: article.slug,
-    summary: article.summary,
-    content: article.content,
+    summary: cleanSummary,
+    content: canReadFullContent ? article.content : undefined,
     image: article.image,
     publishedAt: article.publishedAt,
     createdAt: article.createdAt,

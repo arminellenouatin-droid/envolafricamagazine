@@ -1,8 +1,8 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import FinancementClient from "./FinancementClient";
 
 export const metadata: Metadata = {
-  title: "Financement Participatif & Crowdfunding Panafricain | Envol Africa",
+  title: "Financement Participatif & Crowdfunding Panafricain",
   description: "Investissez dans les entreprises, startups et projets à fort impact en Afrique. Dons, prises de participation et prêts rémunérés avec suivi en temps réel.",
   alternates: {
     canonical: "/financement",

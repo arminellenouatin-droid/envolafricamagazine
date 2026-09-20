@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { CrowdProject } from "@/lib/crowdfunding-db";
@@ -55,12 +55,12 @@ export default function FinancementClient() {
         <div className="max-w-[1280px] mx-auto px-5 md:px-[64px] relative z-10">
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/10 rounded-full px-4 py-1.5 text-[11px] font-bold tracking-wider uppercase">AfricaCrowdFunding • Simple • Sûr • Temps réel</div>
           <h1 className="text-[36px] md:text-[52px] font-black leading-[0.9] mt-6 max-w-[800px]" style={{ fontFamily: "Montserrat" }}>Financez l&apos;Afrique qui <span className="text-[#ffdad8]">entreprend</span></h1>
-          <p className="text-[#e4e2e1] mt-4 max-w-[640px] leading-7">Porteurs de projets présentent leurs idées, investisseurs les aident via 3 façons : <strong className="text-white">Don</strong> (sans retour), <strong className="text-white">Prise de part</strong> (devient propriétaire petite partie), <strong className="text-white">Prêt</strong> (remboursé avec intérêt). Suivi temps réel de chaque collecte.</p>
+          <p className="text-[#e4e2e1] mt-4 max-w-[640px] leading-7">Porteurs de projets et investisseurs se rencontrent autour de 3 modes de financement : <strong className="text-white">Don</strong> (soutien direct), <strong className="text-white">Prise de participation</strong> (entrée au capital), et <strong className="text-white">Prêt participatif</strong> (rémunéré selon un calendrier fixé). Suivi en temps réel de chaque collecte.</p>
           
           <div className="mt-8 grid md:grid-cols-3 gap-4 max-w-[800px]">
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4"><div className="w-10 h-10 rounded-full bg-[#ffdad8] text-[#9e001f] flex items-center justify-center font-bold">❤️</div><div className="font-bold mt-3">Don</div><div className="text-[12px] text-[#e4e2e1] mt-1">Montant libre, badge Soutien sur profil, aucun retour financier</div></div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4"><div className="w-10 h-10 rounded-full bg-[#ffdad8] text-[#9e001f] flex items-center justify-center font-bold">%</div><div className="font-bold mt-3">Prise de part</div><div className="text-[12px] text-[#e4e2e1] mt-1">Devient propriétaire petite partie, valorisation auto montant collecté / % vendu, contrat PDF auto</div></div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4"><div className="w-10 h-10 rounded-full bg-[#ffdad8] text-[#9e001f] flex items-center justify-center font-bold">↗</div><div className="font-bold mt-3">Prêt</div><div className="text-[12px] text-[#e4e2e1] mt-1">Prête avec taux intérêt fixé porteur, calendrier remboursement auto (mensuel capital+intérêts)</div></div>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4"><div className="w-10 h-10 rounded-full bg-[#ffdad8] text-[#9e001f] flex items-center justify-center font-bold">❤️</div><div className="font-bold mt-3">Don solidaire</div><div className="text-[12px] text-[#e4e2e1] mt-1">Montant libre, attribution d&apos;un badge Soutien, contribution directe à l&apos;impact social</div></div>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4"><div className="w-10 h-10 rounded-full bg-[#ffdad8] text-[#9e001f] flex items-center justify-center font-bold">%</div><div className="font-bold mt-3">Prise de participation</div><div className="text-[12px] text-[#e4e2e1] mt-1">Devenez associé au capital d&apos;une entreprise africaine prometteuse, convention et contrat formalisés</div></div>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4"><div className="w-10 h-10 rounded-full bg-[#ffdad8] text-[#9e001f] flex items-center justify-center font-bold">↗</div><div className="font-bold mt-3">Prêt participatif</div><div className="text-[12px] text-[#e4e2e1] mt-1">Prêtez à une entreprise avec taux d&apos;intérêt défini et calendrier d&apos;amortissement transparent</div></div>
           </div>
 
           <div className="mt-8 flex gap-3">

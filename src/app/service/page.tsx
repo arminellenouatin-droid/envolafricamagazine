@@ -1,8 +1,8 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import ServiceClient from "./ServiceClient";
 
 export const metadata: Metadata = {
-  title: "Demande de Services & Contact Groupe | Envol Africa",
+  title: "Demande de Services & Partenariats Groupe",
   description: "Contactez l'équipe Envol Africa : Emploi, Marketplace, Financement Participatif, Africa Awards, Salons Professionnels et Régie Publicitaire. Réponse sous 24h.",
   alternates: {
     canonical: "/service",

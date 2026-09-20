@@ -105,20 +105,20 @@ export default async function AfricaAwardsLanding() {
               {/* Live Counters */}
               <div className="mt-12 grid grid-cols-2 gap-4 border-t border-[#D4AF37]/20 pt-8 sm:grid-cols-4">
                 <div>
-                  <div className="font-serif text-3xl font-black text-[#D4AF37]">2,5M+</div>
-                  <div className="mt-0.5 text-[11px] font-bold uppercase tracking-wider text-[#8A8882]">Votes comptabilisés</div>
+                  <div className="font-serif text-3xl font-black text-[#D4AF37]">En direct</div>
+                  <div className="mt-0.5 text-[11px] font-bold uppercase tracking-wider text-[#8A8882]">Votes certifiés</div>
                 </div>
                 <div>
                   <div className="font-serif text-3xl font-black text-white">54</div>
-                  <div className="mt-0.5 text-[11px] font-bold uppercase tracking-wider text-[#8A8882]">Pays représentés</div>
+                  <div className="mt-0.5 text-[11px] font-bold uppercase tracking-wider text-[#8A8882]">Pays éligibles</div>
                 </div>
                 <div>
-                  <div className="font-serif text-3xl font-black text-white">150+</div>
-                  <div className="mt-0.5 text-[11px] font-bold uppercase tracking-wider text-[#8A8882]">Compétitions</div>
+                  <div className="font-serif text-3xl font-black text-white">Annuelle</div>
+                  <div className="mt-0.5 text-[11px] font-bold uppercase tracking-wider text-[#8A8882]">Grande Cérémonie</div>
                 </div>
                 <div>
                   <div className="font-serif text-3xl font-black text-[#D4AF37]">100%</div>
-                  <div className="mt-0.5 text-[11px] font-bold uppercase tracking-wider text-[#8A8882]">Transparence RLS</div>
+                  <div className="mt-0.5 text-[11px] font-bold uppercase tracking-wider text-[#8A8882]">Scrutin audité</div>
                 </div>
               </div>
             </div>

@@ -1,8 +1,8 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Page introuvable (404) | Envol Africa Magazine",
+  title: "Page introuvable (404)",
   description: "La page que vous recherchez n'existe pas ou a été déplacée.",
   robots: {
     index: false,

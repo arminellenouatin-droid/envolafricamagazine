@@ -287,6 +287,29 @@ export async function findEditorialAuthorById(id?: string): Promise<{ id: string
   return { id: String(data.id), name: String(data.name), photoUrl: typeof data.photo_url === "string" ? data.photo_url : undefined, bio: typeof data.bio === "string" ? data.bio : undefined, roleLabel: typeof data.role_label === "string" ? data.role_label : undefined };
 }
 
+export function stripArticleContent(article: Article): Article {
+  const cleanSummary = (article.summary || "").replace(/&nbsp;|\u00a0/g, " ").trim();
+  const cleanTranslations = article.translations
+    ? Object.fromEntries(
+        Object.entries(article.translations).map(([lang, t]) => [
+          lang,
+          {
+            ...t,
+            summary: (t.summary || "").replace(/&nbsp;|\u00a0/g, " ").trim(),
+            content: "",
+          },
+        ])
+      )
+    : undefined;
+
+  return {
+    ...article,
+    summary: cleanSummary,
+    content: "",
+    translations: cleanTranslations,
+  };
+}
+
 export async function listPublishedArticles(): Promise<Article[]> {
   const client = getPublicClient();
   if (!client) return canUseJsonFallback() ? readDB().articles.filter((article) => article.isPublished) : [];
@@ -294,6 +317,7 @@ export async function listPublishedArticles(): Promise<Article[]> {
   if (error) throw error;
   return (data ?? []).map((row) => mapArticle(row as Record<string, unknown>));
 }
+
 
 const LEGACY_SLUGS_MAP: Record<string, string> = {
   "portrait-aminata-traor-la-reine-du-bio-africain-5": "intelligence-artificielle-benin-strategie-nationale",
