@@ -66,7 +66,11 @@ export default async function CandidateProfile({ params }: { params: Promise<{ i
     if (data) candidate = data as any;
   }
   if (!candidate) return notFound();
-  const comp = db.competitions.find(c=>c.id===candidate.competition_id);
+  let comp = db.competitions.find(c=>c.id===candidate.competition_id);
+  if (!comp && supabase) {
+    const { data: compData } = await supabase.from("awards_competitions").select("*").eq("id", candidate.competition_id).maybeSingle();
+    if (compData) comp = compData as any;
+  }
 
   return (
     <div className="bg-[#0B0B0F] text-[#F5F3EE] min-h-screen pb-20">
