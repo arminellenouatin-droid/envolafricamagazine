@@ -19,30 +19,31 @@ const siteLinks = [
 ];
 
 const supportLinks = [
-  { name: "Ingénierie digitale", href: "https://envolafrica.net/" },
-  { name: "Newsletters", href: "https://envolafrica.net/" },
+  { name: "Ingénierie digitale", href: "/service" },
+  { name: "Newsletters", href: "/#newsletter" },
   { name: "Abonnement", href: "/abonnement" },
-  { name: "Levée de fonds et accompagnement", href: "https://envolafrica.net/" },
+  { name: "Levée de fonds et accompagnement", href: "/financement" },
   { name: "Programme d'affiliation", href: "/affiliation" },
-  { name: "Kit média", href: "https://envolafrica.net/" },
-  { name: "Recherche de financement", href: "https://envolafrica.net/" },
+  { name: "Kit média", href: "/a-propos" },
+  { name: "Recherche de financement", href: "/financement" },
 ];
 
 const serviceLinks = [
-  { name: "Sur Android", href: "https://direct.kkiapay.me/4788/business-angel-1" },
-  { name: "Sur iPhone", href: "https://envolafrica.net/" },
-  { name: "Sur Huawei", href: "https://envolafrica.net/" },
-  { name: "Externalisation / Applications", href: "https://envolafrica.net/" },
-  { name: "Formation et recyclage", href: "https://envolafrica.net/" },
+  { name: "Sur Android", href: "/service" },
+  { name: "Sur iPhone", href: "/service" },
+  { name: "Sur Huawei", href: "/service" },
+  { name: "Externalisation / Applications", href: "/service" },
+  { name: "Formation et recyclage", href: "/marketplace" },
 ];
 
 const contactLinks = [
-  { name: "Publicité", href: "https://envolafrica.net/" },
-  { name: "Suivi complet", href: "https://envolafrica.net/" },
-  { name: "Applications", href: "https://envolafrica.net/" },
-  { name: "Contact Régie", href: "/service" },
-  { name: "Mentions Légales", href: "/conditions" },
-  { name: "CGU / Confidentialité", href: "/conditions" },
+  { name: "Publicité", href: "/service" },
+  { name: "Suivi complet", href: "/contact" },
+  { name: "Applications", href: "/service" },
+  { name: "Contact Régie", href: "/contact" },
+  { name: "Mentions Légales", href: "/mentions-legales" },
+  { name: "CGU", href: "/conditions" },
+  { name: "Confidentialité", href: "/politique-de-confidentialite" },
 ];
 
 function ExternalLink({ href, children, className = "" }: { href: string; children: ReactNode; className?: string }) {
@@ -151,7 +152,7 @@ export default function Footer() {
           { title: "Publicité & Suivi", items: contactLinks },
         ]} />
       </div>
-      <div className="bg-[#eae7e7] px-5 py-5 md:px-[64px]"><div className="mx-auto flex max-w-[1280px] flex-col items-center justify-between gap-4 md:flex-row"><p className="text-[12px] text-[#1c1b1b]">©2026 <ExternalLink href="https://envolafrica.net/" className="font-bold hover:text-[#9e001f]">Envol Africa</ExternalLink> Groupe. Tous droits réservés</p><div className="flex items-center gap-4 text-[12px] text-[#474646]"><Link href="/conditions" className="hover:text-[#9e001f]">Conditions</Link><span className="text-[#e5bdbb]">;</span><Link href="/conditions" className="hover:text-[#9e001f]">Confidentialité</Link><span className="text-[#e5bdbb]">;</span><Link href="/cookies" className="hover:text-[#9e001f]">Cookies</Link><span className="hidden items-center gap-2 md:flex"><span className="h-2 w-2 rounded-full bg-green-600" />Paiement Moneroo sécurisé</span></div></div></div>
+      <div className="bg-[#eae7e7] px-5 py-5 md:px-[64px]"><div className="mx-auto flex max-w-[1280px] flex-col items-center justify-between gap-4 md:flex-row"><p className="text-[12px] text-[#1c1b1b]">©2026 <Link href="/" className="font-bold hover:text-[#9e001f]">Envol Africa</Link> Groupe. Tous droits réservés</p><div className="flex items-center gap-4 text-[12px] text-[#474646]"><Link href="/conditions" className="hover:text-[#9e001f]">Conditions</Link><span className="text-[#e5bdbb]">;</span><Link href="/politique-de-confidentialite" className="hover:text-[#9e001f]">Confidentialité</Link><span className="text-[#e5bdbb]">;</span><Link href="/mentions-legales" className="hover:text-[#9e001f]">Mentions Légales</Link><span className="text-[#e5bdbb]">;</span><Link href="/cookies" className="hover:text-[#9e001f]">Cookies</Link><span className="hidden items-center gap-2 md:flex"><span className="h-2 w-2 rounded-full bg-green-600" />Paiement Moneroo sécurisé</span></div></div></div>
     </footer>
   );
 }

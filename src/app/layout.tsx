@@ -14,6 +14,9 @@ const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-SPMNFS
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://envolafrica.site"),
+  alternates: {
+    canonical: "/",
+  },
   title: {
     default: "Envol Africa Magazine | Le magazine économique panafricain de référence",
     template: "%s | Envol Africa",
