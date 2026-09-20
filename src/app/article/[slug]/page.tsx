@@ -6,6 +6,8 @@ import { findArticleBySlug, findEditorialAuthorById, listPublishedArticles, stri
 import ArticleActions from "@/components/ArticleActions";
 import LocalizedArticleExperience from "@/components/LocalizedArticleExperience";
 import ArticleRecommendations from "@/components/ArticleRecommendations";
+import SameCategoryCarousel from "@/components/article/SameCategoryCarousel";
+import SameAuthorArticles from "@/components/article/SameAuthorArticles";
 import { getNewsArticleSchema, getBreadcrumbSchema } from "@/lib/schema-org";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -84,6 +86,38 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     .sort((a, b) => b.views - a.views)
     .slice(0, 6)
     .map(stripArticleContent);
+
+  // Bloc 1 : Articles de la même catégorie pour le carrousel automatique
+  const sameCategoryArticles = articles
+    .filter((a) => a.id !== article.id && (a.categories || [a.category]).some((category) => articleCategorySet.has(category)))
+    .map(stripArticleContent);
+  const fallbackCategoryArticles = sameCategoryArticles.length >= 2
+    ? sameCategoryArticles
+    : [...sameCategoryArticles, ...articles.filter((a) => a.id !== article.id && !sameCategoryArticles.some((sc) => sc.id === a.id)).map(stripArticleContent)].slice(0, 8);
+
+  // Bloc 2 : Articles du même auteur pour le carrousel manuel des titres
+  const currentAuthorName = (editorialAuthor?.name || article.author || "").trim().toLowerCase();
+  const sameAuthorArticles = articles
+    .filter((a) => {
+      if (a.id === article.id) return false;
+      if (article.authorProfileId && a.authorProfileId === article.authorProfileId) return true;
+      if (currentAuthorName && a.author && a.author.trim().toLowerCase() === currentAuthorName) return true;
+      return false;
+    })
+    .map(stripArticleContent);
+
+  const authorInfo = {
+    id: editorialAuthor?.id || article.authorProfileId || "author",
+    name: editorialAuthor?.name || article.author || "Rédaction Envol Africa",
+    photoUrl: editorialAuthor?.photoUrl || article.authorProfilePhoto || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600",
+    roleLabel: editorialAuthor?.roleLabel || "Journaliste & Rédacteur",
+    bio: editorialAuthor?.bio || "Membre de la rédaction d'Envol Africa Magazine, dédié aux analyses économiques et aux perspectives de développement panafricain.",
+  };
+
+  const finalAuthorArticles = sameAuthorArticles.length > 0
+    ? sameAuthorArticles
+    : articles.filter((a) => a.id !== article.id).slice(0, 4).map(stripArticleContent);
+
   const canReadFullContent = !article.isEncrypted || isSubscriber;
   const cleanSummary = (article.summary || "").replace(/&nbsp;|\u00a0/g, " ").trim();
   const readerArticle = canReadFullContent ? { ...article, summary: cleanSummary } : {
@@ -153,6 +187,23 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           </div>
         </article>
 
+        {/* Bloc 1 : Carrousel automatique « Dans la même catégorie » */}
+        {fallbackCategoryArticles.length > 0 && (
+          <SameCategoryCarousel
+            articles={fallbackCategoryArticles}
+            categoryName={article.category}
+          />
+        )}
+
+        {/* Bloc 2 : Carrousel manuel titre par titre « Du même auteur » */}
+        {finalAuthorArticles.length > 0 && (
+          <SameAuthorArticles
+            author={authorInfo}
+            articles={finalAuthorArticles}
+          />
+        )}
+
+        {/* Bloc 3 : Pour poursuivre la lecture / Nos articles les plus lus (conservé intact) */}
         <ArticleRecommendations mostRead={mostRead} sameSubject={related} />
       </main>
     </div>
