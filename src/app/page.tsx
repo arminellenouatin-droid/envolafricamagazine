@@ -59,6 +59,7 @@ export default async function HomePage() {
   ];
   const startups = ["AgriTrace", "KoriPay", "MobiClinic", "TerraLoop"];
   const recruitment = managedRecruitment.length ? managedRecruitment.map((item) => ({ title: item.title, description: item.description || "Rejoindre une équipe qui construit les usages de demain.", href: item.href || "/emploi", meta: [item.date, item.location].filter(Boolean).join(" · ") })) : ["Directeur.trice commercial.e", "Responsable programme", "Product manager Afrique"].map((title) => ({ title, description: "Rejoindre une équipe qui construit les usages de demain.", href: "/emploi", meta: "Poste ouvert" }));
+  const youtubeId = (value: string) => { const match = value.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/i); return match?.[1] || ""; };
   const fallbackVideoTitles = [
     "Grand Entretien Économique : Bâtir des champions panafricains",
     "Immersion au cœur de l’innovation et des PME d’Afrique",
