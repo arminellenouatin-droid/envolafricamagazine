@@ -86,8 +86,30 @@ export default function KiosquePage({ initialMagazines = [] }: { initialMagazine
         const currentMagazine = previewMagazine || featured;
         const language = locale.language || "fr";
         const selectedPdf = currentMagazine.pdfs?.[language] || currentMagazine.pdfs?.fr;
-        const protectedPdf = selectedPdf?.startsWith("private-pdf://") ? `/api/magazines/${encodeURIComponent(currentMagazine.id)}/preview?lang=${encodeURIComponent(language)}` : undefined;
-        return <PreviewFlipbook title={currentMagazine.title} cover={currentMagazine.cover} pages={currentMagazine.previewImages} pdfUrl={protectedPdf ? undefined : selectedPdf} previewUrl={protectedPdf} language={language} onClose={() => { setPreviewOpen(false); setPreviewMagazine(null); }} onPurchase={() => { window.location.assign(`/kiosque/${currentMagazine.id}#purchase-options-title`); }} />;
+        const protectedPdf = selectedPdf?.startsWith("private-pdf://")
+          ? `/api/magazines/${encodeURIComponent(currentMagazine.id)}/preview?lang=${encodeURIComponent(language)}`
+          : undefined;
+        return (
+          <PreviewFlipbook
+            title={currentMagazine.title}
+            cover={currentMagazine.cover}
+            pages={currentMagazine.previewImages}
+            pdfUrl={protectedPdf ? undefined : selectedPdf}
+            previewUrl={protectedPdf}
+            language={language}
+            numero={currentMagazine.numero}
+            description={currentMagazine.description}
+            date={currentMagazine.date}
+            year={currentMagazine.year}
+            onClose={() => {
+              setPreviewOpen(false);
+              setPreviewMagazine(null);
+            }}
+            onPurchase={() => {
+              window.location.assign(`/kiosque/${currentMagazine.id}#purchase-options-title`);
+            }}
+          />
+        );
       })()}
     </div>
   );

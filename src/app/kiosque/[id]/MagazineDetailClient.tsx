@@ -147,7 +147,7 @@ export default function MagazineDetailPage({ initialMagazine }: { initialMagazin
               <div className="aspect-[3/4] w-full bg-[#eae7e7] rounded-lg overflow-hidden shadow-2xl relative" style={{ boxShadow: "inset 12px 0 15px -10px rgba(0,0,0,0.5)" }}>
                 <img src={magazine.cover} alt={magazine.title} className="w-full h-full object-cover rounded-lg" />
                 <div className="absolute inset-0 bg-black/5 pointer-events-none"></div>
-                <button type="button" onClick={() => setPreviewOpen(true)} className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full bg-white/95 px-5 py-3 text-[12px] font-bold text-[#9e001f] shadow-lg backdrop-blur-md opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"><span className="material-symbols-outlined">menu_book</span> FEUILLETER L&apos;APER├çU</button>
+                <button type="button" onClick={() => setPreviewOpen(true)} className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full bg-white/95 px-5 py-3 text-[12px] font-bold text-[#9e001f] shadow-lg backdrop-blur-md opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"><span className="material-symbols-outlined">menu_book</span> FEUILLETER L&apos;APERÇU</button>
               </div>
             </div>
           </div>
@@ -156,7 +156,7 @@ export default function MagazineDetailPage({ initialMagazine }: { initialMagazin
             <header>
               <div className="flex items-center gap-3 mb-2">
                 <span className="px-3 py-1 bg-[#ffdad8] text-[#9e001f] rounded-full text-[11px] uppercase tracking-wider font-bold">Magazine Mensuel</span>
-                <span className="text-[#5c403f] text-[12px] italic">N° {magazine.numero} ÔÇö {magazine.year} • 124 pages</span>
+                <span className="text-[#5c403f] text-[12px] italic">N° {magazine.numero} — {magazine.year} • 124 pages</span>
               </div>
               <h1 className="text-[32px] md:text-[40px] font-bold leading-tight text-[#1b1c1c] mb-2" style={{ fontFamily: "Montserrat" }}>{magazine.title}</h1>
               <div className="max-w-2xl text-[18px] leading-relaxed text-[#5f5e5e]" style={{ fontFamily: "Source Serif 4" }}><RichTextContent value={`${magazine.description || ""} Ce numéro inclut notre enquête sur la transformation locale du cacao, entretien CEO Wave, classement 50 entreprises les plus performantes.`} /></div>
@@ -269,7 +269,31 @@ export default function MagazineDetailPage({ initialMagazine }: { initialMagazin
           <Link href="/kiosque" className="mt-2 block text-center text-[11px] font-bold uppercase tracking-[.12em] text-[#9e001f] hover:underline sm:hidden">Voir tous les numéros →</Link>
         </section>}
       </main>
-      {previewOpen && (() => { const selectedPdf = magazine.pdfs?.[localeLanguage] || magazine.pdfs?.fr; const protectedPdf = selectedPdf?.startsWith("private-pdf://") ? `/api/magazines/${encodeURIComponent(id)}/preview?lang=${encodeURIComponent(localeLanguage)}` : undefined; return <PreviewFlipbook title={magazine.title} cover={magazine.cover} pages={magazine.previewImages} pdfUrl={protectedPdf ? undefined : selectedPdf} previewUrl={protectedPdf} language={localeLanguage} onClose={() => setPreviewOpen(false)} onPurchase={() => { setPreviewOpen(false); document.getElementById("purchase-options-title")?.scrollIntoView({ behavior: "smooth", block: "center" }); }} />; })()}
+      {previewOpen && (() => {
+        const selectedPdf = magazine.pdfs?.[localeLanguage] || magazine.pdfs?.fr;
+        const protectedPdf = selectedPdf?.startsWith("private-pdf://")
+          ? `/api/magazines/${encodeURIComponent(id)}/preview?lang=${encodeURIComponent(localeLanguage)}`
+          : undefined;
+        return (
+          <PreviewFlipbook
+            title={magazine.title}
+            cover={magazine.cover}
+            pages={magazine.previewImages}
+            pdfUrl={protectedPdf ? undefined : selectedPdf}
+            previewUrl={protectedPdf}
+            language={localeLanguage}
+            numero={magazine.numero}
+            description={magazine.description}
+            date={magazine.date}
+            year={magazine.year}
+            onClose={() => setPreviewOpen(false)}
+            onPurchase={() => {
+              setPreviewOpen(false);
+              document.getElementById("purchase-options-title")?.scrollIntoView({ behavior: "smooth", block: "center" });
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }
