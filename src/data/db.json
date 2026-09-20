@@ -493,7 +493,10 @@
         "en",
         "es"
       ],
-      "featured": true
+      "featured": true,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "2ed0179f-623d-4e05-ac0a-a269a0eae8aa",
@@ -516,7 +519,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "68ae80e9-1d06-4b70-a19a-793755821f8b",
@@ -575,7 +581,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "71c6627a-efab-43f0-b0bd-38ab5c7f25db",
@@ -598,7 +607,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "542bdfd1-1f84-43a3-9c41-2dd12d01e4aa",
@@ -621,7 +633,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "f7366da6-771e-4b6a-8d11-eae6fc605948",
@@ -644,7 +659,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "52326e4c-a260-49ab-8647-170d3b6e5f84",
@@ -667,7 +685,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "dc6c4f64-72c8-4e51-8e18-58812b4fa526",
@@ -690,7 +711,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "71b3df5e-5f85-43f9-8573-b365e46923f0",
@@ -713,7 +737,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "386c36ad-791c-4314-9bd9-5426c513fefc",
@@ -736,7 +763,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "904fea26-603c-49fb-bb7a-da4770e31580",
@@ -759,7 +789,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "af854acf-bc64-4f6b-b9b9-92fb7623879b",
@@ -782,7 +815,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "24d8f3e6-b257-4bba-ac9f-4b241362b37c",
@@ -805,7 +841,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "2a90c684-bb5b-4261-a1e3-50ff15fbc19f",
@@ -828,7 +867,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "c87d0e91-7cf7-40a2-80a7-94c118af67aa",
@@ -851,7 +893,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "f02ee3d4-b608-4f7f-a660-9fd0fcfa16e7",
@@ -874,7 +919,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "83040987-8ecb-49b0-a997-642227f6d8da",
@@ -897,7 +945,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "d9a73c7f-a43a-4aa3-b74a-0fd1fb2726cc",
@@ -920,7 +971,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "026cfa51-0669-4f07-8b47-879cfe8e0f77",
@@ -943,7 +997,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "e507280b-552c-4dff-8d32-c6eb13f0c9a7",
@@ -966,7 +1023,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "2b8eb465-bd2a-4b09-93d1-878fac5dae20",
@@ -989,7 +1049,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "ed7f02f0-265e-4d8d-8f77-1da694ab28c5",
@@ -1012,7 +1075,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "064be1a1-7385-45a0-8ff3-9661f5d4e560",
@@ -1035,7 +1101,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     },
     {
       "id": "30574411-c1e6-4f40-850d-d8284b30a562",
@@ -1058,7 +1127,10 @@
         "en",
         "es"
       ],
-      "featured": false
+      "featured": false,
+      "pdfs": {
+        "fr": "/magazines/23/numero-23.pdf"
+      }
     }
   ],
   "orders": [],

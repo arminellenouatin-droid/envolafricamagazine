@@ -117,9 +117,27 @@ function normalizeMagazineAsset(value: unknown, fallback = "") {
   }
   return raw;
 }
+function normalizePdfUrl(value: unknown, fallback = "/magazines/23/numero-23.pdf"): string {
+  if (typeof value !== "string") return fallback;
+  const raw = value.trim();
+  if (!raw) return fallback;
+  if (raw.includes("envolafricamagazinegildas.vercel.app/magazines/")) {
+    return raw.replace(/https?:\/\/envolafricamagazinegildas\.vercel\.app/, "");
+  }
+  return raw;
+}
+
 function mapMagazine(row: Record<string, unknown>): Magazine {
   const numero = Number(row.numero);
   const coverFallback = numero > 0 ? `/covers/envol-africa-cover-${String(((numero - 1) % 4) + 1).padStart(2, "0")}.jpg` : "";
+  const rawPdfs = row.pdfs && typeof row.pdfs === "object" ? (row.pdfs as Record<string, string>) : {};
+  const normalizedPdfs: Record<string, string> = {
+    fr: normalizePdfUrl(rawPdfs.fr || rawPdfs.en || Object.values(rawPdfs)[0]),
+  };
+  for (const [lang, val] of Object.entries(rawPdfs)) {
+    if (val) normalizedPdfs[lang] = normalizePdfUrl(val);
+  }
+
   return {
     id: String(row.id),
     numero,
@@ -130,8 +148,8 @@ function mapMagazine(row: Record<string, unknown>): Magazine {
     year: Number(row.year ?? new Date().getFullYear()),
     description: String(row.description ?? ""),
     previewPages: Number(row.preview_pages ?? 5),
-    previewImages: Array.isArray(row.preview_images) ? row.preview_images.map(String) : undefined,
-    pdfs: row.pdfs && typeof row.pdfs === "object" ? row.pdfs as Record<string, string> : undefined,
+    previewImages: Array.isArray(row.preview_images) && row.preview_images.length > 0 ? row.preview_images.map(String) : undefined,
+    pdfs: normalizedPdfs,
     prices: row.prices && typeof row.prices === "object" ? row.prices as Record<string, number> : undefined,
     formats: Array.isArray(row.formats) ? row.formats.map(String) : [],
     languages: Array.isArray(row.languages) ? row.languages.map(String) : [],
