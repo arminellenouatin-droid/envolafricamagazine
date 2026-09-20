@@ -90,8 +90,8 @@ function ProductCard({ product, onOpen }: { product: ProductWithMeta; onOpen: (p
   </article>;
 }
 
-export default function MarketplaceClient() {
-  const [products, setProducts] = useState<Array<MarketplaceProduct & { isMagazine?: boolean; magazineId?: string; magazineNumero?: number }>>([]);
+export default function MarketplaceClient({ initialProducts = [] }: { initialProducts?: MarketplaceProduct[] }) {
+  const [products, setProducts] = useState<Array<MarketplaceProduct & { isMagazine?: boolean; magazineId?: string; magazineNumero?: number }>>(initialProducts);
   const [viewMode, setViewMode] = useState<MarketplaceView>("products");
   const [toolsOpen, setToolsOpen] = useState(false);
   const [imageSearchPreview, setImageSearchPreview] = useState("");
@@ -104,7 +104,7 @@ export default function MarketplaceClient() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(initialProducts.length === 0);
   const [error, setError] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<ProductWithMeta | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);

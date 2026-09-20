@@ -1,9 +1,7 @@
 "use client";
 
-import dynamic from "next/dynamic";
-
-const InteractiveFooter = dynamic(() => import("./Footer"), { ssr: false });
+import Footer from "./Footer";
 
 export default function FooterShell() {
-  return <InteractiveFooter />;
+  return <Footer />;
 }

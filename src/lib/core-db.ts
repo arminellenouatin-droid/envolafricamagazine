@@ -295,10 +295,29 @@ export async function listPublishedArticles(): Promise<Article[]> {
   return (data ?? []).map((row) => mapArticle(row as Record<string, unknown>));
 }
 
+const LEGACY_SLUGS_MAP: Record<string, string> = {
+  "portrait-aminata-traor-la-reine-du-bio-africain-5": "intelligence-artificielle-benin-strategie-nationale",
+  "rwanda-le-miracle-conomique-d-crypt-11": "entrepreneuriat-d-autres-y-reussissent-pourquoi-pas-vous",
+  "agrobusiness-le-retour-gagnant-du-fonio-8": "vos-ventes-sont-bloquees-quelles-strategies-adopter",
+  "startups-dakar-et-kigali-dans-le-top-10-mondial-7": "emprunt-bancaire-ou-obligataire-lequel-choisir",
+  "bourse-la-brvm-bat-tous-les-records-14": "reussite-des-enfants-assurance-ou-bourse",
+  "cacao-ivoirien-vers-une-transformation-locale-50-2": "le-bras-droit-ce-capital-invisible-qui-securise-la-croissance",
+  "maroc-le-nouveau-hub-automobile-du-continent-6": "maisons-vendues-a-1-euro-en-italie-opportunite",
+  "nergie-solaire-le-pari-gagnant-du-sahel-3": "faire-de-vos-employes-performants-vos-associes",
+  "zlecaf-le-grand-tournant-de-l-int-gration-africaine-0": "wake-up-africa-le-benin-montre-la-voie",
+  "interview-exclusive-le-patron-de-la-bad-se-confie-10": "comment-creer-une-entreprise-qui-fonctionne-sans-vous",
+  "p-trole-s-n-galais-les-premiers-barils-changent-tout-12": "crypto-monnaie-afrique-chance-unique",
+  "dette-africaine-les-solutions-qui-fonctionnent-9": "les-cles-du-succes-d-une-petite-entreprise",
+  "fintech-comment-le-mobile-money-redessine-la-banque-4": "vous-payez-trop-d-impots-comment-reduire-la-facture-fiscale",
+  "nigeria-pourquoi-lagos-attire-les-licornes-de-la-tech-1": "etre-riche-et-mourir-de-faim-reflexion-financiere",
+  "femmes-entrepreneures-elles-l-vent-200m-en-2025-13": "la-strategie-silencieuse-pourquoi-certaines-diasporas-reussissent",
+};
+
 export async function findArticleBySlug(slug: string): Promise<Article | null> {
+  const targetSlug = LEGACY_SLUGS_MAP[slug] || slug;
   const client = getPublicClient();
-  if (!client) return canUseJsonFallback() ? getJsonArticleBySlug(slug) ?? null : null;
-  const { data, error } = await client.from("articles").select("*, article_categories(category_id, categories(id,label)), editorial_authors!articles_author_profile_id_fkey(id,name,photo_url,bio,role_label)").eq("slug", slug).maybeSingle();
+  if (!client) return canUseJsonFallback() ? (getJsonArticleBySlug(targetSlug) ?? getJsonArticleBySlug(slug) ?? null) : null;
+  const { data, error } = await client.from("articles").select("*, article_categories(category_id, categories(id,label)), editorial_authors!articles_author_profile_id_fkey(id,name,photo_url,bio,role_label)").or(`slug.eq.${targetSlug},slug.eq.${slug}`).maybeSingle();
   if (error) throw error;
   return data ? mapArticle(data as Record<string, unknown>) : null;
 }

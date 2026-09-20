@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate || echo 'prisma generate skipped' && next build --debug-prerender",
+    "build": "prisma generate || echo 'prisma generate skipped' && next build",
     "start": "next start",
     "lint": "eslint",
     "db:migrate": "prisma migrate dev",
