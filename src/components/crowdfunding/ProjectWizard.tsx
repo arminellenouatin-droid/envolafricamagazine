@@ -8,12 +8,17 @@ type AdvisoryPlan = { id: string; name: string; monthlyPriceXof: number; service
 type WizardData = { nom: string; slogan: string; secteur: string; pays: string; ville: string; stade: string; typeFinancement: FundingType; advisoryPlanId: string; devise: string; objectif: string; dureeJours: string; descriptionCourte: string; descriptionComplete: string; probleme: string; solution: string; image: string; video: string; role: string; risques: string; acceptCabinet: boolean; acceptTerms: boolean };
 const initialData: WizardData = { nom: "", slogan: "", secteur: "", pays: "BJ", ville: "", stade: "Idée", typeFinancement: "angel", advisoryPlanId: "", devise: "XOF", objectif: "", dureeJours: "30", descriptionCourte: "", descriptionComplete: "", probleme: "", solution: "", image: "", video: "", role: "", risques: "", acceptCabinet: false, acceptTerms: false };
 
-export default function ProjectWizard() {
+type ProjectWizardProps = {
+  onCreated?: () => void;
+};
+
+export default function ProjectWizard({ onCreated }: ProjectWizardProps = {}) {
   const [step, setStep] = useState(0);
   const [data, setData] = useState<WizardData>(initialData);
   const [plans, setPlans] = useState<AdvisoryPlan[]>([]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
   useEffect(() => { fetch("/api/crowdfunding/advisory-plans", { cache: "no-store" }).then((response) => response.json()).then((result) => setPlans(Array.isArray(result.plans) ? result.plans : [])).catch(() => setPlans([])); }, []);
   const update = <K extends keyof WizardData>(key: K, value: WizardData[K]) => setData((current) => ({ ...current, [key]: value }));
   const canNext = () => {
@@ -25,14 +30,23 @@ export default function ProjectWizard() {
     return true;
   };
   const saveDraft = async (submit = false) => {
-    setSaving(true); setMessage("");
+    setSaving(true); setMessage(""); setIsError(false);
     try {
       const response = await fetch("/api/crowdfunding/projects", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...data, nom: data.nom, secteur: data.secteur, description: data.descriptionCourte, montantRecherche: Number(data.objectif), pays: data.pays, dureeJours: Number(data.dureeJours), typesFinancement: [data.typeFinancement], statut: submit ? "pending_review" : "draft", images: data.image ? [data.image] : [], videos: data.video ? [data.video] : [] }) });
+      if (response.status === 401) {
+        window.location.href = `/auth/login?next=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Impossible d’enregistrer le projet");
-      setMessage(submit ? "Projet soumis pour validation administrative." : "Brouillon enregistré. Il reste privé tant qu’il n’est pas soumis.");
+      setIsError(false);
+      setMessage(submit ? "Projet soumis avec succès pour validation administrative." : "Brouillon enregistré. Il reste privé tant qu’il n’est pas soumis.");
       if (!submit) setData(initialData);
-    } catch (error) { setMessage(error instanceof Error ? error.message : "Erreur d’enregistrement"); } finally { setSaving(false); }
+      if (onCreated) onCreated();
+    } catch (error) {
+      setIsError(true);
+      setMessage(error instanceof Error ? error.message : "Erreur d’enregistrement");
+    } finally { setSaving(false); }
   };
   const inputClass = "w-full h-11 rounded-xl border border-[#e5bdbb] bg-white px-4 text-sm";
   return <section className="bg-white border border-[#e5bdbb] rounded-2xl p-5 md:p-7 mb-8">
@@ -48,7 +62,7 @@ export default function ProjectWizard() {
       {step === 6 && <><textarea className="w-full min-h-28 rounded-xl border border-[#e5bdbb] bg-white p-4 text-sm" placeholder="Décrivez les risques du projet (minimum 30 caractères)" value={data.risques} onChange={(e) => update("risques", e.target.value)} /><label className="flex gap-3 items-start text-sm"><input type="checkbox" checked={data.acceptTerms} onChange={(e) => update("acceptTerms", e.target.checked)} /> J’ai lu et j’accepte les conditions générales et la charte du porteur.</label><label className="flex gap-3 items-start text-sm"><input type="checkbox" checked={data.acceptCabinet} onChange={(e) => update("acceptCabinet", e.target.checked)} /> J’accepte les règles d’accompagnement du cabinet si mon projet est de type Angel, ainsi que les règles de reporting applicables à mon type de financement.</label></>}
       {step === 7 && <div className="rounded-xl bg-[#f6f3f2] p-5 text-sm space-y-2"><p><strong>Titre :</strong> {data.nom || "—"}</p><p><strong>Type :</strong> {data.typeFinancement}</p><p><strong>Objectif :</strong> {data.objectif || "—"} {data.devise}</p><p><strong>Durée :</strong> {data.dureeJours} jours</p><p><strong>Statut après enregistrement :</strong> brouillon privé, puis soumission explicite pour validation.</p></div>}
     </div>
-    {message && <p className="mt-4 rounded-xl bg-[#ffdad8]/40 p-3 text-sm text-[#9e001f]">{message}</p>}
+    {message && <p className={`mt-4 rounded-xl p-3 text-sm font-medium ${isError ? "bg-[#ffdad8]/60 text-[#9e001f] border border-[#ffdad8]" : "bg-emerald-50 text-emerald-800 border border-emerald-200"}`}>{message}</p>}
     <div className="mt-6 flex flex-wrap justify-between gap-3"><button type="button" disabled={step === 0} onClick={() => setStep((current) => Math.max(0, current - 1))} className="h-10 px-5 rounded-full border text-sm font-bold disabled:opacity-40">Précédent</button><div className="flex gap-2"><button type="button" disabled={saving} onClick={() => void saveDraft(false)} className="h-10 px-5 rounded-full border border-[#9e001f] text-[#9e001f] text-sm font-bold">Enregistrer brouillon</button>{step < STEPS.length - 1 ? <button type="button" disabled={!canNext()} onClick={() => setStep((current) => Math.min(STEPS.length - 1, current + 1))} className="h-10 px-5 rounded-full bg-[#9e001f] text-white text-sm font-bold disabled:opacity-40">Continuer</button> : <button type="button" disabled={!canNext() || saving} onClick={() => void saveDraft(true)} className="h-10 px-5 rounded-full bg-[#9e001f] text-white text-sm font-bold disabled:opacity-40">Soumettre pour validation</button>}</div></div>
   </section>;
 }

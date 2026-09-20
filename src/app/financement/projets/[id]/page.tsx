@@ -34,12 +34,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   if (!projet) {
     return {
-      title: "Projet de Financement | Envol Africa",
+      title: "Projet non trouvé",
       description: "Découvrez les opportunités d'investissement et projets panafricains à financer.",
     };
   }
 
-  const title = `${projet.nom} • Crowdfunding Envol Africa`;
+  const title = `${projet.nom} — Crowdfunding`;
   const description = (projet.description || "Participez au financement de ce projet à fort impact sur Envol Africa.")
     .replace(/<[^>]*>/g, "")
     .slice(0, 180)

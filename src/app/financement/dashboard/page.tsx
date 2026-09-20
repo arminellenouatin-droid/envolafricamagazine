@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Dashboard Crowdfunding & Investissement",
+  description: "Espace de gestion pour porteurs de projets et investisseurs sur Envol Africa.",
+};
+
 export default function DashboardCrowd() {
   return (
     <div className="bg-[#fcf9f8] min-h-screen pb-20">
@@ -9,13 +16,13 @@ export default function DashboardCrowd() {
           <Link href="/financement/dashboard/porteur" className="bg-white rounded-xl border p-6 hover:shadow-lg transition-shadow">
             <div className="w-12 h-12 rounded-full bg-[#9e001f]/10 flex items-center justify-center text-xl">🚀</div>
             <div className="font-bold text-[18px] mt-4">Je suis porteur de projet</div>
-            <div className="text-[13px] text-[#5c403f] mt-2">Créer compte avec email/tel/mdp + code vérif SMS/mail + docs identité/entreprise + Google/Facebook login - Créer projet nom/secteur/description/vidéos/images/PDF/montant/risque/durée/types financement - Gérer collecte modifier/historique/docs/chiffres utiles/messagerie/retraits - Suivi après collecte rapports mensuels/trimestriels + remboursement automatique prêts</div>
+            <div className="text-[13px] text-[#5c403f] mt-2">Créer compte avec email/tel/mdp + docs identité/entreprise - Créer projet nom/secteur/description/vidéos/images/PDF/montant/risque/durée/types financement - Gérer collecte modifier/historique/docs/chiffres utiles/messagerie/retraits - Suivi après collecte rapports mensuels/trimestriels + remboursement automatique prêts</div>
             <div className="mt-4 h-10 rounded-full bg-[#9e001f] text-white flex items-center justify-center font-bold text-[13px]">Espace porteur →</div>
           </Link>
           <Link href="/financement/dashboard/investisseur" className="bg-[#303030] text-white rounded-xl p-6 hover:shadow-lg transition-shadow">
             <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-xl">💰</div>
             <div className="font-bold text-[18px] mt-4">Je suis investisseur</div>
-            <div className="text-[13px] text-[#e4e2e1] mt-2">Créer compte email/tel + code vérif + docs identité + niveau connaissance finance - Parcourir projets filtres secteur/montant/type/pays/risque/avancement - 3 façons investir don/prise part/pret + contrat PDF auto + calendrier remboursement - Suivre investissements historique/docs/contrats/calendrier/évolution/messagerie/parts valeur mise à jour</div>
+            <div className="text-[13px] text-[#e4e2e1] mt-2">Créer compte email/tel + docs identité + niveau connaissance finance - Parcourir projets filtres secteur/montant/type/pays/risque/avancement - 3 façons investir don/prise part/pret + contrat PDF auto + calendrier remboursement - Suivre investissements historique/docs/contrats/calendrier/évolution/messagerie/parts valeur mise à jour</div>
             <div className="mt-4 h-10 rounded-full bg-white text-black flex items-center justify-center font-bold text-[13px]">Espace investisseur →</div>
           </Link>
         </div>

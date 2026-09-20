@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
   const risque = searchParams.get("risque");
   const statut = searchParams.get("statut");
   const id = searchParams.get("id");
+  const porteurId = searchParams.get("porteurId");
   const cursor = searchParams.get("cursor");
   const limit = Number(searchParams.get("limit") || 12);
 
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Crowdfunding indisponible : connexion Supabase manquante." }, { status: 503 });
   }
   if (supabase) {
-    const result = await getCrowdProjects({ secteur, pays, risque, statut: statut || (id ? null : "en_cours"), type, id, cursor, limit });
+    const result = await getCrowdProjects({ secteur, pays, risque, statut: statut || (id || porteurId ? null : "en_cours"), type, id, porteurId, cursor, limit });
     if (id) {
       const projet = result.projets[0];
       if (!projet) return NextResponse.json({ error: "Projet introuvable" }, { status: 404 });
@@ -38,6 +39,7 @@ export async function GET(req: NextRequest) {
   }
 
   let projets = db.projets;
+  if (porteurId) projets = projets.filter(p=>p.porteurId===porteurId);
   if (secteur && secteur!=="all") projets = projets.filter(p=>p.secteur===secteur);
   if (type && type!=="all") projets = projets.filter(p=>p.typesFinancement.includes(type as CrowdProject["typesFinancement"][number]));
   if (pays && pays!=="all") projets = projets.filter(p=>p.pays===pays);

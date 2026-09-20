@@ -8,7 +8,7 @@ export function mapCrowdProject(row: Record<string, unknown>): CrowdProject {
   };
 }
 
-type CrowdProjectFilters = { secteur?: string | null; pays?: string | null; risque?: string | null; statut?: string | null; id?: string | null; type?: string | null; cursor?: string | null; limit?: number };
+type CrowdProjectFilters = { secteur?: string | null; pays?: string | null; risque?: string | null; statut?: string | null; id?: string | null; type?: string | null; cursor?: string | null; limit?: number; porteurId?: string | null };
 
 export async function getCrowdProjects(filters: CrowdProjectFilters) {
   const client = getSupabaseAdmin();
@@ -16,6 +16,7 @@ export async function getCrowdProjects(filters: CrowdProjectFilters) {
   const limit = Math.min(Math.max(filters.limit || 12, 1), 30);
   let query = client.from("crowdfunding_projects").select("*").order("created_at", { ascending: false }).limit(limit + 1);
   if (filters.id) query = query.eq("id", filters.id);
+  if (filters.porteurId) query = query.eq("porteur_id", filters.porteurId);
   if (filters.secteur && filters.secteur !== "all") query = query.eq("secteur", filters.secteur);
   if (filters.pays && filters.pays !== "all") query = query.eq("pays", filters.pays);
   if (filters.risque && filters.risque !== "all") query = query.eq("niveau_risque", filters.risque);
