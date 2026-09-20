@@ -14,7 +14,7 @@ type Product = {
 const labels: Record<string, string> = { BJ: "Bénin", CI: "Côte d’Ivoire", CM: "Cameroun", BF: "Burkina Faso", SN: "Sénégal", ML: "Mali", TG: "Togo" };
 const money = (value: number) => new Intl.NumberFormat("fr-FR").format(value) + " XOF";
 
-export default function ProductDetailClient({ id, initialProduct }: { id: string; initialProduct?: Product | null }) {
+export default function ProductDetailClient({ id, initialProduct, refToken }: { id: string; initialProduct?: Product | null; refToken?: string }) {
   const [product, setProduct] = useState<Product | null>(initialProduct || null);
   const [loading, setLoading] = useState(!initialProduct);
   const [mode, setMode] = useState<"full" | "installment">("full");
@@ -46,9 +46,10 @@ export default function ProductDetailClient({ id, initialProduct }: { id: string
     setOrderLoading(true);
     setOrderError("");
     try {
-      const response = await fetch("/api/marketplace/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId: product.id, paymentMode: mode, months: mode === "installment" ? months : 1 }) });
+      const activeRef = refToken || (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("ref") || undefined : undefined);
+      const response = await fetch("/api/marketplace/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId: product.id, paymentMode: mode, months: mode === "installment" ? months : 1, referralToken: activeRef }) });
       const data = await response.json().catch(() => ({}));
-      if (response.status === 401) { window.location.assign(`/auth/login?next=${encodeURIComponent(`/marketplace/produits/${product.id}`)}`); return; }
+      if (response.status === 401) { window.location.assign(`/auth/login?next=${encodeURIComponent(`/marketplace/produits/${product.id}${activeRef ? `?ref=${activeRef}` : ""}`)}`); return; }
       if (!response.ok || !data.checkoutUrl) throw new Error(data.error || "Impossible de préparer la commande.");
       window.location.assign(data.checkoutUrl);
     } catch (error) { setOrderError(error instanceof Error ? error.message : "Impossible de préparer la commande."); } finally { setOrderLoading(false); }

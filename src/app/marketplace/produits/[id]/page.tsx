@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   if (!product) {
     return {
-      title: "Produit Marketplace | Envol Africa",
+      title: "Produit non trouvé",
       description: "Découvrez nos produits vérifiés sur la Marketplace Envol Africa.",
     };
   }
@@ -76,8 +76,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
-export default async function MarketplaceProductPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ProductDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ ref?: string }>;
+}) {
   const { id } = await params;
+  const { ref } = (await searchParams) || {};
   const product = await getProduct(id);
 
   const productSchema = product ? getMarketplaceProductSchema(product) : null;
@@ -99,7 +106,7 @@ export default async function MarketplaceProductPage({ params }: { params: Promi
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
-      <ProductDetailClient id={id} initialProduct={product} />
+      <ProductDetailClient id={id} initialProduct={product} refToken={ref} />
     </>
   );
 }

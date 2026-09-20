@@ -20,7 +20,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const user = await getCurrentUserFromCookie();
   if (!user) return NextResponse.json({ error: "Connexion requise." }, { status: 401 });
-  const body = await request.json().catch(() => null) as { productId?: string; paymentMode?: "full" | "installment"; months?: number } | null;
+  const body = await request.json().catch(() => null) as { productId?: string; paymentMode?: "full" | "installment"; months?: number; referralToken?: string } | null;
   if (!body?.productId || !["full", "installment"].includes(body.paymentMode || "")) return NextResponse.json({ error: "Commande invalide." }, { status: 400 });
   const months = body.paymentMode === "installment" ? Math.min(12, Math.max(1, Number(body.months) || 1)) : 1;
   const supabase = getSupabaseAdmin();
@@ -51,7 +51,15 @@ export async function POST(request: NextRequest) {
       description: `Marketplace Envol Africa — ${product.title || "Commande"}`,
       customer: { email: user.email, first_name: user.prenom, last_name: user.nom, phone: user.phone },
       return_url: `${origin}/marketplace?order=${order.id}`,
-      metadata: { product: "marketplace_order", order_id: order.id, product_id: product.id, buyer_id: user.id, payment_mode: body.paymentMode, months },
+      metadata: {
+        product: "marketplace_order",
+        order_id: order.id,
+        product_id: product.id,
+        buyer_id: user.id,
+        payment_mode: body.paymentMode,
+        months,
+        referral_token: typeof body?.referralToken === "string" && body.referralToken.trim() ? body.referralToken.trim() : undefined,
+      },
     });
     const { error: paymentLinkError } = await supabase.from("marketplace_orders").update({ provider_payment_id: payment.id, updated_at: new Date().toISOString() }).eq("id", order.id);
     if (paymentLinkError) throw paymentLinkError;

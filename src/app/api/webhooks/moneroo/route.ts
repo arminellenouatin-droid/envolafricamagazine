@@ -130,6 +130,18 @@ export async function POST(req: NextRequest) {
       const verification = await verifyMonerooPayment(data.id);
       if (!validPaymentStatus(verification.status)) return NextResponse.json({ error: "Paiement non confirmé" }, { status: 409 });
       const result = await settleMarketplaceOrderByPayment(String(metadata.order_id || ""), data.id, Number(verification.amount ?? data.amount), String(verification.currency ?? data.currency ?? "XOF"));
+      if (metadata.referral_token) {
+        try {
+          const { calculateMarketplaceCommission } = await import("@/lib/affiliation/marketplace");
+          await calculateMarketplaceCommission({
+            sourceSaleId: String(metadata.order_id || ""),
+            referralToken: String(metadata.referral_token),
+            saleAmount: Number(verification.amount ?? data.amount),
+          });
+        } catch (affError) {
+          console.error("Affiliation commission settlement error:", affError);
+        }
+      }
       return NextResponse.json({ ok: true, marketplace: result }, { status: 200 });
     }
 
