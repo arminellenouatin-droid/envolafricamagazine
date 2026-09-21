@@ -107,6 +107,7 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
   const [landingBlocks, setLandingBlocks] = useState<any[]>([]);
   const [savingLanding, setSavingLanding] = useState(false);
   const [landingSubTab, setLandingSubTab] = useState<"videos" | "contenus_sponsorises" | "formations_certifiees" | "recrutement" | "mega_menu">("videos");
+  const [copiedArticleId, setCopiedArticleId] = useState<string | null>(null);
 
   const fetchArticles = async () => { const res = await fetch("/api/admin/articles"); if (res.ok) { const d = await res.json(); setArticles(d.articles); } };
   const fetchMagazines = async () => { const res = await fetch("/api/admin/magazines"); if (res.ok) { const d = await res.json(); setMagazines(d.magazines); } };
@@ -200,9 +201,33 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
     if (res.ok) { setMessage("Article supprimé"); fetchArticles(); }
   };
 
-  const handleTogglePublish = async (a:any) => {
-    const res = await fetch("/api/admin/articles", { method:"PUT", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ id: a.id, isPublished: !a.isPublished }) });
-    if (res.ok) fetchArticles();
+  const handleCopyArticleLink = async (a: any) => {
+    const slug = a.slug || a.id;
+    const origin = typeof window !== "undefined" && window.location.origin ? window.location.origin : "https://www.envolafrica.site";
+    const articleUrl = `${origin}/article/${encodeURIComponent(slug)}`;
+    try {
+      await navigator.clipboard.writeText(articleUrl);
+      setCopiedArticleId(a.id);
+      setMessage(`Lien copié : ${articleUrl} ✅`);
+      setTimeout(() => setCopiedArticleId((curr) => (curr === a.id ? null : curr)), 2500);
+    } catch {
+      window.prompt("Copiez le lien de l'article :", articleUrl);
+    }
+  };
+
+  const handleTogglePublish = async (a: any) => {
+    const nextPublished = !a.isPublished;
+    const res = await fetch("/api/admin/articles", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: a.id, isPublished: nextPublished }),
+    });
+    if (res.ok) {
+      setMessage(nextPublished ? `Article « ${a.title} » publié en ligne ✅` : `Article « ${a.title} » dépublié (brouillon) ⏸️`);
+      fetchArticles();
+    } else {
+      setMessage("Erreur lors de la modification du statut de l'article.");
+    }
   };
 
   const handleCreateMag = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -363,14 +388,30 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
           <div className="bg-white rounded-[18px] border p-6">
             <div className="flex items-center justify-between"><h3 className="font-bold text-[18px]">Articles - CRUD complet + KPIs vues/likes - Fil d'info, Sentinelles, Essor, Ombre douce</h3><button onClick={()=>{setEditingArticle(null); setArticleImage(""); setArticleTranslations({}); setArticleAudios({}); setSelectedAuthorId(""); setSelectedCategoryId(""); setSelectedCategoryIds([]); setShowArticleModal(true);}} className="h-9 px-4 rounded-full bg-[#0A1931] text-white text-[12px] font-bold">+ Nouvel article</button></div>
             <div className="mt-6 overflow-x-auto">
-              <table className="w-full text-[12px]"><thead className="text-[10px] uppercase text-zinc-500 border-b"><tr><th className="text-left py-2">Titre</th><th>Cat</th><th>Auteur</th><th>Vues</th><th>Flags</th><th>Statut</th><th>Actions</th></tr></thead>
-                <tbody>{articles.map((a:any)=>(<tr key={a.id} className="border-b"><td className="py-2 max-w-[280px] truncate font-medium">{a.title}</td><td><span className="px-2 py-0.5 bg-zinc-100 rounded-full text-[10px]">{a.category}</span></td><td className="text-[11px]">{a.author}</td><td>{a.views}</td><td className="text-[9px] space-x-1">{a.isFeatured&&"★"}{a.isSentinelle&&"S"}{a.isEssor&&"E"}{a.isOmbreDouce&&"O"}</td><td><span className={`px-2 py-0.5 rounded-full text-[10px] ${a.isPublished?"bg-green-50 text-green-700":"bg-amber-50"}`}>{a.isPublished?"Publié":"Brouillon"}</span></td><td className="flex gap-1 py-1"><button onClick={()=>{setEditingArticle(a); setArticleImage(a.image || ""); setArticleTranslations(a.translations || {}); setArticleAudios(a.audioByLanguage || a.audio_by_language || {}); setSelectedAuthorId(a.authorProfileId || a.author_profile_id || ""); setSelectedCategoryId(a.categoryId || a.category_id || ""); setSelectedCategoryIds(a.categoryIds || (a.categoryId || a.category_id ? [a.categoryId || a.category_id] : [])); setShowArticleModal(true);}} className="h-6 px-2 rounded-full border text-[10px]">Éditer</button><button onClick={()=>handleTogglePublish(a)} className="h-6 px-2 border rounded-full text-[10px]">{a.isPublished?"Dépub":"Pub"}</button><button onClick={()=>handleDeleteArticle(a.id)} className="h-6 px-2 bg-red-50 text-red-600 border text-[10px]">Suppr</button></td></tr>))}</tbody>
+              <table className="w-full text-[12px]"><thead className="text-[10px] uppercase text-zinc-500 border-b"><tr><th className="text-left py-2">Titre</th><th>Cat</th><th>Auteur</th><th>Vues</th><th>Flags</th><th>Statut</th><th className="text-right py-2 pr-2">Actions</th></tr></thead>
+                <tbody>{articles.map((a:any)=>(<tr key={a.id} className="border-b"><td className="py-2 max-w-[260px] truncate font-medium">{a.title}</td><td><span className="px-2 py-0.5 bg-zinc-100 rounded-full text-[10px]">{a.category}</span></td><td className="text-[11px]">{a.author}</td><td>{a.views}</td><td className="text-[9px] space-x-1">{a.isFeatured&&"★"}{a.isSentinelle&&"S"}{a.isEssor&&"E"}{a.isOmbreDouce&&"O"}</td><td><span className={`px-2 py-0.5 rounded-full text-[10px] ${a.isPublished?"bg-green-50 text-green-700":"bg-amber-50 text-amber-700"}`}>{a.isPublished?"Publié":"Brouillon"}</span></td><td className="py-1.5"><div className="flex flex-wrap items-center justify-end gap-1.5"><a href={`/article/${encodeURIComponent(a.slug || a.id)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 h-7 px-2.5 rounded-full border border-blue-200 bg-blue-50 text-[11px] font-semibold text-blue-700 hover:bg-blue-100 transition" title="Voir l’article dans un nouvel onglet"><span>Voir</span><span className="text-[10px]">↗</span></a><button type="button" onClick={()=>void handleCopyArticleLink(a)} className={`inline-flex items-center gap-1 h-7 px-2.5 rounded-full border text-[11px] font-semibold transition ${copiedArticleId===a.id?"border-green-300 bg-green-100 text-green-800":"border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100"}`} title="Copier l’adresse web complète de l’article"><span>{copiedArticleId===a.id?"✓ Copié !":"Copier le lien"}</span></button><button type="button" onClick={()=>{setEditingArticle(a); setArticleImage(a.image || ""); setArticleTranslations(a.translations || {}); setArticleAudios(a.audioByLanguage || a.audio_by_language || {}); setSelectedAuthorId(a.authorProfileId || a.author_profile_id || ""); setSelectedCategoryId(a.categoryId || a.category_id || ""); setSelectedCategoryIds(a.categoryIds || (a.categoryId || a.category_id ? [a.categoryId || a.category_id] : [])); setShowArticleModal(true);}} className="h-7 px-2.5 rounded-full border border-zinc-200 bg-white text-[11px] font-semibold text-[#0A1931] hover:bg-zinc-50">Éditer</button><button type="button" onClick={()=>void handleTogglePublish(a)} className={`h-7 px-2.5 border rounded-full text-[11px] font-semibold transition ${a.isPublished?"border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100":"border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"}`} title={a.isPublished?"Dépublier cet article (passer en brouillon)":"Publier cet article en ligne"}>{a.isPublished?"Dépublier":"Publier"}</button><button type="button" onClick={()=>void handleDeleteArticle(a.id)} className="h-7 px-2.5 bg-red-50 text-red-600 border border-red-200 rounded-full text-[11px] font-semibold hover:bg-red-100" title="Supprimer définitivement cet article">Supprimer</button></div></td></tr>))}</tbody>
               </table>
             </div>
             {showArticleModal && (
               <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
                 <form onSubmit={handleCreateArticle} className="bg-white rounded-[20px] p-6 w-full max-w-[760px] max-h-[90vh] overflow-y-auto">
-                  <h3 className="font-bold">{editingArticle?"Modifier":"Nouveau"} article</h3><p className="mt-1 text-[11px] text-zinc-500">Les champs marqués sont enregistrés dans le Magazine et contrôlent l’accès public au contenu.</p>
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
+                    <div>
+                      <h3 className="font-bold text-lg text-[#0A1931]">{editingArticle?"Modifier":"Nouveau"} article</h3>
+                      <p className="mt-0.5 text-[11px] text-zinc-500">Les champs marqués sont enregistrés dans le Magazine et contrôlent l’accès public au contenu.</p>
+                    </div>
+                    {editingArticle && (
+                      <div className="flex items-center gap-2">
+                        <a href={`/article/${encodeURIComponent(editingArticle.slug || editingArticle.id)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-full hover:bg-blue-100">
+                          <span>Voir en direct</span>
+                          <span>↗</span>
+                        </a>
+                        <button type="button" onClick={() => void handleCopyArticleLink(editingArticle)} className="text-[11px] font-bold text-zinc-700 bg-zinc-100 border border-zinc-200 px-3 py-1.5 rounded-full hover:bg-zinc-200">
+                          {copiedArticleId === editingArticle.id ? "✓ Lien copié !" : "Copier le lien"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   <div className="mt-4 grid gap-3">
                     <input name="title" defaultValue={editingArticle?.title} placeholder="Titre" required className="h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" />
                     <RichTextEditor name="summary" defaultValue={editingArticle?.summary || ""} placeholder="Résumé de l’article" minHeight={100} className="bg-zinc-50" />
