@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 export default function CandidateDashboard() {
@@ -23,7 +24,46 @@ export default function CandidateDashboard() {
   return (
     <div className="bg-[#0B0B0F] text-white min-h-screen pb-20">
       <div className="max-w-[1280px] mx-auto px-5 md:px-[64px] py-10">
-        <h1 className="text-[28px] font-black" style={{ fontFamily: "Fraunces" }}>Dashboard Candidat - Badges, niveaux, profils publics enrichis</h1>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-[28px] font-black" style={{ fontFamily: "Fraunces" }}>Dashboard Candidat</h1>
+            <p className="text-white/60 text-sm mt-1">Gérez vos performances, suivez vos dons et intervenez en direct sur scène.</p>
+          </div>
+          <Link
+            href="/africa-awards/candidate/live/aminata-traore"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4D976] text-black font-black text-sm shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:scale-105 active:scale-95 transition"
+          >
+            <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping" />
+            <span>Rejoindre le Live en direct</span>
+            <span className="text-base">🎥</span>
+          </Link>
+        </div>
+
+        {/* Bannière d'intervention Live */}
+        <div className="mt-6 rounded-2xl bg-gradient-to-r from-[#D4AF37]/20 via-[#16161D] to-black border border-[#D4AF37]/40 p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-[#D4AF37]/20 border border-[#D4AF37]/50 flex items-center justify-center text-2xl">
+              🎙️
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2 py-0.5 rounded bg-red-500/20 text-red-400 font-black tracking-wider uppercase border border-red-500/30">
+                  En Direct Maintenant
+                </span>
+                <span className="text-sm font-bold text-white">Gala Africa Awards 2026</span>
+              </div>
+              <p className="text-xs text-white/60 mt-0.5">
+                Votre présence sur scène est attendue. Activez votre caméra selfie, surveillez vos dons et vos votes en temps réel.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/africa-awards/candidate/live/aminata-traore"
+            className="w-full md:w-auto px-4 py-2.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold text-xs text-center transition border border-white/20"
+          >
+            Ouvrir mon Studio Candidat →
+          </Link>
+        </div>
         
         <div className="mt-8 grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">

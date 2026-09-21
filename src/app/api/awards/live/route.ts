@@ -69,7 +69,11 @@ export async function POST(req: NextRequest) {
   if (action === "event") {
     const sessionId = String(body.session_id || "");
     const eventType = String(body.event_type || "");
-    const allowed = ["comment", "reaction", "candidate_join", "candidate_leave", "vote", "gift", "donation", "pot_increase"];
+    const allowed = [
+      "comment", "reaction", "candidate_join", "candidate_leave", "vote",
+      "gift", "donation", "pot_increase", "announcement", "pin_comment",
+      "mod_alert", "speaker_change", "mod_action"
+    ];
     if (!sessionId || !allowed.includes(eventType)) return NextResponse.json({ error: "session_id et type d’événement valides requis" }, { status: 400 });
     const payload = body.payload && typeof body.payload === "object" ? body.payload : {};
     if (eventType === "comment" && (!String((payload as Record<string, unknown>).content || "").trim() || String((payload as Record<string, unknown>).content).length > 500)) return NextResponse.json({ error: "Commentaire vide ou trop long" }, { status: 400 });
