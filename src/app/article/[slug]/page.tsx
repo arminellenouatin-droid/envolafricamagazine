@@ -76,9 +76,37 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   if (!article) return notFound();
   const [editorialAuthor, isSubscriber, preferredLanguage] = await Promise.all([findEditorialAuthorById(article.authorProfileId), getIsSubscribed(), (async () => { const user = await getCurrentUserFromCookie(); return user?.lang || "fr"; })()]);
 
-  const articleCategorySet = new Set(article.categories?.length ? article.categories : [article.category]);
+  // Normalisation pour un matching infaillible (minuscules, sans accents, sans espaces superflus)
+  const normalize = (val?: string | null) =>
+    (val || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+
+  const currentArticleCategories = (article.categories?.length ? article.categories : [article.category])
+    .filter(Boolean)
+    .map(normalize);
+
+  const currentArticleCategoryIds = new Set(
+    [
+      ...(article.categoryIds || []),
+      article.categoryId,
+    ].filter(Boolean) as string[]
+  );
+
+  const matchesCategory = (a: typeof article) => {
+    if (a.id === article.id) return false;
+    const aCategories = (a.categories?.length ? a.categories : [a.category]).filter(Boolean).map(normalize);
+    const hasCategoryNameMatch = aCategories.some((cat) => currentArticleCategories.includes(cat));
+    if (hasCategoryNameMatch) return true;
+    const aCategoryIds = [...(a.categoryIds || []), a.categoryId].filter(Boolean) as string[];
+    const hasCategoryIdMatch = aCategoryIds.some((id) => currentArticleCategoryIds.has(id));
+    return hasCategoryIdMatch;
+  };
+
   const related = articles
-    .filter((a) => a.id !== article.id && (a.categories || [a.category]).some((category) => articleCategorySet.has(category)))
+    .filter((a) => matchesCategory(a))
     .slice(0, 3)
     .map(stripArticleContent);
   const mostRead = [...articles]
@@ -87,21 +115,21 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     .slice(0, 6)
     .map(stripArticleContent);
 
-  // Bloc 1 : Articles de la même catégorie pour le carrousel automatique
+  // Bloc 1 : Articles STRICTEMENT de la même catégorie pour le carrousel automatique
+  // AUCUN article d'une autre catégorie ne doit s'y afficher
   const sameCategoryArticles = articles
-    .filter((a) => a.id !== article.id && (a.categories || [a.category]).some((category) => articleCategorySet.has(category)))
+    .filter((a) => matchesCategory(a))
     .map(stripArticleContent);
-  const fallbackCategoryArticles = sameCategoryArticles.length >= 2
-    ? sameCategoryArticles
-    : [...sameCategoryArticles, ...articles.filter((a) => a.id !== article.id && !sameCategoryArticles.some((sc) => sc.id === a.id)).map(stripArticleContent)].slice(0, 8);
 
-  // Bloc 2 : Articles du même auteur pour le carrousel manuel des titres
-  const currentAuthorName = (editorialAuthor?.name || article.author || "").trim().toLowerCase();
+  // Bloc 2 : Articles STRICTEMENT du même auteur
+  // AUCUN article d'un autre auteur ne doit s'y afficher
+  const currentAuthorName = normalize(editorialAuthor?.name || article.author);
   const sameAuthorArticles = articles
     .filter((a) => {
       if (a.id === article.id) return false;
-      if (article.authorProfileId && a.authorProfileId === article.authorProfileId) return true;
-      if (currentAuthorName && a.author && a.author.trim().toLowerCase() === currentAuthorName) return true;
+      if (article.authorProfileId && a.authorProfileId && a.authorProfileId === article.authorProfileId) return true;
+      if (article.authorId && a.authorId && a.authorId === article.authorId) return true;
+      if (currentAuthorName && normalize(a.author) === currentAuthorName) return true;
       return false;
     })
     .map(stripArticleContent);
@@ -113,10 +141,6 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     roleLabel: editorialAuthor?.roleLabel || "Journaliste & Rédacteur",
     bio: editorialAuthor?.bio || "Membre de la rédaction d'Envol Africa Magazine, dédié aux analyses économiques et aux perspectives de développement panafricain.",
   };
-
-  const finalAuthorArticles = sameAuthorArticles.length > 0
-    ? sameAuthorArticles
-    : articles.filter((a) => a.id !== article.id).slice(0, 4).map(stripArticleContent);
 
   const canReadFullContent = !article.isEncrypted || isSubscriber;
   const cleanSummary = (article.summary || "").replace(/&nbsp;|\u00a0/g, " ").trim();
@@ -187,19 +211,19 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           </div>
         </article>
 
-        {/* Bloc 1 : Carrousel automatique « Dans la même catégorie » */}
-        {fallbackCategoryArticles.length > 0 && (
+        {/* Bloc 1 : Carrousel automatique « Dans la même catégorie » (strictement de la même catégorie) */}
+        {sameCategoryArticles.length > 0 && (
           <SameCategoryCarousel
-            articles={fallbackCategoryArticles}
+            articles={sameCategoryArticles}
             categoryName={article.category}
           />
         )}
 
-        {/* Bloc 2 : Carrousel manuel titre par titre « Du même auteur » */}
-        {finalAuthorArticles.length > 0 && (
+        {/* Bloc 2 : Carrousel automatique « Du même auteur » avec miniature à gauche (strictement du même auteur) */}
+        {sameAuthorArticles.length > 0 && (
           <SameAuthorArticles
             author={authorInfo}
-            articles={finalAuthorArticles}
+            articles={sameAuthorArticles}
           />
         )}
 
