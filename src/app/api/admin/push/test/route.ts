@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const title = body.title || "Test Envol Africa";
+    const title = body.title || "ENVOL AFRICA";
     const content = body.body || "Ceci est un test de notification Chrome avec l'image principale de la publication.";
     const href = body.href || "/";
     const image = body.image || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800";

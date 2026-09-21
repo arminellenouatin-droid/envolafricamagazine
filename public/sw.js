@@ -5,7 +5,7 @@ self.addEventListener("push", (event) => {
   } catch {
     payload = {};
   }
-  const title = payload.title || "Envol Africa";
+  const title = payload.title || "ENVOL AFRICA";
 
   const toAbsolute = (url) => {
     if (!url) return undefined;

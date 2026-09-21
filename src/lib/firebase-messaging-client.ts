@@ -134,7 +134,7 @@ export async function listenForForegroundMessages(callback?: (payload: MessagePa
     callback?.(payload);
     const data = payload.data || {};
     const notification = payload.notification || {};
-    const title = notification.title || data.title || "Envol Africa";
+    const title = notification.title || data.title || "ENVOL AFRICA";
     const body = notification.body || data.body || "Nouvelle notification";
     const href = data.href || data.link || "/";
 

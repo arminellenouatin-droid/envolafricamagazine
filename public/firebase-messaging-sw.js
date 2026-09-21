@@ -30,9 +30,8 @@ function toAbsoluteUrl(url) {
 
 messaging.onBackgroundMessage((payload) => {
   const data = payload.data || {};
-  const notification = payload.notification || {};
-  const title = notification.title || data.title || "Envol Africa Magazine";
-  const body = notification.body || data.body || "Un nouvel article est disponible sur Envol Africa.";
+  const title = notification.title || data.title || "ENVOL AFRICA";
+  const body = notification.body || data.body || "Nouvelle publication disponible sur Envol Africa.";
 
   // Image principale du média (article, magazine, etc.)
   const mediaImage = toAbsoluteUrl(notification.image || notification.imageUrl || data.image || data.imageUrl);
