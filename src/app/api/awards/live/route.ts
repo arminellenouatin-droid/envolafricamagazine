@@ -8,9 +8,31 @@ export async function GET(req: NextRequest) {
   if (!competitionId && !sessionId) return NextResponse.json({ error: "competition_id ou session_id requis" }, { status: 400 });
   const supabase = getSupabaseAdmin();
   if (!supabase) return NextResponse.json({ error: "Base live Awards temporairement indisponible" }, { status: 503 });
+  const isUuid = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
+  let targetCompId = competitionId;
+  if (competitionId && !isUuid(competitionId)) {
+    const { data: comp } = await supabase
+      .from("awards_competitions")
+      .select("id")
+      .eq("slug", competitionId)
+      .limit(1)
+      .maybeSingle();
+    if (!comp) {
+      return NextResponse.json({ session: null, events: [], participants: [] });
+    }
+    targetCompId = comp.id;
+  }
+
   let sessionQuery = supabase.from("awards_live_sessions").select("id,competition_id,mux_playback_id,status,started_at,ended_at,replay_url,created_at").order("created_at", { ascending: false }).limit(1);
-  if (sessionId) sessionQuery = sessionQuery.eq("id", sessionId);
-  else sessionQuery = sessionQuery.eq("competition_id", competitionId).in("status", ["scheduled", "live"]);
+  if (sessionId) {
+    if (!isUuid(sessionId)) {
+      return NextResponse.json({ session: null, events: [], participants: [] });
+    }
+    sessionQuery = sessionQuery.eq("id", sessionId);
+  } else if (targetCompId) {
+    sessionQuery = sessionQuery.eq("competition_id", targetCompId).in("status", ["scheduled", "live"]);
+  }
   const { data: session, error: sessionError } = await sessionQuery.maybeSingle();
   if (sessionError) return NextResponse.json({ error: sessionError.message }, { status: 500 });
   const liveSessionId = session?.id || sessionId;
