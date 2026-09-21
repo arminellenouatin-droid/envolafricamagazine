@@ -49,12 +49,12 @@ function isInvalidFirebaseRegistration(code?: string) {
 export function toAbsoluteUrl(url?: string | null): string | undefined {
   if (!url) return undefined;
   if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
-    return url;
+    // Forcer le domaine officiel canonique et éliminer tout lien vers les domaines secondaires ou obsolètes
+    return url
+      .replace(/https?:\/\/envolafricamagazinealokpe\.vercel\.app/g, "https://envolafrica.site")
+      .replace(/https?:\/\/envolafrica\.vercel\.app/g, "https://envolafrica.site");
   }
-  const baseUrl = (
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://envolafrica.site")
-  ).replace(/\/$/, "");
+  const baseUrl = "https://envolafrica.site";
   const path = url.startsWith("/") ? url : `/${url}`;
   return `${baseUrl}${path}`;
 }
@@ -70,26 +70,39 @@ export async function sendPushToAllSubscribers(payload: PushPayload) {
   const messaging = getFirebaseAdminMessaging();
   let fcmSent = 0;
 
-  // 1. Récupération de tous les abonnements FCM (visiteurs + connectés)
+  // 1. Récupération de tous les abonnements FCM (visiteurs + connectés) ordonnés par fraîcheur
   const { data: fcmSubs, error: fcmError } = await supabase
     .from("push_subscriptions")
-    .select("fcm_fid")
+    .select("fcm_fid, profile_id, updated_at")
     .not("fcm_fid", "is", null)
+    .order("updated_at", { ascending: false })
     .limit(5000);
 
   if (fcmError) {
     console.error("[push] Erreur lecture push_subscriptions :", fcmError.message);
   }
 
-  const tokens = Array.from(
-    new Set((fcmSubs || []).map((s) => s.fcm_fid).filter((t): t is string => Boolean(t)))
-  );
+  // Dédoublonnage : si un profil est présent plusieurs fois (ex: suite à la navigation sur plusieurs domaines),
+  // on ne conserve que son token le plus récent pour éviter les réceptions multiples.
+  const seenProfiles = new Set<string>();
+  const tokensList: string[] = [];
+
+  for (const s of fcmSubs || []) {
+    if (!s.fcm_fid) continue;
+    if (s.profile_id) {
+      if (seenProfiles.has(s.profile_id)) continue;
+      seenProfiles.add(s.profile_id);
+    }
+    tokensList.push(s.fcm_fid);
+  }
+
+  const tokens = Array.from(new Set(tokensList));
 
   const absoluteImage = toAbsoluteUrl(payload.image);
   const absoluteLogo = toAbsoluteUrl("/mobile-header-logo.png");
   // L'icône réduite demandée : l'image de la publication si disponible, sinon le logo du site
   const notificationIcon = absoluteImage || absoluteLogo;
-  const targetHref = payload.href || "/";
+  const targetHref = toAbsoluteUrl(payload.href) || "https://envolafrica.site";
 
   if (messaging && tokens.length > 0) {
     for (const batch of chunks(tokens, 500)) {

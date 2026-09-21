@@ -19,17 +19,37 @@ const messaging = firebase.messaging();
 function toAbsoluteUrl(url) {
   if (!url) return undefined;
   if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
-    return url;
+    return url
+      .replace(/https?:\/\/envolafricamagazinealokpe\.vercel\.app/g, "https://envolafrica.site")
+      .replace(/https?:\/\/envolafrica\.vercel\.app/g, "https://envolafrica.site");
   }
-  try {
-    return new URL(url, self.location.origin).href;
-  } catch (e) {
-    return url;
-  }
+  const cleanPath = url.startsWith("/") ? url : `/${url}`;
+  return `https://envolafrica.site${cleanPath}`;
 }
 
 messaging.onBackgroundMessage((payload) => {
+  const hostname = self.location.hostname;
+  const isObsoleteDomain = hostname.includes("alokpe") || hostname.includes("envolafricamagazinealokpe");
+  const isAllowedHost = hostname === "envolafrica.site" || hostname === "localhost" || hostname === "127.0.0.1";
+
+  // Si la notification arrive sur l'ancien domaine ou un miroir secondaire non-autorisé :
+  if (isObsoleteDomain || !isAllowedHost) {
+    // 1. Se désinscrire auprès du PushManager
+    if (self.registration && self.registration.pushManager) {
+      self.registration.pushManager.getSubscription().then((sub) => {
+        if (sub) sub.unsubscribe().catch(() => {});
+      }).catch(() => {});
+    }
+    // 2. Désinstaller le Service Worker de ce domaine
+    if (self.registration && self.registration.unregister) {
+      self.registration.unregister().catch(() => {});
+    }
+    // 3. Annuler l'affichage de la notification
+    return;
+  }
+
   const data = payload.data || {};
+  const notification = payload.notification || {};
   const title = notification.title || data.title || "ENVOL AFRICA";
   const body = notification.body || data.body || "Nouvelle publication disponible sur Envol Africa.";
 
@@ -40,7 +60,7 @@ messaging.onBackgroundMessage((payload) => {
   // Remplacement de l'icône réduite (favicon) par l'image de la publication
   const iconUrl = mediaImage || toAbsoluteUrl(notification.icon || data.icon) || defaultLogo;
   const badgeUrl = toAbsoluteUrl(notification.badge || data.badge) || defaultLogo;
-  const targetHref = data.href || data.link || "/";
+  const targetHref = toAbsoluteUrl(data.href || data.link || "/");
 
   const options = {
     body,
@@ -61,17 +81,24 @@ messaging.onBackgroundMessage((payload) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const requestedHref = event.notification.data && event.notification.data.href
+  const rawHref = event.notification.data && event.notification.data.href
     ? event.notification.data.href
     : "/";
-  const targetUrl = new URL(requestedHref, self.location.origin);
-  if (targetUrl.origin !== self.location.origin) {
-    targetUrl.href = new URL("/", self.location.origin).href;
+
+  // Toujours rediriger vers le domaine canonique officiel envolafrica.site
+  let targetUrl;
+  try {
+    targetUrl = new URL(rawHref, "https://envolafrica.site");
+    if (!targetUrl.origin.includes("envolafrica.site")) {
+      targetUrl = new URL(targetUrl.pathname + targetUrl.search, "https://envolafrica.site");
+    }
+  } catch {
+    targetUrl = new URL("/", "https://envolafrica.site");
   }
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (windows) => {
-      const existing = windows.find((client) => "focus" in client && new URL(client.url).origin === self.location.origin);
+      const existing = windows.find((client) => "focus" in client && client.url.includes("envolafrica.site"));
       if (existing) {
         await existing.focus();
         return existing.navigate(targetUrl.href);

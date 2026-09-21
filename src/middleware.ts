@@ -2,9 +2,16 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const host = request.headers.get("host") || "";
+  const { pathname, search } = request.nextUrl;
 
-  // Protect Admin UI pages at the Edge
+  // 1. Redirection 308 permanente de l'ancien domaine obsolète envolafricamagazinealokpe.vercel.app
+  if (host.includes("alokpe") || host.includes("envolafricamagazinealokpe")) {
+    const canonicalUrl = new URL(`${pathname}${search}`, "https://envolafrica.site");
+    return NextResponse.redirect(canonicalUrl, 308);
+  }
+
+  // 2. Protection des pages d'administration à l'Edge
   if (pathname.startsWith("/admin")) {
     const token = request.cookies.get("eam_token")?.value;
     if (!token) {
@@ -19,6 +26,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/admin/:path*",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
