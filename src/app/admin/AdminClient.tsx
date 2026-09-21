@@ -108,6 +108,50 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
   const [savingLanding, setSavingLanding] = useState(false);
   const [landingSubTab, setLandingSubTab] = useState<"videos" | "contenus_sponsorises" | "formations_certifiees" | "recrutement" | "mega_menu">("videos");
   const [copiedArticleId, setCopiedArticleId] = useState<string | null>(null);
+  const [articleTitle, setArticleTitle] = useState("");
+  const [articleSummary, setArticleSummary] = useState("");
+  const [articleContent, setArticleContent] = useState("");
+  const [articleTags, setArticleTags] = useState("");
+  const [articleIsEncrypted, setArticleIsEncrypted] = useState(true);
+  const [articleIsPublished, setArticleIsPublished] = useState(false);
+  const [articleLandingTag, setArticleLandingTag] = useState("");
+
+  const openCreateArticleModal = () => {
+    setEditingArticle(null);
+    setArticleTitle("");
+    setArticleSummary("");
+    setArticleContent("");
+    setArticleImage("");
+    setArticleTags("");
+    setArticleIsEncrypted(true);
+    setArticleIsPublished(false);
+    setArticleLandingTag("");
+    setArticleTranslations({});
+    setArticleAudios({});
+    setSelectedAuthorId("");
+    setSelectedCategoryId("");
+    setSelectedCategoryIds([]);
+    setShowArticleModal(true);
+  };
+
+  const openEditArticleModal = (a: any) => {
+    setEditingArticle(a);
+    setArticleTitle(a.title || "");
+    setArticleSummary(a.summary || "");
+    setArticleContent(a.content || "");
+    setArticleImage(a.image || "");
+    setArticleTags(Array.isArray(a.tags) ? a.tags.join(", ") : (a.tags || ""));
+    setArticleIsEncrypted(a.isEncrypted !== false && a.is_encrypted !== false);
+    setArticleIsPublished(Boolean(a.isPublished ?? a.is_published));
+    setArticleTranslations(a.translations || {});
+    setArticleAudios(a.audioByLanguage || a.audio_by_language || {});
+    setSelectedAuthorId(a.authorProfileId || a.author_profile_id || "");
+    setSelectedCategoryId(a.categoryId || a.category_id || "");
+    setSelectedCategoryIds(a.categoryIds || (a.categoryId || a.category_id ? [a.categoryId || a.category_id] : []));
+    const landingTag = LANDING_ARTICLE_TAGS.find((tag) => a.tags?.some((item: string) => item.toLowerCase() === tag.toLowerCase())) || "";
+    setArticleLandingTag(landingTag);
+    setShowArticleModal(true);
+  };
 
   const fetchArticles = async () => { const res = await fetch("/api/admin/articles"); if (res.ok) { const d = await res.json(); setArticles(d.articles); } };
   const fetchMagazines = async () => { const res = await fetch("/api/admin/magazines"); if (res.ok) { const d = await res.json(); setMagazines(d.magazines); } };
@@ -157,21 +201,81 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
     setSavingArticle(true);
     try {
       const form = new FormData(e.currentTarget);
+      const title = (articleTitle || (form.get("title") as string) || "").trim();
+      const summary = (articleSummary || (form.get("summary") as string) || "").trim();
+      const content = (articleContent || (form.get("content") as string) || "").trim();
+
+      if (!title || !content) {
+        throw new Error("Le titre et le contenu de l’article sont obligatoires.");
+      }
+
+      const currentTranslations = {
+        ...articleTranslations,
+        fr: {
+          title,
+          summary,
+          content,
+        },
+      };
+
+      const selectedTags = Array.from(new Set([
+        ...articleTags.split(",").map((t: string) => t.trim()).filter(Boolean),
+        String(articleLandingTag || "").trim()
+      ].filter(Boolean)));
+
+      const primaryCatId = selectedCategoryIds[0] || selectedCategoryId;
+      const categoryLabel = categories.find((item) => item.id === primaryCatId)?.label || editingArticle?.category || "Economie";
+
+      const authorObj = authors.find((item) => item.id === selectedAuthorId);
+      const authorName = authorObj?.name || editingArticle?.author || "";
+
       const payload: any = {
-        title: form.get("title"), summary: form.get("summary"), content: form.get("content"), category: categories.find((item) => item.id === selectedCategoryIds[0])?.label || "Economie", categoryId: selectedCategoryIds[0] || null, categoryIds: selectedCategoryIds, image: form.get("image") || articleImage, translations: articleTranslations, audioByLanguage: articleAudios,
-        author: authors.find((item) => item.id === form.get("authorProfileId"))?.name || "", authorId: form.get("authorId") || "", authorProfileId: form.get("authorProfileId") || null, tags: Array.from(new Set([...(form.get("tags") as string || "").split(",").map((tag:string) => tag.trim()).filter(Boolean), String(form.get("landingTag") || "").trim()].filter(Boolean))),
-        isEncrypted: form.get("isEncrypted") === "on", isPublished: form.get("isPublished")==="on", isFeatured: form.get("isFeatured")==="on", isSentinelle: form.get("isSentinelle")==="on", isEssor: form.get("isEssor")==="on", isOmbreDouce: form.get("isOmbreDouce")==="on",
+        title,
+        summary,
+        content,
+        category: categoryLabel,
+        categoryId: primaryCatId || null,
+        categoryIds: selectedCategoryIds,
+        image: articleImage || (form.get("image") as string) || "",
+        translations: currentTranslations,
+        audioByLanguage: articleAudios,
+        author: authorName,
+        authorId: form.get("authorId") || editingArticle?.authorId || "",
+        authorProfileId: selectedAuthorId || null,
+        tags: selectedTags,
+        isEncrypted: articleIsEncrypted,
+        isPublished: articleIsPublished,
+        isFeatured: editingArticle?.isFeatured ?? false,
+        isSentinelle: editingArticle?.isSentinelle ?? false,
+        isEssor: editingArticle?.isEssor ?? false,
+        isOmbreDouce: editingArticle?.isOmbreDouce ?? false,
       };
       if (editingArticle) payload.id = editingArticle.id;
-      const res = await fetch("/api/admin/articles", { method: editingArticle ? "PUT" : "POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
+
+      const res = await fetch("/api/admin/articles", {
+        method: editingArticle ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
       const data = await res.json().catch(() => ({ error: "Réponse serveur illisible" }));
       if (!res.ok) throw new Error(data.error || `Enregistrement impossible (${res.status})`);
       setMessage(editingArticle ? "Article modifié et enregistré ✅" : "Article créé et enregistré ✅");
       await fetchArticles();
-      setShowArticleModal(false); setEditingArticle(null); setArticleImage(""); setArticleTranslations({}); setArticleAudios({});
+      setShowArticleModal(false);
+      setEditingArticle(null);
+      setArticleTitle("");
+      setArticleSummary("");
+      setArticleContent("");
+      setArticleImage("");
+      setArticleTags("");
+      setArticleLandingTag("");
+      setArticleTranslations({});
+      setArticleAudios({});
     } catch (error) {
       setMessage(`Erreur d’enregistrement : ${error instanceof Error ? error.message : "réessayez"}`);
-    } finally { setSavingArticle(false); }
+    } finally {
+      setSavingArticle(false);
+    }
   };
 
   const handleArticleAudioUpload = async (file: File, language: string) => {
@@ -386,15 +490,15 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
 
         {activeTab==="articles" && (
           <div className="bg-white rounded-[18px] border p-6">
-            <div className="flex items-center justify-between"><h3 className="font-bold text-[18px]">Articles - CRUD complet + KPIs vues/likes - Fil d'info, Sentinelles, Essor, Ombre douce</h3><button onClick={()=>{setEditingArticle(null); setArticleImage(""); setArticleTranslations({}); setArticleAudios({}); setSelectedAuthorId(""); setSelectedCategoryId(""); setSelectedCategoryIds([]); setShowArticleModal(true);}} className="h-9 px-4 rounded-full bg-[#0A1931] text-white text-[12px] font-bold">+ Nouvel article</button></div>
+            <div className="flex items-center justify-between"><h3 className="font-bold text-[18px]">Articles - CRUD complet + KPIs vues/likes - Fil d'info, Sentinelles, Essor, Ombre douce</h3><button onClick={openCreateArticleModal} className="h-9 px-4 rounded-full bg-[#0A1931] text-white text-[12px] font-bold">+ Nouvel article</button></div>
             <div className="mt-6 overflow-x-auto">
               <table className="w-full text-[12px]"><thead className="text-[10px] uppercase text-zinc-500 border-b"><tr><th className="text-left py-2">Titre</th><th>Cat</th><th>Auteur</th><th>Vues</th><th>Flags</th><th>Statut</th><th className="text-right py-2 pr-2">Actions</th></tr></thead>
-                <tbody>{articles.map((a:any)=>(<tr key={a.id} className="border-b"><td className="py-2 max-w-[260px] truncate font-medium">{a.title}</td><td><span className="px-2 py-0.5 bg-zinc-100 rounded-full text-[10px]">{a.category}</span></td><td className="text-[11px]">{a.author}</td><td>{a.views}</td><td className="text-[9px] space-x-1">{a.isFeatured&&"★"}{a.isSentinelle&&"S"}{a.isEssor&&"E"}{a.isOmbreDouce&&"O"}</td><td><span className={`px-2 py-0.5 rounded-full text-[10px] ${a.isPublished?"bg-green-50 text-green-700":"bg-amber-50 text-amber-700"}`}>{a.isPublished?"Publié":"Brouillon"}</span></td><td className="py-1.5"><div className="flex flex-wrap items-center justify-end gap-1.5"><a href={`/article/${encodeURIComponent(a.slug || a.id)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 h-7 px-2.5 rounded-full border border-blue-200 bg-blue-50 text-[11px] font-semibold text-blue-700 hover:bg-blue-100 transition" title="Voir l’article dans un nouvel onglet"><span>Voir</span><span className="text-[10px]">↗</span></a><button type="button" onClick={()=>void handleCopyArticleLink(a)} className={`inline-flex items-center gap-1 h-7 px-2.5 rounded-full border text-[11px] font-semibold transition ${copiedArticleId===a.id?"border-green-300 bg-green-100 text-green-800":"border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100"}`} title="Copier l’adresse web complète de l’article"><span>{copiedArticleId===a.id?"✓ Copié !":"Copier le lien"}</span></button><button type="button" onClick={()=>{setEditingArticle(a); setArticleImage(a.image || ""); setArticleTranslations(a.translations || {}); setArticleAudios(a.audioByLanguage || a.audio_by_language || {}); setSelectedAuthorId(a.authorProfileId || a.author_profile_id || ""); setSelectedCategoryId(a.categoryId || a.category_id || ""); setSelectedCategoryIds(a.categoryIds || (a.categoryId || a.category_id ? [a.categoryId || a.category_id] : [])); setShowArticleModal(true);}} className="h-7 px-2.5 rounded-full border border-zinc-200 bg-white text-[11px] font-semibold text-[#0A1931] hover:bg-zinc-50">Éditer</button><button type="button" onClick={()=>void handleTogglePublish(a)} className={`h-7 px-2.5 border rounded-full text-[11px] font-semibold transition ${a.isPublished?"border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100":"border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"}`} title={a.isPublished?"Dépublier cet article (passer en brouillon)":"Publier cet article en ligne"}>{a.isPublished?"Dépublier":"Publier"}</button><button type="button" onClick={()=>void handleDeleteArticle(a.id)} className="h-7 px-2.5 bg-red-50 text-red-600 border border-red-200 rounded-full text-[11px] font-semibold hover:bg-red-100" title="Supprimer définitivement cet article">Supprimer</button></div></td></tr>))}</tbody>
+                <tbody>{articles.map((a:any)=>(<tr key={a.id} className="border-b"><td className="py-2 max-w-[260px] truncate font-medium">{a.title}</td><td><span className="px-2 py-0.5 bg-zinc-100 rounded-full text-[10px]">{a.category}</span></td><td className="text-[11px]">{a.author}</td><td>{a.views}</td><td className="text-[9px] space-x-1">{a.isFeatured&&"★"}{a.isSentinelle&&"S"}{a.isEssor&&"E"}{a.isOmbreDouce&&"O"}</td><td><span className={`px-2 py-0.5 rounded-full text-[10px] ${a.isPublished?"bg-green-50 text-green-700":"bg-amber-50 text-amber-700"}`}>{a.isPublished?"Publié":"Brouillon"}</span></td><td className="py-1.5"><div className="flex flex-wrap items-center justify-end gap-1.5"><a href={`/article/${encodeURIComponent(a.slug || a.id)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 h-7 px-2.5 rounded-full border border-blue-200 bg-blue-50 text-[11px] font-semibold text-blue-700 hover:bg-blue-100 transition" title="Voir l’article dans un nouvel onglet"><span>Voir</span><span className="text-[10px]">↗</span></a><button type="button" onClick={()=>void handleCopyArticleLink(a)} className={`inline-flex items-center gap-1 h-7 px-2.5 rounded-full border text-[11px] font-semibold transition ${copiedArticleId===a.id?"border-green-300 bg-green-100 text-green-800":"border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100"}`} title="Copier l’adresse web complète de l’article"><span>{copiedArticleId===a.id?"✓ Copié !":"Copier le lien"}</span></button><button type="button" onClick={()=>openEditArticleModal(a)} className="h-7 px-2.5 rounded-full border border-zinc-200 bg-white text-[11px] font-semibold text-[#0A1931] hover:bg-zinc-50">Éditer</button><button type="button" onClick={()=>void handleTogglePublish(a)} className={`h-7 px-2.5 border rounded-full text-[11px] font-semibold transition ${a.isPublished?"border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100":"border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"}`} title={a.isPublished?"Dépublier cet article (passer en brouillon)":"Publier cet article en ligne"}>{a.isPublished?"Dépublier":"Publier"}</button><button type="button" onClick={()=>void handleDeleteArticle(a.id)} className="h-7 px-2.5 bg-red-50 text-red-600 border border-red-200 rounded-full text-[11px] font-semibold hover:bg-red-100" title="Supprimer définitivement cet article">Supprimer</button></div></td></tr>))}</tbody>
               </table>
             </div>
             {showArticleModal && (
               <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-                <form onSubmit={handleCreateArticle} className="bg-white rounded-[20px] p-6 w-full max-w-[760px] max-h-[90vh] overflow-y-auto">
+                <form key={editingArticle ? editingArticle.id : "new-article"} onSubmit={handleCreateArticle} className="bg-white rounded-[20px] p-6 w-full max-w-[760px] max-h-[90vh] overflow-y-auto">
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
                     <div>
                       <h3 className="font-bold text-lg text-[#0A1931]">{editingArticle?"Modifier":"Nouveau"} article</h3>
@@ -413,18 +517,18 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
                     )}
                   </div>
                   <div className="mt-4 grid gap-3">
-                    <input name="title" defaultValue={editingArticle?.title} placeholder="Titre" required className="h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" />
-                    <RichTextEditor name="summary" defaultValue={editingArticle?.summary || ""} placeholder="Résumé de l’article" minHeight={100} className="bg-zinc-50" />
-                    <RichTextEditor name="content" defaultValue={editingArticle?.content || ""} placeholder="Contenu complet - 12 lignes visibles non-abonnés" minHeight={220} className="bg-zinc-50" />
+                    <input name="title" value={articleTitle} onChange={(e)=>setArticleTitle(e.target.value)} placeholder="Titre" required className="h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" />
+                    <RichTextEditor name="summary" value={articleSummary} onChange={setArticleSummary} placeholder="Résumé de l’article" minHeight={100} className="bg-zinc-50" />
+                    <RichTextEditor name="content" value={articleContent} onChange={setArticleContent} placeholder="Contenu complet - 12 lignes visibles non-abonnés" minHeight={220} className="bg-zinc-50" />
                     <section className="rounded-[16px] border border-[#e5bdbb] bg-[#fffaf8] p-4"><div className="flex items-start justify-between gap-3"><div><h4 className="text-xs font-black text-[#0A1931]">Versions linguistiques et audio</h4><p className="mt-1 text-[11px] leading-5 text-zinc-500">Le français reprend le contenu principal. Ajoutez les autres langues et l’URL sécurisée de leur fichier audio, puis l’abonné retrouvera automatiquement sa préférence.</p></div><span className="material-symbols-outlined text-[#9e001f]">translate</span></div><div className="mt-4 grid gap-3">{articleLanguages.filter((language) => language.code !== "fr").map((language) => { const value = articleTranslations[language.code] || { title: "", summary: "", content: "" }; return <div key={language.code} className="rounded-[14px] border border-white bg-white p-3"><div className="mb-2 flex items-center justify-between"><span className="text-[11px] font-black text-[#9e001f]">{language.label}</span><span className="text-[10px] text-zinc-400">facultatif</span></div><div className="grid gap-2 md:grid-cols-2"><input value={value.title} onChange={(event) => setArticleTranslations((items) => ({ ...items, [language.code]: { ...value, title: event.target.value } }))} placeholder={`Titre en ${language.label}`} className="h-9 rounded-full border bg-zinc-50 px-3 text-[11px]" /><input value={value.summary} onChange={(event) => setArticleTranslations((items) => ({ ...items, [language.code]: { ...value, summary: event.target.value } }))} placeholder={`Résumé en ${language.label}`} className="h-9 rounded-full border bg-zinc-50 px-3 text-[11px]" /><RichTextEditor value={value.content} onChange={(content) => setArticleTranslations((items) => ({ ...items, [language.code]: { ...value, content } }))} placeholder={`Contenu en ${language.label}`} minHeight={120} className="bg-zinc-50 md:col-span-2" /><div className="flex flex-wrap items-center gap-2 md:col-span-2"><label className="inline-flex h-9 cursor-pointer items-center rounded-full bg-[#0A1931] px-3 text-[10px] font-bold text-white">Uploader l’audio<input type="file" accept="audio/mpeg,audio/wav,audio/ogg,audio/webm" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleArticleAudioUpload(file, language.code); }} /></label><input type="url" value={articleAudios[language.code] || ""} onChange={(event) => setArticleAudios((items) => ({ ...items, [language.code]: event.target.value }))} placeholder={`URL audio ${language.label} (https://...)`} className="h-9 min-w-[220px] flex-1 rounded-full border bg-zinc-50 px-3 text-[11px]" /></div></div></div>; })}<div className="rounded-[14px] border border-dashed border-[#e5bdbb] bg-white p-3"><label className="text-[11px] font-bold text-[#0A1931]">Audio français, facultatif<div className="mt-2 flex flex-wrap gap-2"><label className="inline-flex h-9 cursor-pointer items-center rounded-full bg-[#0A1931] px-3 text-[10px] font-bold text-white">Uploader<input type="file" accept="audio/mpeg,audio/wav,audio/ogg,audio/webm" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleArticleAudioUpload(file, "fr"); }} /></label><input type="url" value={articleAudios.fr || ""} onChange={(event) => setArticleAudios((items) => ({ ...items, fr: event.target.value }))} placeholder="https://..." className="h-9 min-w-[220px] flex-1 rounded-full border bg-zinc-50 px-3 text-[11px]" /></div></label></div></div></section>
                     <div className="grid gap-3 md:grid-cols-2">
                       <div><label className="mb-1 block text-[11px] font-bold text-zinc-600">Catégorie</label><div className="flex gap-2"><select name="categoryId" multiple size={Math.min(Math.max(categories.length, 3), 6)} value={selectedCategoryIds.length ? selectedCategoryIds : (selectedCategoryId || editingArticle?.categoryId || editingArticle?.category_id || categories.find((item) => item.label.toLowerCase() === String(editingArticle?.category || "").toLowerCase())?.id || "")} onChange={(event) => { const values = Array.from(event.target.selectedOptions).map((option) => option.value); setSelectedCategoryIds(values); setSelectedCategoryId(values[0] || ""); }} className="h-auto min-h-11 min-w-0 flex-1 rounded-[14px] border bg-zinc-50 px-4 py-2 text-[13px]" required><option value="">Sélectionner une catégorie</option>{categories.filter((item) => item.is_active !== false).map((item) => <option key={item.id} value={item.id}>{categoryPath(item, categories)}</option>)}</select><button type="button" onClick={() => setShowCategoryModal(true)} className="h-11 shrink-0 rounded-full border border-[#9e001f] px-3 text-[11px] font-bold text-[#9e001f]">Créer</button></div></div>
                       <div><label className="mb-1 block text-[11px] font-bold text-zinc-600">Rédacteur</label><div className="flex gap-2"><select name="authorProfileId" value={selectedAuthorId || editingArticle?.authorProfileId || editingArticle?.author_profile_id || authors.find((item) => item.name.toLowerCase() === String(editingArticle?.author || "").toLowerCase())?.id || ""} onChange={(event) => setSelectedAuthorId(event.target.value)} className="h-11 min-w-0 flex-1 rounded-full border bg-zinc-50 px-4 text-[13px]" required><option value="">Sélectionner un rédacteur</option>{authors.filter((item) => item.is_active !== false).map((item) => <option key={item.id} value={item.id}>{item.name}{item.role_label ? ` · ${item.role_label}` : ""}</option>)}</select><input type="hidden" name="authorId" value={editingArticle?.authorId || ""} /><button type="button" onClick={() => setShowAuthorModal(true)} className="h-11 shrink-0 rounded-full border border-[#9e001f] px-3 text-[11px] font-bold text-[#9e001f]">Créer</button></div></div>
                     </div>
                     <div className="rounded-[16px] border border-dashed border-zinc-300 bg-zinc-50 p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="text-xs font-black text-[#0A1931]">Image principale</div><div className="mt-1 text-[11px] text-zinc-500">Uploadez une image ou utilisez une URL externe.</div></div><label className="inline-flex h-9 cursor-pointer items-center justify-center rounded-full bg-[#0A1931] px-4 text-[11px] font-bold text-white">{uploadingArticleImage ? "Upload en cours…" : "Choisir une image"}<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadingArticleImage} onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleArticleImageUpload(file); }} /></label></div><input name="image" value={articleImage} onChange={(event) => setArticleImage(event.target.value)} placeholder="URL de l’image" className="mt-3 h-10 w-full rounded-full border bg-white px-4 text-[12px]" />{articleImage && <img src={articleImage} alt="Aperçu de l’article" className="mt-3 h-32 w-full rounded-xl object-cover" />}</div>
-                    <input name="tags" defaultValue={editingArticle?.tags?.join(", ")} placeholder="Tags séparés par des virgules" className="h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" />
-                    <div className="rounded-[16px] border border-zinc-200 bg-white p-4"><div className="mb-3 text-xs font-black text-[#0A1931]">Accès au contenu</div><div className="flex flex-wrap gap-4 text-[12px]"><label className="flex items-center gap-2"><input type="checkbox" name="isEncrypted" defaultChecked={editingArticle?.isEncrypted ?? true} aria-describedby="article-access-help"/> <span><strong>Article réservé aux abonnés</strong><span className="ml-1 text-zinc-500">(aperçu pour les visiteurs)</span></span></label><label className="flex items-center gap-2"><input type="checkbox" name="isPublished" defaultChecked={editingArticle?.isPublished}/> Publié</label></div><p id="article-access-help" className="mt-3 text-[11px] leading-5 text-zinc-500"><strong>Ouvert à tout le monde :</strong> décochez « Article réservé aux abonnés ». L’article sera lisible sans abonnement après publication.</p></div>
-                    <div className="rounded-[16px] border border-[#e5bdbb] bg-[#fffaf8] p-4"><div className="mb-2 text-xs font-black text-[#0A1931]">Positionner sur le Landing Magazine</div><p className="mb-3 text-[11px] leading-5 text-zinc-500">Choisissez une seule étiquette. Après publication, l’article sera automatiquement placé dans le bloc correspondant.</p><select name="landingTag" defaultValue={LANDING_ARTICLE_TAGS.find((tag) => editingArticle?.tags?.some((item: string) => item.toLowerCase() === tag.toLowerCase())) || ""} className="h-11 w-full rounded-full border bg-white px-4 text-[12px] font-semibold"><option value="">Aucun placement Landing</option>{LANDING_ARTICLE_TAGS.map((tag) => <option key={tag} value={tag}>{tag}</option>)}</select><p className="mt-2 text-[10px] text-zinc-500">Les anciennes cases techniques restent compatibles avec les articles existants, mais les nouveaux articles utilisent ce sélecteur simple.</p></div>
+                    <input name="tags" value={articleTags} onChange={(e)=>setArticleTags(e.target.value)} placeholder="Tags séparés par des virgules" className="h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" />
+                    <div className="rounded-[16px] border border-zinc-200 bg-white p-4"><div className="mb-3 text-xs font-black text-[#0A1931]">Accès au contenu</div><div className="flex flex-wrap gap-4 text-[12px]"><label className="flex items-center gap-2"><input type="checkbox" name="isEncrypted" checked={articleIsEncrypted} onChange={(e)=>setArticleIsEncrypted(e.target.checked)} aria-describedby="article-access-help"/> <span><strong>Article réservé aux abonnés</strong><span className="ml-1 text-zinc-500">(aperçu pour les visiteurs)</span></span></label><label className="flex items-center gap-2"><input type="checkbox" name="isPublished" checked={articleIsPublished} onChange={(e)=>setArticleIsPublished(e.target.checked)}/> Publié</label></div><p id="article-access-help" className="mt-3 text-[11px] leading-5 text-zinc-500"><strong>Ouvert à tout le monde :</strong> décochez « Article réservé aux abonnés ». L’article sera lisible sans abonnement après publication.</p></div>
+                    <div className="rounded-[16px] border border-[#e5bdbb] bg-[#fffaf8] p-4"><div className="mb-2 text-xs font-black text-[#0A1931]">Positionner sur le Landing Magazine</div><p className="mb-3 text-[11px] leading-5 text-zinc-500">Choisissez une seule étiquette. Après publication, l’article sera automatiquement placé dans le bloc correspondant.</p><select name="landingTag" value={articleLandingTag} onChange={(e)=>setArticleLandingTag(e.target.value)} className="h-11 w-full rounded-full border bg-white px-4 text-[12px] font-semibold"><option value="">Aucun placement Landing</option>{LANDING_ARTICLE_TAGS.map((tag) => <option key={tag} value={tag}>{tag}</option>)}</select><p className="mt-2 text-[10px] text-zinc-500">Les anciennes cases techniques restent compatibles avec les articles existants, mais les nouveaux articles utilisent ce sélecteur simple.</p></div>
                   </div>
                   <div className="mt-6 flex gap-2"><button type="submit" disabled={savingArticle || uploadingArticleImage} className="h-10 px-5 rounded-full bg-[#0A1931] text-white text-[13px] font-bold disabled:cursor-not-allowed disabled:opacity-60">{savingArticle ? "Enregistrement…" : "Enregistrer"}</button><button type="button" onClick={()=>{setShowArticleModal(false); setEditingArticle(null);}} className="h-10 px-5 rounded-full border text-[13px]">Annuler</button></div>
                 </form>

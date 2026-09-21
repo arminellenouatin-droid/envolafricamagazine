@@ -14,6 +14,7 @@ function normalizeTranslations(input: unknown, fallback: { title: string; summar
   const source = input && typeof input === "object" ? input as Record<string, unknown> : {};
   const output: Record<string, { title: string; summary: string; content: string }> = {};
   for (const language of SUPPORTED_ARTICLE_LANGUAGES) {
+    if (language === "fr") continue;
     const value = source[language];
     if (!value || typeof value !== "object") continue;
     const item = value as Record<string, unknown>;
@@ -22,7 +23,7 @@ function normalizeTranslations(input: unknown, fallback: { title: string; summar
     const content = sanitizeRichText(String(item.content ?? ""));
     if (title && content) output[language] = { title, summary, content };
   }
-  if (!output.fr) output.fr = fallback;
+  if (fallback.title && fallback.content) output.fr = fallback;
   return output;
 }
 
@@ -97,13 +98,11 @@ export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
     const { id, ...updates } = body;
-    if (updates.translations !== undefined) updates.translations = normalizeTranslations(updates.translations, { title: String(updates.title ?? ""), summary: String(updates.summary ?? ""), content: sanitizeRichText(String(updates.content ?? "")) });
-    if (updates.audioByLanguage !== undefined) updates.audioByLanguage = normalizeAudioByLanguage(updates.audioByLanguage);
     if (!id) return NextResponse.json({ error: "ID requis" }, { status: 400 });
     const client = getSupabaseAdmin();
     let existing: any;
     if (client) {
-      const result = await client.from("articles").select("id, author_id, is_published").eq("id", id).maybeSingle();
+      const result = await client.from("articles").select("id, author_id, is_published, title, summary, content").eq("id", id).maybeSingle();
       if (result.error) return NextResponse.json({ error: `Lecture impossible : ${result.error.message}` }, { status: 503 });
       existing = result.data;
     } else {
@@ -113,12 +112,37 @@ export async function PUT(req: NextRequest) {
     const isPublishing = updates.isPublished === true && existing.is_published !== true && existing.isPublished !== true;
     if (isPublishing && !["redacteur_chef", "gerant", "admin"].includes(user!.role) && (existing.author_id || existing.authorId) !== user!.id) return NextResponse.json({ error: "Seul un rédacteur en chef peut publier cet article" }, { status: 403 });
     const publishedAt = isPublishing ? new Date().toISOString() : undefined;
+
+    const sanitizedContent = updates.content !== undefined ? sanitizeRichText(String(updates.content ?? "")) : undefined;
+    const sanitizedSummary = updates.summary !== undefined ? String(updates.summary ?? "").replace(/<[^>]*>/g, "").trim() : undefined;
+
+    if (updates.translations !== undefined) {
+      updates.translations = normalizeTranslations(updates.translations, {
+        title: String(updates.title ?? existing.title ?? ""),
+        summary: sanitizedSummary ?? String(existing.summary ?? ""),
+        content: sanitizedContent ?? String(existing.content ?? "")
+      });
+    }
+    if (updates.audioByLanguage !== undefined) updates.audioByLanguage = normalizeAudioByLanguage(updates.audioByLanguage);
+
     if (client) {
       const patch: Record<string, unknown> = {};
       const fields: Record<string, string> = { title: "title", summary: "summary", content: "content", category: "category", categoryId: "category_id", author: "author", authorId: "author_id", authorProfileId: "author_profile_id", image: "image", tags: "tags", isPublished: "is_published", isEncrypted: "is_encrypted", isFeatured: "is_featured", isSentinelle: "is_sentinelle", isEssor: "is_essor", isOmbreDouce: "is_ombre_douce", translations: "translations", audioByLanguage: "audio_by_language" };
-      for (const [key, column] of Object.entries(fields)) if (Object.prototype.hasOwnProperty.call(updates, key)) patch[column] = key === "content" ? sanitizeRichText(String(updates[key] ?? "")) : key === "summary" ? String(updates[key] ?? "").replace(/<[^>]*>/g, "").trim() : updates[key];
-      if (Object.prototype.hasOwnProperty.call(updates, "audioByLanguage")) { patch.has_audio = Object.keys(updates.audioByLanguage || {}).length > 0; patch.audio_url = updates.audioByLanguage?.fr || Object.values(updates.audioByLanguage || {})[0] || null; }
-      if (Object.prototype.hasOwnProperty.call(updates, "translations") && updates.translations?.fr) { patch.title = updates.translations.fr.title; patch.summary = updates.translations.fr.summary; patch.content = updates.translations.fr.content; patch.language = "fr"; }
+      for (const [key, column] of Object.entries(fields)) {
+        if (Object.prototype.hasOwnProperty.call(updates, key)) {
+          patch[column] = key === "content" ? sanitizedContent : key === "summary" ? sanitizedSummary : updates[key];
+        }
+      }
+      if (sanitizedContent) {
+        patch.reading_time = Math.ceil(sanitizedContent.split(/\s+/).length / 200);
+      }
+      if (Object.prototype.hasOwnProperty.call(updates, "audioByLanguage")) {
+        patch.has_audio = Object.keys(updates.audioByLanguage || {}).length > 0;
+        patch.audio_url = updates.audioByLanguage?.fr || Object.values(updates.audioByLanguage || {})[0] || null;
+      }
+      if (Object.prototype.hasOwnProperty.call(updates, "translations")) {
+        patch.language = "fr";
+      }
       if (publishedAt) patch.published_at = publishedAt;
       const result = await client.from("articles").update(patch).eq("id", id).select("*").single();
       if (result.error) return NextResponse.json({ error: `Impossible d’enregistrer l’article : ${result.error.message}` }, { status: 503 });
