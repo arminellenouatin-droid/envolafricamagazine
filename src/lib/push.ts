@@ -51,10 +51,11 @@ export function toAbsoluteUrl(url?: string | null): string | undefined {
   if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
     // Forcer le domaine officiel canonique et éliminer tout lien vers les domaines secondaires ou obsolètes
     return url
-      .replace(/https?:\/\/envolafricamagazinealokpe\.vercel\.app/g, "https://envolafrica.site")
-      .replace(/https?:\/\/envolafrica\.vercel\.app/g, "https://envolafrica.site");
+      .replace(/https?:\/\/envolafricamagazinealokpe\.vercel\.app/g, "https://www.envolafrica.site")
+      .replace(/https?:\/\/envolafrica\.vercel\.app/g, "https://www.envolafrica.site")
+      .replace(/https?:\/\/envolafrica\.site(?!\w)/g, "https://www.envolafrica.site");
   }
-  const baseUrl = "https://envolafrica.site";
+  const baseUrl = "https://www.envolafrica.site";
   const path = url.startsWith("/") ? url : `/${url}`;
   return `${baseUrl}${path}`;
 }
@@ -102,7 +103,7 @@ export async function sendPushToAllSubscribers(payload: PushPayload) {
   const absoluteLogo = toAbsoluteUrl("/mobile-header-logo.png");
   // L'icône réduite demandée : l'image de la publication si disponible, sinon le logo du site
   const notificationIcon = absoluteImage || absoluteLogo;
-  const targetHref = toAbsoluteUrl(payload.href) || "https://envolafrica.site";
+  const targetHref = toAbsoluteUrl(payload.href) || "https://www.envolafrica.site";
 
   if (messaging && tokens.length > 0) {
     for (const batch of chunks(tokens, 500)) {

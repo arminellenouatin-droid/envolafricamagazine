@@ -59,7 +59,7 @@ export default function AffiliationPage() {
     Boolean(user?.affiliateAccepted) ||
     ["admin", "gerant", "redacteur", "redacteur_chef"].includes(user?.role);
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://envolafrica.site";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://www.envolafrica.site";
   const affiliateLink = user?.affiliateCode ? `${siteUrl}?ref=${user.affiliateCode}` : "";
   const total = useMemo(
     () => earnings.reduce((sum, item) => sum + Number(item.commission || 0), 0),

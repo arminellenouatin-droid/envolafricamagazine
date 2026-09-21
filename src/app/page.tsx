@@ -50,15 +50,28 @@ export default async function HomePage() {
   const managedRecruitment = managedItems("recrutement");
   const managedVideos = managedItems("videos");
   const managedSponsors = managedItems("contenus_sponsorises");
-  const formations = (managedFormations.length ? managedFormations.map((item) => ({ title: item.title, image: item.mediaUrl || imageFallbacks[0], href: item.href || "/emploi", meta: [item.date, item.location].filter(Boolean).join(" · ") || "Formation certifiée" })) : ["Fondamentaux du Trading", "Blockchain et Fintech", "Leadership & Management Public", "Marketing Digital Afrique", "Finance Verte", "Agrobusiness 4.0"].map((title, index) => ({ title, image: imageFallbacks[index % imageFallbacks.length], href: "/emploi", meta: "Formation certifiée" }))).slice(0, landingByKey.formations_certifiees?.itemLimit || 6);
+  const defaultFormations = [
+    { title: "Fondamentaux du Commerce Panafricain & ZLECAf", href: "/marketplace", meta: "Formation Certifiante · 6 semaines" },
+    { title: "Blockchain, Fintech & Monnaies Numériques", href: "/marketplace", meta: "Executive Masterclass · Cotonou" },
+    { title: "Leadership & Gouvernance des Entreprises", href: "/emploi", meta: "Cycle Dirigeants · Abidjan" },
+    { title: "Marketing Digital & Conquête Marché Afrique", href: "/marketplace", meta: "Programme Pratique · En ligne" },
+    { title: "Finance Verte & Financement Climat PME", href: "/financement", meta: "Certificat Pro · Dakar" },
+    { title: "Agrobusiness & Valorisation des Chaînes Locales", href: "/financement", meta: "Atelier Opérationnel · 4 semaines" },
+  ];
+  const formations = (managedFormations.length ? managedFormations.map((item) => ({ title: item.title, image: item.mediaUrl || imageFallbacks[0], href: item.href || "/marketplace", meta: [item.date, item.location].filter(Boolean).join(" · ") || "Formation certifiée" })) : defaultFormations.map((item, index) => ({ title: item.title, image: imageFallbacks[index % imageFallbacks.length], href: item.href, meta: item.meta }))).slice(0, landingByKey.formations_certifiees?.itemLimit || 6);
   const taggedOpportunityArticles = ["Financement", "Opportunités"].flatMap((tag) => taggedArticles(tag)).slice(0, 6);
   const opportunities = taggedOpportunityArticles.length ? taggedOpportunityArticles.map((article) => ({ label: hasTag(article, "Financement") ? "Financement" : "Opportunités", title: article.title, text: article.summary, meta: article.author, href: `/article/${article.slug}` })) : [
-    { label: "Financement", title: "AfricaGrow Fund", text: "Financement pour PME agro-industrielles", meta: "Jusqu’à 2 M€", href: "/financement" },
-    { label: "Opportunités", title: "AFD, Climat & Résilience", text: "Appui aux projets d’adaptation climatique", meta: "Afrique de l’Ouest", href: "/financement" },
-    { label: "Emplois", title: "Visa Foundation", text: "Financement de l’entrepreneuriat féminin", meta: "Programme ouvert", href: "/emploi" },
+    { label: "Financement", title: "Fonds Panafricain pour l'Agro-industrie", text: "Lignes de crédit concessionnelles pour coopératives et PME de transformation locale.", meta: "Plafond : 2 M€ · Afrique de l'Ouest", href: "/financement" },
+    { label: "Opportunités", title: "Programme Transition Énergétique & Résilience", text: "Subventions directes et assistance technique pour projets solaires et écologiques.", meta: "Guichet Climat · Appels ouverts", href: "/financement" },
+    { label: "Emplois", title: "Initiative Entreprenariat Féminin & Croissance", text: "Accompagnement capitalistique et mentorat international pour fondatrices de startups.", meta: "Cohorte 2026 · Postuler en ligne", href: "/emploi" },
   ];
   const startups = ["AgriTrace", "KoriPay", "MobiClinic", "TerraLoop"];
-  const recruitment = managedRecruitment.length ? managedRecruitment.map((item) => ({ title: item.title, description: item.description || "Rejoindre une équipe qui construit les usages de demain.", href: item.href || "/emploi", meta: [item.date, item.location].filter(Boolean).join(" · ") })) : ["Directeur.trice commercial.e", "Responsable programme", "Product manager Afrique"].map((title) => ({ title, description: "Rejoindre une équipe qui construit les usages de demain.", href: "/emploi", meta: "Poste ouvert" }));
+  const defaultRecruitments = [
+    { title: "Directeur.trice Commercial.e Régional", description: "Piloter le développement des partenariats et des abonnements corporate en zone UEMOA.", href: "/emploi", meta: "CDI · Cotonou / Télétravail" },
+    { title: "Responsable Programme Financement & PME", description: "Instruire les dossiers d'éligibilité crowdfunding et coordonner les comités d'investissement.", href: "/emploi", meta: "CDI · Abidjan" },
+    { title: "Product Manager Afrique & Solutions Numériques", description: "Concevoir l'évolution UX de la plateforme Kiosque, Marketplace et de l'espace abonnés.", href: "/emploi", meta: "Plein temps · Dakar / Remote" },
+  ];
+  const recruitment = managedRecruitment.length ? managedRecruitment.map((item) => ({ title: item.title, description: item.description || "Rejoindre une équipe qui construit les usages de demain.", href: item.href || "/emploi", meta: [item.date, item.location].filter(Boolean).join(" · ") })) : defaultRecruitments;
   const youtubeId = (value: string) => { const match = value.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/i); return match?.[1] || ""; };
   const fallbackVideoTitles = [
     "Grand Entretien Économique : Bâtir des champions panafricains",
@@ -82,7 +95,12 @@ export default async function HomePage() {
       description: item.description || "",
     };
   });
-  const sponsorItems = managedSponsors.length ? managedSponsors.map((item) => ({ title: item.title, image: item.mediaUrl || imageFallbacks[0], href: item.href || "/recherche", description: item.description || "" })) : ["Regards croisés sur l’industrie africaine", "Dossier spécial finance durable", "L’Afrique des nouvelles chaînes de valeur"].map((title, index) => ({ title, image: imageFallbacks[(index + 1) % imageFallbacks.length], href: "/contact", description: "Une proposition de partenariat éditorial à découvrir." }));
+  const defaultSponsors = [
+    { title: "Regards Croisés sur l’Industrie Minière et Énergétique", description: "Dossier spécial en partenariat avec les acteurs majeurs des ressources stratégiques.", href: "/kiosque" },
+    { title: "Banque & Fintech : Le Défi de l'Inclusion Financière", description: "Analyse prospective des nouveaux modèles de paiement mobile et d'épargne panafricaine.", href: "/kiosque" },
+    { title: "L’Afrique des Nouvelles Chaînes Logistiques & ZLECAf", description: "Comment les corridors routiers et portuaires transforment le commerce transfrontalier.", href: "/marketplace" },
+  ];
+  const sponsorItems = managedSponsors.length ? managedSponsors.map((item) => ({ title: item.title, image: item.mediaUrl || imageFallbacks[0], href: item.href || "/recherche", description: item.description || "" })) : defaultSponsors.map((item, index) => ({ title: item.title, image: imageFallbacks[(index + 1) % imageFallbacks.length], href: item.href, description: item.description }));
 
   return (
     <div className="magazine-home overflow-x-hidden bg-[#fcf9f8] text-[#222223]"><main>

@@ -3,7 +3,7 @@
  * Conformes aux spécifications Google Search Central & GEO/AEO
  */
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://envolafrica.site";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://www.envolafrica.site";
 
 export function getOrganizationSchema() {
   return {

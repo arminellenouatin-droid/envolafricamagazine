@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     title: "Marketplace Envol Africa | Le commerce africain sans détour",
     description: "Découvrez des fournisseurs africains, des produits vérifiés et des facilités de paiement échelonné jusqu’à 12 mois.",
     type: "website",
-    url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://envolafrica.site"}/marketplace`,
+    url: "/marketplace",
     images: [
       {
         url: "/covers/envol-africa-cover-01.jpg",

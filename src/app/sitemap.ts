@@ -8,7 +8,7 @@ import { getSupabaseCompetitions } from "@/lib/awards-supabase";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://envolafrica.site";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://www.envolafrica.site";
 
   const staticLastMod = new Date("2026-09-20T00:00:00Z");
 

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { readWabDB } from "@/lib/wab-db";
 
-const CANONICAL_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://envolafrica.site";
+const CANONICAL_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://www.envolafrica.site";
 
 type Props = {
   params: Promise<{ id: string }>;

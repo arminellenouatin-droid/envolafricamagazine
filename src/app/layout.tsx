@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
+import CookieConsentBanner from "@/components/CookieConsentBanner";
 import Header from "@/components/HeaderShell";
 import Footer from "@/components/FooterShell";
 import PromoPopup from "@/components/PromoPopup";
@@ -10,10 +11,11 @@ import { getOrganizationSchema, getWebSiteSchema } from "@/lib/schema-org";
 
 export const dynamic = "force-dynamic";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://www.envolafrica.site";
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-SPMNFS3PD4";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://envolafrica.site"),
+  metadataBase: new URL(SITE_URL),
   alternates: {
     canonical: "/",
   },
@@ -78,6 +80,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             __html: `
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
+              gtag('consent', 'default', {
+                'analytics_storage': 'denied',
+                'ad_storage': 'denied',
+                'ad_user_data': 'denied',
+                'ad_personalization': 'denied',
+                'wait_for_update': 500
+              });
               gtag('js', new Date());
               gtag('config', '${GA_MEASUREMENT_ID}');
             `,
@@ -124,6 +133,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <LocaleProvider>
           <Header user={user ? { id: user.id, nom: user.nom, prenom: user.prenom, email: user.email, role: user.role, avatar: user.avatar } : undefined} />
           <PromoPopup />
+          <CookieConsentBanner />
           <main className="flex-1">{children}</main>
           <Footer />
         </LocaleProvider>

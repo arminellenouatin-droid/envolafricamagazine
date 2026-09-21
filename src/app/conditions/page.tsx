@@ -5,6 +5,13 @@ export const metadata: Metadata = {
   title: "Conditions Générales d’Utilisation & de Vente",
   description: "Conditions générales d’utilisation et de vente régissant l'écosystème Envol Africa Magazine, le Kiosque, la Marketplace et les services d'affiliation.",
   alternates: { canonical: "/conditions" },
+  openGraph: {
+    title: "Conditions Générales d’Utilisation & de Vente | Envol Africa",
+    description: "Conditions générales d’utilisation et de vente régissant l'écosystème Envol Africa Magazine, le Kiosque, la Marketplace et les services d'affiliation.",
+    url: "/conditions",
+    type: "website",
+    siteName: "Envol Africa",
+  },
 };
 
 export default function ConditionsPage() {

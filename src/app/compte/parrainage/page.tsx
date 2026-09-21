@@ -18,7 +18,7 @@ export default function ParrainageCompte(){
 
   const total = earnings.reduce((s, e) => s + Number(e.commission || 0), 0);
   const available = earnings.filter((e) => e.status === "available").reduce((s, e) => s + Number(e.commission || 0), 0);
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://envolafrica.site";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://www.envolafrica.site";
   const affiliateLink = user?.affiliateCode ? `${siteUrl}?ref=${user.affiliateCode}` : "";
 
   const copyLink = async () => {

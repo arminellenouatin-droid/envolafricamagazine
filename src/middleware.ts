@@ -7,7 +7,7 @@ export function middleware(request: NextRequest) {
 
   // 1. Redirection 308 permanente de l'ancien domaine obsolète envolafricamagazinealokpe.vercel.app
   if (host.includes("alokpe") || host.includes("envolafricamagazinealokpe")) {
-    const canonicalUrl = new URL(`${pathname}${search}`, "https://envolafrica.site");
+    const canonicalUrl = new URL(`${pathname}${search}`, "https://www.envolafrica.site");
     return NextResponse.redirect(canonicalUrl, 308);
   }
 

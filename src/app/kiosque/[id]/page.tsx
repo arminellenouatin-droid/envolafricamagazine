@@ -22,16 +22,18 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   const image = magazine.cover || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800";
 
+  const canonicalSlug = magazine.numero ? String(magazine.numero) : encodeURIComponent(id);
+
   return {
     title,
     description,
     alternates: {
-      canonical: `/kiosque/${encodeURIComponent(id)}`,
+      canonical: `/kiosque/${canonicalSlug}`,
     },
     openGraph: {
       title,
       description,
-      url: `/kiosque/${encodeURIComponent(id)}`,
+      url: `/kiosque/${canonicalSlug}`,
       type: "book",
       images: [
         {

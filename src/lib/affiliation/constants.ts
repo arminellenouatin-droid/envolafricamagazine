@@ -44,7 +44,7 @@ export const MARKETPLACE_PLATFORM_FEE = 0.08; // 8% prélevés par la plateforme
 
 export const WITHDRAWAL_THRESHOLD = 10_000; // 10 000 XOF — seuil unique combiné
 export const CURRENCY = "XOF";
-export const DEFAULT_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://envolafrica.site";
+export const DEFAULT_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://www.envolafrica.site";
 
 // Garde-fous de cohérence
 if (

@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { listPublishedArticles } from "@/lib/core-db";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ function escapeXml(unsafe: string) {
 }
 
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://envolafrica.site";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://www.envolafrica.site";
   const articles = await listPublishedArticles().catch(() => []);
 
   const itemsXml = articles.slice(0, 50).map((article: any) => {
