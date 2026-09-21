@@ -76,6 +76,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         (function(){
           try {
             if (localStorage.getItem('eam_dark_mode') === 'dark') document.documentElement.classList.add('dark');
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                registrations.forEach(function(reg) {
+                  reg.update().catch(function(){});
+                });
+              }).catch(function(){});
+            }
           } catch {}
         })();
       ` }} />

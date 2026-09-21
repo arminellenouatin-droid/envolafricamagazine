@@ -1,6 +1,39 @@
 /* eslint-disable no-undef */
 // Service Worker pour Firebase Cloud Messaging (Envol Africa)
 
+const OFFICIAL_LOGO = "https://www.envolafrica.site/logo-reduit.png";
+const OFFICIAL_BADGE = "https://www.envolafrica.site/favicon-32x32.png";
+
+// Prise en compte immédiate de cette version sans attendre la fermeture des onglets
+self.addEventListener("install", () => {
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
+// Interception absolue : garantit que TOUT appel à showNotification (y compris interne à Firebase Compat)
+// charge TOUJOURS le logo réduit d'Envol Africa en icône miniature (icon) et préserve l'image de l'article en grand (image)
+if (typeof ServiceWorkerRegistration !== "undefined" && ServiceWorkerRegistration.prototype.showNotification) {
+  const _originalShowNotification = ServiceWorkerRegistration.prototype.showNotification;
+  ServiceWorkerRegistration.prototype.showNotification = function (title, options = {}) {
+    options = options || {};
+
+    // Forcer l'icône miniature sur le logo officiel réduit
+    options.icon = OFFICIAL_LOGO;
+    options.badge = OFFICIAL_BADGE;
+
+    // Si une grande image est passée dans options ou dans payload.data, la préserver comme grande photo
+    if (options.data && (options.data.image || options.data.imageUrl) && !options.image) {
+      options.image = options.data.image || options.data.imageUrl;
+    }
+
+    const finalTitle = title || "ENVOL AFRICA";
+    return _originalShowNotification.call(this, finalTitle, options);
+  };
+}
+
 importScripts("https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging-compat.js");
 
@@ -55,17 +88,12 @@ messaging.onBackgroundMessage((payload) => {
 
   // Grande image : la photo de l'article ou publication
   const mediaImage = toAbsoluteUrl(notification.image || notification.imageUrl || data.image || data.imageUrl);
-  const logoReduit = toAbsoluteUrl("/logo-reduit.png") || toAbsoluteUrl("/favicon.png");
-
-  // Miniature demandée pour Chrome : le logo réduit de la marque
-  const iconUrl = toAbsoluteUrl(notification.icon || data.icon) || logoReduit;
-  const badgeUrl = toAbsoluteUrl(notification.badge || data.badge) || toAbsoluteUrl("/favicon-32x32.png") || logoReduit;
   const targetHref = toAbsoluteUrl(data.href || data.link || "/");
 
   const options = {
     body,
-    icon: iconUrl, // Miniature : logo réduit
-    badge: badgeUrl,
+    icon: OFFICIAL_LOGO, // Miniature : logo réduit
+    badge: OFFICIAL_BADGE,
     image: mediaImage, // Grande image : photo de l'article
     tag: data.tag || "envol-africa-article",
     requireInteraction: true,

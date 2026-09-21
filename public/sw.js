@@ -1,3 +1,31 @@
+const OFFICIAL_LOGO = "https://www.envolafrica.site/logo-reduit.png";
+const OFFICIAL_BADGE = "https://www.envolafrica.site/favicon-32x32.png";
+
+// Prise en compte immédiate de cette version
+self.addEventListener("install", () => {
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
+// Interception absolue : garantit que TOUT appel à showNotification
+// charge TOUJOURS le logo réduit d'Envol Africa en icône miniature (icon) et préserve l'image de l'article en grand (image)
+if (typeof ServiceWorkerRegistration !== "undefined" && ServiceWorkerRegistration.prototype.showNotification) {
+  const _originalShowNotification = ServiceWorkerRegistration.prototype.showNotification;
+  ServiceWorkerRegistration.prototype.showNotification = function (title, options = {}) {
+    options = options || {};
+    options.icon = OFFICIAL_LOGO;
+    options.badge = OFFICIAL_BADGE;
+    if (options.data && (options.data.image || options.data.imageUrl) && !options.image) {
+      options.image = options.data.image || options.data.imageUrl;
+    }
+    const finalTitle = title || "ENVOL AFRICA";
+    return _originalShowNotification.call(this, finalTitle, options);
+  };
+}
+
 self.addEventListener("push", (event) => {
   const hostname = self.location.hostname;
   const isObsoleteDomain = hostname.includes("alokpe") || hostname.includes("envolafricamagazinealokpe");
@@ -21,7 +49,11 @@ self.addEventListener("push", (event) => {
   } catch {
     payload = {};
   }
-  const title = payload.title || "ENVOL AFRICA";
+
+  const data = payload.data || {};
+  const notif = payload.notification || {};
+  const title = notif.title || data.title || payload.title || "ENVOL AFRICA";
+  const body = notif.body || data.body || payload.body || "Une nouvelle publication est disponible sur Envol Africa.";
 
   const toAbsolute = (url) => {
     if (!url) return undefined;
@@ -35,20 +67,15 @@ self.addEventListener("push", (event) => {
   };
 
   // Grande image : photo de l'article ou publication
-  const mediaImage = toAbsolute(payload.image || payload.imageUrl);
-  const logoReduit = toAbsolute("/logo-reduit.png") || toAbsolute("/favicon.png");
-
-  // Miniature Chrome : le logo réduit
-  const iconUrl = toAbsolute(payload.icon) || logoReduit;
-  const badgeUrl = toAbsolute(payload.badge) || toAbsolute("/favicon-32x32.png") || logoReduit;
-  const targetHref = toAbsolute(payload.href || payload.link || "/");
+  const mediaImage = toAbsolute(notif.image || notif.imageUrl || data.image || data.imageUrl || payload.image || payload.imageUrl);
+  const targetHref = toAbsolute(data.href || data.link || payload.href || payload.link || "/");
 
   const options = {
-    body: payload.body || "Une nouvelle publication est disponible sur Envol Africa.",
-    icon: iconUrl, // Miniature : logo réduit
-    badge: badgeUrl,
+    body,
+    icon: OFFICIAL_LOGO, // Miniature : logo réduit officiel
+    badge: OFFICIAL_BADGE,
     image: mediaImage, // Grande image : photo de l'article
-    tag: payload.tag || "eam-publication",
+    tag: payload.tag || data.tag || notif.tag || "eam-publication",
     requireInteraction: true,
     data: { href: targetHref, link: targetHref, image: mediaImage },
   };

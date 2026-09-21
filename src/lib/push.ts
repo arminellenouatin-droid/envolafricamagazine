@@ -100,9 +100,9 @@ export async function sendPushToAllSubscribers(payload: PushPayload) {
   const tokens = Array.from(new Set(tokensList));
 
   const absoluteImage = toAbsoluteUrl(payload.image);
-  // Miniature demandée pour Chrome / Web Push : le logo réduit
-  const notificationIcon = toAbsoluteUrl("/logo-reduit.png") || toAbsoluteUrl("/favicon.png");
-  const notificationBadge = toAbsoluteUrl("/favicon-32x32.png") || notificationIcon;
+  // Miniature demandée pour Chrome / Web Push : le logo réduit officiel
+  const notificationIcon = "https://www.envolafrica.site/logo-reduit.png";
+  const notificationBadge = "https://www.envolafrica.site/favicon-32x32.png";
   const targetHref = toAbsoluteUrl(payload.href) || "https://www.envolafrica.site";
 
   if (messaging && tokens.length > 0) {
@@ -235,9 +235,9 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
   );
 
   const absoluteImage = toAbsoluteUrl(payload.image);
-  // Miniature demandée pour Chrome / Web Push : le logo réduit
-  const notificationIcon = toAbsoluteUrl("/logo-reduit.png") || toAbsoluteUrl("/favicon.png");
-  const notificationBadge = toAbsoluteUrl("/favicon-32x32.png") || notificationIcon;
+  // Miniature demandée pour Chrome / Web Push : le logo réduit officiel
+  const notificationIcon = "https://www.envolafrica.site/logo-reduit.png";
+  const notificationBadge = "https://www.envolafrica.site/favicon-32x32.png";
   const targetHref = payload.href || "/";
 
   if (messaging && fcmTokens.length > 0) {
