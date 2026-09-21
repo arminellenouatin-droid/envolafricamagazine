@@ -13,6 +13,7 @@ import { optimizeSelectedImages } from "@/lib/client-image-optimizer";
 import RichTextEditor from "@/components/RichTextEditor";
 import ExpandablePostText from "@/components/wab/ExpandablePostText";
 import WabSidebarCards from "@/components/wab/WabSidebarCards";
+import { useLocale } from "@/components/LocaleProvider";
 
 type PublishPage = { id: string; name: string; logoUrl?: string; logo_url?: string };
 type PublishGroup = { id: string; name: string; privacy: "community" | "private" };
@@ -117,6 +118,7 @@ function formatPostTime(isoDate?: string): string {
 }
 
 export default function WabClient() {
+  const { formatPrice } = useLocale();
   const [posts, setPosts] = useState<Post[]>([]);
   const [content, setContent] = useState("");
   const [type, setType] = useState("text");
@@ -771,7 +773,7 @@ export default function WabClient() {
                       : "Pour publier un média lourd de plus de 10 Mo, l’abonnement Entreprise WAB est requis."}
                   </p>
                   <p className="mt-3 rounded-xl bg-[#eefcfa] p-3 text-xs leading-5 text-[#006874]">
-                    L’abonnement Entreprise coûte {WAB_BUSINESS_MONTHLY_PRICE.toLocaleString("fr-FR")} XOF par mois via Mobile Money ou Carte bancaire.
+                    L’abonnement Entreprise coûte {formatPrice(WAB_BUSINESS_MONTHLY_PRICE)} par mois via Mobile Money ou Carte bancaire.
                   </p>
                   <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                     <button type="button" onClick={() => setUpgradeRequired(null)} className="rounded-xl border border-[#c3c6ce] px-4 py-2.5 text-xs font-bold text-[#43474d]">Continuer sans publier</button>

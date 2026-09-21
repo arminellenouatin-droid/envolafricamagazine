@@ -6,6 +6,7 @@ import Header from "@/components/HeaderShell";
 import Footer from "@/components/FooterShell";
 import PromoPopup from "@/components/PromoPopup";
 import { LocaleProvider } from "@/components/LocaleProvider";
+import AutoTranslator from "@/components/AutoTranslator";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { getOrganizationSchema, getWebSiteSchema } from "@/lib/schema-org";
 
@@ -150,6 +151,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className="min-h-full flex flex-col bg-[#fcf9f8]" style={{ fontFamily: "Source Serif 4, Georgia, serif" }}>
         <LocaleProvider>
+          <AutoTranslator />
           <Header user={user ? { id: user.id, nom: user.nom, prenom: user.prenom, email: user.email, role: user.role, avatar: user.avatar } : undefined} />
           <PromoPopup />
           <CookieConsentBanner />

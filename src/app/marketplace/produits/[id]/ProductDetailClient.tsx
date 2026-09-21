@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useLocale } from "@/components/LocaleProvider";
 
 type Product = {
   id: string; title: string; description: string; category: string; country_code?: string; country?: string; product_video_url?: string | null; product_video_mime?: string | null; product_video_size?: number | null;
@@ -12,9 +13,9 @@ type Product = {
 };
 
 const labels: Record<string, string> = { BJ: "Bénin", CI: "Côte d’Ivoire", CM: "Cameroun", BF: "Burkina Faso", SN: "Sénégal", ML: "Mali", TG: "Togo" };
-const money = (value: number) => new Intl.NumberFormat("fr-FR").format(value) + " XOF";
 
 export default function ProductDetailClient({ id, initialProduct, refToken }: { id: string; initialProduct?: Product | null; refToken?: string }) {
+  const { formatPrice } = useLocale();
   const [product, setProduct] = useState<Product | null>(initialProduct || null);
   const [loading, setLoading] = useState(!initialProduct);
   const [mode, setMode] = useState<"full" | "installment">("full");
@@ -68,7 +69,7 @@ export default function ProductDetailClient({ id, initialProduct, refToken }: { 
           <h1 className="mt-4 font-display text-4xl font-black tracking-tight md:text-5xl">{product.title}</h1>
           <p className="mt-5 text-base leading-7 text-[#725f4d]">{product.description}</p>
           <div className="mt-6 flex flex-wrap gap-3 text-xs font-bold text-[#806c58]"><span>{labels[product.country_code || product.country || ""] || product.country_code || product.country}</span><span>·</span><span>{product.city}</span><span>·</span><span>{product.category}</span></div>
-          <div className="mt-8 rounded-[22px] bg-white p-6 shadow-sm ring-1 ring-[#eadfce]"><p className="text-xs font-bold uppercase tracking-widest text-[#806c58]">Prix fournisseur</p><p className="mt-1 text-4xl font-black text-[#9e001f]">{money(price)}</p>{installment && <div className="mt-5"><p className="text-sm font-bold">Mode d’achat</p><div className="mt-2 grid gap-2 sm:grid-cols-2"><button onClick={() => setMode("full")} className={`rounded-xl border p-3 text-left text-xs font-bold ${mode === "full" ? "border-[#9e001f] bg-[#fff3f2]" : "border-[#eadfce]"}`}>Paiement comptant<br /><span className="font-normal text-[#806c58]">Livraison selon accord</span></button><button onClick={() => setMode("installment")} className={`rounded-xl border p-3 text-left text-xs font-bold ${mode === "installment" ? "border-[#9e001f] bg-[#fff3f2]" : "border-[#eadfce]"}`}>Paiement échelonné<br /><span className="font-normal text-[#806c58]">Jusqu’à {months} mois · produit réservé</span></button></div>{mode === "installment" && <p className="mt-3 rounded-lg bg-[#fff8ed] p-3 text-xs leading-5 text-[#725f4d]">Les échéances sont suivies sur le compte acheteur et fournisseur. La remise du produit et la libération des frais suivent les règles de réception et de paiement.</p>}</div>}
+          <div className="mt-8 rounded-[22px] bg-white p-6 shadow-sm ring-1 ring-[#eadfce]"><p className="text-xs font-bold uppercase tracking-widest text-[#806c58]">Prix fournisseur</p><p className="mt-1 text-4xl font-black text-[#9e001f]">{formatPrice(price)}</p>{installment && <div className="mt-5"><p className="text-sm font-bold">Mode d’achat</p><div className="mt-2 grid gap-2 sm:grid-cols-2"><button onClick={() => setMode("full")} className={`rounded-xl border p-3 text-left text-xs font-bold ${mode === "full" ? "border-[#9e001f] bg-[#fff3f2]" : "border-[#eadfce]"}`}>Paiement comptant<br /><span className="font-normal text-[#806c58]">Livraison selon accord</span></button><button onClick={() => setMode("installment")} className={`rounded-xl border p-3 text-left text-xs font-bold ${mode === "installment" ? "border-[#9e001f] bg-[#fff3f2]" : "border-[#eadfce]"}`}>Paiement échelonné<br /><span className="font-normal text-[#806c58]">Jusqu’à {months} mois · produit réservé</span></button></div>{mode === "installment" && <p className="mt-3 rounded-lg bg-[#fff8ed] p-3 text-xs leading-5 text-[#725f4d]">Les échéances sont suivies sur le compte acheteur et fournisseur. La remise du produit et la libération des frais suivent les règles de réception et de paiement.</p>}</div>}
             <div className="mt-5 grid gap-3 sm:grid-cols-2"><Link href={`/marketplace/messages?product=${encodeURIComponent(product.id)}`} className="rounded-full border border-[#cdbb9f] px-5 py-3 text-center text-xs font-black text-[#5c3d19]">Contacter le fournisseur</Link><button type="button" onClick={() => void startOrder()} disabled={orderLoading || (mode === "installment" && !installment)} className="rounded-full bg-[#9e001f] px-5 py-3 text-center text-xs font-black text-white disabled:opacity-60">{orderLoading ? "Préparation…" : mode === "installment" ? "Choisir l’échelonnement" : "Acheter en sécurité"}</button></div>{orderError && <p className="mt-3 rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-800">{orderError}</p>}</div>
           <div className="mt-6 rounded-[20px] border border-[#eadfce] bg-[#2a211a] p-5 text-sm leading-6 text-white/80"><strong className="text-white">Protection EAM :</strong> ne partagez aucun contact externe dans la messagerie. Les paiements et échanges hors plateforme ne sont pas couverts.</div>
           <p className="mt-5 text-sm text-[#806c58]">Fournisseur : <strong className="text-[#2a211a]">{supplierName}</strong>{supplier?.rating ? ` · ${supplier.rating}/5` : ""}</p>

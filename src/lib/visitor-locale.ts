@@ -7,6 +7,7 @@ export type VisitorLocale = {
   language: string;
   currency: string;
   source?: string;
+  isManual?: boolean;
 };
 
 export const DEFAULT_VISITOR_LOCALE: VisitorLocale = {
@@ -16,16 +17,42 @@ export const DEFAULT_VISITOR_LOCALE: VisitorLocale = {
   language: "fr",
   currency: "XOF",
   source: "fallback",
+  isManual: false,
 };
 
-export function normalizeVisitorLocale(value: Partial<VisitorLocale> | null | undefined): VisitorLocale {
+export function normalizeVisitorLocale(
+  value: Partial<VisitorLocale> | null | undefined,
+  existing?: VisitorLocale | null
+): VisitorLocale {
+  const current = existing ?? (typeof window !== "undefined" ? readPersistedVisitorLocale() : null);
+  const isIncomingAutomated = value?.source === "vercel" || value?.source === "fallback";
+  const userLocked = Boolean(current?.isManual);
+
+  // Si l'utilisateur a choisi manuellement sa langue ou sa devise, l'auto-détection ne doit pas les écraser
+  const finalLanguage =
+    userLocked && isIncomingAutomated && current?.language
+      ? current.language
+      : typeof value?.language === "string" && value.language
+      ? value.language.toLowerCase().split("-")[0]
+      : current?.language || DEFAULT_VISITOR_LOCALE.language;
+
+  const finalCurrency =
+    userLocked && isIncomingAutomated && current?.currency
+      ? current.currency
+      : typeof value?.currency === "string" && value.currency
+      ? value.currency.toUpperCase()
+      : current?.currency || DEFAULT_VISITOR_LOCALE.currency;
+
+  const isManual = value?.isManual ?? (userLocked && isIncomingAutomated ? true : false);
+
   return {
-    country: typeof value?.country === "string" && value.country ? value.country : DEFAULT_VISITOR_LOCALE.country,
-    countryCode: typeof value?.countryCode === "string" && value.countryCode ? value.countryCode.toUpperCase() : DEFAULT_VISITOR_LOCALE.countryCode,
-    city: typeof value?.city === "string" && value.city ? value.city : null,
-    language: typeof value?.language === "string" && value.language ? value.language.toLowerCase().split("-")[0] : DEFAULT_VISITOR_LOCALE.language,
-    currency: typeof value?.currency === "string" && value.currency ? value.currency.toUpperCase() : DEFAULT_VISITOR_LOCALE.currency,
-    source: value?.source || DEFAULT_VISITOR_LOCALE.source,
+    country: typeof value?.country === "string" && value.country ? value.country : current?.country || DEFAULT_VISITOR_LOCALE.country,
+    countryCode: typeof value?.countryCode === "string" && value.countryCode ? value.countryCode.toUpperCase() : current?.countryCode || DEFAULT_VISITOR_LOCALE.countryCode,
+    city: typeof value?.city === "string" && value.city ? value.city : current?.city || null,
+    language: finalLanguage,
+    currency: finalCurrency,
+    source: value?.source || current?.source || DEFAULT_VISITOR_LOCALE.source,
+    isManual,
   };
 }
 
@@ -44,7 +71,7 @@ export function readPersistedVisitorLocale(): VisitorLocale {
   if (typeof window === "undefined") return DEFAULT_VISITOR_LOCALE;
   try {
     const saved = localStorage.getItem("ea_visitor_locale");
-    return saved ? normalizeVisitorLocale(JSON.parse(saved)) : DEFAULT_VISITOR_LOCALE;
+    return saved ? (JSON.parse(saved) as VisitorLocale) : DEFAULT_VISITOR_LOCALE;
   } catch {
     return DEFAULT_VISITOR_LOCALE;
   }
