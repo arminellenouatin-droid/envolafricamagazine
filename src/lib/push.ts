@@ -100,9 +100,9 @@ export async function sendPushToAllSubscribers(payload: PushPayload) {
   const tokens = Array.from(new Set(tokensList));
 
   const absoluteImage = toAbsoluteUrl(payload.image);
-  const absoluteLogo = toAbsoluteUrl("/mobile-header-logo.png");
-  // L'icône réduite demandée : l'image de la publication si disponible, sinon le logo du site
-  const notificationIcon = absoluteImage || absoluteLogo;
+  // Miniature demandée pour Chrome / Web Push : le logo réduit
+  const notificationIcon = toAbsoluteUrl("/logo-reduit.png") || toAbsoluteUrl("/favicon.png");
+  const notificationBadge = toAbsoluteUrl("/favicon-32x32.png") || notificationIcon;
   const targetHref = toAbsoluteUrl(payload.href) || "https://www.envolafrica.site";
 
   if (messaging && tokens.length > 0) {
@@ -116,14 +116,14 @@ export async function sendPushToAllSubscribers(payload: PushPayload) {
             imageUrl: absoluteImage,
           },
           data: {
-            title: String(payload.title || "Envol Africa"),
+            title: String(payload.title || "ENVOL AFRICA"),
             body: String(payload.body || ""),
             href: String(targetHref),
             link: String(targetHref),
             image: String(absoluteImage || ""),
             imageUrl: String(absoluteImage || ""),
             icon: String(notificationIcon || ""),
-            badge: String(absoluteLogo || ""),
+            badge: String(notificationBadge || ""),
             tag: String(payload.tag || "envol-africa"),
           },
           webpush: {
@@ -135,7 +135,7 @@ export async function sendPushToAllSubscribers(payload: PushPayload) {
               body: payload.body,
               icon: notificationIcon,
               image: absoluteImage,
-              badge: absoluteLogo,
+              badge: notificationBadge,
               tag: payload.tag || "envol-africa",
               requireInteraction: true,
             },
@@ -181,7 +181,7 @@ export async function sendPushToAllSubscribers(payload: PushPayload) {
         link: targetHref,
         image: absoluteImage,
         icon: notificationIcon,
-        badge: absoluteLogo,
+        badge: notificationBadge,
         tag: payload.tag || "envol-africa",
       };
       for (const row of legacySubs as PushSubscriptionRow[]) {
@@ -235,9 +235,9 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
   );
 
   const absoluteImage = toAbsoluteUrl(payload.image);
-  const absoluteLogo = toAbsoluteUrl("/mobile-header-logo.png");
-  // L'icône réduite demandée : l'image de la publication si disponible, sinon le logo du site
-  const notificationIcon = absoluteImage || absoluteLogo;
+  // Miniature demandée pour Chrome / Web Push : le logo réduit
+  const notificationIcon = toAbsoluteUrl("/logo-reduit.png") || toAbsoluteUrl("/favicon.png");
+  const notificationBadge = toAbsoluteUrl("/favicon-32x32.png") || notificationIcon;
   const targetHref = payload.href || "/";
 
   if (messaging && fcmTokens.length > 0) {
@@ -250,14 +250,14 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
           imageUrl: absoluteImage,
         },
         data: {
-          title: String(payload.title || "Envol Africa"),
+          title: String(payload.title || "ENVOL AFRICA"),
           body: String(payload.body || ""),
           href: String(targetHref),
           link: String(targetHref),
           image: String(absoluteImage || ""),
           imageUrl: String(absoluteImage || ""),
           icon: String(notificationIcon || ""),
-          badge: String(absoluteLogo || ""),
+          badge: String(notificationBadge || ""),
           tag: String(payload.tag || "envol-africa"),
         },
         webpush: {
@@ -269,7 +269,7 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
             body: payload.body,
             icon: notificationIcon,
             image: absoluteImage,
-            badge: absoluteLogo,
+            badge: notificationBadge,
             tag: payload.tag || "envol-africa",
             requireInteraction: true,
           },
@@ -295,7 +295,7 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
       link: targetHref,
       image: absoluteImage,
       icon: notificationIcon,
-      badge: absoluteLogo,
+      badge: notificationBadge,
       tag: payload.tag || "envol-africa",
     };
     for (const row of rows) {

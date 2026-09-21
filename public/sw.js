@@ -34,17 +34,20 @@ self.addEventListener("push", (event) => {
     return `https://envolafrica.site${cleanPath}`;
   };
 
+  // Grande image : photo de l'article ou publication
   const mediaImage = toAbsolute(payload.image || payload.imageUrl);
-  const defaultLogo = toAbsolute("/mobile-header-logo.png");
-  const iconUrl = mediaImage || toAbsolute(payload.icon) || defaultLogo;
-  const badgeUrl = toAbsolute(payload.badge) || defaultLogo;
+  const logoReduit = toAbsolute("/logo-reduit.png") || toAbsolute("/favicon.png");
+
+  // Miniature Chrome : le logo réduit
+  const iconUrl = toAbsolute(payload.icon) || logoReduit;
+  const badgeUrl = toAbsolute(payload.badge) || toAbsolute("/favicon-32x32.png") || logoReduit;
   const targetHref = toAbsolute(payload.href || payload.link || "/");
 
   const options = {
     body: payload.body || "Une nouvelle publication est disponible sur Envol Africa.",
-    icon: iconUrl,
+    icon: iconUrl, // Miniature : logo réduit
     badge: badgeUrl,
-    image: mediaImage,
+    image: mediaImage, // Grande image : photo de l'article
     tag: payload.tag || "eam-publication",
     requireInteraction: true,
     data: { href: targetHref, link: targetHref, image: mediaImage },

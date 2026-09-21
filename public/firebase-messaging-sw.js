@@ -53,20 +53,20 @@ messaging.onBackgroundMessage((payload) => {
   const title = notification.title || data.title || "ENVOL AFRICA";
   const body = notification.body || data.body || "Nouvelle publication disponible sur Envol Africa.";
 
-  // Image principale du média (article, magazine, etc.)
+  // Grande image : la photo de l'article ou publication
   const mediaImage = toAbsoluteUrl(notification.image || notification.imageUrl || data.image || data.imageUrl);
-  const defaultLogo = toAbsoluteUrl("/mobile-header-logo.png");
+  const logoReduit = toAbsoluteUrl("/logo-reduit.png") || toAbsoluteUrl("/favicon.png");
 
-  // Remplacement de l'icône réduite (favicon) par l'image de la publication
-  const iconUrl = mediaImage || toAbsoluteUrl(notification.icon || data.icon) || defaultLogo;
-  const badgeUrl = toAbsoluteUrl(notification.badge || data.badge) || defaultLogo;
+  // Miniature demandée pour Chrome : le logo réduit de la marque
+  const iconUrl = toAbsoluteUrl(notification.icon || data.icon) || logoReduit;
+  const badgeUrl = toAbsoluteUrl(notification.badge || data.badge) || toAbsoluteUrl("/favicon-32x32.png") || logoReduit;
   const targetHref = toAbsoluteUrl(data.href || data.link || "/");
 
   const options = {
     body,
-    icon: iconUrl,
+    icon: iconUrl, // Miniature : logo réduit
     badge: badgeUrl,
-    image: mediaImage,
+    image: mediaImage, // Grande image : photo de l'article
     tag: data.tag || "envol-africa-article",
     requireInteraction: true,
     data: {
