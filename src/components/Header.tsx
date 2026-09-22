@@ -91,6 +91,149 @@ function MegaMenu({ platform, onClose, articles, config }: { platform: PlatformC
     const categories = config?.categories?.length ? config.categories.slice(0, 6) : Array.from(new Set(articles.map((item) => item.category).filter(Boolean))).slice(0, 6);
     return <div className="absolute left-1/2 top-full z-[70] mt-3 w-[min(94vw,1080px)] -translate-x-1/2 overflow-hidden rounded-[24px] border border-[#d8c3c1] bg-[#fffdfc] shadow-[0_26px_70px_rgba(55,23,24,.22)]" onClick={(event) => event.stopPropagation()}><div className="border-b border-[#ead8d5] bg-[linear-gradient(135deg,#fff8f3,#f5e3dc)] px-7 py-5"><div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#9e001f]">Magazine · édition en cours</p><h2 className="mt-1 font-serif text-3xl font-black text-[#2b2525]">{config?.title || "Nouveau numéro"}</h2><p className="mt-1 text-sm text-[#746665]">{config?.description || "Les idées, les visages et les analyses à ouvrir maintenant."}</p></div><button type="button" aria-label="Fermer le menu" onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-[#9e001f] shadow-sm">×</button></div></div><div className="grid gap-5 p-6 lg:grid-cols-[1.6fr_.8fr]"><div className="grid gap-3 md:grid-cols-3">{(main.length ? main : [{ slug: "", title: "Les analyses du nouveau numéro" }]).map((article, index) => <Link key={`${article.slug || "empty"}-${index}`} href={(article as FeaturedArticle & { href?: string }).href || (article.slug ? `/article/${encodeURIComponent(article.slug)}` : "/") } onClick={onClose} className="group overflow-hidden rounded-2xl border border-[#ead8d5] bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"><div className="h-28 overflow-hidden bg-[#ead8d5]">{article.image ? <img src={article.image} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center text-[#9e001f]"><span className="material-symbols-outlined text-3xl">menu_book</span></div>}</div><div className="p-3"><span className="text-[9px] font-black uppercase tracking-wider text-[#9e001f]">{article.category || "À découvrir"}</span><h3 className="mt-1 line-clamp-3 font-serif text-lg font-black leading-tight text-[#2b2525]">{article.title}</h3></div></Link>)}</div><div className="space-y-3">{(side.length ? side : main.slice(0, 3)).map((article, index) => <Link key={`${article.slug || "side"}-${index}`} href={(article as FeaturedArticle & { href?: string }).href || (article.slug ? `/article/${encodeURIComponent(article.slug)}` : "/") } onClick={onClose} className="group flex gap-3 border-b border-[#ead8d5] pb-3"><div className="h-16 w-20 shrink-0 overflow-hidden rounded-xl bg-[#ead8d5]">{article.image ? <img src={article.image} alt="" className="h-full w-full object-cover transition group-hover:scale-105" /> : <span className="grid h-full place-items-center text-[#9e001f]"><span className="material-symbols-outlined">article</span></span>}</div><div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-wider text-[#9e001f]">{article.category || "Article"}</p><h3 className="mt-1 line-clamp-2 font-serif text-base font-black leading-tight text-[#2b2525]">{article.title}</h3></div></Link>)}</div></div><div className="flex flex-col gap-4 border-t border-[#ead8d5] bg-white px-6 py-4 lg:flex-row lg:items-center lg:justify-between"><div className="flex min-w-0 flex-1 items-center gap-3 overflow-x-auto">{categories.length ? categories.map((category) => <Link key={category} href={`/recherche?q=${encodeURIComponent(category || "")}`} onClick={onClose} className="shrink-0 text-[10px] font-black uppercase tracking-wider text-[#746665] hover:text-[#9e001f]">{category}</Link>) : <span className="text-[10px] font-bold text-[#746665]">Analyses · Économie · Entrepreneuriat · Société</span>}<Link href="/recherche" onClick={onClose} className="shrink-0 text-[10px] font-black uppercase tracking-wider text-[#9e001f]">Voir plus →</Link></div><Link href={config?.buyHref || "/kiosque"} onClick={onClose} className="shrink-0 rounded-full bg-[#9e001f] px-5 py-3 text-center text-[11px] font-black text-white shadow-sm transition hover:bg-[#7f0019]">Acheter ce numéro</Link></div></div>;
   }
+
+  if (platform.megaSections && platform.megaSections.length > 0) {
+    return (
+      <div
+        className="absolute left-1/2 top-full z-[70] mt-3 w-[min(94vw,980px)] -translate-x-1/2 overflow-hidden rounded-[24px] border border-[#d8c3c1] bg-[#fffdfc] shadow-[0_26px_70px_rgba(55,23,24,.22)] animate-in fade-in zoom-in-95 duration-150"
+        onClick={(event) => event.stopPropagation()}
+      >
+        {/* En-tête du MegaMenu */}
+        <div
+          className="border-b border-[#ead8d5] px-7 py-5"
+          style={{
+            background: `linear-gradient(135deg, #fffdfc 0%, ${platform.accentSoft} 100%)`,
+          }}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span
+                  className="rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.18em]"
+                  style={{ backgroundColor: `${platform.accent}18`, color: platform.accent }}
+                >
+                  {platform.name}
+                </span>
+                <span className="text-[11px] font-semibold text-[#8b7d7b]">· Menu contextuel</span>
+              </div>
+              <h2 className="mt-1.5 font-serif text-2xl font-black text-[#2b2525]">
+                {platform.megaTitle}
+              </h2>
+              <p className="mt-1 text-xs text-[#746665] max-w-[680px] leading-relaxed">
+                {platform.megaDescription}
+              </p>
+            </div>
+            <button
+              type="button"
+              aria-label="Fermer le menu"
+              onClick={onClose}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-[#9e001f] shadow-sm transition hover:scale-105"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
+        {/* Grille 2 colonnes par catégorie */}
+        <div className="grid gap-6 p-6 lg:grid-cols-2 bg-[#fffdfc]">
+          {platform.megaSections.map((section) => (
+            <div
+              key={section.title}
+              className="flex flex-col rounded-2xl border border-[#ead8d5]/80 bg-white p-4 shadow-xs"
+            >
+              {/* Titre de section */}
+              <div className="flex items-center gap-2.5 pb-3 border-b border-[#f0dedd]">
+                <div
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-lg"
+                  style={{ backgroundColor: `${platform.accent}14`, color: platform.accent }}
+                >
+                  <span className="material-symbols-outlined text-[19px]">{section.icon}</span>
+                </div>
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-[#2b2525]">
+                    {section.title}
+                  </h3>
+                  <p className="text-[10px] text-[#8b7d7b]">
+                    {section.items.length} raccourcis dédiés
+                  </p>
+                </div>
+              </div>
+
+              {/* Liste des actions */}
+              <div className="mt-2.5 flex-1 space-y-1.5">
+                {section.items.map((item) => (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={onClose}
+                    className="group flex items-start gap-3 rounded-xl p-2.5 transition-all duration-150 hover:bg-[#fff7f6] hover:border-[#ead2d0] border border-transparent"
+                  >
+                    <div
+                      className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#f8f5f4] text-[#746665] transition-all group-hover:scale-105 group-hover:bg-white group-hover:shadow-xs"
+                      style={{ color: platform.accent }}
+                    >
+                      <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[12.5px] font-bold text-[#2b2525] group-hover:text-[#9e001f] transition-colors leading-tight">
+                          {item.label}
+                        </span>
+                        {item.badge && (
+                          <span
+                            className="rounded-full px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider"
+                            style={{ backgroundColor: `${platform.accent}15`, color: platform.accent }}
+                          >
+                            {item.badge}
+                          </span>
+                        )}
+                      </div>
+                      {item.description && (
+                        <p className="mt-0.5 text-[11px] text-[#746665] line-clamp-1 leading-snug">
+                          {item.description}
+                        </p>
+                      )}
+                    </div>
+                    <span className="material-symbols-outlined shrink-0 text-[16px] text-slate-300 transition-transform duration-150 group-hover:translate-x-1 group-hover:text-[#9e001f]">
+                      chevron_right
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Pied du menu */}
+        <div className="flex flex-col gap-3 border-t border-[#ead8d5] bg-[#faf6f5] px-6 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-xs text-[#746665]">
+            <span className="material-symbols-outlined text-[17px]" style={{ color: platform.accent }}>
+              verified
+            </span>
+            <span className="font-semibold">Portail officiel {platform.name}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link
+              href={platform.homeHref}
+              onClick={onClose}
+              className="text-xs font-bold text-[#5c403f] hover:text-[#9e001f] hover:underline"
+            >
+              Accéder au flux {platform.name} →
+            </Link>
+            <Link
+              href={platform.megaSections[0]?.items[0]?.href || platform.homeHref}
+              onClick={onClose}
+              className="rounded-full px-4 py-2 text-center text-[11px] font-black text-white shadow-xs transition hover:brightness-110"
+              style={{ backgroundColor: platform.accent }}
+            >
+              Démarrer
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return <div className="absolute left-1/2 top-full z-[70] mt-3 w-[min(92vw,760px)] -translate-x-1/2 overflow-hidden rounded-2xl border border-[#e5bdbb] bg-white shadow-2xl"><div className="border-b border-slate-100 px-5 py-4" style={{ backgroundColor: platform.accentSoft }}><div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: platform.accent }}>{platform.name}</p><h2 className="mt-1 font-display text-lg font-extrabold text-slate-950">{platform.megaTitle}</h2><p className="mt-1 text-sm text-slate-600">{platform.megaDescription}</p></div><button type="button" aria-label="Fermer le menu" onClick={onClose} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-slate-600 shadow-sm transition hover:text-slate-950">×</button></div></div><div className="grid gap-2 p-4 sm:grid-cols-2">{platform.megaItems.map((item) => <Link key={item.label} href={item.href} onClick={onClose} className="group flex items-center gap-3 rounded-xl border border-slate-100 px-4 py-3 transition hover:-translate-y-0.5 hover:border-transparent hover:shadow-md" style={{ backgroundColor: `${platform.accentSoft}88` }}><span className="material-symbols-outlined text-[22px]" style={{ color: platform.accent }}>{item.icon}</span><span className="flex-1 text-sm font-bold text-slate-800">{item.label}</span><span className="text-slate-400 transition group-hover:translate-x-0.5" aria-hidden="true">→</span></Link>)}</div></div>;
 }
 
@@ -138,6 +281,58 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
   const [visitorLocale, setVisitorLocale] = useState<VisitorLocale>(() => readPersistedVisitorLocale());
   const [featuredArticles, setFeaturedArticles] = useState<FeaturedArticle[]>([]);
   const [megaMenuConfig, setMegaMenuConfig] = useState<MegaMenuConfig>();
+  const [scrollY, setScrollY] = useState(0);
+  const [mobileContextBarVisible, setMobileContextBarVisible] = useState(true);
+
+  useEffect(() => {
+    let lastScrollY = typeof window !== "undefined" ? window.scrollY : 0;
+    let scrollStopTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const handleScroll = () => {
+      if (typeof window !== "undefined" && window.innerWidth >= 1024) return;
+      const currentScrollY = window.scrollY;
+      setScrollY(currentScrollY);
+
+      if (scrollStopTimer) {
+        clearTimeout(scrollStopTimer);
+      }
+
+      if (currentScrollY <= 40) {
+        setMobileContextBarVisible(true);
+      } else if (currentScrollY > lastScrollY && currentScrollY > 60) {
+        // Défilement vers le bas -> masquer pour libérer l'espace de lecture
+        setMobileContextBarVisible(false);
+
+        // Réapparaître après arrêt du défilement (inactivité ~320ms)
+        scrollStopTimer = setTimeout(() => {
+          setMobileContextBarVisible(true);
+        }, 320);
+      } else if (currentScrollY < lastScrollY) {
+        // Défilement vers le haut -> réapparaître immédiatement
+        setMobileContextBarVisible(true);
+      }
+
+      lastScrollY = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (scrollStopTimer) clearTimeout(scrollStopTimer);
+    };
+  }, []);
+
+  const openPlatformToolbox = () => {
+    if (platform.key === "wab") {
+      setWabToolsOpen(true);
+    } else if (platform.key === "marketplace") {
+      setMarketplaceToolsOpen(true);
+    } else if (platform.key === "awards") {
+      setAwardsToolsOpen(true);
+    } else {
+      setPlatformToolsOpen(true);
+    }
+  };
 
   useEffect(() => {
     const refreshInboxCounts = async () => {
@@ -306,8 +501,9 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
   const firstLineActive = (href: string) => href === "/" ? pathname === "/" : pathname.startsWith(href);
   const platformToolItems = useMemo(() => {
     const roleItems = user?.role === "admin" ? [{ label: "Administration de la plateforme", href: platform.key === "magazine" ? "/admin" : platform.homeHref, icon: "admin_panel_settings" }] : user ? [{ label: "Mon espace personnel", href: "/compte", icon: "account_circle" }] : [];
-    const extras = platform.key === "magazine" ? [{ label: "Gérer les articles et magazines", href: "/admin", icon: "library_books" }, { label: "Voir mes abonnements", href: "/compte/abonnement", icon: "stars" }] : platform.key === "kiosque" ? [{ label: "Mes achats et lectures", href: "/compte/achats", icon: "receipt_long" }, { label: "S’abonner au Magazine", href: "/abonnement", icon: "stars" }] : platform.key === "jobs" ? [{ label: "Publier une offre", href: "/emploi#publier", icon: "post_add" }, { label: "Gérer mes candidatures", href: "/emploi/dashboard", icon: "badge" }] : platform.key === "crowdfunding" ? [{ label: "Lancer un projet", href: "/financement#lancer", icon: "add_circle" }, { label: "Mon dashboard finance", href: "/financement/dashboard", icon: "dashboard" }] : platform.key === "wab" ? [{ label: "Publier sur WAB", href: "/wab#publier", icon: "edit_square" }, { label: "Mes messages WAB", href: "/wab/messages", icon: "mail" }] : [{ label: `Explorer ${platform.name}`, href: platform.homeHref, icon: "explore" }];
-    return [...roleItems, ...platform.megaItems, ...extras].filter((item, index, items) => items.findIndex((candidate) => candidate.href === item.href && candidate.label === item.label) === index).slice(0, 8);
+    const sectionItems = platform.megaSections ? platform.megaSections.flatMap((s) => s.items) : platform.megaItems;
+    const extras = platform.key === "magazine" ? [{ label: "Gérer les articles et magazines", href: "/admin", icon: "library_books" }, { label: "Voir mes abonnements", href: "/compte/abonnement", icon: "stars" }] : platform.key === "kiosque" ? [{ label: "Mes achats et lectures", href: "/compte/achats", icon: "receipt_long" }, { label: "S’abonner au Magazine", href: "/abonnement", icon: "stars" }] : platform.key === "jobs" ? [{ label: "Publier une offre", href: "/jobs/recruteur/offres/nouvelle", icon: "post_add" }, { label: "Gérer mes candidatures", href: "/jobs/candidat", icon: "badge" }] : platform.key === "crowdfunding" ? [{ label: "Lancer un projet", href: "/crowdfunding/demande", icon: "add_circle" }, { label: "Mon dashboard finance", href: "/crowdfunding/porteur", icon: "dashboard" }] : platform.key === "wab" ? [{ label: "Publier sur WAB", href: "/wab", icon: "edit_square" }, { label: "Mes messages WAB", href: "/wab/messages", icon: "mail" }] : [{ label: `Explorer ${platform.name}`, href: platform.homeHref, icon: "explore" }];
+    return [...roleItems, ...sectionItems, ...extras].filter((item, index, items) => items.findIndex((candidate) => candidate.href === item.href && candidate.label === item.label) === index).slice(0, 10);
   }, [platform, user?.role, user?.id]);
 
   const awardsToolItems = useMemo(() => {
@@ -593,7 +789,64 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
             <div className="flex items-center gap-2"><button type="button" onClick={() => { setMobileLocaleOpen((open) => !open); setMobileLocaleSection(null); }} aria-label={`Réglages régionaux : ${visitorLocale.country}`} aria-expanded={mobileLocaleOpen} className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f3f2] p-1.5 transition hover:bg-[#e5bdbb] overflow-hidden">{visitorLocale.countryCode ? (<img src={getCountryFlagImgUrl(visitorLocale.countryCode)} alt={visitorLocale.country || visitorLocale.countryCode} className="h-4 w-5.5 rounded-[2px] object-cover shadow-xs" onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }} />) : (<span className="text-[18px]">🌍</span>)}</button><button type="button" onClick={() => setShowSearch((open) => !open)} aria-label="Rechercher" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f3f2]"><span className="material-symbols-outlined">search</span></button><button type="button" onClick={() => setSideMenuOpen(true)} aria-label="Ouvrir le menu" className="grid h-9 w-9 place-items-center text-[#303030]"><span className="material-symbols-outlined">menu</span></button></div>
           </header>
           {mobileLocaleOpen && <div className="notranslate fixed left-1/2 top-[52px] z-[90] max-h-[68vh] w-[min(92vw,350px)] -translate-x-1/2 overflow-y-auto rounded-2xl border border-[#e5bdbb] bg-white p-3.5 text-[#242020] shadow-2xl" translate="no"><div className="flex items-center justify-between border-b border-[#f0e7e5] pb-2.5"><div><p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#9e001f]">{translate("common.country", visitorLocale.language)}</p><p className="mt-0.5 text-sm font-bold flex items-center gap-2">{visitorLocale.countryCode && (<img src={getCountryFlagImgUrl(visitorLocale.countryCode)} alt="" className="h-3.5 w-5 rounded-[2px] object-cover shadow-xs inline-block" />)}<span>{visitorLocale.country}</span></p></div><button type="button" onClick={() => setMobileLocaleOpen(false)} aria-label={translate("common.close", visitorLocale.language)} className="grid h-8 w-8 place-items-center rounded-full bg-[#f6f3f2] text-[#9e001f]"><span className="notranslate material-symbols-outlined text-[18px]" translate="no">close</span></button></div><div className="mt-2.5 space-y-2"><button type="button" onClick={() => { toggleDarkMode(); setMobileLocaleOpen(false); }} className="flex w-full items-center justify-between rounded-xl border border-[#eee2e0] px-3 py-2 text-left text-xs font-bold hover:bg-[#fff7f6]"><span className="flex items-center gap-2"><span className="notranslate material-symbols-outlined text-[18px] text-[#9e001f]" translate="no">{darkMode ? "light_mode" : "dark_mode"}</span>{darkMode ? translate("common.lightMode", visitorLocale.language) : translate("common.darkMode", visitorLocale.language)}</span><span className="text-[11px] text-[#746665]">Changer</span></button><div className="rounded-xl border border-[#eee2e0]"><button type="button" onClick={() => setMobileLocaleSection((section) => section === "currency" ? null : "currency")} aria-expanded={mobileLocaleSection === "currency"} className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-bold"><span className="flex items-center gap-2"><span className="notranslate material-symbols-outlined text-[18px] text-[#9e001f]" translate="no">payments</span>{translate("common.currency", visitorLocale.language)} <span className="font-normal text-[#746665]">{visitorLocale.currency}</span></span><span className="notranslate material-symbols-outlined text-[18px]" translate="no">{mobileLocaleSection === "currency" ? "expand_less" : "expand_more"}</span></button>{mobileLocaleSection === "currency" && <div className="notranslate grid grid-cols-1 gap-1.5 border-t border-[#f0e7e5] px-3 py-2 max-h-[220px] overflow-y-auto" translate="no">{CURRENCY_OPTIONS.map((curr) => { const isSelected = visitorLocale.currency === curr.code; return <button type="button" key={curr.code} onClick={() => { const next = { ...visitorLocale, currency: curr.code, isManual: true }; setVisitorLocale(next); persistVisitorLocale(next); setMobileLocaleSection(null); setMobileLocaleOpen(false); }} className={`flex items-center justify-between rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${isSelected ? "border-[#9e001f] bg-[#f0eded] text-[#9e001f]" : "border-[#e5bdbb] text-[#242020] hover:bg-[#fff7f6]"}`}><div className="flex items-center gap-2"><span className="grid h-6 w-6 place-items-center rounded-lg bg-[#f6f3f2] text-[11px] font-black text-[#9e001f]">{curr.symbol}</span><div className="text-left"><span className="block font-bold">{curr.label} ({curr.code})</span><span className="block text-[10px] font-normal text-[#746665]">{curr.detail}</span></div></div>{isSelected && <span className="notranslate material-symbols-outlined text-[16px] text-[#9e001f]" translate="no">check</span>}</button>; })}</div>}</div><div className="rounded-xl border border-[#eee2e0]"><button type="button" onClick={() => setMobileLocaleSection((section) => section === "language" ? null : "language")} aria-expanded={mobileLocaleSection === "language"} className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-bold"><span className="flex items-center gap-2"><span className="notranslate material-symbols-outlined text-[18px] text-[#9e001f]" translate="no">translate</span>{translate("common.language", visitorLocale.language)} <span className="font-normal text-[#746665]">{visitorLocale.language.toUpperCase()}</span></span><span className="notranslate material-symbols-outlined text-[18px]" translate="no">{mobileLocaleSection === "language" ? "expand_less" : "expand_more"}</span></button>{mobileLocaleSection === "language" && <div className="notranslate flex flex-wrap gap-1.5 border-t border-[#f0e7e5] px-3 py-2" translate="no">{LANGUAGE_OPTIONS.map((language) => <button type="button" key={language.code} onClick={() => { const next = { ...visitorLocale, language: language.code, isManual: true }; setVisitorLocale(next); persistVisitorLocale(next); setMobileLocaleSection(null); setMobileLocaleOpen(false); }} className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${visitorLocale.language === language.code ? "border-[#9e001f] bg-[#f0eded] text-[#9e001f]" : "border-[#e5bdbb] hover:bg-[#fff7f6]"}`}>{language.label}</button>)}</div>}</div></div></div>}
-          {megaMenuOpen && <div className="mobile-context-row sticky top-[48px] z-40 border-b border-[#e5bdbb] bg-white px-3 py-2 shadow-sm"><div className="flex items-center gap-2 overflow-x-auto">{platform.megaItems.map((item) => <Link key={item.label} href={item.href} onClick={() => setMegaMenuOpen(false)} className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#e5bdbb] px-3 py-2 text-[11px] font-bold text-[#303030] transition-colors hover:border-[#9e001f] hover:text-[#9e001f]" style={{ backgroundColor: `${platform.accentSoft}88` }}><span className="notranslate material-symbols-outlined text-[17px]" translate="no" style={{ color: platform.accent }}>{item.icon}</span>{item.label}</Link>)}</div></div>}
+          {platform.mobileQuickActions && platform.mobileQuickActions.length > 0 && (
+            <>
+              {/* Espacement dans le flux pour préserver la position du contenu */}
+              <div className="h-[44px] md:hidden" aria-hidden="true" />
+
+              {/* Bandeau d'actions contextuelles scroll-aware */}
+              <div
+                className={`fixed inset-x-0 z-40 md:hidden border-b border-[#ead8d5] bg-[#fffdfc]/95 backdrop-blur-md shadow-xs transition-all duration-300 ease-in-out ${
+                  mobileContextBarVisible
+                    ? "translate-y-0 opacity-100 pointer-events-auto"
+                    : "-translate-y-full opacity-0 pointer-events-none"
+                }`}
+                style={{
+                  top: `${scrollY < 56 ? Math.max(48, 104 - scrollY) : 48}px`,
+                }}
+              >
+                <div className="mx-auto flex h-[44px] max-w-[520px] items-center justify-between gap-1.5 px-3">
+                  <div className="flex flex-1 items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+                    {platform.mobileQuickActions.map((action) => {
+                      const isActive = pathname === action.href || (action.href !== "/" && pathname.startsWith(action.href));
+                      return (
+                        <Link
+                          key={action.label}
+                          href={action.href}
+                          className={`flex-1 min-w-[72px] text-center truncate rounded-full px-2.5 py-1.5 text-[11px] font-black transition-all border active:scale-95 ${
+                            isActive
+                              ? "shadow-2xs"
+                              : "border-[#ead8d5] bg-white text-[#2b2525] hover:border-[#9e001f]"
+                          }`}
+                          style={
+                            isActive
+                              ? {
+                                  backgroundColor: `${platform.accent}14`,
+                                  borderColor: `${platform.accent}55`,
+                                  color: platform.accent,
+                                }
+                              : undefined
+                          }
+                        >
+                          {action.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={openPlatformToolbox}
+                    aria-label={`Ouvrir la boîte à outils ${platform.name}`}
+                    title="Boîte à outils"
+                    className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-white shadow-xs transition-transform active:scale-90 hover:brightness-110"
+                    style={{ backgroundColor: platform.accent }}
+                  >
+                    <span className="material-symbols-outlined text-[19px]">add</span>
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
           {showSearch && <div className="border-b bg-white p-4"><form onSubmit={(event) => { event.preventDefault(); if (searchQuery.trim()) window.location.assign(`/recherche?q=${encodeURIComponent(searchQuery.trim())}`); }}><input autoFocus value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Rechercher..." className="h-11 w-full rounded-lg border bg-[#f6f3f2] px-4" /></form></div>}
         </div>
         <div className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 p-0">
