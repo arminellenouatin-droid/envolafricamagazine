@@ -48,7 +48,19 @@ const LANGUAGE_OPTIONS = [
   { code: "ar", label: "العربية 🇸🇦" },
   { code: "sw", label: "Kiswahili 🇹🇿" },
 ];
-const CURRENCY_OPTIONS = ["XOF", "XAF", "EUR", "USD", "NGN", "GHS", "KES", "ZAR", "MAD", "CAD", "GBP"];
+const CURRENCY_OPTIONS = [
+  { code: "EUR", label: "Euros", symbol: "€", detail: "Zone Euro" },
+  { code: "USD", label: "Dollars US", symbol: "$", detail: "États-Unis / International" },
+  { code: "XOF", label: "Franc CFA", symbol: "FCFA", detail: "UEMOA (Bénin, CI, SN...)" },
+  { code: "XAF", label: "Franc CFA", symbol: "FCFA", detail: "CEMAC (Cameroun, Gabon...)" },
+  { code: "CAD", label: "Dollar CA", symbol: "CA$", detail: "Canada" },
+  { code: "GBP", label: "Livre Sterling", symbol: "£", detail: "Royaume-Uni" },
+  { code: "NGN", label: "Naira", symbol: "₦", detail: "Nigeria" },
+  { code: "GHS", label: "Cedi", symbol: "₵", detail: "Ghana" },
+  { code: "KES", label: "Shilling", symbol: "KSh", detail: "Kenya" },
+  { code: "ZAR", label: "Rand", symbol: "R", detail: "Afrique du Sud" },
+  { code: "MAD", label: "Dirham", symbol: "DH", detail: "Maroc" },
+];
 
 function urlBase64ToUint8Array(value: string) {
   const padding = "=".repeat((4 - (value.length % 4)) % 4);
@@ -316,9 +328,9 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
 
   return (
     <>
-      <nav className="hidden items-center justify-between border-b border-[#d8c3c1] bg-white px-5 py-2 text-black lg:flex lg:px-[64px]" style={{ fontFamily: "Century Gothic, Inter, sans-serif" }}>
+      <nav className="notranslate hidden items-center justify-between border-b border-[#d8c3c1] bg-white px-5 py-2 text-black lg:flex lg:px-[64px]" translate="no" style={{ fontFamily: "Century Gothic, Inter, sans-serif" }}>
         <div className="flex items-center gap-5 text-[12px] font-medium">
-          {firstLineMenus.map((item) => <Link key={item.name} href={item.href} className={`flex items-center gap-1.5 transition-colors hover:text-[#9e001f] ${firstLineActive(item.href) ? "font-bold text-[#9e001f]" : ""}`}><span className="material-symbols-outlined text-[16px]">{item.icon}</span>{item.name}</Link>)}
+          {firstLineMenus.map((item) => <Link key={item.name} href={item.href} className={`flex items-center gap-1.5 transition-colors hover:text-[#9e001f] ${firstLineActive(item.href) ? "font-bold text-[#9e001f]" : ""}`}><span className="notranslate material-symbols-outlined text-[16px]" translate="no">{item.icon}</span>{item.name}</Link>)}
         </div>
         <div className="relative flex items-center gap-2">
           {/* Drapeau du pays localisé automatiquement */}
@@ -326,7 +338,7 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
             className="flex items-center gap-1.5 rounded-full bg-[#f6f3f2] px-2.5 py-1 text-xs font-semibold text-[#242020] border border-[#eee2e0] cursor-default select-none shadow-sm"
             title={`Pays localisé automatiquement : ${visitorLocale.country} (${visitorLocale.countryCode})`}
           >
-            <span className="text-base leading-none" role="img" aria-label={visitorLocale.country}>
+            <span className="notranslate text-base leading-none" translate="no" role="img" aria-label={visitorLocale.country}>
               {getCountryFlag(visitorLocale.countryCode)}
             </span>
             <span className="font-bold text-[11px] text-[#4a3b3a]">
@@ -344,12 +356,12 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
               aria-label={`Changer la langue du site (actuellement ${visitorLocale.language})`}
               aria-expanded={desktopLocaleMenu === "language"}
             >
-              <span className="material-symbols-outlined text-[18px]">translate</span>
+              <span className="notranslate material-symbols-outlined text-[18px]" translate="no">translate</span>
             </button>
             {desktopLocaleMenu === "language" && (
               <>
                 <div className="fixed inset-0 z-40 cursor-default" onClick={() => setDesktopLocaleMenu(null)} />
-                <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-2xl border border-[#e5bdbb] bg-white p-2.5 shadow-2xl text-black">
+                <div className="notranslate absolute right-0 top-full z-50 mt-2 w-60 rounded-2xl border border-[#e5bdbb] bg-white p-2.5 shadow-2xl text-black" translate="no">
                   <div className="flex items-center justify-between border-b border-[#f0e7e5] px-2 pb-2">
                     <span className="text-[10px] font-black uppercase tracking-wider text-[#9e001f]">
                       {translate("common.language", visitorLocale.language)}
@@ -379,7 +391,7 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
                           className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition-colors ${isSelected ? "bg-[#f0eded] font-bold text-[#9e001f]" : "text-[#242020] hover:bg-[#fff7f6] hover:text-[#9e001f]"}`}
                         >
                           <span>{lang.label}</span>
-                          {isSelected && <span className="material-symbols-outlined text-[16px] text-[#9e001f]">check</span>}
+                          {isSelected && <span className="notranslate material-symbols-outlined text-[16px] text-[#9e001f]" translate="no">check</span>}
                         </button>
                       );
                     })}
@@ -399,12 +411,12 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
               aria-label={`Changer la devise (actuellement ${visitorLocale.currency})`}
               aria-expanded={desktopLocaleMenu === "currency"}
             >
-              <span className="material-symbols-outlined text-[18px]">payments</span>
+              <span className="notranslate material-symbols-outlined text-[18px]" translate="no">payments</span>
             </button>
             {desktopLocaleMenu === "currency" && (
               <>
                 <div className="fixed inset-0 z-40 cursor-default" onClick={() => setDesktopLocaleMenu(null)} />
-                <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-[#e5bdbb] bg-white p-3 shadow-2xl text-black">
+                <div className="notranslate absolute right-0 top-full z-50 mt-2 w-72 rounded-2xl border border-[#e5bdbb] bg-white p-3 shadow-2xl text-black" translate="no">
                   <div className="flex items-center justify-between border-b border-[#f0e7e5] px-1 pb-2">
                     <div>
                       <span className="text-[10px] font-black uppercase tracking-wider text-[#9e001f]">
@@ -421,23 +433,35 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
                       ×
                     </button>
                   </div>
-                  <div className="mt-2 grid grid-cols-2 gap-1.5 max-h-[260px] overflow-y-auto">
+                  <div className="mt-2 space-y-1 max-h-[300px] overflow-y-auto">
                     {CURRENCY_OPTIONS.map((curr) => {
-                      const isSelected = visitorLocale.currency === curr;
+                      const isSelected = visitorLocale.currency === curr.code;
                       return (
                         <button
-                          key={curr}
+                          key={curr.code}
                           type="button"
                           onClick={() => {
-                            const next = { ...visitorLocale, currency: curr, isManual: true };
+                            const next = { ...visitorLocale, currency: curr.code, isManual: true };
                             setVisitorLocale(next);
                             persistVisitorLocale(next);
                             setDesktopLocaleMenu(null);
                           }}
-                          className={`flex items-center justify-between rounded-xl border px-3 py-1.5 text-xs font-bold transition-colors ${isSelected ? "border-[#9e001f] bg-[#f0eded] text-[#9e001f]" : "border-[#e5bdbb] text-[#242020] hover:bg-[#fff7f6] hover:border-[#9e001f]"}`}
+                          className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${
+                            isSelected
+                              ? "border-[#9e001f] bg-[#f0eded] text-[#9e001f]"
+                              : "border-[#f0e2e0] text-[#242020] hover:bg-[#fff7f6] hover:border-[#9e001f]"
+                          }`}
                         >
-                          <span>{curr}</span>
-                          {isSelected && <span className="material-symbols-outlined text-[14px] text-[#9e001f]">check</span>}
+                          <div className="flex items-center gap-2">
+                            <span className="grid h-6 w-6 place-items-center rounded-lg bg-[#f6f3f2] text-[11px] font-black text-[#9e001f]">
+                              {curr.symbol}
+                            </span>
+                            <div className="text-left">
+                              <span className="block font-bold">{curr.label} ({curr.code})</span>
+                              <span className="block text-[10px] font-normal text-[#746665]">{curr.detail}</span>
+                            </div>
+                          </div>
+                          {isSelected && <span className="notranslate material-symbols-outlined text-[16px] text-[#9e001f]" translate="no">check</span>}
                         </button>
                       );
                     })}
@@ -448,7 +472,7 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
           </div>
 
           {/* Mode sombre / clair */}
-          <button type="button" onClick={toggleDarkMode} className="grid h-8 w-8 place-items-center text-black transition-colors hover:text-[#9e001f]" title={darkMode ? translate("common.lightMode", visitorLocale.language) : translate("common.darkMode", visitorLocale.language)}><span className="material-symbols-outlined text-[18px]">{darkMode ? "light_mode" : "dark_mode"}</span></button>
+          <button type="button" onClick={toggleDarkMode} className="grid h-8 w-8 place-items-center text-black transition-colors hover:text-[#9e001f]" title={darkMode ? translate("common.lightMode", visitorLocale.language) : translate("common.darkMode", visitorLocale.language)}><span className="notranslate material-symbols-outlined text-[18px]" translate="no">{darkMode ? "light_mode" : "dark_mode"}</span></button>
         </div>
       </nav>
 
@@ -548,21 +572,21 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
             </div>
             <div className="flex items-center gap-2"><button type="button" onClick={() => { setMobileLocaleOpen((open) => !open); setMobileLocaleSection(null); }} aria-label={`Réglages régionaux : ${visitorLocale.country}`} aria-expanded={mobileLocaleOpen} className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f3f2] text-[21px] transition hover:bg-[#e5bdbb]">{getCountryFlag(visitorLocale.countryCode)}</button><button type="button" onClick={() => setShowSearch((open) => !open)} aria-label="Rechercher" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f3f2]"><span className="material-symbols-outlined">search</span></button><button type="button" onClick={() => setSideMenuOpen(true)} aria-label="Ouvrir le menu" className="grid h-9 w-9 place-items-center text-[#303030]"><span className="material-symbols-outlined">menu</span></button></div>
           </header>
-          {mobileLocaleOpen && <div className="fixed left-1/2 top-[52px] z-[90] max-h-[68vh] w-[min(92vw,350px)] -translate-x-1/2 overflow-y-auto rounded-2xl border border-[#e5bdbb] bg-white p-3.5 text-[#242020] shadow-2xl"><div className="flex items-center justify-between border-b border-[#f0e7e5] pb-2.5"><div><p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#9e001f]">{translate("common.country", visitorLocale.language)}</p><p className="mt-0.5 text-sm font-bold">{getCountryFlag(visitorLocale.countryCode)} {visitorLocale.country}</p></div><button type="button" onClick={() => setMobileLocaleOpen(false)} aria-label={translate("common.close", visitorLocale.language)} className="grid h-8 w-8 place-items-center rounded-full bg-[#f6f3f2] text-[#9e001f]"><span className="material-symbols-outlined text-[18px]">close</span></button></div><div className="mt-2.5 space-y-2"><button type="button" onClick={() => { toggleDarkMode(); setMobileLocaleOpen(false); }} className="flex w-full items-center justify-between rounded-xl border border-[#eee2e0] px-3 py-2 text-left text-xs font-bold hover:bg-[#fff7f6]"><span className="flex items-center gap-2"><span className="material-symbols-outlined text-[18px] text-[#9e001f]">{darkMode ? "light_mode" : "dark_mode"}</span>{darkMode ? translate("common.lightMode", visitorLocale.language) : translate("common.darkMode", visitorLocale.language)}</span><span className="text-[11px] text-[#746665]">Changer</span></button><div className="rounded-xl border border-[#eee2e0]"><button type="button" onClick={() => setMobileLocaleSection((section) => section === "currency" ? null : "currency")} aria-expanded={mobileLocaleSection === "currency"} className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-bold"><span className="flex items-center gap-2"><span className="material-symbols-outlined text-[18px] text-[#9e001f]">payments</span>{translate("common.currency", visitorLocale.language)} <span className="font-normal text-[#746665]">{visitorLocale.currency}</span></span><span className="material-symbols-outlined text-[18px]">{mobileLocaleSection === "currency" ? "expand_less" : "expand_more"}</span></button>{mobileLocaleSection === "currency" && <div className="flex flex-wrap gap-1.5 border-t border-[#f0e7e5] px-3 py-2">{CURRENCY_OPTIONS.map((currency) => <button type="button" key={currency} onClick={() => { const next = { ...visitorLocale, currency, isManual: true }; setVisitorLocale(next); persistVisitorLocale(next); setMobileLocaleSection(null); setMobileLocaleOpen(false); }} className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${visitorLocale.currency === currency ? "border-[#9e001f] bg-[#f0eded] text-[#9e001f]" : "border-[#e5bdbb] hover:bg-[#fff7f6]"}`}>{currency}</button>)}</div>}</div><div className="rounded-xl border border-[#eee2e0]"><button type="button" onClick={() => setMobileLocaleSection((section) => section === "language" ? null : "language")} aria-expanded={mobileLocaleSection === "language"} className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-bold"><span className="flex items-center gap-2"><span className="material-symbols-outlined text-[18px] text-[#9e001f]">translate</span>{translate("common.language", visitorLocale.language)} <span className="font-normal text-[#746665]">{visitorLocale.language.toUpperCase()}</span></span><span className="material-symbols-outlined text-[18px]">{mobileLocaleSection === "language" ? "expand_less" : "expand_more"}</span></button>{mobileLocaleSection === "language" && <div className="flex flex-wrap gap-1.5 border-t border-[#f0e7e5] px-3 py-2">{LANGUAGE_OPTIONS.map((language) => <button type="button" key={language.code} onClick={() => { const next = { ...visitorLocale, language: language.code, isManual: true }; setVisitorLocale(next); persistVisitorLocale(next); setMobileLocaleSection(null); setMobileLocaleOpen(false); }} className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${visitorLocale.language === language.code ? "border-[#9e001f] bg-[#f0eded] text-[#9e001f]" : "border-[#e5bdbb] hover:bg-[#fff7f6]"}`}>{language.label}</button>)}</div>}</div></div></div>}
-          {megaMenuOpen && <div className="mobile-context-row sticky top-[48px] z-40 border-b border-[#e5bdbb] bg-white px-3 py-2 shadow-sm"><div className="flex items-center gap-2 overflow-x-auto">{platform.megaItems.map((item) => <Link key={item.label} href={item.href} onClick={() => setMegaMenuOpen(false)} className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#e5bdbb] px-3 py-2 text-[11px] font-bold text-[#303030] transition-colors hover:border-[#9e001f] hover:text-[#9e001f]" style={{ backgroundColor: `${platform.accentSoft}88` }}><span className="material-symbols-outlined text-[17px]" style={{ color: platform.accent }}>{item.icon}</span>{item.label}</Link>)}</div></div>}
+          {mobileLocaleOpen && <div className="notranslate fixed left-1/2 top-[52px] z-[90] max-h-[68vh] w-[min(92vw,350px)] -translate-x-1/2 overflow-y-auto rounded-2xl border border-[#e5bdbb] bg-white p-3.5 text-[#242020] shadow-2xl" translate="no"><div className="flex items-center justify-between border-b border-[#f0e7e5] pb-2.5"><div><p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#9e001f]">{translate("common.country", visitorLocale.language)}</p><p className="mt-0.5 text-sm font-bold">{getCountryFlag(visitorLocale.countryCode)} {visitorLocale.country}</p></div><button type="button" onClick={() => setMobileLocaleOpen(false)} aria-label={translate("common.close", visitorLocale.language)} className="grid h-8 w-8 place-items-center rounded-full bg-[#f6f3f2] text-[#9e001f]"><span className="notranslate material-symbols-outlined text-[18px]" translate="no">close</span></button></div><div className="mt-2.5 space-y-2"><button type="button" onClick={() => { toggleDarkMode(); setMobileLocaleOpen(false); }} className="flex w-full items-center justify-between rounded-xl border border-[#eee2e0] px-3 py-2 text-left text-xs font-bold hover:bg-[#fff7f6]"><span className="flex items-center gap-2"><span className="notranslate material-symbols-outlined text-[18px] text-[#9e001f]" translate="no">{darkMode ? "light_mode" : "dark_mode"}</span>{darkMode ? translate("common.lightMode", visitorLocale.language) : translate("common.darkMode", visitorLocale.language)}</span><span className="text-[11px] text-[#746665]">Changer</span></button><div className="rounded-xl border border-[#eee2e0]"><button type="button" onClick={() => setMobileLocaleSection((section) => section === "currency" ? null : "currency")} aria-expanded={mobileLocaleSection === "currency"} className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-bold"><span className="flex items-center gap-2"><span className="notranslate material-symbols-outlined text-[18px] text-[#9e001f]" translate="no">payments</span>{translate("common.currency", visitorLocale.language)} <span className="font-normal text-[#746665]">{visitorLocale.currency}</span></span><span className="notranslate material-symbols-outlined text-[18px]" translate="no">{mobileLocaleSection === "currency" ? "expand_less" : "expand_more"}</span></button>{mobileLocaleSection === "currency" && <div className="notranslate grid grid-cols-1 gap-1.5 border-t border-[#f0e7e5] px-3 py-2 max-h-[220px] overflow-y-auto" translate="no">{CURRENCY_OPTIONS.map((curr) => { const isSelected = visitorLocale.currency === curr.code; return <button type="button" key={curr.code} onClick={() => { const next = { ...visitorLocale, currency: curr.code, isManual: true }; setVisitorLocale(next); persistVisitorLocale(next); setMobileLocaleSection(null); setMobileLocaleOpen(false); }} className={`flex items-center justify-between rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${isSelected ? "border-[#9e001f] bg-[#f0eded] text-[#9e001f]" : "border-[#e5bdbb] text-[#242020] hover:bg-[#fff7f6]"}`}><div className="flex items-center gap-2"><span className="grid h-6 w-6 place-items-center rounded-lg bg-[#f6f3f2] text-[11px] font-black text-[#9e001f]">{curr.symbol}</span><div className="text-left"><span className="block font-bold">{curr.label} ({curr.code})</span><span className="block text-[10px] font-normal text-[#746665]">{curr.detail}</span></div></div>{isSelected && <span className="notranslate material-symbols-outlined text-[16px] text-[#9e001f]" translate="no">check</span>}</button>; })}</div>}</div><div className="rounded-xl border border-[#eee2e0]"><button type="button" onClick={() => setMobileLocaleSection((section) => section === "language" ? null : "language")} aria-expanded={mobileLocaleSection === "language"} className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-bold"><span className="flex items-center gap-2"><span className="notranslate material-symbols-outlined text-[18px] text-[#9e001f]" translate="no">translate</span>{translate("common.language", visitorLocale.language)} <span className="font-normal text-[#746665]">{visitorLocale.language.toUpperCase()}</span></span><span className="notranslate material-symbols-outlined text-[18px]" translate="no">{mobileLocaleSection === "language" ? "expand_less" : "expand_more"}</span></button>{mobileLocaleSection === "language" && <div className="notranslate flex flex-wrap gap-1.5 border-t border-[#f0e7e5] px-3 py-2" translate="no">{LANGUAGE_OPTIONS.map((language) => <button type="button" key={language.code} onClick={() => { const next = { ...visitorLocale, language: language.code, isManual: true }; setVisitorLocale(next); persistVisitorLocale(next); setMobileLocaleSection(null); setMobileLocaleOpen(false); }} className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${visitorLocale.language === language.code ? "border-[#9e001f] bg-[#f0eded] text-[#9e001f]" : "border-[#e5bdbb] hover:bg-[#fff7f6]"}`}>{language.label}</button>)}</div>}</div></div></div>}
+          {megaMenuOpen && <div className="mobile-context-row sticky top-[48px] z-40 border-b border-[#e5bdbb] bg-white px-3 py-2 shadow-sm"><div className="flex items-center gap-2 overflow-x-auto">{platform.megaItems.map((item) => <Link key={item.label} href={item.href} onClick={() => setMegaMenuOpen(false)} className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#e5bdbb] px-3 py-2 text-[11px] font-bold text-[#303030] transition-colors hover:border-[#9e001f] hover:text-[#9e001f]" style={{ backgroundColor: `${platform.accentSoft}88` }}><span className="notranslate material-symbols-outlined text-[17px]" translate="no" style={{ color: platform.accent }}>{item.icon}</span>{item.label}</Link>)}</div></div>}
           {showSearch && <div className="border-b bg-white p-4"><form onSubmit={(event) => { event.preventDefault(); if (searchQuery.trim()) window.location.assign(`/recherche?q=${encodeURIComponent(searchQuery.trim())}`); }}><input autoFocus value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Rechercher..." className="h-11 w-full rounded-lg border bg-[#f6f3f2] px-4" /></form></div>}
         </div>
         <div className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 p-0">
           <div className="mobile-bottom-nav__surface relative flex w-full max-w-none items-end justify-between gap-1 rounded-none border-x-0 border-b-0 border-t border-[#e5bdbb] bg-[#fffdfc]/95 px-2 pb-[max(0.7rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_35px_rgba(79,13,25,0.12)] backdrop-blur-xl">
             {mobilePrimaryNav.map((item) => {
               const active = pathname === item.href;
-              return <Link key={item.name} href={item.href} className={`mobile-nav-item ${active ? "mobile-nav-item--active" : ""}`} aria-current={active ? "page" : undefined}><span className="mobile-nav-item__icon"><span className="material-symbols-outlined text-[20px]">{item.icon}</span></span><span className="mobile-nav-item__label">{item.name}</span></Link>;
+              return <Link key={item.name} href={item.href} className={`mobile-nav-item ${active ? "mobile-nav-item--active" : ""}`} aria-current={active ? "page" : undefined}><span className="mobile-nav-item__icon"><span className="notranslate material-symbols-outlined text-[20px]" translate="no">{item.icon}</span></span><span className="mobile-nav-item__label">{item.name}</span></Link>;
             })}
             <div className={`mobile-nav-plus-wrap ${mobileSecondaryActive ? "mobile-nav-plus-wrap--active" : ""}`}>
               <div className={`mobile-secondary-menu ${mobileNavOpen ? "mobile-secondary-menu--open" : ""}`} aria-hidden={!mobileNavOpen}>
-                {mobileSecondaryNav.map((item, index) => <Link key={item.name} href={item.href} tabIndex={mobileNavOpen ? 0 : -1} style={{ "--mobile-delay": `${index * 45}ms` } as React.CSSProperties} className="mobile-secondary-item"><span className="mobile-secondary-item__icon"><span className="material-symbols-outlined text-[18px]">{item.icon}</span></span><span>{item.name}</span></Link>)}
+                {mobileSecondaryNav.map((item, index) => <Link key={item.name} href={item.href} tabIndex={mobileNavOpen ? 0 : -1} style={{ "--mobile-delay": `${index * 45}ms` } as React.CSSProperties} className="mobile-secondary-item"><span className="mobile-secondary-item__icon"><span className="notranslate material-symbols-outlined text-[18px]" translate="no">{item.icon}</span></span><span>{item.name}</span></Link>)}
               </div>
-              <button type="button" className={`mobile-plus-button ${mobileNavOpen ? "mobile-plus-button--open" : ""}`} onClick={() => setMobileNavOpen((open) => !open)} aria-label={mobileNavOpen ? "Fermer Jobs, Kiosque et Profil" : "Afficher Jobs, Kiosque et Profil"} aria-expanded={mobileNavOpen}><span className="mobile-plus-button__icon"><span className="material-symbols-outlined text-[28px]">{mobileNavOpen ? "close" : "add"}</span></span></button>
+              <button type="button" className={`mobile-plus-button ${mobileNavOpen ? "mobile-plus-button--open" : ""}`} onClick={() => setMobileNavOpen((open) => !open)} aria-label={mobileNavOpen ? "Fermer Jobs, Kiosque et Profil" : "Afficher Jobs, Kiosque et Profil"} aria-expanded={mobileNavOpen}><span className="mobile-plus-button__icon"><span className="notranslate material-symbols-outlined text-[28px]" translate="no">{mobileNavOpen ? "close" : "add"}</span></span></button>
             </div>
           </div>
         </div>

@@ -18,7 +18,7 @@ export default function KiosquePage({ initialMagazines = [] }: { initialMagazine
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterState, setNewsletterState] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [newsletterMessage, setNewsletterMessage] = useState("");
-  const { locale } = useLocale();
+  const { locale, formatPrice } = useLocale();
 
 
   const years = [...new Set(magazines.map((magazine: any) => magazine.year))].sort((a: any, b: any) => b - a);
@@ -57,7 +57,11 @@ export default function KiosquePage({ initialMagazines = [] }: { initialMagazine
                 <Link href={`/kiosque/${featured.id}`} className="kiosque-primary-cta"><span className="material-symbols-outlined text-[19px]">shopping_bag</span> Découvrir ce numéro <span aria-hidden>↗</span></Link>
                 <button type="button" onClick={() => void openFeaturedPreview()} className="kiosque-ghost-cta"><span className="material-symbols-outlined text-[19px]">import_contacts</span> Feuilleter</button>
               </div>
-              <div className="mt-10 flex items-center gap-7 border-t border-[#d8c3c1] pt-5 font-sans text-[10px] font-bold uppercase tracking-[.14em] text-[#746665]"><span><strong className="text-2xl font-serif text-[#9e001f]">{magazines.length || "—"}</strong><br />numéros disponibles</span><span><strong className="text-2xl font-serif text-[#9e001f]">2026</strong><br />édition en cours</span></div>
+              <div className="mt-10 flex items-center gap-7 border-t border-[#d8c3c1] pt-5 font-sans text-[10px] font-bold uppercase tracking-[.14em] text-[#746665]">
+                <span><strong className="text-2xl font-serif text-[#9e001f]">{magazines.length || "—"}</strong><br />numéros disponibles</span>
+                <span><strong className="text-2xl font-serif text-[#9e001f] notranslate" translate="no">{formatPrice(featured.prices?.numerique || 10000)}</strong><br />dès la version numérique</span>
+                <span><strong className="text-2xl font-serif text-[#9e001f]">2026</strong><br />édition en cours</span>
+              </div>
             </div>
             <div className="order-1 flex justify-center lg:order-2 lg:justify-end">
               <div className="kiosque-featured-cover group relative">
@@ -76,7 +80,7 @@ export default function KiosquePage({ initialMagazines = [] }: { initialMagazine
             <label className="kiosque-search"><span className="material-symbols-outlined">search</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Rechercher un numéro ou un dossier" type="search" /><kbd>⌘ K</kbd></label>
           </div>
           <div className="mb-6 flex items-center justify-between font-sans text-[10px] font-bold uppercase tracking-[.14em] text-[#746665]"><span>{archiveCount} {archiveCount === 1 ? "numéro" : "numéros"} dans la collection</span><span className="hidden md:inline">Glisser pour parcourir</span></div>
-          <div className="kiosque-archive-grid">{filtered.map((magazine: any, index: number) => <Link key={magazine.id} href={`/kiosque/${magazine.id}`} aria-label={`Voir la fiche produit de ${magazine.title}`} className="kiosque-card group cursor-pointer" style={{ "--card-delay": `${Math.min(index, 10) * 45}ms` } as CSSProperties}><div className="kiosque-card__cover"><img src={magazine.cover} alt={magazine.title} loading="lazy" decoding="async" /><span className="kiosque-card__shine" /><span className="kiosque-card__number">N°{magazine.numero}</span><span className="kiosque-card__open material-symbols-outlined">arrow_outward</span></div><div className="mt-4"><p className="font-sans text-[10px] font-bold uppercase tracking-[.13em] text-[#9e001f]">{new Date(magazine.date).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}</p><h3 className="mt-1 font-serif text-xl leading-tight text-[#2b2525] transition-colors group-hover:text-[#9e001f]">{magazine.title}</h3><div className="mt-3 flex flex-wrap gap-1.5">{(magazine.formats || []).slice(0, 2).map((format: string) => <span key={format} className="kiosque-format-pill">{formatLabels[format] || format}</span>)}</div></div></Link>)}</div>
+          <div className="kiosque-archive-grid">{filtered.map((magazine: any, index: number) => <Link key={magazine.id} href={`/kiosque/${magazine.id}`} aria-label={`Voir la fiche produit de ${magazine.title}`} className="kiosque-card group cursor-pointer" style={{ "--card-delay": `${Math.min(index, 10) * 45}ms` } as CSSProperties}><div className="kiosque-card__cover"><img src={magazine.cover} alt={magazine.title} loading="lazy" decoding="async" /><span className="kiosque-card__shine" /><span className="kiosque-card__number">N°{magazine.numero}</span><span className="kiosque-card__open material-symbols-outlined">arrow_outward</span></div><div className="mt-4"><p className="font-sans text-[10px] font-bold uppercase tracking-[.13em] text-[#9e001f]">{new Date(magazine.date).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}</p><h3 className="mt-1 font-serif text-xl leading-tight text-[#2b2525] transition-colors group-hover:text-[#9e001f]">{magazine.title}</h3><div className="mt-3 flex items-center justify-between gap-2"><div className="flex flex-wrap gap-1.5">{(magazine.formats || []).slice(0, 2).map((format: string) => <span key={format} className="kiosque-format-pill">{formatLabels[format] || format}</span>)}</div><span className="font-sans text-xs font-black text-[#9e001f] notranslate" translate="no">{formatPrice(magazine.prices?.numerique || 10000)}</span></div></div></Link>)}</div>
           {!filtered.length && <div className="rounded-2xl border border-dashed border-[#cdb7b4] bg-white p-12 text-center"><span className="material-symbols-outlined text-4xl text-[#9e001f]">search_off</span><h3 className="mt-3 font-serif text-2xl">Aucun numéro trouvé</h3><p className="mt-2 font-sans text-sm text-[#746665]">Essayez une autre année, un autre format ou un terme différent.</p></div>}
         </section>
 
