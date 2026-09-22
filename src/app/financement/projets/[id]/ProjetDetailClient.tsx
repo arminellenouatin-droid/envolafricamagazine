@@ -2,8 +2,10 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useLocale } from "@/components/LocaleProvider";
 
 export default function ProjetDetail({ id: propId, initialProjet }: { id?: string; initialProjet?: any }) {
+  const { formatPrice } = useLocale();
   const params = useParams();
   const id = (params?.id as string) || propId || initialProjet?.id || "";
   const [projet, setProjet] = useState<any>(initialProjet || null);
@@ -73,7 +75,7 @@ export default function ProjetDetail({ id: propId, initialProjet }: { id?: strin
             <div className="bg-white rounded-[16px] border border-[#e5bdbb] p-6 sticky top-24">
               <div className="flex justify-between text-[11px] mb-1"><span>Progression</span><span className="font-bold">{pct}%</span></div>
               <div className="h-2 bg-[#f0eded] rounded-full overflow-hidden"><div className="h-full bg-[#9e001f]" style={{ width: `${Math.min(100,pct)}%` }}></div></div>
-              <div className="flex justify-between text-[12px] mt-2"><span className="font-bold">{projet.montantCollecte.toLocaleString()} F</span><span className="text-[#5c403f]">sur {projet.montantRecherche.toLocaleString()} F</span></div>
+              <div className="flex justify-between text-[12px] mt-2"><span className="font-bold notranslate" translate="no">{formatPrice(projet.montantCollecte)}</span><span className="text-[#5c403f] notranslate" translate="no">sur {formatPrice(projet.montantRecherche)}</span></div>
               <div className="flex justify-between text-[11px] mt-3 text-[#5c403f]"><span>{projet.investisseurs} investisseurs</span><span>{daysRemaining}j restants</span></div>
 
               <div className="mt-6 border-t border-[#e5bdbb]/30 pt-6">
@@ -87,22 +89,22 @@ export default function ProjetDetail({ id: propId, initialProjet }: { id?: strin
                 {tab==="don" && (
                   <div className="mt-4">
                     <p className="text-[12px] text-[#5c403f]">Montant libre ou proposé. Aucun retour financier. Badge Soutien sur profil.</p>
-                    <div className="mt-3 flex gap-2"><button onClick={()=>setMontant(5000)} className="flex-1 h-9 rounded-full border bg-[#f6f3f2] text-[12px]">5k F</button><button onClick={()=>setMontant(10000)} className="flex-1 h-9 rounded-full border bg-white text-[12px] font-bold">10k F</button><button onClick={()=>setMontant(50000)} className="flex-1 h-9 rounded-full border bg-[#f6f3f2] text-[12px]">50k F</button></div>
+                    <div className="mt-3 flex gap-2"><button onClick={()=>setMontant(5000)} className="flex-1 h-9 rounded-full border bg-[#f6f3f2] text-[12px] font-semibold notranslate" translate="no">{formatPrice(5000)}</button><button onClick={()=>setMontant(10000)} className="flex-1 h-9 rounded-full border bg-white text-[12px] font-bold notranslate" translate="no">{formatPrice(10000)}</button><button onClick={()=>setMontant(50000)} className="flex-1 h-9 rounded-full border bg-[#f6f3f2] text-[12px] font-semibold notranslate" translate="no">{formatPrice(50000)}</button></div>
                     <input type="number" value={montant} onChange={e=>setMontant(parseInt(e.target.value)||0)} className="mt-3 w-full h-11 rounded-full border bg-[#f6f3f2] px-4 text-[14px]" placeholder="Montant libre" />
-                    <button onClick={() => startContribution("don", montant)} disabled={paying} className="mt-4 w-full h-11 rounded-full bg-[#9e001f] text-white font-bold text-[13px] disabled:opacity-50">{paying ? "Redirection Moneroo..." : `Faire un don de ${montant.toLocaleString()} F →`}</button>
+                    <button onClick={() => startContribution("don", montant)} disabled={paying} className="mt-4 w-full h-11 rounded-full bg-[#9e001f] text-white font-bold text-[13px] disabled:opacity-50">{paying ? "Redirection Moneroo..." : `Faire un don de ${formatPrice(montant)} →`}</button>
                   </div>
                 )}
 
                 {tab==="prise_part" && (
                   <div className="mt-4">
-                    <p className="text-[12px] text-[#5c403f]">Achetez % entreprise. Valorisation auto: montant collecté / % vendu = {valorisation.toLocaleString()} F. Contrat PDF auto généré.</p>
+                    <p className="text-[12px] text-[#5c403f]">Achetez % entreprise. Valorisation auto: montant collecté / % vendu = <span className="font-bold notranslate" translate="no">{formatPrice(valorisation)}</span>. Contrat PDF auto généré.</p>
                     <div className="mt-3 bg-[#f6f3f2] rounded-lg p-3 text-[12px]">
-                      <div className="flex justify-between"><span>Valorisation</span><span className="font-bold">{valorisation.toLocaleString()} F</span></div>
+                      <div className="flex justify-between"><span>Valorisation</span><span className="font-bold notranslate" translate="no">{formatPrice(valorisation)}</span></div>
                       <div className="flex justify-between mt-1"><span>% vendu</span><span>{projet.pourcentageVendu}%</span></div>
-                      <div className="flex justify-between mt-1 font-bold border-t pt-2"><span>Prix pour 1%</span><span>{Math.round(valorisation/100).toLocaleString()} F</span></div>
+                      <div className="flex justify-between mt-1 font-bold border-t pt-2"><span>Prix pour 1%</span><span className="notranslate" translate="no">{formatPrice(Math.round(valorisation/100))}</span></div>
                     </div>
-                    <div className="mt-3"><label className="text-[11px] font-bold">% souhaité</label><input type="range" min="0.1" max="10" step="0.1" value={pourcentage} onChange={(e) => setPourcentage(Number(e.target.value))} className="w-full mt-1" /><div className="text-[11px] text-[#5c403f]">{pourcentage}% = {Math.round(valorisation * pourcentage / 100).toLocaleString()} F</div></div>
-                    <button onClick={() => startContribution("prise_part", Math.round(valorisation * pourcentage / 100), pourcentage)} disabled={paying} className="mt-4 w-full h-11 rounded-full bg-[#9e001f] text-white font-bold text-[13px] disabled:opacity-50">{paying ? "Redirection Moneroo..." : `Acheter ${pourcentage}% pour ${Math.round(valorisation * pourcentage / 100).toLocaleString()} F → Contrat PDF auto`}</button>
+                    <div className="mt-3"><label className="text-[11px] font-bold">% souhaité</label><input type="range" min="0.1" max="10" step="0.1" value={pourcentage} onChange={(e) => setPourcentage(Number(e.target.value))} className="w-full mt-1" /><div className="text-[11px] text-[#5c403f]">{pourcentage}% = <span className="font-bold notranslate" translate="no">{formatPrice(Math.round(valorisation * pourcentage / 100))}</span></div></div>
+                    <button onClick={() => startContribution("prise_part", Math.round(valorisation * pourcentage / 100), pourcentage)} disabled={paying} className="mt-4 w-full h-11 rounded-full bg-[#9e001f] text-white font-bold text-[13px] disabled:opacity-50">{paying ? "Redirection Moneroo..." : `Acheter ${pourcentage}% pour ${formatPrice(Math.round(valorisation * pourcentage / 100))} → Contrat PDF auto`}</button>
                   </div>
                 )}
 
@@ -115,7 +117,7 @@ export default function ProjetDetail({ id: propId, initialProjet }: { id?: strin
                       <div className="mt-2 text-[10px]">Calendrier: chaque mois, part capital + intérêts, date paiement auto</div>
                     </div>
                     <input type="number" value={montant} onChange={e=>setMontant(parseInt(e.target.value)||0)} placeholder="Montant à prêter" className="mt-3 w-full h-11 rounded-full border bg-[#f6f3f2] px-4 text-[14px]" />
-                    <button onClick={() => startContribution("pret", montant)} disabled={paying} className="mt-3 w-full h-11 rounded-full bg-[#9e001f] text-white font-bold text-[13px] disabled:opacity-50">{paying ? "Redirection Moneroo..." : `Prêter ${montant.toLocaleString()} F à ${projet.tauxInteret}% →`}</button>
+                    <button onClick={() => startContribution("pret", montant)} disabled={paying} className="mt-3 w-full h-11 rounded-full bg-[#9e001f] text-white font-bold text-[13px] disabled:opacity-50">{paying ? "Redirection Moneroo..." : `Prêter ${formatPrice(montant)} à ${projet.tauxInteret}% →`}</button>
                   </div>
                 )}
               </div>

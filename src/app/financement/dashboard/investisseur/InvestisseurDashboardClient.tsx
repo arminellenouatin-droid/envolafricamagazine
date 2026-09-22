@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- dashboard legacy en cours de typage progressif */
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useLocale } from "@/components/LocaleProvider";
 
 type UserProp = {
   id: string;
@@ -13,6 +14,7 @@ type UserProp = {
 };
 
 export default function InvestisseurDashboardClient({ user }: { user: UserProp }) {
+  const { formatPrice } = useLocale();
   const [contribs, setContribs] = useState<any[]>([]);
   const [repayments, setRepayments] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
@@ -98,7 +100,7 @@ export default function InvestisseurDashboardClient({ user }: { user: UserProp }
         <div className="mt-8 grid md:grid-cols-3 gap-4">
           <div className="bg-white border rounded-xl p-5 shadow-sm">
             <div className="text-[11px] uppercase font-bold text-[#5c403f]">Total investi</div>
-            <div className="text-[22px] font-black mt-1">{totalInvesti.toLocaleString()} F CFA</div>
+            <div className="text-[22px] font-black mt-1 notranslate" translate="no">{formatPrice(totalInvesti)}</div>
             <div className="text-[11px] text-green-600 mt-1">
               {contribs.length} contribution(s) active(s)
             </div>
@@ -108,9 +110,9 @@ export default function InvestisseurDashboardClient({ user }: { user: UserProp }
             <div className="text-[22px] font-black mt-1">
               {equityContribs.length ? `${equityContribs.length} participation(s)` : "Aucune part"}
             </div>
-            <div className="text-[11px] text-[#5c403f] mt-1">
+            <div className="text-[11px] text-[#5c403f] mt-1 notranslate" translate="no">
               {equityContribs.length
-                ? `${equityValue.toLocaleString()} F en capital`
+                ? `${formatPrice(equityValue)} en capital`
                 : "Participez au capital d'entreprises pour détenir des parts."}
             </div>
           </div>
@@ -160,7 +162,7 @@ export default function InvestisseurDashboardClient({ user }: { user: UserProp }
                       </div>
                       <div className="text-[11px] text-[#5c403f] mt-1">
                         {c.createdAt ? new Date(c.createdAt).toLocaleDateString("fr-FR") : "—"} ·{" "}
-                        <span className="font-bold text-slate-800">{Number(c.montant || 0).toLocaleString()} F CFA</span>
+                        <span className="font-bold text-slate-800 notranslate" translate="no">{formatPrice(Number(c.montant || 0))}</span>
                         {c.pourcentage ? ` · ${c.pourcentage}%` : ""}
                         {c.tauxInteret ? ` · Taux ${c.tauxInteret}%` : ""}
                       </div>
@@ -209,8 +211,8 @@ export default function InvestisseurDashboardClient({ user }: { user: UserProp }
                         {r.statut}
                       </span>
                     </div>
-                    <div className="mt-1 text-slate-600">
-                      Montant : {Number(r.total || 0).toLocaleString()} F CFA
+                    <div className="mt-1 text-slate-600 notranslate" translate="no">
+                      Montant : {formatPrice(Number(r.total || 0))}
                     </div>
                   </div>
                 ))

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useLocale } from "@/components/LocaleProvider";
 
 export function SentinellesSection({ articles }: { articles: any[] }) {
   const items = articles.filter(a=>a.isSentinelle).slice(0,3);
@@ -161,11 +162,12 @@ export function FilInfoManager({ articles }: { articles: any[] }) {
 }
 
 export function MostReadFormations({ articles }: { articles: any[] }) {
+  const { formatPrice } = useLocale();
   const mostRead = [...articles].sort((a,b)=>b.views-a.views).slice(0,5);
   const formations = [
-    { title: "Executive MBA - Finance Africaine", org: "Envol Academy x HEC", duration: "12 mois", price: "3,5M F CFA", badge: "Certifié" },
-    { title: "Fintech & Mobile Money Mastery", org: "Envol Academy", duration: "8 semaines", price: "450k F CFA", badge: "Nouveau" },
-    { title: "Leadership Féminin - Cohort 7", org: "Envol Women", duration: "6 mois", price: "1,2M F CFA", badge: "Bourse 50%" },
+    { title: "Executive MBA - Finance Africaine", org: "Envol Academy x HEC", duration: "12 mois", priceXof: 3500000, badge: "Certifié" },
+    { title: "Fintech & Mobile Money Mastery", org: "Envol Academy", duration: "8 semaines", priceXof: 450000, badge: "Nouveau" },
+    { title: "Leadership Féminin - Cohort 7", org: "Envol Women", duration: "6 mois", priceXof: 1200000, badge: "Bourse 50%" },
   ];
   return (
     <section className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-8 py-4 grid lg:grid-cols-3 gap-6">
@@ -198,7 +200,7 @@ export function MostReadFormations({ articles }: { articles: any[] }) {
               <h4 className="font-bold text-[14px] leading-tight">{f.title}</h4>
               <div className="text-[12px] text-zinc-500 mt-1">{f.org}</div>
               <div className="mt-4 flex items-center justify-between">
-                <span className="font-bold text-[13px] text-[#0A1931]">{f.price}</span>
+                <span className="font-bold text-[13px] text-[#0A1931] notranslate" translate="no">{formatPrice(f.priceXof)}</span>
                 <span className="text-[11px] font-bold uppercase tracking-wide border border-zinc-200 rounded-full px-2.5 py-1">S'inscrire</span>
               </div>
             </div>
@@ -210,15 +212,16 @@ export function MostReadFormations({ articles }: { articles: any[] }) {
 }
 
 export function TabsSection() {
+  const { formatPrice } = useLocale();
   const tabs = [
     { id: "financement", label: "Financement", count: "24 opportunités" },
     { id: "formation", label: "Formation", count: "12 programmes" },
     { id: "concours", label: "Concours", count: "8 concours" },
   ];
   const items = [
-    { title: "Levée de fonds Série A - AgriTech Sénégal", amount: "500M F CFA recherchés", time: "Il reste 12 jours", tag: "Agro" },
+    { title: "Levée de fonds Série A - AgriTech Sénégal", amount: `${formatPrice(500000000)} recherchés`, time: "Il reste 12 jours", tag: "Agro" },
     { title: "Bourse d'excellence Envol - 100% financée", amount: "Master 2 Finance", time: "Clôture dans 5 jours", tag: "Éducation" },
-    { title: "Prix de l'Innovation Africaine 2026", amount: "Prix : 10M F CFA", time: "Candidatures ouvertes", tag: "Innovation" },
+    { title: "Prix de l'Innovation Africaine 2026", amount: `Prix : ${formatPrice(10000000)}`, time: "Candidatures ouvertes", tag: "Innovation" },
   ];
   return (
     <section className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-8 py-6">

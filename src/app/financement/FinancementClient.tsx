@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { CrowdProject } from "@/lib/crowdfunding-db";
+import { useLocale } from "@/components/LocaleProvider";
 
 const SECTEURS_POPULAIRES = [
   "Tous",
@@ -26,6 +27,7 @@ const PAYS_OPTIONS = [
 ];
 
 export default function FinancementClient() {
+  const { formatPrice } = useLocale();
   const [projets, setProjets] = useState<CrowdProject[]>([]);
   const [now] = useState(() => Date.now());
   const [filtreSecteur, setFiltreSecteur] = useState("all");
@@ -434,11 +436,11 @@ export default function FinancementClient() {
                       />
                     </div>
                     <div className="mt-2 flex items-center justify-between text-xs">
-                      <span className="font-black text-slate-900">
-                        {p.montantCollecte.toLocaleString()} F CFA
+                      <span className="font-black text-slate-900 notranslate" translate="no">
+                        {formatPrice(p.montantCollecte)}
                       </span>
-                      <span className="text-slate-400">
-                        sur {p.montantRecherche.toLocaleString()} F
+                      <span className="text-slate-400 notranslate" translate="no">
+                        sur {formatPrice(p.montantRecherche)}
                       </span>
                     </div>
                   </div>
@@ -543,7 +545,7 @@ export default function FinancementClient() {
                 id: 1,
                 titre: "Éducation numérique des jeunes filles",
                 pays: "Bénin 🇧🇯",
-                montant: "750 000 / 1 500 000 F CFA",
+                montant: `${formatPrice(750000)} / ${formatPrice(1500000)}`,
                 pct: 50,
                 donateurs: 38,
               },
@@ -551,7 +553,7 @@ export default function FinancementClient() {
                 id: 2,
                 titre: "Forage d'eau potable et maraîchage",
                 pays: "Sénégal 🇸🇳",
-                montant: "1 800 000 / 2 000 000 F CFA",
+                montant: `${formatPrice(1800000)} / ${formatPrice(2000000)}`,
                 pct: 90,
                 donateurs: 74,
               },
@@ -559,7 +561,7 @@ export default function FinancementClient() {
                 id: 3,
                 titre: "Coopérative solaire de transformation agro",
                 pays: "Côte d'Ivoire 🇨🇮",
-                montant: "1 200 000 / 3 000 000 F CFA",
+                montant: `${formatPrice(1200000)} / ${formatPrice(3000000)}`,
                 pct: 40,
                 donateurs: 52,
               },

@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- module legacy en cours de typage progressif */
 import { useEffect, useState } from "react";
 import ProjectWizard from "@/components/crowdfunding/ProjectWizard";
+import { useLocale } from "@/components/LocaleProvider";
 
 type UserProp = {
   id: string;
@@ -13,6 +14,7 @@ type UserProp = {
 };
 
 export default function PorteurDashboardClient({ user }: { user: UserProp }) {
+  const { formatPrice } = useLocale();
   const [projets, setProjets] = useState<any[]>([]);
   const [selectedProjet, setSelectedProjet] = useState<any>(null);
   const [documents, setDocuments] = useState<any[]>([]);
@@ -213,7 +215,7 @@ export default function PorteurDashboardClient({ user }: { user: UserProp }) {
         <div className="mt-8 grid md:grid-cols-3 gap-4">
           <div className="bg-white border rounded-xl p-5 shadow-sm">
             <div className="text-[11px] uppercase font-bold text-[#5c403f]">Collecte totale</div>
-            <div className="text-[22px] font-black mt-1">{totalCollecte.toLocaleString()} F CFA</div>
+            <div className="text-[22px] font-black mt-1 notranslate" translate="no">{formatPrice(totalCollecte)}</div>
             <div className="text-[11px] text-green-600 mt-1">{pctObjectif}% de l’objectif atteint</div>
           </div>
           <div className="bg-white border rounded-xl p-5 shadow-sm">
@@ -245,8 +247,8 @@ export default function PorteurDashboardClient({ user }: { user: UserProp }) {
                   }`}
                 >
                   <div className="font-bold text-[14px] line-clamp-1 text-[#071b36]">{p.nom}</div>
-                  <div className="text-[11px] text-[#5c403f] mt-1">
-                    {Number(p.montantCollecte || 0).toLocaleString()} / {Number(p.montantRecherche || 0).toLocaleString()} F
+                  <div className="text-[11px] text-[#5c403f] mt-1 notranslate" translate="no">
+                    {formatPrice(Number(p.montantCollecte || 0))} / {formatPrice(Number(p.montantRecherche || 0))}
                   </div>
                   <div className="mt-2 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">
                     {p.statut}

@@ -1,8 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useLocale } from "@/components/LocaleProvider";
 
 export default function ParrainageCompte(){
+  const { formatPrice } = useLocale();
   const [earnings, setEarnings] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
   const [copied, setCopied] = useState(false);
@@ -71,11 +73,11 @@ export default function ParrainageCompte(){
       <div className="grid md:grid-cols-3 gap-4">
         <div className="rounded-[18px] bg-[#0A1931] p-5 text-white">
           <div className="text-[11px] uppercase font-bold text-[#D4AF37]">Gains totaux</div>
-          <div className="font-black text-[24px] mt-1">{total.toLocaleString("fr-FR")} F CFA</div>
+          <div className="font-black text-[24px] mt-1 notranslate" translate="no">{formatPrice(total)}</div>
         </div>
         <div className="rounded-[18px] bg-white border p-5">
           <div className="text-[11px] uppercase font-bold text-zinc-500">Disponible</div>
-          <div className="font-black text-[20px] mt-1 text-emerald-700">{available.toLocaleString("fr-FR")} F</div>
+          <div className="font-black text-[20px] mt-1 text-emerald-700 notranslate" translate="no">{formatPrice(available)}</div>
         </div>
         <div className="rounded-[18px] bg-white border p-5">
           <div className="text-[11px] uppercase font-bold text-zinc-500">Taux actuel</div>
@@ -94,8 +96,8 @@ export default function ParrainageCompte(){
           ) : (
             earnings.map((e: any) => (
               <div key={e.id} className="flex justify-between p-3 rounded-[12px] bg-zinc-50 border">
-                <span className="text-[13px]">Commande {String(e.orderId).slice(0, 8)} • {Number(e.amount || 0).toLocaleString("fr-FR")} F • {Number(e.rate || 0) * 100}%</span>
-                <span className="font-bold text-emerald-700">+{Number(e.commission || 0).toLocaleString("fr-FR")} F</span>
+                <span className="text-[13px] notranslate" translate="no">Commande {String(e.orderId).slice(0, 8)} • {formatPrice(Number(e.amount || 0))} • {Number(e.rate || 0) * 100}%</span>
+                <span className="font-bold text-emerald-700 notranslate" translate="no">+{formatPrice(Number(e.commission || 0))}</span>
               </div>
             ))
           )}
@@ -104,7 +106,7 @@ export default function ParrainageCompte(){
 
       <div className="bg-[#D4AF37] rounded-[18px] p-5 flex flex-wrap justify-between items-center gap-4">
         <div>
-          <div className="font-bold text-[#0A1931] text-[14px]">Retrait dès 10 000 F CFA</div>
+          <div className="font-bold text-[#0A1931] text-[14px]">Retrait dès {formatPrice(10000)}</div>
           <div className="text-[12px] text-[#0A1931]/80 mt-1">Mobile Money (MTN, Moov, Orange, Wave) ou virement bancaire. Traitement rapide.</div>
         </div>
         <Link

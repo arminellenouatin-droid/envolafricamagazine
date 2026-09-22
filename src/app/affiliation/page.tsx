@@ -4,10 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import NetworkExplorer from "@/components/affiliation/NetworkExplorer";
 import GratificationPolicy from "@/components/affiliation/GratificationPolicy";
+import { useLocale } from "@/components/LocaleProvider";
 
 type Tab = "dashboard" | "network" | "link" | "commissions" | "payout" | "policy";
 
 export default function AffiliationPage() {
+  const { formatPrice } = useLocale();
   const [user, setUser] = useState<any>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [earnings, setEarnings] = useState<any[]>([]);
@@ -101,7 +103,7 @@ export default function AffiliationPage() {
   async function requestPayout() {
     const amt = Number(withdrawAmount) || available;
     if (amt < 10000) {
-      setNotice("Le montant minimum de retrait est de 10 000 F CFA.");
+      setNotice(`Le montant minimum de retrait est de ${formatPrice(10000)}.`);
       return;
     }
     if (!mmNumber.trim()) {
@@ -361,7 +363,7 @@ export default function AffiliationPage() {
                 <p className="text-xs text-white/60 uppercase font-bold tracking-wider">
                   Commissions Cumulées
                 </p>
-                <p className="mt-2 text-3xl font-black">{total.toLocaleString("fr-FR")} F</p>
+                <p className="mt-2 text-3xl font-black notranslate" translate="no">{formatPrice(total)}</p>
                 <p className="mt-1 text-xs text-white/60">Gains totaux Magazine & Marketplace</p>
               </div>
 
@@ -369,10 +371,10 @@ export default function AffiliationPage() {
                 <p className="text-xs text-zinc-500 uppercase font-bold tracking-wider">
                   Disponible au Retrait
                 </p>
-                <p className="mt-2 text-3xl font-black text-emerald-700">
-                  {available.toLocaleString("fr-FR")} F
+                <p className="mt-2 text-3xl font-black text-emerald-700 notranslate" translate="no">
+                  {formatPrice(available)}
                 </p>
-                <p className="mt-1 text-xs text-zinc-400">Seuil de retrait : 10 000 F CFA</p>
+                <p className="mt-1 text-xs text-zinc-400">Seuil de retrait : {formatPrice(10000)}</p>
               </div>
 
               <div className="rounded-2xl bg-[#D4AF37] p-6 shadow-sm">
@@ -503,7 +505,7 @@ export default function AffiliationPage() {
             <div>
               <h2 className="text-xl font-black text-[#0A1931]">Demande de Retrait Mobile Money</h2>
               <p className="mt-1 text-sm text-zinc-600">
-                Retrait de vos gains d'affiliation dès <strong>10 000 F CFA</strong> via MTN, Moov, Orange
+                Retrait de vos gains d'affiliation dès <strong>{formatPrice(10000)}</strong> via MTN, Moov, Orange
                 ou Wave.
               </p>
             </div>
@@ -511,8 +513,8 @@ export default function AffiliationPage() {
             <div className="rounded-xl bg-zinc-50 border p-5 space-y-4">
               <p className="text-sm">
                 Montant actuellement disponible au retrait :{" "}
-                <strong className="text-emerald-700 text-lg font-black">
-                  {available.toLocaleString("fr-FR")} F CFA
+                <strong className="text-emerald-700 text-lg font-black notranslate" translate="no">
+                  {formatPrice(available)}
                 </strong>
               </p>
 
