@@ -105,6 +105,7 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileLocaleOpen, setMobileLocaleOpen] = useState(false);
   const [mobileLocaleSection, setMobileLocaleSection] = useState<"currency" | "language" | null>(null);
+  const [desktopLocaleMenu, setDesktopLocaleMenu] = useState<"currency" | "language" | null>(null);
   const [cartCount, setCartCount] = useState(0);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -146,6 +147,7 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
   useEffect(() => {
     setMegaMenuOpen(false);
     setDropdownOpen(false);
+    setDesktopLocaleMenu(null);
     setMobileLocaleOpen(false);
     setMobileLocaleSection(null);
     setMobileNavOpen(false);
@@ -314,16 +316,141 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
 
   return (
     <>
-      {isMagazineExperience && <nav className="hidden items-center justify-between border-b border-[#d8c3c1] bg-white px-5 py-2 text-black lg:flex lg:px-[64px]" style={{ fontFamily: "Century Gothic, Inter, sans-serif" }}>
+      <nav className="hidden items-center justify-between border-b border-[#d8c3c1] bg-white px-5 py-2 text-black lg:flex lg:px-[64px]" style={{ fontFamily: "Century Gothic, Inter, sans-serif" }}>
         <div className="flex items-center gap-5 text-[12px] font-medium">
           {firstLineMenus.map((item) => <Link key={item.name} href={item.href} className={`flex items-center gap-1.5 transition-colors hover:text-[#9e001f] ${firstLineActive(item.href) ? "font-bold text-[#9e001f]" : ""}`}><span className="material-symbols-outlined text-[16px]">{item.icon}</span>{item.name}</Link>)}
         </div>
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={() => { setMobileLocaleOpen((open) => !open); setMobileLocaleSection("language"); }} className="grid h-8 w-8 place-items-center text-black transition-colors hover:text-[#9e001f]" title={`Langue : ${visitorLocale.language.toUpperCase()} (Changer)`} aria-label={`Traduction automatique en ${visitorLocale.language}`}><span className="material-symbols-outlined text-[18px]">translate</span></button>
-          <button type="button" onClick={() => { setMobileLocaleOpen((open) => !open); setMobileLocaleSection("currency"); }} className="grid h-8 w-8 place-items-center text-black transition-colors hover:text-[#9e001f]" title={`${getCountryFlag(visitorLocale.countryCode)} ${visitorLocale.country} · ${visitorLocale.currency} (Changer)`} aria-label={`Pays ${visitorLocale.country}, langue ${visitorLocale.language}, devise ${visitorLocale.currency}`}><span className="material-symbols-outlined text-[18px]">payments</span></button>
+        <div className="relative flex items-center gap-2">
+          {/* Drapeau du pays localisé automatiquement */}
+          <div
+            className="flex items-center gap-1.5 rounded-full bg-[#f6f3f2] px-2.5 py-1 text-xs font-semibold text-[#242020] border border-[#eee2e0] cursor-default select-none shadow-sm"
+            title={`Pays localisé automatiquement : ${visitorLocale.country} (${visitorLocale.countryCode})`}
+          >
+            <span className="text-base leading-none" role="img" aria-label={visitorLocale.country}>
+              {getCountryFlag(visitorLocale.countryCode)}
+            </span>
+            <span className="font-bold text-[11px] text-[#4a3b3a]">
+              {visitorLocale.countryCode}
+            </span>
+          </div>
+
+          {/* Bouton et menu de choix de langue */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setDesktopLocaleMenu((curr) => curr === "language" ? null : "language")}
+              className={`grid h-8 w-8 place-items-center rounded-full transition-colors ${desktopLocaleMenu === "language" ? "bg-[#f0eded] text-[#9e001f]" : "text-black hover:bg-[#f6f3f2] hover:text-[#9e001f]"}`}
+              title={`Langue du site : ${visitorLocale.language.toUpperCase()} (Cliquer pour changer)`}
+              aria-label={`Changer la langue du site (actuellement ${visitorLocale.language})`}
+              aria-expanded={desktopLocaleMenu === "language"}
+            >
+              <span className="material-symbols-outlined text-[18px]">translate</span>
+            </button>
+            {desktopLocaleMenu === "language" && (
+              <>
+                <div className="fixed inset-0 z-40 cursor-default" onClick={() => setDesktopLocaleMenu(null)} />
+                <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-2xl border border-[#e5bdbb] bg-white p-2.5 shadow-2xl text-black">
+                  <div className="flex items-center justify-between border-b border-[#f0e7e5] px-2 pb-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-[#9e001f]">
+                      {translate("common.language", visitorLocale.language)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setDesktopLocaleMenu(null)}
+                      className="grid h-5 w-5 place-items-center rounded-full text-[#746665] hover:bg-[#f6f3f2] hover:text-black text-xs font-bold"
+                      aria-label="Fermer"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="mt-1.5 space-y-1">
+                    {LANGUAGE_OPTIONS.map((lang) => {
+                      const isSelected = visitorLocale.language === lang.code;
+                      return (
+                        <button
+                          key={lang.code}
+                          type="button"
+                          onClick={() => {
+                            const next = { ...visitorLocale, language: lang.code, isManual: true };
+                            setVisitorLocale(next);
+                            persistVisitorLocale(next);
+                            setDesktopLocaleMenu(null);
+                          }}
+                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition-colors ${isSelected ? "bg-[#f0eded] font-bold text-[#9e001f]" : "text-[#242020] hover:bg-[#fff7f6] hover:text-[#9e001f]"}`}
+                        >
+                          <span>{lang.label}</span>
+                          {isSelected && <span className="material-symbols-outlined text-[16px] text-[#9e001f]">check</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Bouton et menu de choix de devise */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setDesktopLocaleMenu((curr) => curr === "currency" ? null : "currency")}
+              className={`grid h-8 w-8 place-items-center rounded-full transition-colors ${desktopLocaleMenu === "currency" ? "bg-[#f0eded] text-[#9e001f]" : "text-black hover:bg-[#f6f3f2] hover:text-[#9e001f]"}`}
+              title={`Devise du site : ${visitorLocale.currency} (Cliquer pour changer)`}
+              aria-label={`Changer la devise (actuellement ${visitorLocale.currency})`}
+              aria-expanded={desktopLocaleMenu === "currency"}
+            >
+              <span className="material-symbols-outlined text-[18px]">payments</span>
+            </button>
+            {desktopLocaleMenu === "currency" && (
+              <>
+                <div className="fixed inset-0 z-40 cursor-default" onClick={() => setDesktopLocaleMenu(null)} />
+                <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-[#e5bdbb] bg-white p-3 shadow-2xl text-black">
+                  <div className="flex items-center justify-between border-b border-[#f0e7e5] px-1 pb-2">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-[#9e001f]">
+                        {translate("common.currency", visitorLocale.language)}
+                      </span>
+                      <p className="text-[11px] text-[#746665]">Sélectionnez votre devise</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setDesktopLocaleMenu(null)}
+                      className="grid h-5 w-5 place-items-center rounded-full text-[#746665] hover:bg-[#f6f3f2] hover:text-black text-xs font-bold"
+                      aria-label="Fermer"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="mt-2 grid grid-cols-2 gap-1.5 max-h-[260px] overflow-y-auto">
+                    {CURRENCY_OPTIONS.map((curr) => {
+                      const isSelected = visitorLocale.currency === curr;
+                      return (
+                        <button
+                          key={curr}
+                          type="button"
+                          onClick={() => {
+                            const next = { ...visitorLocale, currency: curr, isManual: true };
+                            setVisitorLocale(next);
+                            persistVisitorLocale(next);
+                            setDesktopLocaleMenu(null);
+                          }}
+                          className={`flex items-center justify-between rounded-xl border px-3 py-1.5 text-xs font-bold transition-colors ${isSelected ? "border-[#9e001f] bg-[#f0eded] text-[#9e001f]" : "border-[#e5bdbb] text-[#242020] hover:bg-[#fff7f6] hover:border-[#9e001f]"}`}
+                        >
+                          <span>{curr}</span>
+                          {isSelected && <span className="material-symbols-outlined text-[14px] text-[#9e001f]">check</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Mode sombre / clair */}
           <button type="button" onClick={toggleDarkMode} className="grid h-8 w-8 place-items-center text-black transition-colors hover:text-[#9e001f]" title={darkMode ? translate("common.lightMode", visitorLocale.language) : translate("common.darkMode", visitorLocale.language)}><span className="material-symbols-outlined text-[18px]">{darkMode ? "light_mode" : "dark_mode"}</span></button>
         </div>
-      </nav>}
+      </nav>
 
       <header className="hidden sticky top-0 z-40 border-b border-[#e5bdbb] bg-[#fcf9f8] shadow-sm lg:block">
         <div className="mx-auto flex h-[76px] max-w-[1280px] items-center justify-between px-5 lg:px-[64px]">
