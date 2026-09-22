@@ -19,6 +19,18 @@ export function getCountryFlag(countryCode?: string | null): string {
   return String.fromCodePoint(...codePoints);
 }
 
+/**
+ * Retourne l'URL de l'image officielle haute résolution du drapeau (FlagCDN).
+ * Fonctionne parfaitement sur tous les OS (notamment Windows qui n'affiche pas les émojis drapeaux).
+ */
+export function getCountryFlagImgUrl(countryCode?: string | null): string {
+  if (!countryCode || typeof countryCode !== "string") return "";
+  const clean = countryCode.trim().toLowerCase();
+  if (clean.length !== 2) return "";
+  return `https://flagcdn.com/w40/${clean}.png`;
+}
+
+
 // Tous les 54 pays africains + principaux pays internationaux
 export const WORLD_COUNTRIES: Record<string, CountryInfo> = {
   // --- AFRIQUE DE L'OUEST ---
