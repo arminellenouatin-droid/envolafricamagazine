@@ -25,10 +25,17 @@ export function normalizeVisitorLocale(
   existing?: VisitorLocale | null
 ): VisitorLocale {
   const current = existing ?? (typeof window !== "undefined" ? readPersistedVisitorLocale() : null);
-  const isIncomingAutomated = value?.source === "vercel" || value?.source === "fallback";
-  const userLocked = Boolean(current?.isManual);
+  const isIncomingAutomated = value?.source === "vercel" || value?.source === "fallback" || value?.source === "simulation";
 
-  // Si l'utilisateur a choisi manuellement sa langue ou sa devise, l'auto-détection ne doit pas les écraser
+  // Détecter si le pays détecté a changé (ex: déplacement physique ou activation/changement de serveur VPN)
+  const incomingCountryCode = typeof value?.countryCode === "string" && value.countryCode ? value.countryCode.trim().toUpperCase() : null;
+  const previousCountryCode = typeof current?.countryCode === "string" && current.countryCode ? current.countryCode.trim().toUpperCase() : null;
+  const countryChanged = Boolean(incomingCountryCode && previousCountryCode && incomingCountryCode !== previousCountryCode);
+
+  // Le verrouillage manuel ne s'applique que si l'utilisateur est toujours dans le même pays.
+  // S'il change de pays (VPN ou voyage), le site s'adapte automatiquement à son nouveau pays !
+  const userLocked = Boolean(current?.isManual) && !countryChanged;
+
   const finalLanguage =
     userLocked && isIncomingAutomated && current?.language
       ? current.language
@@ -47,7 +54,7 @@ export function normalizeVisitorLocale(
 
   return {
     country: typeof value?.country === "string" && value.country ? value.country : current?.country || DEFAULT_VISITOR_LOCALE.country,
-    countryCode: typeof value?.countryCode === "string" && value.countryCode ? value.countryCode.toUpperCase() : current?.countryCode || DEFAULT_VISITOR_LOCALE.countryCode,
+    countryCode: incomingCountryCode || previousCountryCode || DEFAULT_VISITOR_LOCALE.countryCode,
     city: typeof value?.city === "string" && value.city ? value.city : current?.city || null,
     language: finalLanguage,
     currency: finalCurrency,

@@ -178,7 +178,11 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
     const loadVisitorLocale = async () => {
       try {
         const persisted = readPersistedVisitorLocale();
-        const response = await fetch("/api/geo", { cache: "no-store" });
+        const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+        const testCountry = urlParams?.get("country") || urlParams?.get("test_country");
+        const geoUrl = testCountry ? `/api/geo?test_country=${encodeURIComponent(testCountry)}` : "/api/geo";
+
+        const response = await fetch(geoUrl, { cache: "no-store" });
         if (!response.ok) return;
         const fetched = await response.json();
         const locale = normalizeVisitorLocale(fetched, persisted);
