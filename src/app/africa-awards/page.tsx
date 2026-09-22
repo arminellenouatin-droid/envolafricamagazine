@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSupabaseCandidates, getSupabaseCompetitions, getSupabasePrizes } from "@/lib/awards-supabase";
+import VisitorPrice from "@/components/VisitorPrice";
 
 import type { Metadata } from "next";
 
@@ -300,7 +301,7 @@ export default async function AfricaAwardsLanding() {
                   </div>
 
                   <div className="absolute bottom-3 left-3 text-xs font-bold text-white/90">
-                    Vote à partir de {comp.vote_price_cents || 200} XOF
+                    Vote à partir de <VisitorPrice amountInXof={comp.vote_price_cents || 200} />
                   </div>
                 </div>
 

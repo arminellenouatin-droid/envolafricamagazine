@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AFRICA_COUNTRIES } from "@/lib/africa-context";
+import { useLocale } from "@/components/LocaleProvider";
 
 type Offer = {
   id: string;
@@ -49,6 +50,7 @@ const countryFromLocale: Record<string, string> = {
 };
 
 export default function JobsClient() {
+  const { formatPrice } = useLocale();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -449,7 +451,7 @@ export default function JobsClient() {
                 Multipliez vos opportunités
               </h3>
               <p className="mt-2 text-xs leading-relaxed text-slate-600">
-                Décryptez une offre immédiatement pour <strong>200 XOF</strong>, ou débloquez un pass illimité 24h, 7j ou 30j pour contacter les recruteurs directement.
+                Décryptez une offre immédiatement pour <strong>{formatPrice(200)}</strong>, ou débloquez un pass illimité 24h, 7j ou 30j pour contacter les recruteurs directement.
               </p>
               <div className="mt-4 flex flex-col gap-2">
                 <Link

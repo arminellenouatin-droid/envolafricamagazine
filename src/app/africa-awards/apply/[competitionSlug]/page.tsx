@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import VisitorPrice from "@/components/VisitorPrice";
 
 function Field({ field, value, onChange }: { field: any; value: string; onChange: (value: string) => void }) {
   const common = { value, onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => onChange(event.target.value), required: field.is_required, className: "mt-1 w-full rounded-xl bg-[#0B0B0F] border border-white/10 px-4 text-[13px]" };
@@ -91,7 +92,7 @@ export default function ApplyCompetition() {
         <p className="text-[#A8A6A0] text-[13px] mt-2">{entrepreneurship ? "Formulaire Entrepreneuriat : identité, projet, besoin, niveau actuel et plan d’affaires." : "Formulaire candidat : photo, nom, téléphone et informations complémentaires configurées par l’administrateur."}</p>
         {configMissing && <div className="mt-4 rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 text-[13px] text-amber-100">La configuration d’inscription n’a pas encore été publiée par l’administrateur. Le formulaire sera activé après définition des règles et ouverture des inscriptions.</div>}
         {comp.status !== "registrations_open" && <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4 text-[13px] text-[#A8A6A0]">Les inscriptions ne sont pas ouvertes actuellement. La compétition est encore en préparation.</div>}
-        {config.registration_fee_xof > 0 && <div className="mt-4 rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 p-4 text-[13px]">Frais d’inscription : <strong>{Number(config.registration_fee_xof).toLocaleString("fr-FR")} {config.currency}</strong>. Le paiement sera demandé avant la finalisation.</div>}
+        {config.registration_fee_xof > 0 && <div className="mt-4 rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 p-4 text-[13px]">Frais d’inscription : <strong className="text-[#D4AF37]"><VisitorPrice amountInXof={Number(config.registration_fee_xof)} /></strong>. Le paiement sera demandé avant la finalisation.</div>}
         {registrationClosed && <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-[13px]">La période d’inscription est fermée.</div>}
         
         <form onSubmit={submit} className="mt-8 bg-[#16161D] border border-white/10 rounded-[16px] p-6 space-y-4">
