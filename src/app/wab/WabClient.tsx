@@ -21,9 +21,15 @@ type PublishGroup = { id: string; name: string; privacy: "community" | "private"
 type DiscoveryType = "people" | "reels" | "pages" | "groups";
 
 function discoveryTypeForInsertion(publicationCount: number): DiscoveryType | null {
-  if (publicationCount < 5 || (publicationCount > 5 && (publicationCount - 5) % 10 !== 0)) return null;
-  const slot = publicationCount === 5 ? 0 : Math.floor((publicationCount - 5) / 10);
-  return (["people", "reels", "pages", "groups"] as DiscoveryType[])[slot % 4];
+  if (publicationCount === 3) return "people";
+  if (publicationCount === 6) return "reels";
+  if (publicationCount === 9) return "pages";
+  if (publicationCount === 13) return "groups";
+  if (publicationCount > 13 && (publicationCount - 13) % 8 === 0) {
+    const slot = Math.floor((publicationCount - 13) / 8);
+    return (["people", "reels", "pages", "groups"] as DiscoveryType[])[slot % 4];
+  }
+  return null;
 }
 
 type Post = {
