@@ -87,8 +87,8 @@ export default function AssistanceChatWidget() {
 
   return (
     <>
-      {/* Bouton Flottant d'assistance (en bas à droite) */}
-      <div className="fixed bottom-6 right-6 z-40">
+      {/* Bouton Flottant d'assistance (masqué sur mobile, accessible via le lien Assistance dans le pied de page) */}
+      <div className="fixed bottom-6 right-6 z-40 hidden md:block">
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
@@ -109,7 +109,7 @@ export default function AssistanceChatWidget() {
 
       {/* Fenêtre de Chat d'Assistance */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[92vw] max-w-[380px] h-[520px] bg-white rounded-3xl shadow-2xl border border-[#e5bdbb]/80 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200">
+        <div className="fixed bottom-6 md:bottom-24 right-4 md:right-6 left-4 md:left-auto z-50 w-auto md:w-[380px] max-w-[380px] h-[520px] max-h-[85vh] bg-white rounded-3xl shadow-2xl border border-[#e5bdbb]/80 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200">
           {/* Header */}
           <div className="bg-[#1b1c1c] text-white p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
