@@ -67,7 +67,14 @@ export async function PATCH(request: NextRequest, context: Context) {
   if (!user) return NextResponse.json({ error: "Connexion requise." }, { status: 401 });
   const { id } = await context.params;
   const body = await request.json().catch(() => ({}));
-  const content = typeof body.content === "string" ? sanitizeRichText(body.content).trim().slice(0, 10000) : "";
+  const rawContent = typeof body.content === "string" ? body.content : "";
+  const cleanedContent = rawContent
+    .replace(/&amp;nbsp;?/gi, " ")
+    .replace(/&nbsp;?/gi, " ")
+    .replace(/\u00a0/g, " ")
+    .replace(/\u202f/g, " ")
+    .replace(/\u200b/g, "");
+  const content = sanitizeRichText(cleanedContent).trim().slice(0, 10000);
   if (content.length < 2) return NextResponse.json({ error: "Le contenu doit contenir au moins deux caractères." }, { status: 400 });
 
   const supabase = getSupabaseAdmin();

@@ -47,7 +47,12 @@ export default function SalonClient({ id }: { id: string }) {
   const [salon, setSalon] = useState<Salon | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
-  const [isHost, setIsHost] = useState(false);
+  const [isHost, setIsHost] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem(`eam_live_host_${id}`) === "true";
+    }
+    return false;
+  });
   const [currentUserName, setCurrentUserName] = useState("Moi");
   const [isFollowing, setIsFollowing] = useState(false);
 
@@ -66,6 +71,10 @@ export default function SalonClient({ id }: { id: string }) {
   // Camera & Mic state (Creator)
   const [cameraActive, setCameraActive] = useState(true);
   const [micActive, setMicActive] = useState(true);
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [startingCamera, setStartingCamera] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -104,34 +113,97 @@ export default function SalonClient({ id }: { id: string }) {
           setCurrentUserName(`${data.user.prenom || ""} ${data.user.nom || ""}`.trim() || "Moi");
           if (salon && salon.hostUserId === data.user.id) {
             setIsHost(true);
+            if (typeof window !== "undefined") {
+              sessionStorage.setItem(`eam_live_host_${id}`, "true");
+            }
           }
         }
       })
       .catch(() => {});
-  }, [salon]);
+  }, [salon, id]);
 
   // 3. Camera Stream (Creator)
-  useEffect(() => {
-    if (isHost && salon?.status === "live") {
-      navigator.mediaDevices
-        ?.getUserMedia({ video: true, audio: true })
-        .then((stream) => {
-          streamRef.current = stream;
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-          }
-        })
-        .catch(() => {
-          // Camera non disponible ou refusée
+  const startCamera = async (mode: "user" | "environment" = facingMode) => {
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      setCameraError("La caméra n'est pas disponible sur ce navigateur.");
+      return;
+    }
+    setStartingCamera(true);
+    setCameraError(null);
+
+    // Arrêter le flux actif s'il existe
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
+    try {
+      // Tenter d'abord avec caméra préférée (frontale sur mobile) + audio
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: mode },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: true,
+      });
+      streamRef.current = stream;
+      setMediaStream(stream);
+      setCameraActive(true);
+      setMicActive(true);
+    } catch (firstErr) {
+      console.warn("Échec caméra complète, tentative vidéo simple sans audio...", firstErr);
+      try {
+        const fallbackStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
         });
+        streamRef.current = fallbackStream;
+        setMediaStream(fallbackStream);
+        setCameraActive(true);
+        setMicActive(false);
+      } catch (err: any) {
+        console.error("Impossible d'accéder à la caméra:", err);
+        setCameraError(err?.message || "Accès à la caméra refusé. Vérifiez vos autorisations.");
+      }
+    } finally {
+      setStartingCamera(false);
+    }
+  };
+
+  const flipCamera = async () => {
+    const nextMode = facingMode === "user" ? "environment" : "user";
+    setFacingMode(nextMode);
+    await startCamera(nextMode);
+  };
+
+  // Démarrage automatique de la caméra pour l'hôte
+  useEffect(() => {
+    if (isHost) {
+      startCamera(facingMode);
     }
 
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
       }
     };
-  }, [isHost, salon?.status]);
+  }, [isHost]);
+
+  // Attacher le flux vidéo à l'élément <video> dès qu'il est monté
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !mediaStream) return;
+    video.srcObject = mediaStream;
+    video.muted = true;
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch((err) => {
+        console.warn("Auto-play caméra en attente d'interaction :", err);
+      });
+    }
+  }, [mediaStream, isHost, cameraActive]);
 
   // Scroll chat on new message
   useEffect(() => {
@@ -170,17 +242,29 @@ export default function SalonClient({ id }: { id: string }) {
     const text = inputText.trim();
     setInputText("");
 
+    // Optimistic UI : affichage instantané dans le chat
+    const tempId = "temp-" + Date.now();
+    const tempMessage: Message = {
+      id: tempId,
+      author: currentUserName || "Moi",
+      content: text,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, tempMessage]);
+
     try {
       const res = await fetch(`/api/wab/salons/${id}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: text }),
+        body: JSON.stringify({ content: text, author: currentUserName }),
       });
-      const data = await res.json();
-      if (data.message) {
-        setMessages((prev) => [...prev, data.message]);
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.message) {
+        setMessages((prev) => prev.map((m) => (m.id === tempId ? data.message : m)));
       }
-    } catch {}
+    } catch (err) {
+      console.warn("Échec transmission message salon:", err);
+    }
   };
 
   // 6. Send Virtual Gift
@@ -285,13 +369,33 @@ export default function SalonClient({ id }: { id: string }) {
       {/* ======================================================== */}
       <div className="absolute inset-0 z-0">
         {isHost ? (
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className={`w-full h-full object-cover ${cameraActive ? "" : "hidden"}`}
-          />
+          <div className="relative w-full h-full">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className={`w-full h-full object-cover ${cameraActive ? "" : "hidden"}`}
+            />
+            {(!mediaStream || cameraError) && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-md p-6 text-center z-10">
+                <span className="material-symbols-outlined text-5xl text-emerald-400 mb-3 animate-pulse">videocam</span>
+                <p className="text-sm font-bold text-white mb-2">Activer votre flux caméra</p>
+                <p className="text-xs text-slate-300 max-w-xs mb-4">
+                  {cameraError || "Appuyez sur le bouton ci-dessous pour autoriser et démarrer la vidéo en direct."}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => startCamera(facingMode)}
+                  disabled={startingCamera}
+                  className="rounded-full bg-emerald-500 hover:bg-emerald-600 px-6 py-2.5 text-xs font-black text-white shadow-xl transition-transform active:scale-95 flex items-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-base">photo_camera</span>
+                  <span>{startingCamera ? "Connexion caméra…" : "Démarrer la caméra"}</span>
+                </button>
+              </div>
+            )}
+          </div>
         ) : (
           // Flux spectateur immersif
           <div className="relative w-full h-full bg-gradient-to-b from-slate-900 via-[#00223a] to-black flex items-center justify-center">
@@ -377,6 +481,15 @@ export default function SalonClient({ id }: { id: string }) {
                 <span className="material-symbols-outlined text-lg">
                   {cameraActive ? "videocam" : "videocam_off"}
                 </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={flipCamera}
+                className="w-9 h-9 rounded-full flex items-center justify-center backdrop-blur-md border bg-black/40 border-white/20 text-white hover:bg-black/60 active:scale-90 transition-transform"
+                title="Changer de caméra (avant/arrière)"
+              >
+                <span className="material-symbols-outlined text-lg">flip_camera_ios</span>
               </button>
 
               <button

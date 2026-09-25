@@ -31,7 +31,18 @@ export default function RichTextEditor({ name, value, defaultValue = "", onChang
   function emit() {
     const editor = editorRef.current;
     if (!editor) return;
-    const html = editor.innerHTML;
+    let html = editor.innerHTML
+      .replace(/&amp;nbsp;?/gi, " ")
+      .replace(/&nbsp;?/gi, " ")
+      .replace(/\u00a0/g, " ")
+      .replace(/\u202f/g, " ")
+      .replace(/\u200b/g, "");
+
+    const textOnly = html.replace(/<[^>]*>/g, "").trim();
+    if (!textOnly && !/<img\b/i.test(html)) {
+      html = "";
+    }
+
     lastEmittedRef.current = html;
     if (hiddenRef.current) hiddenRef.current.value = html;
     onChange?.(html);

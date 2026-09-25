@@ -104,6 +104,22 @@ messaging.onBackgroundMessage((payload) => {
     },
   };
 
+  // Diffuser immédiatement aux fenêtres actives pour affichage du tiroir / bannière haute dans l'application
+  if (self.clients && self.clients.matchAll) {
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
+      windowClients.forEach((client) => {
+        client.postMessage({
+          type: "EAM_IN_APP_NOTIFICATION",
+          title,
+          body,
+          href: targetHref,
+          image: mediaImage,
+          icon: OFFICIAL_LOGO,
+        });
+      });
+    }).catch(() => {});
+  }
+
   return self.registration.showNotification(title, options);
 });
 

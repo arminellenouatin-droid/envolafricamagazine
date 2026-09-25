@@ -15,7 +15,8 @@ export default function AuthCallbackPage() {
       window.location.replace("/auth/login?oauthError=missing_code");
       return;
     }
-    window.location.replace(`/api/auth/oauth/callback?code=${encodeURIComponent(code)}`);
+    const next = params.get("next") || "/";
+    window.location.replace(`/api/auth/oauth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(next)}`);
   }, []);
 
   return (

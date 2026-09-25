@@ -55,9 +55,18 @@ export function fixMojibake(text: string): string {
     .replace(/â€¦/g, "…")
     .replace(/â‚¬/g, "€")
     .replace(/Å“/g, "œ")
-    // Leaked HTML entity strings in text
+    // Leaked HTML entity strings & non-breaking spaces in text
+    .replace(/&amp;nbsp;?/gi, " ")
+    .replace(/&nbsp;?/gi, " ")
+    .replace(/\u00a0/g, " ")
+    .replace(/\u202f/g, " ")
+    .replace(/\u200b/g, "")
+    .replace(/&amp;#160;?/gi, " ")
+    .replace(/&#160;?/gi, " ")
     .replace(/&amp;#039;/g, "'")
     .replace(/&#039;/g, "'")
+    .replace(/&amp;#39;/g, "'")
+    .replace(/&#39;/g, "'")
     .replace(/&amp;quot;/g, '"')
     .replace(/&quot;/g, '"')
     .replace(/&amp;amp;/g, "&")
@@ -65,8 +74,21 @@ export function fixMojibake(text: string): string {
     .replace(/&amp;gt;/g, ">");
 }
 
+export function cleanTextContent(text: string): string {
+  if (!text || typeof text !== "string") return "";
+  return fixMojibake(text)
+    .replace(/&amp;nbsp;?/gi, " ")
+    .replace(/&nbsp;?/gi, " ")
+    .replace(/\u00a0/g, " ")
+    .replace(/\u202f/g, " ")
+    .replace(/\u200b/g, "")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 export function escapeHtml(value: string) {
-  return fixMojibake(value)
+  return cleanTextContent(value)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
@@ -77,8 +99,11 @@ export function plainTextToRichHtml(value: string) {
 }
 
 export function sanitizeRichText(value: string) {
-  const source = String(value ?? "");
-  if (!/<[a-z][\s\S]*>/i.test(source)) return source;
+  const source = fixMojibake(String(value ?? ""))
+    .replace(/&amp;nbsp;?/gi, " ")
+    .replace(/&nbsp;?/gi, " ")
+    .replace(/\u00a0/g, " ");
+  if (!/<[a-z][\s\S]*>/i.test(source)) return cleanTextContent(source);
   return source
     .replace(/<!--[\s\S]*?-->/g, "")
     .replace(/<\s*(script|style|iframe|object|embed|form|input|textarea|button|svg|math|base|link|meta)[\s\S]*?(?:<\s*\/\s*\1\s*>|\/?>)/gi, "")

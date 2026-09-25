@@ -10,6 +10,7 @@ import AutoTranslator from "@/components/AutoTranslator";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { getOrganizationSchema, getWebSiteSchema } from "@/lib/schema-org";
 import GoogleOneTapPrompt from "@/components/GoogleOneTapPrompt";
+import InAppNotificationBanner from "@/components/InAppNotificationBanner";
 import AssistanceChatWidget from "@/components/AssistanceChatWidget";
 
 export const dynamic = "force-dynamic";
@@ -174,6 +175,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main className="flex-1">{children}</main>
           <Footer />
           <GoogleOneTapPrompt user={user ? { id: user.id } : null} />
+          <InAppNotificationBanner />
           <AssistanceChatWidget />
         </LocaleProvider>
         <script dangerouslySetInnerHTML={{__html: `

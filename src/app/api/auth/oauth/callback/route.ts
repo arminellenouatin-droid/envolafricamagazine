@@ -10,7 +10,9 @@ function getSupabaseConfig() {
 }
 
 export async function GET(request: NextRequest) {
-  const redirectUrl = new URL("/", request.url);
+  const rawNext = request.nextUrl.searchParams.get("next") || "/";
+  const safeNext = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
+  const redirectUrl = new URL(safeNext, request.url);
   const code = request.nextUrl.searchParams.get("code");
   const config = getSupabaseConfig();
   if (!code || !config) return NextResponse.redirect(new URL("/auth/login?oauthError=configuration", request.url));

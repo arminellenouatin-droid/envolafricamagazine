@@ -86,6 +86,9 @@ export default function SalonsClient() {
 
       // Rediriger immédiatement vers le live
       if (data.salon?.id) {
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem(`eam_live_host_${data.salon.id}`, "true");
+        }
         router.push(`/wab/salons/${data.salon.id}`);
       } else {
         loadSalons();

@@ -140,7 +140,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Votre publication doit contenir au moins deux caractères." }, { status: 400 });
   }
 
-  const content = sanitizeRichText(body.content).trim().slice(0, 10000);
+  const rawInput = typeof body.content === "string" ? body.content : "";
+  const cleanedInput = rawInput
+    .replace(/&amp;nbsp;?/gi, " ")
+    .replace(/&nbsp;?/gi, " ")
+    .replace(/\u00a0/g, " ")
+    .replace(/\u202f/g, " ")
+    .replace(/\u200b/g, "");
+  const content = sanitizeRichText(cleanedInput).trim().slice(0, 10000);
   const type = ["text", "opportunity", "document", "video"].includes(body.type) ? body.type : "text";
   const rawMedia = Array.isArray(body.media) ? (body.media as unknown[]) : [];
   const media = rawMedia

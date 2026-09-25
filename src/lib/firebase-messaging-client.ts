@@ -145,6 +145,21 @@ export async function listenForForegroundMessages(callback?: (payload: MessagePa
     const iconUrl = mediaImage || toAbsoluteClientUrl((notification as any).icon || data.icon) || defaultLogo;
     const badgeUrl = toAbsoluteClientUrl((notification as any).badge || data.badge) || defaultLogo;
 
+    // Déclencher le tiroir de notification in-app en haut de l'écran
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("eam_in_app_notification", {
+          detail: {
+            title,
+            body,
+            href,
+            image: mediaImage,
+            icon: iconUrl,
+          },
+        })
+      );
+    }
+
     if ("serviceWorker" in navigator) {
       const registration = await navigator.serviceWorker.ready;
       registration.showNotification(title, {
