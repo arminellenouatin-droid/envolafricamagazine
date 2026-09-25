@@ -51,7 +51,7 @@ export default function KiosquePage({ initialMagazines = [] }: { initialMagazine
           <div className="relative mx-auto grid max-w-[1380px] items-center gap-12 px-5 py-12 md:px-10 md:py-20 lg:grid-cols-[.82fr_1.18fr] lg:px-16 lg:py-24">
             <div className="order-2 lg:order-1">
               <p className="editorial-kicker">Le kiosque · édition à la une</p>
-              <h1 className="mt-4 max-w-xl font-serif text-5xl leading-[.94] text-[#2b2525] md:text-7xl">Lire l’Afrique,<br /><em className="text-[#9e001f]">numéro après numéro.</em></h1>
+              <h1 className="mt-4 max-w-xl font-serif text-5xl leading-[.94] text-[#2b2525] md:text-7xl">Envoler l’Afrique,<br /><em className="text-[#9e001f]">numéro après numéro.</em></h1>
               <p className="mt-6 max-w-xl font-sans text-sm leading-7 text-[#746665] md:text-base">Des dossiers pour comprendre les transformations du continent, des récits de terrain et les idées qui façonnent les économies africaines.</p>
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <Link href={`/kiosque/${featured.id}`} className="kiosque-primary-cta"><span className="material-symbols-outlined text-[19px]">shopping_bag</span> Découvrir ce numéro <span aria-hidden>↗</span></Link>

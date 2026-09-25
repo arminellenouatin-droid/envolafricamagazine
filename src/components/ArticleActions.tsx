@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import SocialShareModal from "@/components/SocialShareModal";
 
 type CommentItem = { id: string; userId?: string; content: string; createdAt: string };
 
@@ -84,15 +85,16 @@ export default function ArticleActions({ articleId, slug, initialLikes, initialV
         <span className="inline-flex h-10 items-center gap-2 rounded-full bg-[#f0e8e6] px-4 text-[13px] text-[#5f5352]" aria-label={`${views} vues`}>◉ {views.toLocaleString("fr-FR")} vues</span>
         <button type="button" onClick={handleFavorite} className={`inline-flex h-10 items-center gap-2 rounded-full border px-4 text-[13px] font-medium ${favorited ? "border-amber-200 bg-amber-50 text-amber-900" : "border-[#d8c3c1] text-[#2b2525]"}`}>{favorited ? "✓ Sauvegardé" : "☆ Sauvegarder"}</button>
         <div className="relative ml-auto">
-          <button type="button" onClick={() => setShareOpen((value) => !value)} aria-expanded={shareOpen} aria-haspopup="menu" className="inline-flex h-10 items-center gap-2 rounded-full border border-[#9e001f] px-4 text-[13px] font-bold text-[#9e001f]">Partager</button>
-          {shareOpen && <div role="menu" className="absolute right-0 top-12 z-20 flex min-w-[190px] flex-col gap-1 rounded-xl border border-[#e5bdbb] bg-white p-2 text-[#2b2525] shadow-xl">
-            <button type="button" role="menuitem" onClick={() => void share("whatsapp")} className="rounded-lg px-3 py-2 text-left text-[12px] font-semibold hover:bg-[#f6f3f2]">WhatsApp</button>
-            <button type="button" role="menuitem" onClick={() => void share("copy")} className="rounded-lg px-3 py-2 text-left text-[12px] font-semibold hover:bg-[#f6f3f2]">Copier le lien exact</button>
-            {typeof navigator !== "undefined" && "share" in navigator && <button type="button" role="menuitem" onClick={() => void share("native")} className="rounded-lg px-3 py-2 text-left text-[12px] font-semibold hover:bg-[#f6f3f2]">Partager avec l’appareil</button>}
-            <button type="button" role="menuitem" onClick={() => void share("x")} className="rounded-lg px-3 py-2 text-left text-[12px] hover:bg-[#f6f3f2]">X</button>
-            <button type="button" role="menuitem" onClick={() => void share("facebook")} className="rounded-lg px-3 py-2 text-left text-[12px] hover:bg-[#f6f3f2]">Facebook</button>
-            <button type="button" role="menuitem" onClick={() => void share("linkedin")} className="rounded-lg px-3 py-2 text-left text-[12px] hover:bg-[#f6f3f2]">LinkedIn</button>
-          </div>}
+          <button type="button" onClick={() => setShareOpen(true)} className="inline-flex h-10 items-center gap-2 rounded-full border border-[#9e001f] px-4 text-[13px] font-bold text-[#9e001f] hover:bg-[#9e001f] hover:text-white transition">
+            <span className="material-symbols-outlined text-[18px]">share</span>
+            Partager
+          </button>
+          <SocialShareModal
+            isOpen={shareOpen}
+            onClose={() => setShareOpen(false)}
+            url={articleUrl}
+            title={typeof document !== "undefined" ? document.title : "Envol Africa Magazine"}
+          />
         </div>
       </div>
       {message && <p role="status" className="mt-3 text-[12px] font-semibold text-[#9e001f]">{message}</p>}

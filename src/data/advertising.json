@@ -1,0 +1,98 @@
+{
+  "formats": [
+    {
+      "id": "mag-encart",
+      "category": "magazine",
+      "name": "Encart Publicitaire (1/4 Page)",
+      "dimension": "90 x 130 mm",
+      "description": "Visibilité ciblée au cœur des rubriques spécialisées du magazine papier et numérique.",
+      "priceXof": 150000,
+      "priceEur": 230,
+      "featured": false
+    },
+    {
+      "id": "mag-demi-page",
+      "category": "magazine",
+      "name": "Demi-Page (1/2 Page)",
+      "dimension": "180 x 130 mm ou 90 x 260 mm",
+      "description": "Idéal pour le lancement de produit, annonce institutionnelle ou offre B2B.",
+      "priceXof": 300000,
+      "priceEur": 460,
+      "featured": false
+    },
+    {
+      "id": "mag-pleine-page",
+      "category": "magazine",
+      "name": "Pleine Page (1 Page)",
+      "dimension": "210 x 297 mm (A4)",
+      "description": "Impact visuel maximal pour valoriser votre marque auprès des décideurs africains.",
+      "priceXof": 550000,
+      "priceEur": 840,
+      "featured": true
+    },
+    {
+      "id": "mag-double-page",
+      "category": "magazine",
+      "name": "Double Page Centrale (2 Pages)",
+      "dimension": "420 x 297 mm",
+      "description": "L'espace le plus prestigieux du magazine pour vos grandes campagnes institutionnelles.",
+      "priceXof": 950000,
+      "priceEur": 1450,
+      "featured": false
+    },
+    {
+      "id": "mag-couverture-4",
+      "category": "magazine",
+      "name": "4ème de Couverture (Dos du magazine)",
+      "dimension": "210 x 297 mm",
+      "description": "Emplacement premium ultra-exposé, consulté par 100% des lecteurs.",
+      "priceXof": 1200000,
+      "priceEur": 1830,
+      "featured": true
+    },
+    {
+      "id": "web-header-banner",
+      "category": "web",
+      "name": "Bannière Header Leaderboard",
+      "dimension": "728 x 90 px ou 970 x 90 px",
+      "description": "Affichage en haut de toutes les pages du site web et sur le portail d'actualités.",
+      "priceXof": 200000,
+      "priceEur": 305,
+      "featured": false
+    },
+    {
+      "id": "web-sidebar-square",
+      "category": "web",
+      "name": "Pavé Sidebar / In-Feed",
+      "dimension": "300 x 250 px ou 300 x 600 px",
+      "description": "Intégration fluide dans les articles d'analyse et les flux de publication WAB.",
+      "priceXof": 150000,
+      "priceEur": 230,
+      "featured": false
+    },
+    {
+      "id": "web-sponsored-article",
+      "category": "web",
+      "name": "Article Sponsorisé & Publi-reportage",
+      "dimension": "Format éditorial complet + diffusion multi-canaux",
+      "description": "Rédaction professionnelle par notre équipe éditoriale, publication à la une et relai réseaux sociaux.",
+      "priceXof": 400000,
+      "priceEur": 610,
+      "featured": true
+    },
+    {
+      "id": "web-habillage",
+      "category": "web",
+      "name": "Habillage Complet de Site (Takeover)",
+      "dimension": "Background complet + Header sticky",
+      "description": "Exclusivité visuelle totale sur l'ensemble de la plateforme Envol Africa pendant 7 jours.",
+      "priceXof": 800000,
+      "priceEur": 1220,
+      "featured": false
+    }
+  ],
+  "kitMediaUrl": "/kit-media-envol-africa-2026.pdf",
+  "kitMediaUpdatedAt": "2026-09-01T00:00:00.000Z",
+  "contactEmail": "regie@envolafrica.site",
+  "contactPhone": "+229 01 54 88 88 88"
+}

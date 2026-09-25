@@ -9,6 +9,8 @@ import { LocaleProvider } from "@/components/LocaleProvider";
 import AutoTranslator from "@/components/AutoTranslator";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { getOrganizationSchema, getWebSiteSchema } from "@/lib/schema-org";
+import GoogleOneTapPrompt from "@/components/GoogleOneTapPrompt";
+import AssistanceChatWidget from "@/components/AssistanceChatWidget";
 
 export const dynamic = "force-dynamic";
 
@@ -34,10 +36,11 @@ export const metadata: Metadata = {
     description: "Analyses exclusives, enquêtes économiques, Kiosque numérique, Marketplace et opportunités panafricaines.",
     images: [
       {
-        url: "/mobile-header-logo.png",
-        width: 800,
-        height: 800,
-        alt: "Logo Envol Africa Magazine",
+        url: `${SITE_URL}/logo-couleur-entete-new.png`,
+        width: 1200,
+        height: 630,
+        alt: "Envol Africa Magazine",
+        type: "image/png",
       },
     ],
   },
@@ -45,7 +48,14 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Envol Africa Magazine",
     description: "Le magazine économique panafricain de référence.",
-    images: ["/mobile-header-logo.png"],
+    images: [
+      {
+        url: `${SITE_URL}/logo-couleur-entete-new.png`,
+        width: 1200,
+        height: 630,
+        alt: "Envol Africa Magazine",
+      },
+    ],
   },
   icons: {
     icon: [
@@ -122,8 +132,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
         <link rel="alternate" type="application/rss+xml" title="Flux RSS - Envol Africa Magazine" href="/feed.xml" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" rel="stylesheet" />
         <style>{`
           .material-symbols-outlined {
             font-family: 'Material Symbols Outlined';
@@ -133,7 +143,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             line-height: 1;
             letter-spacing: normal;
             text-transform: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1em;
+            height: 1em;
+            overflow: hidden;
             white-space: nowrap;
             word-wrap: normal;
             direction: ltr;
@@ -141,6 +156,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             -webkit-font-smoothing: antialiased;
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
             vertical-align: middle;
+            user-select: none;
           }
           :root {
             --font-geist-sans: 'Inter', system-ui, sans-serif;
@@ -157,6 +173,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <CookieConsentBanner />
           <main className="flex-1">{children}</main>
           <Footer />
+          <GoogleOneTapPrompt user={user ? { id: user.id } : null} />
+          <AssistanceChatWidget />
         </LocaleProvider>
         <script dangerouslySetInnerHTML={{__html: `
           (function(){
