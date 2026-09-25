@@ -453,7 +453,35 @@ export default function MessagesPage() {
   });
 
   return (
-    <div className="h-[calc(100vh-140px)] min-h-[580px] bg-[#f0f2f5] flex flex-col">
+    <div className="fixed inset-0 z-[9999] w-screen h-[100dvh] bg-[#f0f2f5] flex flex-col overflow-hidden select-none">
+      {/* Top Application Header */}
+      <div className="h-12 md:h-14 px-3 sm:px-4 bg-[#082843] text-white flex items-center justify-between shrink-0 shadow-md z-30 pt-[env(safe-area-inset-top,0px)]">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#9e001f] text-white flex items-center justify-center font-bold text-xs shadow">
+            <span className="material-symbols-outlined text-base">chat</span>
+          </div>
+          <div>
+            <h1 className="font-display font-black text-xs sm:text-sm text-white tracking-wide leading-tight">
+              Messagerie Envol Africa
+            </h1>
+            <p className="text-[10px] text-gray-300 hidden sm:block leading-tight">
+              Discussions directes et confidentielles
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Link
+            href="/wab"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all border border-white/20 shadow-sm active:scale-95"
+            title="Fermer la messagerie et retourner au site"
+          >
+            <span className="material-symbols-outlined text-sm">arrow_back</span>
+            <span>Fermer / Retour au site</span>
+          </Link>
+        </div>
+      </div>
+
       {/* Hidden File Inputs */}
       <input
         type="file"
@@ -476,30 +504,31 @@ export default function MessagesPage() {
         onChange={handleVideoUpload}
       />
 
-      <div className="flex-1 flex max-w-7xl w-full mx-auto bg-white shadow-xl overflow-hidden md:my-3 md:rounded-2xl border border-[#d1d7db]">
+      <div className="flex-1 flex w-full h-[calc(100%-3rem)] bg-white overflow-hidden border-t border-[#d1d7db]">
         {/* ======================================================== */}
         {/* COLONNE GAUCHE : LISTE DES CONVERSATIONS                 */}
         {/* ======================================================== */}
         <div
-          className={`w-full md:w-[380px] lg:w-[420px] border-r border-[#e9edef] flex flex-col bg-white relative ${
+          className={`w-full md:w-[380px] lg:w-[420px] border-r border-[#e9edef] flex flex-col bg-white relative shrink-0 ${
             activeConversation ? "hidden md:flex" : "flex"
           }`}
         >
           {/* Top Bar Gauche */}
-          <div className="h-16 px-4 bg-[#f0f2f5] flex items-center justify-between border-b border-[#e9edef]">
+          <div className="h-14 sm:h-16 px-4 bg-[#f0f2f5] flex items-center justify-between border-b border-[#e9edef] shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#9e001f] text-white flex items-center justify-center font-bold text-sm">
-                <span className="material-symbols-outlined text-xl">chat</span>
+              <div className="w-9 h-9 rounded-full bg-[#9e001f] text-white flex items-center justify-center font-bold text-sm">
+                <span className="material-symbols-outlined text-lg">chat</span>
               </div>
-              <h1 className="font-display font-black text-lg text-[#111b21]">Discussions</h1>
+              <h2 className="font-display font-black text-base text-[#111b21]">Discussions</h2>
             </div>
             <div className="flex items-center gap-1">
               <Link
                 href="/wab"
-                className="p-2 text-gray-600 hover:text-gray-900 rounded-full hover:bg-black/5"
-                title="Aller sur WAB"
+                className="px-2.5 py-1 text-xs font-bold text-gray-700 hover:text-gray-900 rounded-full hover:bg-black/5 flex items-center gap-1 border border-gray-300 sm:hidden"
+                title="Fermer"
               >
-                <span className="material-symbols-outlined text-xl">feed</span>
+                <span className="material-symbols-outlined text-base">close</span>
+                <span>Fermer</span>
               </Link>
             </div>
           </div>
@@ -613,7 +642,7 @@ export default function MessagesPage() {
             type="button"
             onClick={openNewChatModal}
             aria-label="Nouvelle discussion"
-            className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-[#25D366] hover:bg-[#20ba5a] text-white shadow-xl flex items-center justify-center transition-all hover:scale-105 active:scale-95 z-20 focus:outline-none ring-4 ring-[#25D366]/20"
+            className="absolute bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-6 w-14 h-14 rounded-full bg-[#25D366] hover:bg-[#20ba5a] text-white shadow-xl flex items-center justify-center transition-all hover:scale-105 active:scale-95 z-20 focus:outline-none ring-4 ring-[#25D366]/20"
           >
             <span className="material-symbols-outlined text-3xl font-bold">add</span>
           </button>
@@ -630,12 +659,13 @@ export default function MessagesPage() {
           {activeConversation ? (
             <>
               {/* Top Bar Discussion */}
-              <div className="h-16 px-4 bg-[#f0f2f5] flex items-center justify-between border-b border-[#e9edef] shrink-0">
+              <div className="h-14 sm:h-16 px-4 bg-[#f0f2f5] flex items-center justify-between border-b border-[#e9edef] shrink-0">
                 <div className="flex items-center gap-3 min-w-0">
                   <button
                     type="button"
                     onClick={() => setActiveConversation(null)}
-                    className="md:hidden text-gray-600 hover:text-gray-900 mr-1"
+                    className="md:hidden text-gray-600 hover:text-gray-900 mr-1 p-1 rounded-full hover:bg-black/5"
+                    title="Retour aux discussions"
                   >
                     <span className="material-symbols-outlined text-2xl">arrow_back</span>
                   </button>
@@ -682,6 +712,15 @@ export default function MessagesPage() {
                   >
                     <span className="material-symbols-outlined text-xl">videocam</span>
                   </button>
+
+                  <Link
+                    href="/wab"
+                    className="px-2.5 py-1 text-xs font-bold text-gray-700 hover:text-gray-900 rounded-full hover:bg-black/5 flex items-center gap-1 border border-gray-300 sm:hidden"
+                    title="Fermer la messagerie"
+                  >
+                    <span className="material-symbols-outlined text-base">close</span>
+                    <span>Fermer</span>
+                  </Link>
                 </div>
               </div>
 
@@ -803,7 +842,7 @@ export default function MessagesPage() {
               </div>
 
               {/* Barre de saisie WhatsApp */}
-              <div className="p-3 bg-[#f0f2f5] border-t border-[#e9edef] flex items-center gap-2">
+              <div className="p-2.5 sm:p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-[#f0f2f5] border-t border-[#e9edef] flex items-center gap-2 shrink-0">
                 {isRecordingVoice ? (
                   // Mode enregistrement audio
                   <div className="flex-1 flex items-center justify-between bg-white px-4 py-2.5 rounded-full border border-red-300">

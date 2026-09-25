@@ -80,21 +80,27 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const user = await getCurrentUserFromCookie();
-  if (!user) return NextResponse.json({ error: "Connexion requise." }, { status: 401 });
-
   const body = await request.json().catch(() => null);
   if (!body || typeof body.title !== "string" || body.title.trim().length < 3) {
-    return NextResponse.json({ error: "Titre de Salon invalide." }, { status: 400 });
+    return NextResponse.json({ error: "Titre de Salon invalide (au moins 3 caractères requis)." }, { status: 400 });
   }
+
+  const hostUserId = user ? user.id : `guest-${uuid().slice(0, 8)}`;
+  const host = user
+    ? (`${user.prenom || ""} ${user.nom || ""}`.trim() || user.email || "Hôte")
+    : (typeof body.host === "string" && body.host.trim() ? body.host.trim() : "Créateur Envol");
 
   const isLiveNow = Boolean(body.isLiveNow || body.status === "live");
   const startsAt = isLiveNow ? new Date().toISOString() : body.startsAt || new Date().toISOString();
 
   const db = readWabDB();
+  if (!Array.isArray(db.salons)) db.salons = [];
+  if (!Array.isArray(db.salonParticipants)) db.salonParticipants = [];
+
   const salon = {
     id: uuid(),
-    hostUserId: user.id,
-    host: `${user.prenom || ""} ${user.nom || ""}`.trim() || user.email || "Hôte",
+    hostUserId,
+    host,
     title: body.title.trim().slice(0, 180),
     description: typeof body.description === "string" ? body.description.trim().slice(0, 4000) : "",
     startsAt,
@@ -107,7 +113,7 @@ export async function POST(request: NextRequest) {
   // Auto-join host
   db.salonParticipants.push({
     salonId: salon.id,
-    userId: user.id,
+    userId: hostUserId,
     name: salon.host,
     joinedAt: new Date().toISOString(),
   });

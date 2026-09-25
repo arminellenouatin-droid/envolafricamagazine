@@ -14,6 +14,7 @@ import RichTextEditor from "@/components/RichTextEditor";
 import ExpandablePostText from "@/components/wab/ExpandablePostText";
 import WabSidebarCards from "@/components/wab/WabSidebarCards";
 import { useLocale } from "@/components/LocaleProvider";
+import { uploadWabMedia, readJsonResponse } from "@/lib/wab-upload-client";
 
 type PublishPage = { id: string; name: string; logoUrl?: string; logo_url?: string };
 type PublishGroup = { id: string; name: string; privacy: "community" | "private" };
@@ -92,12 +93,6 @@ function LocalAttachmentPreview({ file }: { file: File }) {
   if (file.type.startsWith("video/")) return <video src={url} muted playsInline className="h-10 w-10 shrink-0 rounded-lg bg-black object-cover" />;
   if (file.type.startsWith("audio/")) return <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#eefcfa] text-[#006874]"><span className="material-symbols-outlined text-[18px]">audio_file</span></span>;
   return <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#eefcfa] text-[#006874]"><span className="material-symbols-outlined text-[18px]">description</span></span>;
-}
-
-async function readJsonResponse<T>(response: Response): Promise<T> {
-  const raw = await response.text();
-  if (!raw.trim()) throw new Error(`Le serveur a renvoyé une réponse vide (HTTP ${response.status}).`);
-  try { return JSON.parse(raw) as T; } catch { throw new Error(`Réponse serveur invalide (HTTP ${response.status}). Veuillez réessayer.`); }
 }
 
 function SubscriptionMessage({ message }: { message: string }) {
@@ -436,10 +431,7 @@ export default function WabClient() {
     try {
       let media: unknown[] = [];
       for (const file of selectedFiles) {
-        const upload = new FormData(); upload.set("file", file);
-        const uploadResponse = await fetch("/api/wab/upload", { method: "POST", body: upload });
-        const uploadData = await readJsonResponse<{ error?: string; path?: string; mimeType?: string; name?: string }>(uploadResponse);
-        if (!uploadResponse.ok) throw new Error(uploadData.error);
+        const uploadData = await uploadWabMedia(file, (status) => setMessage(status));
         media.push(uploadData);
       }
       const response = await fetch("/api/wab/posts", {

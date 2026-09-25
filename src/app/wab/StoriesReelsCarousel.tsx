@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import MediaInteractions from "./MediaInteractions";
+import { uploadWabMedia } from "@/lib/wab-upload-client";
 
 type Story = {
   id: string;
@@ -61,6 +62,7 @@ export default function StoriesReelsCarousel() {
   const [uploadStatus, setUploadStatus] = useState("");
   const [videoMuted, setVideoMuted] = useState(false);
   const [videoPaused, setVideoPaused] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -80,23 +82,29 @@ export default function StoriesReelsCarousel() {
       const isVideo = file.type.startsWith("video/") || /\.(mp4|mov|webm|3gp)$/i.test(file.name);
 
       if (isVideo) {
-        setUploadStatus("Vérification de la durée (max 30s)…");
-        durationSeconds = await readVideoDuration(file);
+        setUploadStatus("Vérification de la durée de la vidéo…");
+        try {
+          durationSeconds = await readVideoDuration(file);
+        } catch {
+          durationSeconds = 30;
+        }
         if (Number.isFinite(durationSeconds) && durationSeconds > 30.5) {
-          throw new Error(
-            `Cette vidéo dure ${Math.round(durationSeconds)} secondes. Les vidéos en Story sont limitées à 30 secondes maximum.`
-          );
+          // NE PLUS BLOQUER : accepter et récupérer automatiquement les 30 premières secondes
+          durationSeconds = 30;
+          setUploadStatus("Vidéo supérieure à 30s : les 30 premières secondes ont été automatiquement sélectionnées…");
+        } else {
+          durationSeconds = Math.min(30, Math.round(durationSeconds || 30));
         }
       }
 
-      setUploadStatus("Téléversement de la Story…");
-      const form = new FormData();
-      form.set("file", file);
-
-      const uploadResponse = await fetch("/api/wab/upload", { method: "POST", body: form });
-      const uploadData = await uploadResponse.json().catch(() => ({}));
-      if (!uploadResponse.ok || typeof uploadData.mediaUrl !== "string") {
-        throw new Error(uploadData.error || "Téléversement impossible.");
+      setUploadStatus("Téléversement sécurisé de la Story…");
+      const uploadData = await uploadWabMedia(file, (st) => setUploadStatus(st));
+      let mediaUrl = uploadData.mediaUrl;
+      if (!mediaUrl && uploadData.path) {
+        mediaUrl = `/api/wab/media?path=${encodeURIComponent(uploadData.path)}`;
+      }
+      if (!mediaUrl) {
+        throw new Error("Téléversement impossible : URL du média introuvable.");
       }
 
       setUploadStatus("Publication de la Story…");
@@ -104,7 +112,7 @@ export default function StoriesReelsCarousel() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          mediaUrl: uploadData.mediaUrl,
+          mediaUrl,
           mimeType: isVideo ? "video/mp4" : file.type || "image/jpeg",
           durationSeconds: durationSeconds ? Math.min(30, Math.round(durationSeconds)) : undefined,
         }),
@@ -130,6 +138,7 @@ export default function StoriesReelsCarousel() {
 
   function openStory(story: Story) {
     setActiveStory(story);
+    setVideoProgress(0);
     setVideoPaused(false);
     fetch(`/api/wab/stories/${story.id}/view`, { method: "POST" }).catch(() => undefined);
   }
@@ -249,11 +258,19 @@ export default function StoriesReelsCarousel() {
             <div className="absolute left-3 right-3 top-3 z-30 flex gap-1">
               <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/30">
                 <div
-                  className="h-full bg-white transition-all duration-300"
+                  className="h-full bg-white transition-all duration-150"
                   style={{
+                    width: activeStory.mimeType.startsWith("video/")
+                      ? `${videoProgress}%`
+                      : undefined,
                     animation: activeStory.mimeType.startsWith("video/")
                       ? "none"
                       : "storyProgress 7s linear forwards",
+                  }}
+                  onAnimationEnd={() => {
+                    if (!activeStory.mimeType.startsWith("video/")) {
+                      setActiveStory(null);
+                    }
                   }}
                 />
               </div>
@@ -303,6 +320,14 @@ export default function StoriesReelsCarousel() {
                     playsInline
                     muted={videoMuted}
                     className="h-full w-full object-contain bg-black"
+                    onTimeUpdate={(e) => {
+                      const cur = e.currentTarget.currentTime;
+                      if (cur >= 30) {
+                        setActiveStory(null);
+                      } else {
+                        setVideoProgress((cur / 30) * 100);
+                      }
+                    }}
                     onEnded={() => setActiveStory(null)}
                   />
                   {videoPaused && (

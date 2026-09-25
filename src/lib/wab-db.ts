@@ -48,6 +48,125 @@ function reconcileWabDatabase(database: WabDatabase): WabDatabase {
   return database;
 }
 
-export function readWabDB(): WabDatabase { try { if (!fs.existsSync(FILE)) { if (!isProductionRuntime()) { fs.mkdirSync(path.dirname(FILE), { recursive: true }); fs.writeFileSync(FILE, JSON.stringify({ posts: seed, pages: [], groups: [], groupMembers: [], profiles: [], reactions: [], comments: [], reports: [], views: [], rewards: [], stories: demoStories, reels: demoReels, salons: [], salonParticipants: [], salonMessages: [], boosts: [], connections: [], notifications: [], mediaReactions: [], mediaComments: [] }, null, 2)); } else { throw new Error("Stockage WAB local indisponible en production."); } } const data = JSON.parse(fs.readFileSync(FILE, "utf8")) as Partial<WabDatabase>; return reconcileWabDatabase({ posts: (data.posts ?? seed).map((post) => ({ ...post, shares: Number(post.shares ?? 0) })), pages: data.pages ?? [], groups: data.groups ?? [], groupMembers: data.groupMembers ?? [], profiles: data.profiles ?? [], reactions: data.reactions ?? [], comments: data.comments ?? [], reports: data.reports ?? [], views: data.views ?? [], rewards: data.rewards ?? [], stories: data.stories ?? demoStories, reels: data.reels ?? demoReels, salons: data.salons ?? [], salonParticipants: data.salonParticipants ?? [], salonMessages: data.salonMessages ?? [], boosts: data.boosts ?? [], connections: data.connections ?? [], notifications: data.notifications ?? [], mediaReactions: data.mediaReactions ?? [], mediaComments: data.mediaComments ?? [] }); } catch { if (isProductionRuntime()) throw new Error("Persistance WAB Supabase non configurée en production."); return { posts: seed.map((post) => ({ ...post, shares: Number(post.shares ?? 0) })), pages: [], groups: [], groupMembers: [], profiles: [], reactions: [], comments: [], reports: [], views: [], rewards: [], stories: demoStories, reels: demoReels, salons: [], salonParticipants: [], salonMessages: [], boosts: [], connections: [], notifications: [], mediaReactions: [], mediaComments: [] }; } }
-export function writeWabDB(db: WabDatabase) { if (isProductionRuntime()) throw new Error("Écriture du stockage WAB JSON local désactivée en production. Configurez la persistance Supabase."); fs.mkdirSync(path.dirname(FILE), { recursive: true }); fs.writeFileSync(FILE, JSON.stringify(db, null, 2)); }
-export function createWabPost(data: Omit<WabPost, "id" | "views" | "watchSeconds" | "likes" | "comments" | "shares" | "isBoosted" | "createdAt" | "moderationStatus">) { const db = readWabDB(); const post: WabPost = { ...data, id: uuid(), views: 0, watchSeconds: 0, likes: 0, comments: 0, shares: 0, isBoosted: false, createdAt: new Date().toISOString(), moderationStatus: "published" }; db.posts.unshift(post); writeWabDB(db); return post; }
+const TMP_FILE = path.join(process.platform === "win32" ? path.join(process.cwd(), "src", "data", "wab-tmp.json") : "/tmp", "wab.json");
+
+declare global {
+  var __wab_db_cache__: WabDatabase | undefined;
+}
+
+function getEmptySeedDb(): WabDatabase {
+  return {
+    posts: seed.map((post) => ({ ...post, shares: Number(post.shares ?? 0) })),
+    pages: [],
+    groups: [],
+    groupMembers: [],
+    profiles: [],
+    reactions: [],
+    comments: [],
+    reports: [],
+    views: [],
+    rewards: [],
+    stories: demoStories,
+    reels: demoReels,
+    salons: [],
+    salonParticipants: [],
+    salonMessages: [],
+    boosts: [],
+    connections: [],
+    notifications: [],
+    mediaReactions: [],
+    mediaComments: [],
+  };
+}
+
+function sanitizeDb(data: Partial<WabDatabase>): WabDatabase {
+  return {
+    posts: (data.posts ?? seed).map((post) => ({ ...post, shares: Number(post.shares ?? 0) })),
+    pages: data.pages ?? [],
+    groups: data.groups ?? [],
+    groupMembers: data.groupMembers ?? [],
+    profiles: data.profiles ?? [],
+    reactions: data.reactions ?? [],
+    comments: data.comments ?? [],
+    reports: data.reports ?? [],
+    views: data.views ?? [],
+    rewards: data.rewards ?? [],
+    stories: data.stories ?? demoStories,
+    reels: data.reels ?? demoReels,
+    salons: data.salons ?? [],
+    salonParticipants: data.salonParticipants ?? [],
+    salonMessages: data.salonMessages ?? [],
+    boosts: data.boosts ?? [],
+    connections: data.connections ?? [],
+    notifications: data.notifications ?? [],
+    mediaReactions: data.mediaReactions ?? [],
+    mediaComments: data.mediaComments ?? [],
+  };
+}
+
+export function readWabDB(): WabDatabase {
+  if (globalThis.__wab_db_cache__) {
+    return reconcileWabDatabase(globalThis.__wab_db_cache__);
+  }
+
+  // 1. Tenter lecture depuis TMP_FILE si existant
+  if (TMP_FILE !== FILE && fs.existsSync(TMP_FILE)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(TMP_FILE, "utf8")) as Partial<WabDatabase>;
+      const db = reconcileWabDatabase(sanitizeDb(data));
+      globalThis.__wab_db_cache__ = db;
+      return db;
+    } catch {}
+  }
+
+  // 2. Tenter lecture depuis le fichier source
+  if (fs.existsSync(FILE)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(FILE, "utf8")) as Partial<WabDatabase>;
+      const db = reconcileWabDatabase(sanitizeDb(data));
+      globalThis.__wab_db_cache__ = db;
+      return db;
+    } catch {}
+  }
+
+  // 3. Fallback mémoire propre
+  const fallback = reconcileWabDatabase(getEmptySeedDb());
+  globalThis.__wab_db_cache__ = fallback;
+  return fallback;
+}
+
+export function writeWabDB(db: WabDatabase) {
+  globalThis.__wab_db_cache__ = db;
+
+  // 1. Tenter d'écrire dans src/data/wab.json
+  try {
+    fs.mkdirSync(path.dirname(FILE), { recursive: true });
+    fs.writeFileSync(FILE, JSON.stringify(db, null, 2));
+    return;
+  } catch {}
+
+  // 2. Fallback environnement serverless : écrire dans /tmp/wab.json
+  try {
+    fs.writeFileSync(TMP_FILE, JSON.stringify(db, null, 2));
+  } catch {}
+}
+
+export function createWabPost(data: Omit<WabPost, "id" | "views" | "watchSeconds" | "likes" | "comments" | "shares" | "isBoosted" | "createdAt" | "moderationStatus">) {
+  const db = readWabDB();
+  const post: WabPost = {
+    ...data,
+    id: uuid(),
+    views: 0,
+    watchSeconds: 0,
+    likes: 0,
+    comments: 0,
+    shares: 0,
+    isBoosted: false,
+    createdAt: new Date().toISOString(),
+    moderationStatus: "published",
+  };
+  db.posts.unshift(post);
+  writeWabDB(db);
+  return post;
+}
+

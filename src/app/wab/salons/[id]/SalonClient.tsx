@@ -271,7 +271,7 @@ export default function SalonClient({ id }: { id: string }) {
 
   return (
     <div
-      className="relative w-full h-[100dvh] bg-black text-white overflow-hidden select-none"
+      className="fixed inset-0 z-[9999] w-screen h-[100dvh] bg-black text-white overflow-hidden select-none flex flex-col"
       onClick={(e) => {
         // Taper sur l'écran génère un cœur (sauf si clic sur formulaire/boutons)
         const target = e.target as HTMLElement;
@@ -326,7 +326,7 @@ export default function SalonClient({ id }: { id: string }) {
       {/* ======================================================== */}
       {/* 2. EN-TÊTE DU LIVE (Overlay Supérieur)                    */}
       {/* ======================================================== */}
-      <div className="relative z-20 flex items-center justify-between p-4 md:px-6">
+      <div className="relative z-20 flex items-center justify-between p-3 sm:p-4 md:px-6 pt-[max(0.75rem,env(safe-area-inset-top))]">
         {/* Profil de l'Hôte */}
         <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-full pl-1.5 pr-3 py-1 border border-white/10">
           <div className="w-8 h-8 rounded-full overflow-hidden bg-emerald-700 shrink-0">
@@ -399,16 +399,19 @@ export default function SalonClient({ id }: { id: string }) {
             <button
               type="button"
               onClick={() => setShowEndModal(true)}
-              className="bg-red-600 hover:bg-red-700 text-white text-xs font-black px-3.5 py-1.5 rounded-full shadow-lg"
+              className="bg-red-600 hover:bg-red-700 text-white text-xs font-black px-3.5 py-1.5 rounded-full shadow-lg flex items-center gap-1 transition-all active:scale-95"
             >
-              Arrêter
+              <span className="material-symbols-outlined text-sm">call_end</span>
+              <span>Arrêter</span>
             </button>
           ) : (
             <Link
               href="/wab/salons"
-              className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-black/60"
+              className="h-9 px-3 rounded-full bg-black/60 backdrop-blur-md border border-white/25 flex items-center gap-1.5 text-white hover:bg-black/80 text-xs font-bold shadow-lg transition-all active:scale-95"
+              title="Fermer le direct et revenir au site"
             >
-              <span className="material-symbols-outlined text-lg">close</span>
+              <span className="material-symbols-outlined text-base">close</span>
+              <span className="inline">Fermer</span>
             </Link>
           )}
         </div>
@@ -467,7 +470,7 @@ export default function SalonClient({ id }: { id: string }) {
       {/* ======================================================== */}
       {/* 5. OVERLAY CHAT EN DIRECT FLOTTANT (En bas à gauche)      */}
       {/* ======================================================== */}
-      <div className="absolute bottom-20 left-4 right-20 z-20 max-w-sm pointer-events-auto">
+      <div className="absolute bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+3.75rem)] left-4 right-20 z-20 max-w-sm pointer-events-auto">
         <div
           ref={chatScrollRef}
           className="max-h-60 overflow-y-auto space-y-2 pr-2 no-scrollbar"
@@ -496,7 +499,7 @@ export default function SalonClient({ id }: { id: string }) {
       {/* ======================================================== */}
       {/* 6. BARRE D'INTERACTION INFERIEURE (Input, Cadeau, Cœurs) */}
       {/* ======================================================== */}
-      <div className="absolute bottom-3 left-4 right-4 z-30 flex items-center gap-2 pointer-events-auto">
+      <div className="absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-4 right-4 z-30 flex items-center gap-2 pointer-events-auto">
         {/* Champ de saisie commentaire */}
         <div className="flex-1 flex items-center bg-black/50 backdrop-blur-md rounded-full px-4 py-2 border border-white/20">
           <input

@@ -72,7 +72,7 @@ export default function SalonsClient() {
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (res.status === 401) {
         window.location.assign(`/auth/login?next=${encodeURIComponent("/wab/salons")}`);
         return;
@@ -87,9 +87,12 @@ export default function SalonsClient() {
       // Rediriger immédiatement vers le live
       if (data.salon?.id) {
         router.push(`/wab/salons/${data.salon.id}`);
+      } else {
+        loadSalons();
+        setShowLaunchModal(false);
       }
-    } catch {
-      setErrorMsg("Erreur de connexion.");
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Erreur de connexion.");
     } finally {
       setCreating(false);
     }
