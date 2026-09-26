@@ -138,33 +138,65 @@ export default function SalonClient({ id }: { id: string }) {
     }
 
     try {
-      // Tenter d'abord avec caméra préférée (frontale sur mobile) + audio
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: mode },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-        audio: true,
-      });
-      streamRef.current = stream;
-      setMediaStream(stream);
-      setCameraActive(true);
-      setMicActive(true);
-    } catch (firstErr) {
-      console.warn("Échec caméra complète, tentative vidéo simple sans audio...", firstErr);
+      const tryGetUserMedia = async (constraints: MediaStreamConstraints) => {
+        return await navigator.mediaDevices.getUserMedia(constraints);
+      };
+
+      let stream: MediaStream | null = null;
+      let audioEnabled = true;
+
+      // Tentative 1 : mode spécifié (ex: user / environment) + audio
       try {
-        const fallbackStream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: false,
+        stream = await tryGetUserMedia({
+          video: { facingMode: mode },
+          audio: true,
         });
-        streamRef.current = fallbackStream;
-        setMediaStream(fallbackStream);
+      } catch {
+        // Tentative 2 : vidéo générique + audio
+        try {
+          stream = await tryGetUserMedia({
+            video: true,
+            audio: true,
+          });
+        } catch {
+          // Tentative 3 : mode spécifié sans audio (si micro bloqué ou indisponible)
+          audioEnabled = false;
+          try {
+            stream = await tryGetUserMedia({
+              video: { facingMode: mode },
+              audio: false,
+            });
+          } catch {
+            // Tentative 4 : vidéo brute la plus permissive
+            try {
+              stream = await tryGetUserMedia({
+                video: true,
+                audio: false,
+              });
+            } catch (finalErr: any) {
+              console.error("Échec définitif accès caméra :", finalErr);
+              const errName = finalErr?.name || "";
+              if (errName === "NotAllowedError" || errName === "PermissionDeniedError") {
+                setCameraError("permission_denied");
+              } else if (errName === "NotFoundError" || errName === "DevicesNotFoundError") {
+                setCameraError("not_found");
+              } else if (errName === "NotReadableError" || errName === "TrackStartError") {
+                setCameraError("in_use");
+              } else {
+                setCameraError(finalErr?.message || "Accès à la caméra indisponible.");
+              }
+              return;
+            }
+          }
+        }
+      }
+
+      if (stream) {
+        streamRef.current = stream;
+        setMediaStream(stream);
         setCameraActive(true);
-        setMicActive(false);
-      } catch (err: any) {
-        console.error("Impossible d'accéder à la caméra:", err);
-        setCameraError(err?.message || "Accès à la caméra refusé. Vérifiez vos autorisations.");
+        setMicActive(audioEnabled);
+        setCameraError(null);
       }
     } finally {
       setStartingCamera(false);
@@ -378,12 +410,35 @@ export default function SalonClient({ id }: { id: string }) {
               className={`w-full h-full object-cover ${cameraActive ? "" : "hidden"}`}
             />
             {(!mediaStream || cameraError) && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-md p-6 text-center z-10">
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-md p-6 text-center z-10">
                 <span className="material-symbols-outlined text-5xl text-emerald-400 mb-3 animate-pulse">videocam</span>
-                <p className="text-sm font-bold text-white mb-2">Activer votre flux caméra</p>
-                <p className="text-xs text-slate-300 max-w-xs mb-4">
-                  {cameraError || "Appuyez sur le bouton ci-dessous pour autoriser et démarrer la vidéo en direct."}
-                </p>
+                <p className="text-base font-black text-white mb-2">Activer votre flux caméra</p>
+
+                {cameraError === "permission_denied" ? (
+                  <div className="mb-5 max-w-xs rounded-2xl border border-amber-400/30 bg-amber-950/40 p-3.5 text-left text-xs leading-relaxed text-amber-200">
+                    <p className="font-bold flex items-center gap-1.5 text-amber-300 mb-1.5">
+                      <span className="material-symbols-outlined text-sm">lock</span>
+                      Autorisation caméra requise
+                    </p>
+                    <p className="text-[11px] text-slate-300">
+                      Votre navigateur a bloqué l'accès caméra. Pour autoriser :
+                    </p>
+                    <ol className="mt-1.5 list-decimal pl-4 space-y-1 text-[11px] text-slate-200">
+                      <li>Touchez l'icône <strong>🔒</strong> ou <strong>réglages</strong> à gauche de l'adresse web</li>
+                      <li>Activez <strong>Appareil photo</strong> et <strong>Microphone</strong></li>
+                      <li>Touchez ensuite le bouton ci-dessous</li>
+                    </ol>
+                  </div>
+                ) : cameraError === "in_use" ? (
+                  <p className="text-xs text-amber-300 max-w-xs mb-4">
+                    La caméra semble déjà utilisée par une autre application. Fermez les autres applications et réessayez.
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-300 max-w-xs mb-4">
+                    {cameraError || "Appuyez sur le bouton ci-dessous pour autoriser et démarrer la vidéo en direct."}
+                  </p>
+                )}
+
                 <button
                   type="button"
                   onClick={() => startCamera(facingMode)}
@@ -391,7 +446,7 @@ export default function SalonClient({ id }: { id: string }) {
                   className="rounded-full bg-emerald-500 hover:bg-emerald-600 px-6 py-2.5 text-xs font-black text-white shadow-xl transition-transform active:scale-95 flex items-center gap-2"
                 >
                   <span className="material-symbols-outlined text-base">photo_camera</span>
-                  <span>{startingCamera ? "Connexion caméra…" : "Démarrer la caméra"}</span>
+                  <span>{startingCamera ? "Connexion caméra…" : cameraError ? "Réessayer l'activation" : "Démarrer la caméra"}</span>
                 </button>
               </div>
             )}
