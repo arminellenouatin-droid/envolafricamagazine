@@ -1,13 +1,27 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { readWabDB } from "@/lib/wab-db";
 import WabSinglePostView, { type SinglePostData } from "./WabSinglePostView";
 
-const CANONICAL_SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  process.env.NEXT_PUBLIC_BASE_URL ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://www.envolafrica.site");
+async function getSiteOrigin(): Promise<string> {
+  try {
+    const h = await headers();
+    const host = h.get("x-forwarded-host") || h.get("host");
+    const proto = h.get("x-forwarded-proto") || "https";
+    if (host) return `${proto}://${host}`;
+  } catch {}
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "https://envolafrica.vercel.app")
+  );
+}
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -27,7 +41,7 @@ async function resolveMediaUrl(supabase: any, pathOrUrl?: string): Promise<strin
   }
 }
 
-async function getPostData(id: string): Promise<SinglePostData | null> {
+async function getPostData(id: string, origin = "https://envolafrica.vercel.app"): Promise<SinglePostData | null> {
   const supabase = getSupabaseAdmin();
 
   if (supabase) {
@@ -89,14 +103,14 @@ async function getPostData(id: string): Promise<SinglePostData | null> {
         // Sinon (notamment pour les vidéos ou posts texte), on utilise la miniature dynamique 1200x630
         let imageUrl = imageMedia?.mediaUrl;
         if (!imageUrl) {
-          imageUrl = `${CANONICAL_SITE_URL}/api/og/wab-post?id=${id}`;
+          imageUrl = `${origin}/api/og/wab-post?id=${id}`;
         }
 
         return {
           id: data.id,
           author,
           authorAvatarUrl,
-          authorUserId: data.wab_profiles?.user_id,
+          authorUserId: profile?.user_id,
           headline,
           location,
           content: data.content || "",
@@ -110,8 +124,8 @@ async function getPostData(id: string): Promise<SinglePostData | null> {
           shares: data.shares_count || 0,
           createdAt: data.created_at,
           isBoosted: Boolean(data.is_boosted),
-          pageName: data.wab_pages?.name,
-          pageLogoUrl: data.wab_pages?.logo_url,
+          pageName: page?.name,
+          pageLogoUrl: page?.logo_url,
         };
       }
     } catch (e) {
@@ -129,9 +143,9 @@ async function getPostData(id: string): Promise<SinglePostData | null> {
 
       let imageUrl = imageMedia?.path;
       if (!imageUrl) {
-        imageUrl = `${CANONICAL_SITE_URL}/api/og/wab-post?id=${id}`;
+        imageUrl = `${origin}/api/og/wab-post?id=${id}`;
       } else if (imageUrl.startsWith("/")) {
-        imageUrl = `${CANONICAL_SITE_URL}${imageUrl}`;
+        imageUrl = `${origin}${imageUrl}`;
       }
 
       return {
@@ -161,13 +175,14 @@ async function getPostData(id: string): Promise<SinglePostData | null> {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const post = await getPostData(id);
+  const origin = await getSiteOrigin();
+  const post = await getPostData(id, origin);
 
   if (!post) {
     return {
       title: "Publication | World Africa Business (WAB)",
       description: "Découvrez cette publication sur World Africa Business.",
-      metadataBase: new URL(CANONICAL_SITE_URL),
+      metadataBase: new URL(origin),
     };
   }
 
@@ -182,21 +197,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : `${cleanContent.slice(0, 70)} | ${post.author} sur WAB`;
 
   const description = cleanContent.slice(0, 180) + (cleanContent.length > 180 ? "…" : "");
-  const postUrl = `${CANONICAL_SITE_URL}/wab/posts/${id}`;
-
-  const ogImages = post.imageUrl
-    ? [
-        {
-          url: post.imageUrl,
-          width: 1200,
-          height: 630,
-          alt: title,
-        },
-      ]
-    : [];
+  const postUrl = `${origin}/wab/posts/${id}`;
+  const ogImageUrl = post.imageUrl || `${origin}/api/og/wab-post?id=${id}`;
 
   return {
-    metadataBase: new URL(CANONICAL_SITE_URL),
+    metadataBase: new URL(origin),
     title: `${title} | Envol Africa WAB`,
     description,
     openGraph: {
@@ -206,44 +211,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: "World Africa Business (WAB) | Envol Africa",
       title,
       description,
-      images: ogImages,
-      ...(post.videoUrl
-        ? {
-            videos: [
-              {
-                url: post.videoUrl,
-                type: "video/mp4",
-                width: 1280,
-                height: 720,
-              },
-            ],
-          }
-        : {}),
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          type: "image/png",
+          alt: title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: post.imageUrl ? [post.imageUrl] : [],
-      ...(post.videoUrl
-        ? {
-            players: [
-              {
-                playerUrl: post.videoUrl,
-                streamUrl: post.videoUrl,
-                width: 1280,
-                height: 720,
-              },
-            ],
-          }
-        : {}),
+      images: [ogImageUrl],
     },
   };
 }
 
 export default async function WabSharedPostPage({ params }: Props) {
   const { id } = await params;
-  const post = await getPostData(id);
+  const origin = await getSiteOrigin();
+  const post = await getPostData(id, origin);
 
   if (!post) {
     return (

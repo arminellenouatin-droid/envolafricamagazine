@@ -27,7 +27,16 @@ export async function GET(request: NextRequest) {
       .filter((reel) => reel.moderationStatus === "published")
       .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
       .slice(0, 24)
-      .map((reel) => ({ id: reel.id, title: reel.caption || "Reel WAB", subtitle: reel.author, imageUrl: reel.mediaUrl, href: "/wab", mediaUrl: reel.mediaUrl }));
+      .map((reel) => ({
+        id: reel.id,
+        title: reel.caption || "Reel WAB",
+        subtitle: reel.author,
+        imageUrl: reel.mediaUrl,
+        href: "/wab",
+        mediaUrl: reel.mediaUrl,
+        views: reel.views || 0,
+        likes: reel.likes || 0,
+      }));
     return NextResponse.json({ type, items: reels });
   }
 

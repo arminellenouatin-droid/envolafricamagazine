@@ -25,6 +25,10 @@ function Avatar({ src, name, className = "" }: { src?: string; name: string; cla
   );
 }
 
+function formatCompactCount(val?: number): string {
+  return new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 1 }).format(Math.max(0, Number(val) || 0));
+}
+
 function readVideoDuration(file: File): Promise<number> {
   return new Promise((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file);
@@ -218,6 +222,18 @@ export default function StoriesReelsCarousel() {
                 <img src={story.mediaUrl} alt={story.caption || story.author} className="h-full w-full object-cover" />
               )}
 
+              {/* Badges de Vues et Likes */}
+              <div className="absolute left-1.5 top-1.5 z-10 flex flex-col gap-1 pointer-events-none">
+                <span className="flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-sm px-1.5 py-0.5 text-[9px] font-bold text-white shadow-sm" title="Vues">
+                  <span className="material-symbols-outlined text-[11px] text-teal-300">visibility</span>
+                  <span>{formatCompactCount(story.views)}</span>
+                </span>
+                <span className="flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-sm px-1.5 py-0.5 text-[9px] font-bold text-rose-300 shadow-sm" title="J'aime">
+                  <span className="material-symbols-outlined text-[11px] text-rose-400">favorite</span>
+                  <span>{formatCompactCount(story.likes)}</span>
+                </span>
+              </div>
+
               {/* Gradient overlay & Author info */}
               <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent px-2.5 pb-2.5 pt-8 text-xs font-bold text-white">
                 <span className="flex items-center gap-1.5">
@@ -282,7 +298,17 @@ export default function StoriesReelsCarousel() {
                 <Avatar src={activeStory.avatarUrl} name={activeStory.author} className="h-8 w-8 rounded-full border border-white" />
                 <div>
                   <p className="text-xs font-bold leading-none">{activeStory.author}</p>
-                  <p className="text-[10px] text-white/70 mt-0.5">Story WAB</p>
+                  <div className="flex items-center gap-2 text-[10px] text-white/80 mt-1">
+                    <span className="flex items-center gap-0.5">
+                      <span className="material-symbols-outlined text-[12px] text-teal-300">visibility</span>
+                      <span>{formatCompactCount(activeStory.views)}</span>
+                    </span>
+                    <span>·</span>
+                    <span className="flex items-center gap-0.5">
+                      <span className="material-symbols-outlined text-[12px] text-rose-400">favorite</span>
+                      <span>{formatCompactCount(activeStory.likes)}</span>
+                    </span>
+                  </div>
                 </div>
               </div>
 

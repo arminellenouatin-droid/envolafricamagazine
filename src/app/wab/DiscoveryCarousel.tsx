@@ -15,6 +15,8 @@ type DiscoveryItem = {
   targetGroupId?: string;
   targetPageId?: string;
   mediaUrl?: string;
+  views?: number;
+  likes?: number;
 };
 
 const LABELS: Record<DiscoveryType, { eyebrow: string; title: string; icon: string }> = {
@@ -23,6 +25,10 @@ const LABELS: Record<DiscoveryType, { eyebrow: string; title: string; icon: stri
   pages: { eyebrow: "Entreprises & Marques", title: "Pages recommandées", icon: "business" },
   groups: { eyebrow: "Communautés d'affaires", title: "Groupes à rejoindre", icon: "groups" },
 };
+
+function formatCompact(val?: number): string {
+  return new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 1 }).format(Math.max(0, Number(val) || 0));
+}
 
 export default function DiscoveryCarousel({ type }: { type: DiscoveryType }) {
   const [items, setItems] = useState<DiscoveryItem[]>([]);
@@ -238,13 +244,19 @@ export default function DiscoveryCarousel({ type }: { type: DiscoveryType }) {
                         {item.title}
                       </p>
 
-                      {/* Views / Action Pill */}
-                      <div className="mt-2 flex items-center justify-between text-[10px] font-bold text-white/80">
-                        <span className="flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[13px] text-[#2dd4bf]">play_circle</span>
-                          <span>Reel WAB</span>
-                        </span>
-                        <span className="rounded-full bg-white/20 backdrop-blur-xs px-2 py-0.5 text-[9px] text-white">
+                      {/* Views & Likes Badges */}
+                      <div className="mt-2 flex items-center justify-between text-[10px] font-bold text-white/95">
+                        <div className="flex items-center gap-1.5">
+                          <span className="flex items-center gap-1 rounded-full bg-black/50 backdrop-blur-sm px-2 py-0.5" title="Nombre de vues">
+                            <span className="material-symbols-outlined text-[13px] text-teal-300">visibility</span>
+                            <span>{formatCompact(item.views)}</span>
+                          </span>
+                          <span className="flex items-center gap-1 rounded-full bg-black/50 backdrop-blur-sm px-2 py-0.5 text-rose-300" title="Nombre de mentions j'aime">
+                            <span className="material-symbols-outlined text-[13px] text-rose-400">favorite</span>
+                            <span>{formatCompact(item.likes)}</span>
+                          </span>
+                        </div>
+                        <span className="rounded-full bg-white/20 backdrop-blur-xs px-2 py-0.5 text-[9px] text-white font-bold">
                           Regarder
                         </span>
                       </div>

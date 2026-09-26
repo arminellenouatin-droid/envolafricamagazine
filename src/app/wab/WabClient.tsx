@@ -151,12 +151,35 @@ export default function WabClient() {
   const [newPostCount, setNewPostCount] = useState(0);
   const [highlightedPostId, setHighlightedPostId] = useState<string | null>(null);
   const [suggestedFollows, setSuggestedFollows] = useState<Record<string, boolean>>({});
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("default");
   const marker = useRef<HTMLDivElement>(null);
   const feedTopRef = useRef<HTMLDivElement>(null);
   const postsRef = useRef<Post[]>([]);
   const pendingNewPostsRef = useRef<Post[]>([]);
   const sharedPostRef = useRef<Post | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setNotificationPermission(Notification.permission);
+    } else {
+      setNotificationPermission("unsupported");
+    }
+  }, []);
+
+  const enableBrowserNotifications = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    try {
+      const perm = await Notification.requestPermission();
+      setNotificationPermission(perm);
+      if (perm === "granted") {
+        new Notification("Envol Africa - WAB", {
+          body: "Notifications activées ! Vous serez alerté des nouvelles publications et actions de vos amis.",
+          icon: "/favicon.ico",
+        });
+      }
+    } catch {}
+  };
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -304,6 +327,26 @@ export default function WabClient() {
         const pendingIds = new Set(pendingNewPostsRef.current.map((post) => post.id));
         const incoming = data.posts.filter((post) => !knownIds.has(post.id) && !pendingIds.has(post.id));
         if (!incoming.length) return;
+
+        // Notification Chrome / Navigateur native pour les nouvelles publications d'amis et abonnements
+        if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+          const latest = incoming[0];
+          const authorName = latest.author || "Un membre du réseau";
+          const snippet = latest.content ? latest.content.replace(/<[^>]+>/g, "").slice(0, 100) : "Nouvelle publication sur WAB";
+          try {
+            const notif = new Notification(`📢 ${authorName} sur WAB`, {
+              body: snippet,
+              icon: latest.authorAvatarUrl || "/favicon.ico",
+              tag: `wab-post-${latest.id}`,
+            });
+            notif.onclick = () => {
+              window.focus();
+              const el = document.getElementById(`post-${latest.id}`);
+              if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+            };
+          } catch {}
+        }
+
         if (window.scrollY < 220) {
           const nextPosts = [...incoming, ...postsRef.current];
           postsRef.current = nextPosts;
@@ -535,6 +578,35 @@ export default function WabClient() {
               ======================================================== */}
           <section className="flex min-w-0 flex-1 flex-col gap-4">
             
+            {/* Bannière d'activation des notifications Chrome / WAB */}
+            {notificationPermission === "default" && (
+              <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/90 px-4 py-2.5 text-xs text-emerald-950 shadow-sm backdrop-blur-sm">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="material-symbols-outlined text-emerald-700 text-xl shrink-0">notifications_active</span>
+                  <p className="truncate font-medium">
+                    Soyez alerté en direct des nouvelles publications et actions de vos amis.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={enableBrowserNotifications}
+                    className="rounded-full bg-emerald-700 px-3 py-1 font-bold text-white transition hover:bg-emerald-800 text-[11px]"
+                  >
+                    Activer
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNotificationPermission("denied")}
+                    className="text-gray-400 hover:text-gray-600 p-0.5 rounded-full"
+                    title="Masquer"
+                  >
+                    <span className="material-symbols-outlined text-base">close</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Stories & Reels Carousel */}
             <StoriesReelsCarousel />
 

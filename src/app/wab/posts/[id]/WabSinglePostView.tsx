@@ -93,6 +93,17 @@ export default function WabSinglePostView({ post }: { post: SinglePostData }) {
 
   return (
     <main className="min-h-screen bg-[#f0f2f5] py-6 sm:py-10">
+      {/* Balise image prioritaire pour les robots des réseaux sociaux (WhatsApp, etc.) */}
+      {post.imageUrl && (
+        <img
+          src={post.imageUrl}
+          alt={post.author}
+          width={1200}
+          height={630}
+          className="sr-only pointer-events-none absolute -top-96 left-0 h-1 w-1 opacity-0"
+          aria-hidden="true"
+        />
+      )}
       <div className="mx-auto max-w-2xl px-4 sm:px-6">
         {/* Navigation Bar Retour */}
         <div className="flex items-center justify-between mb-6">

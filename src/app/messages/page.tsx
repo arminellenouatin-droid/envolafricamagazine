@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import AudioCallModal from "@/components/messages/AudioCallModal";
+import type { ActiveAudioCall } from "@/app/api/messages/call/route";
 
 interface Participant {
   id: string;
@@ -76,6 +78,7 @@ function MessagesContent() {
   const searchParams = useSearchParams();
   const paramConversationId = searchParams.get("conversationId");
   const paramUserId = searchParams.get("userId") || searchParams.get("targetUserId");
+  const paramCallId = searchParams.get("callId");
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
@@ -83,6 +86,12 @@ function MessagesContent() {
   const [canSendVideo, setCanSendVideo] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchFilter, setSearchFilter] = useState("");
+
+  // Appels audio WebRTC et Notifications
+  const [activeCall, setActiveCall] = useState<ActiveAudioCall | null>(null);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("default");
+  const knownMessageIdsRef = useRef<Set<string>>(new Set());
+  const isInitialLoadRef = useRef(true);
 
   // Input states
   const [textInput, setTextInput] = useState("");
@@ -109,6 +118,29 @@ function MessagesContent() {
   const videoInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Vérifier la permission des notifications au chargement
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setNotificationPermission(Notification.permission);
+    } else {
+      setNotificationPermission("unsupported");
+    }
+  }, []);
+
+  const enableBrowserNotifications = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    try {
+      const perm = await Notification.requestPermission();
+      setNotificationPermission(perm);
+      if (perm === "granted") {
+        new Notification("WAB Messagerie", {
+          body: "Les notifications pour les messages et appels sont désormais activées !",
+          icon: "/favicon.ico",
+        });
+      }
+    } catch {}
+  };
+
   // 1. Initial Load & Auth Check
   useEffect(() => {
     fetch("/api/auth/me")
@@ -126,6 +158,95 @@ function MessagesContent() {
     const interval = setInterval(loadConversations, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  // Détecter un appel direct via URL ?callId=
+  useEffect(() => {
+    if (paramCallId && currentUserId) {
+      fetch(`/api/messages/call?callId=${encodeURIComponent(paramCallId)}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.call && (data.call.status === "ringing" || data.call.status === "connected")) {
+            setActiveCall(data.call);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [paramCallId, currentUserId]);
+
+  // Polling des appels entrants (toutes les 3.5s)
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    let isSubscribed = true;
+
+    const checkIncomingCalls = async () => {
+      try {
+        const res = await fetch("/api/messages/call");
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (!isSubscribed) return;
+
+        if (data.incomingCall) {
+          setActiveCall((prev) => {
+            if (!prev || (prev.id !== data.incomingCall.id && (prev.status === "ended" || prev.status === "rejected"))) {
+              if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+                try {
+                  const notif = new Notification(`📞 Appel audio de ${data.incomingCall.callerName}`, {
+                    body: "Cliquez pour décrocher l'appel audio en direct sur WAB.",
+                    icon: data.incomingCall.callerAvatar || "/favicon.ico",
+                    tag: `call-${data.incomingCall.id}`,
+                  });
+                  notif.onclick = () => {
+                    window.focus();
+                  };
+                } catch {}
+              }
+              return data.incomingCall;
+            }
+            return prev;
+          });
+        }
+      } catch {}
+    };
+
+    const callInterval = setInterval(checkIncomingCalls, 3500);
+    checkIncomingCalls();
+
+    return () => {
+      isSubscribed = false;
+      clearInterval(callInterval);
+    };
+  }, [currentUserId]);
+
+  // Initier un appel audio vers le contact actif
+  const initiateAudioCall = async () => {
+    if (!activeConversation || !currentUserId) return;
+    const recipientId = activeConversation.otherParticipant.id;
+    if (!recipientId || recipientId === currentUserId) return;
+
+    try {
+      const res = await fetch("/api/messages/call", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "initiate",
+          recipientId,
+          recipientName: activeConversation.otherParticipant.fullName,
+          recipientAvatar: activeConversation.otherParticipant.avatarUrl,
+          conversationId: activeConversation.id,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.call) {
+        setActiveCall(data.call);
+      } else {
+        alert(data.error || "Impossible d'initier l'appel audio.");
+      }
+    } catch {
+      alert("Erreur de connexion lors du lancement de l'appel audio.");
+    }
+  };
 
   const loadContacts = async () => {
     setLoadingContacts(true);
@@ -151,6 +272,45 @@ function MessagesContent() {
       if (data.conversations) {
         setConversations(data.conversations);
         setCanSendVideo(Boolean(data.canSendVideo));
+
+        // Détection des nouveaux messages pour les notifications Chrome
+        if (!isInitialLoadRef.current && currentUserId) {
+          for (const conv of data.conversations) {
+            for (const msg of conv.messages || []) {
+              if (msg.sender_id !== currentUserId && !knownMessageIdsRef.current.has(msg.id)) {
+                if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+                  const bodyObj = parseMessageBody(msg.body);
+                  let preview = bodyObj.text || "Nouveau message";
+                  if (bodyObj.type === "voice") preview = "🎤 Note vocale reçue";
+                  else if (bodyObj.type === "video") preview = "🎥 Message vidéo reçu";
+                  else if (bodyObj.type === "image") preview = "📷 Photo reçue";
+                  else if (bodyObj.type === "document") preview = "📎 Document reçu";
+
+                  try {
+                    const notif = new Notification(`💬 ${conv.otherParticipant.fullName}`, {
+                      body: preview,
+                      icon: conv.otherParticipant.avatarUrl || "/favicon.ico",
+                      tag: `msg-${msg.id}`,
+                    });
+                    notif.onclick = () => {
+                      window.focus();
+                      setActiveConversation(conv);
+                    };
+                  } catch {}
+                }
+              }
+            }
+          }
+        }
+
+        const allIds = new Set<string>();
+        for (const conv of data.conversations) {
+          for (const msg of conv.messages || []) {
+            allIds.add(msg.id);
+          }
+        }
+        knownMessageIdsRef.current = allIds;
+        isInitialLoadRef.current = false;
 
         // Sync active conversation
         setActiveConversation((prev) => {
@@ -654,6 +814,23 @@ function MessagesContent() {
             </div>
           </div>
 
+          {/* Bannière d'activation des notifications Chrome / Navigateur */}
+          {notificationPermission === "default" && (
+            <div className="mx-3 my-2 p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2 text-emerald-900 min-w-0">
+                <span className="material-symbols-outlined text-emerald-600 text-lg shrink-0">notifications_active</span>
+                <span className="truncate">Alertes d&apos;appels & messages</span>
+              </div>
+              <button
+                type="button"
+                onClick={enableBrowserNotifications}
+                className="px-2.5 py-1 bg-emerald-700 text-white font-bold text-[11px] rounded-lg hover:bg-emerald-800 transition shrink-0"
+              >
+                Activer
+              </button>
+            </div>
+          )}
+
           {/* Barre d'accès rapide aux comptes suivis (Amis WAB) */}
           {followedContacts.length > 0 && (
             <div className="px-3 py-2.5 bg-white border-b border-[#e9edef] shrink-0">
@@ -856,6 +1033,15 @@ function MessagesContent() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={initiateAudioCall}
+                    className="p-2 rounded-full hover:bg-black/5 text-emerald-700 hover:text-emerald-800 transition"
+                    title="Lancer un appel audio WAB"
+                  >
+                    <span className="material-symbols-outlined text-xl">call</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => {
@@ -1263,6 +1449,18 @@ function MessagesContent() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL APPEL AUDIO WEBRTC                                */}
+      {/* ======================================================== */}
+      {activeCall && currentUserId && (
+        <AudioCallModal
+          currentUserId={currentUserId}
+          call={activeCall}
+          onCallUpdate={(updated) => setActiveCall(updated)}
+          onClose={() => setActiveCall(null)}
+        />
       )}
     </div>
   );
