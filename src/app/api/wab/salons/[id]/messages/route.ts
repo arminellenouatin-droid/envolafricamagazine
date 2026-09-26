@@ -71,9 +71,26 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const userId = user ? user.id : `guest-${uuid().slice(0, 8)}`;
-  const authorName = user
-    ? (`${user.prenom || ""} ${user.nom || ""}`.trim() || user.email || "Participant")
-    : (typeof body.author === "string" && body.author.trim() ? body.author.trim() : "Spectateur WAB");
+
+  let authorName = "Spectateur WAB";
+  if (user) {
+    const fullName = `${user.prenom || ""} ${user.nom || ""}`.trim();
+    authorName = fullName || user.email?.split("@")[0] || "Participant WAB";
+  } else if (typeof body.author === "string" && body.author.trim() && body.author.trim() !== "Moi") {
+    authorName = body.author.trim();
+  }
+
+  let authorAvatarUrl: string | undefined = undefined;
+  if (typeof body.authorAvatarUrl === "string" && body.authorAvatarUrl.trim()) {
+    authorAvatarUrl = body.authorAvatarUrl.trim();
+  } else if (user) {
+    const profile = db.profiles.find((p) => p.userId === user.id);
+    authorAvatarUrl =
+      profile?.avatarUrl ||
+      (user as unknown as { avatar_url?: string; photo_url?: string; avatar?: string }).avatar_url ||
+      (user as unknown as { photo_url?: string }).photo_url ||
+      (user as unknown as { avatar?: string }).avatar;
+  }
 
   // Auto-join participant si pas encore inscrit
   if (!db.salonParticipants.some((item) => item.salonId === id && item.userId === userId)) {
@@ -91,6 +108,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     salonId: id,
     userId,
     author: authorName,
+    authorAvatarUrl,
     content,
     giftType: typeof body.giftType === "string" ? body.giftType : undefined,
     createdAt: new Date().toISOString(),

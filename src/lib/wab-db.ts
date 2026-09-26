@@ -8,7 +8,7 @@ export type WabPost = { id: string; author: string; authorAvatarUrl?: string; au
 export type WabPage = { id: string; ownerUserId: string; name: string; slug: string; logoUrl?: string; avatarUrl?: string; coverUrl?: string; description?: string; status: "active" | "archived"; createdAt: string; updatedAt: string };
 export type WabGroup = { id: string; ownerUserId: string; name: string; slug: string; description?: string; logoUrl?: string; avatarUrl?: string; coverUrl?: string; privacy: "community" | "private"; status: "active" | "archived"; createdAt: string; updatedAt: string };
 export type WabGroupMember = { groupId: string; userId: string; role: "owner" | "moderator" | "member"; status: "active" | "pending" | "blocked"; createdAt: string };
-export type WabProfile = { id: string; userId: string; fullName: string; headline: string; about: string; companyName?: string; industry?: string; country: string; city?: string; status: "active" | "silent" | "banned"; createdAt: string; updatedAt: string; };
+export type WabProfile = { id: string; userId: string; fullName: string; headline: string; about: string; companyName?: string; industry?: string; country: string; city?: string; avatarUrl?: string; photoUrl?: string; status: "active" | "silent" | "banned"; createdAt: string; updatedAt: string; };
 export type WabReaction = { postId: string; userId: string; createdAt: string };
 export type WabMediaReaction = { mediaType: "story" | "reel"; mediaId: string; userId: string; reaction: "love" | "like" | "laugh" | "sad" | "cry" | "wow"; createdAt: string };
 export type WabMediaComment = { id: string; mediaType: "story" | "reel"; mediaId: string; userId: string; author: string; content: string; status: "published" | "hidden"; createdAt: string };
@@ -16,9 +16,32 @@ export type WabComment = { id: string; postId: string; userId: string; author: s
 export type WabReport = { id: string; targetType: "post" | "profile"; targetId: string; reporterId: string; reason: string; status: "open" | "reviewing" | "resolved" | "dismissed"; createdAt: string };
 export type WabView = { postId: string; userId?: string; visitorId?: string; watchSeconds: number; createdAt: string };
 export type WabReward = { id: string; userId: string; postId: string; type: "views_1000" | "watch_minutes_3000"; threshold: number; amount: number; status: "pending_review" | "validated" | "rejected" | "paid"; createdAt: string; validatedAt?: string; paidAt?: string };
-export type WabSalon = { id: string; hostUserId: string; host: string; title: string; description: string; startsAt: string; endsAt?: string; status: "scheduled" | "live" | "ended" | "cancelled"; replayUrl?: string; participants: number; createdAt: string };
+export type WabSalon = {
+  id: string;
+  hostUserId: string;
+  host: string;
+  hostAvatarUrl?: string;
+  title: string;
+  description: string;
+  startsAt: string;
+  endsAt?: string;
+  status: "scheduled" | "live" | "ended" | "cancelled";
+  replayUrl?: string;
+  participants: number;
+  coHostUserId?: string;
+  coHostName?: string;
+  coHostAvatarUrl?: string;
+  guestRequests?: Array<{
+    userId: string;
+    name: string;
+    avatarUrl?: string;
+    requestedAt: string;
+    status: "pending" | "accepted" | "rejected";
+  }>;
+  createdAt: string;
+};
 export type WabSalonParticipant = { salonId: string; userId: string; name: string; joinedAt: string };
-export type WabSalonMessage = { id: string; salonId: string; userId: string; author: string; content: string; createdAt: string };
+export type WabSalonMessage = { id: string; salonId: string; userId: string; author: string; authorAvatarUrl?: string; content: string; giftType?: string; createdAt: string };
 export type WabBoost = { id: string; postId: string; userId: string; budgetXof: number; durationDays: number; audienceType?: "community" | "public"; targetCountries: string[]; targetIndustries: string[]; paymentId?: string; status: "pending" | "active" | "ended" | "cancelled" | "failed"; startsAt?: string; endsAt?: string; createdAt: string };
 export type WabConnection = { followerUserId: string; profileId: string; createdAt: string };
 export type WabNotification = { id: string; userId: string; type: string; title: string; body: string; href?: string; readAt?: string; createdAt: string };

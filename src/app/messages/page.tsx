@@ -730,11 +730,12 @@ function MessagesContent() {
         <div className="flex items-center gap-2">
           <Link
             href="/wab"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all border border-white/20 shadow-sm active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all border border-white/20 shadow-sm active:scale-95 shrink-0"
             title="Fermer la messagerie et retourner au site"
           >
             <span className="material-symbols-outlined text-sm">arrow_back</span>
-            <span>Fermer / Retour au site</span>
+            <span className="hidden sm:inline">Fermer / Retour au site</span>
+            <span className="sm:hidden">Retour</span>
           </Link>
         </div>
       </div>
@@ -990,7 +991,7 @@ function MessagesContent() {
         {/* COLONNE DROITE : FENETRE DE CONVERSATION ACTIVE          */}
         {/* ======================================================== */}
         <div
-          className={`flex-1 flex flex-col bg-[#efeae2] relative ${
+          className={`flex-1 min-w-0 flex flex-col bg-[#efeae2] relative overflow-hidden ${
             activeConversation ? "flex" : "hidden md:flex"
           }`}
         >
@@ -1105,7 +1106,7 @@ function MessagesContent() {
                         >
                           {/* TYPE 1 : Plain Text */}
                           {parsed.type === "text" && (
-                            <p className="whitespace-pre-wrap">{parsed.text}</p>
+                            <p className="whitespace-pre-wrap break-words">{parsed.text}</p>
                           )}
 
                           {/* TYPE 2 : Vocal / Voice Note */}
@@ -1262,7 +1263,7 @@ function MessagesContent() {
                       onChange={(e) => setTextInput(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSendTextMessage()}
                       placeholder="Tapez un message..."
-                      className="flex-1 bg-white text-xs rounded-full px-4 py-3 border border-transparent focus:outline-none focus:ring-1 focus:ring-[#9e001f]"
+                      className="flex-1 min-w-0 bg-white text-xs rounded-full px-4 py-2.5 sm:py-3 border border-transparent focus:outline-none focus:ring-1 focus:ring-[#9e001f]"
                     />
 
                     {/* Bouton Vocal ou Envoi Texte */}

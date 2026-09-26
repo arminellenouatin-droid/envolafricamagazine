@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 interface Salon {
   id: string;
   hostUserId: string;
   host: string;
+  hostAvatarUrl?: string;
   title: string;
   description: string;
   startsAt: string;
@@ -14,11 +16,22 @@ interface Salon {
   status: "scheduled" | "live" | "ended" | "cancelled";
   replayUrl?: string;
   participants: number;
+  coHostUserId?: string;
+  coHostName?: string;
+  coHostAvatarUrl?: string;
+  guestRequests?: Array<{
+    userId: string;
+    name: string;
+    avatarUrl?: string;
+    requestedAt: string;
+    status: "pending" | "accepted" | "rejected";
+  }>;
 }
 
 interface Message {
   id: string;
   author: string;
+  authorAvatarUrl?: string;
   content: string;
   giftType?: string;
   createdAt: string;
@@ -53,7 +66,11 @@ export default function SalonClient({ id }: { id: string }) {
     }
     return false;
   });
-  const [currentUserName, setCurrentUserName] = useState("Moi");
+
+  const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [currentUserName, setCurrentUserName] = useState("Spectateur WAB");
+  const [currentUserAvatar, setCurrentUserAvatar] = useState<string | undefined>(undefined);
+  const [isCoHost, setIsCoHost] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
 
   // Live Stats
@@ -68,7 +85,7 @@ export default function SalonClient({ id }: { id: string }) {
   const [showGiftDrawer, setShowGiftDrawer] = useState(false);
   const [activeGiftAnimation, setActiveGiftAnimation] = useState<{ emoji: string; name: string } | null>(null);
 
-  // Camera & Mic state (Creator)
+  // Camera & Mic state (Creator & Co-host)
   const [cameraActive, setCameraActive] = useState(true);
   const [micActive, setMicActive] = useState(true);
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
@@ -78,6 +95,27 @@ export default function SalonClient({ id }: { id: string }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  // Remote Stream for viewers (Host and Co-Host video streams)
+  const [remoteHostStream, setRemoteHostStream] = useState<MediaStream | null>(null);
+  const [remoteCoHostStream, setRemoteCoHostStream] = useState<MediaStream | null>(null);
+  const [hostLatestFrame, setHostLatestFrame] = useState<string | null>(null);
+  const remoteHostVideoRef = useRef<HTMLVideoElement | null>(null);
+  const remoteCoHostVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  // Stage Requests (Co-Hosting / TikTok Dual Live)
+  const [myStageRequestStatus, setMyStageRequestStatus] = useState<"none" | "pending" | "accepted">("none");
+  const [pendingGuestRequests, setPendingGuestRequests] = useState<Array<{ userId: string; name: string; avatarUrl?: string }>>([]);
+
+  // WebRTC Peer Connections & Supabase Channel
+  const viewerIdRef = useRef<string>("");
+  if (!viewerIdRef.current) {
+    viewerIdRef.current = `v-${Math.random().toString(36).slice(2, 9)}`;
+  }
+  const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
+  const viewerPcRef = useRef<RTCPeerConnection | null>(null);
+  const channelRef = useRef<any>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
   // Modals
   const [showEndModal, setShowEndModal] = useState(false);
   const [liveSummary, setLiveSummary] = useState<{ duration: string; viewers: number; likes: number } | null>(null);
@@ -86,23 +124,43 @@ export default function SalonClient({ id }: { id: string }) {
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
 
   // 1. Initial Load & Polling
-  const loadSalonData = async () => {
+  const loadSalonData = useCallback(async () => {
     try {
       const res = await fetch(`/api/wab/salons/${id}`);
       const data = await res.json();
       if (data.salon) {
         setSalon(data.salon);
-        if (data.messages) setMessages(data.messages);
+        if (Array.isArray(data.messages)) {
+          setMessages((prev) => {
+            // Fusion intelligente sans perdre les messages reçus en temps réel
+            const existingIds = new Set(prev.map((m) => m.id));
+            const newOnes = data.messages.filter((m: Message) => !existingIds.has(m.id));
+            return [...prev, ...newOnes];
+          });
+        }
         if (data.salon.participants) setViewerCount(data.salon.participants);
+
+        // Si l'utilisateur actuel est le co-hôte
+        if (currentUserId && data.salon.coHostUserId === currentUserId) {
+          setIsCoHost(true);
+        } else if (currentUserId && data.salon.coHostUserId !== currentUserId) {
+          setIsCoHost(false);
+        }
+
+        // Mettre à jour les demandes en attente pour l'hôte
+        if (Array.isArray(data.salon.guestRequests)) {
+          const pending = data.salon.guestRequests.filter((r: any) => r.status === "pending");
+          setPendingGuestRequests(pending);
+        }
       }
     } catch {}
-  };
+  }, [id, currentUserId]);
 
   useEffect(() => {
     loadSalonData();
     const interval = setInterval(loadSalonData, 4000);
     return () => clearInterval(interval);
-  }, [id]);
+  }, [loadSalonData]);
 
   // 2. Auth & Host Detection
   useEffect(() => {
@@ -110,19 +168,35 @@ export default function SalonClient({ id }: { id: string }) {
       .then((res) => res.json())
       .then((data) => {
         if (data.user) {
-          setCurrentUserName(`${data.user.prenom || ""} ${data.user.nom || ""}`.trim() || "Moi");
+          setCurrentUserId(data.user.id);
+          const fullName = `${data.user.prenom || ""} ${data.user.nom || ""}`.trim();
+          const nameToUse = fullName || data.user.email?.split("@")[0] || "Membre WAB";
+          setCurrentUserName(nameToUse);
+          const av = data.user.avatar_url || data.user.photo_url || data.user.avatar;
+          if (av) setCurrentUserAvatar(av);
+
           if (salon && salon.hostUserId === data.user.id) {
             setIsHost(true);
             if (typeof window !== "undefined") {
               sessionStorage.setItem(`eam_live_host_${id}`, "true");
             }
           }
+        } else {
+          // Pseudonyme invité stocké ou généré proprement
+          const savedName = localStorage.getItem("wab_viewer_name");
+          if (savedName) {
+            setCurrentUserName(savedName);
+          } else {
+            const guestName = `Spectateur #${viewerIdRef.current.slice(2, 6)}`;
+            setCurrentUserName(guestName);
+            localStorage.setItem("wab_viewer_name", guestName);
+          }
         }
       })
       .catch(() => {});
   }, [salon, id]);
 
-  // 3. Camera Stream (Creator)
+  // 3. Camera Stream (Creator & Co-host)
   const startCamera = async (mode: "user" | "environment" = facingMode) => {
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
       setCameraError("La caméra n'est pas disponible sur ce navigateur.");
@@ -138,38 +212,34 @@ export default function SalonClient({ id }: { id: string }) {
     }
 
     try {
-      const tryGetUserMedia = async (constraints: MediaStreamConstraints) => {
-        return await navigator.mediaDevices.getUserMedia(constraints);
-      };
-
       let stream: MediaStream | null = null;
       let audioEnabled = true;
 
-      // Tentative 1 : mode spécifié (ex: user / environment) + audio
+      // Tentative 1 : mode spécifié (user/environment) + audio
       try {
-        stream = await tryGetUserMedia({
-          video: { facingMode: mode },
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: mode, width: { ideal: 720 }, height: { ideal: 1280 } },
           audio: true,
         });
       } catch {
         // Tentative 2 : vidéo générique + audio
         try {
-          stream = await tryGetUserMedia({
+          stream = await navigator.mediaDevices.getUserMedia({
             video: true,
             audio: true,
           });
         } catch {
-          // Tentative 3 : mode spécifié sans audio (si micro bloqué ou indisponible)
+          // Tentative 3 : vidéo sans audio
           audioEnabled = false;
           try {
-            stream = await tryGetUserMedia({
+            stream = await navigator.mediaDevices.getUserMedia({
               video: { facingMode: mode },
               audio: false,
             });
           } catch {
-            // Tentative 4 : vidéo brute la plus permissive
+            // Tentative 4 : vidéo minimale
             try {
-              stream = await tryGetUserMedia({
+              stream = await navigator.mediaDevices.getUserMedia({
                 video: true,
                 audio: false,
               });
@@ -197,6 +267,19 @@ export default function SalonClient({ id }: { id: string }) {
         setCameraActive(true);
         setMicActive(audioEnabled);
         setCameraError(null);
+
+        // Mettre à jour les pistes dans les peer connections existantes
+        peerConnectionsRef.current.forEach((pc) => {
+          stream!.getTracks().forEach((track) => {
+            const senders = pc.getSenders();
+            const sender = senders.find((s) => s.track?.kind === track.kind);
+            if (sender) {
+              sender.replaceTrack(track).catch(() => {});
+            } else {
+              pc.addTrack(track, stream!);
+            }
+          });
+        });
       }
     } finally {
       setStartingCamera(false);
@@ -211,7 +294,7 @@ export default function SalonClient({ id }: { id: string }) {
 
   // Démarrage automatique de la caméra pour l'hôte
   useEffect(() => {
-    if (isHost) {
+    if (isHost || isCoHost) {
       startCamera(facingMode);
     }
 
@@ -221,9 +304,9 @@ export default function SalonClient({ id }: { id: string }) {
         streamRef.current = null;
       }
     };
-  }, [isHost]);
+  }, [isHost, isCoHost]);
 
-  // Attacher le flux vidéo à l'élément <video> dès qu'il est monté
+  // Attacher le flux vidéo local à l'élément <video>
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !mediaStream) return;
@@ -235,7 +318,299 @@ export default function SalonClient({ id }: { id: string }) {
         console.warn("Auto-play caméra en attente d'interaction :", err);
       });
     }
-  }, [mediaStream, isHost, cameraActive]);
+  }, [mediaStream, isHost, isCoHost, cameraActive]);
+
+  // Attacher le flux vidéo distant hôte pour les spectateurs
+  useEffect(() => {
+    const video = remoteHostVideoRef.current;
+    if (!video || !remoteHostStream) return;
+    video.srcObject = remoteHostStream;
+    video.muted = false;
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch((err) => {
+        console.warn("Auto-play vidéo hôte en attente :", err);
+      });
+    }
+  }, [remoteHostStream]);
+
+  // Attacher le flux vidéo distant co-hôte
+  useEffect(() => {
+    const video = remoteCoHostVideoRef.current;
+    if (!video || !remoteCoHostStream) return;
+    video.srcObject = remoteCoHostStream;
+    video.muted = false;
+    video.play().catch(() => {});
+  }, [remoteCoHostStream]);
+
+  // 4. Capture périodique et diffusion de trame vidéo (Fallback instantané & anti-écran noir)
+  useEffect(() => {
+    if ((!isHost && !isCoHost) || !cameraActive || !mediaStream) return;
+
+    const interval = setInterval(() => {
+      const video = videoRef.current;
+      if (!video || video.videoWidth === 0 || video.videoHeight === 0) return;
+
+      if (!canvasRef.current) {
+        canvasRef.current = document.createElement("canvas");
+      }
+      const canvas = canvasRef.current;
+      const targetWidth = 360;
+      canvas.width = targetWidth;
+      canvas.height = Math.round((targetWidth * video.videoHeight) / video.videoWidth) || 480;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      try {
+        const frameData = canvas.toDataURL("image/jpeg", 0.55);
+        if (channelRef.current) {
+          channelRef.current.send({
+            type: "broadcast",
+            event: isHost ? "host_frame" : "cohost_frame",
+            payload: { frameData, from: currentUserId },
+          });
+        }
+      } catch {}
+    }, 1200);
+
+    return () => clearInterval(interval);
+  }, [isHost, isCoHost, cameraActive, mediaStream, currentUserId]);
+
+  // 5. Connexion Supabase Realtime (Signalisation WebRTC, Chat, Cadeaux, Cœurs, Scène)
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+
+    const ch = supabase.channel(`salon_live_${id}`, {
+      config: {
+        broadcast: { self: false },
+        presence: { key: `viewer_${viewerIdRef.current}` },
+      },
+    });
+
+    // 5.1 Spectateur rejoint le direct -> L'hôte crée l'offre WebRTC
+    ch.on("broadcast", { event: "viewer_join" }, async ({ payload }: { payload: any }) => {
+      const targetViewer = payload?.viewerId;
+      if ((isHost || isCoHost) && streamRef.current && targetViewer) {
+        try {
+          const pc = new RTCPeerConnection({
+            iceServers: [
+              { urls: "stun:stun.l.google.com:19302" },
+              { urls: "stun:stun1.l.google.com:19302" },
+            ],
+          });
+          peerConnectionsRef.current.set(targetViewer, pc);
+
+          streamRef.current.getTracks().forEach((track) => {
+            pc.addTrack(track, streamRef.current!);
+          });
+
+          pc.onicecandidate = (event) => {
+            if (event.candidate) {
+              ch.send({
+                type: "broadcast",
+                event: "live_ice",
+                payload: { to: targetViewer, candidate: event.candidate.toJSON(), role: isHost ? "host" : "cohost" },
+              });
+            }
+          };
+
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+
+          ch.send({
+            type: "broadcast",
+            event: "live_offer",
+            payload: {
+              to: targetViewer,
+              fromRole: isHost ? "host" : "cohost",
+              offer: { type: offer.type, sdp: offer.sdp },
+            },
+          });
+        } catch (err) {
+          console.warn("[Live Host] Erreur création offre viewer :", err);
+        }
+      }
+    });
+
+    // 5.2 Le spectateur reçoit l'offre WebRTC de l'hôte
+    ch.on("broadcast", { event: "live_offer" }, async ({ payload }: { payload: any }) => {
+      if (!isHost && payload?.to === viewerIdRef.current && payload.offer) {
+        try {
+          const pc = new RTCPeerConnection({
+            iceServers: [
+              { urls: "stun:stun.l.google.com:19302" },
+              { urls: "stun:stun1.l.google.com:19302" },
+            ],
+          });
+          viewerPcRef.current = pc;
+
+          pc.ontrack = (event) => {
+            if (event.streams[0]) {
+              if (payload.fromRole === "cohost") {
+                setRemoteCoHostStream(event.streams[0]);
+              } else {
+                setRemoteHostStream(event.streams[0]);
+              }
+            }
+          };
+
+          pc.onicecandidate = (event) => {
+            if (event.candidate) {
+              ch.send({
+                type: "broadcast",
+                event: "live_ice",
+                payload: { from: viewerIdRef.current, candidate: event.candidate.toJSON() },
+              });
+            }
+          };
+
+          await pc.setRemoteDescription(new RTCSessionDescription(payload.offer));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+
+          ch.send({
+            type: "broadcast",
+            event: "live_answer",
+            payload: {
+              from: viewerIdRef.current,
+              answer: { type: answer.type, sdp: answer.sdp },
+            },
+          });
+        } catch (err) {
+          console.warn("[Live Viewer] Erreur négociation réponse :", err);
+        }
+      }
+    });
+
+    // 5.3 L'hôte reçoit la réponse WebRTC du spectateur
+    ch.on("broadcast", { event: "live_answer" }, async ({ payload }: { payload: any }) => {
+      if ((isHost || isCoHost) && payload?.from && payload.answer) {
+        const pc = peerConnectionsRef.current.get(payload.from);
+        if (pc && !pc.currentRemoteDescription) {
+          try {
+            await pc.setRemoteDescription(new RTCSessionDescription(payload.answer));
+          } catch (err) {
+            console.warn("[Live Host] Erreur remote description réponse :", err);
+          }
+        }
+      }
+    });
+
+    // 5.4 ICE Candidates
+    ch.on("broadcast", { event: "live_ice" }, async ({ payload }: { payload: any }) => {
+      if ((isHost || isCoHost) && payload?.from && payload.candidate) {
+        const pc = peerConnectionsRef.current.get(payload.from);
+        if (pc) {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
+          } catch {}
+        }
+      } else if (!isHost && payload?.to === viewerIdRef.current && payload.candidate && viewerPcRef.current) {
+        try {
+          await viewerPcRef.current.addIceCandidate(new RTCIceCandidate(payload.candidate));
+        } catch {}
+      }
+    });
+
+    // 5.5 Réception des trames visuelles instantanées de l'hôte
+    ch.on("broadcast", { event: "host_frame" }, ({ payload }: { payload: any }) => {
+      if (!isHost && payload?.frameData) {
+        setHostLatestFrame(payload.frameData);
+      }
+    });
+
+    // 5.6 Chat en direct instantané
+    ch.on("broadcast", { event: "live_chat_message" }, ({ payload }: { payload: any }) => {
+      if (payload?.message) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === payload.message.id)) return prev;
+          return [...prev, payload.message];
+        });
+      }
+    });
+
+    // 5.7 Cadeaux virtuels reçus
+    ch.on("broadcast", { event: "live_gift" }, ({ payload }: { payload: any }) => {
+      if (payload) {
+        setActiveGiftAnimation({ emoji: payload.emoji, name: payload.name });
+        setGiftCount((g) => g + 1);
+        setTimeout(() => setActiveGiftAnimation(null), 2800);
+      }
+    });
+
+    // 5.8 Cœurs flottants TikTok reçus
+    ch.on("broadcast", { event: "live_heart" }, () => {
+      setLikeCount((prev) => prev + 1);
+      const newHeart: HeartParticle = {
+        id: Date.now() + Math.random(),
+        x: Math.random() * 80 + 10,
+        y: window.innerHeight - 140,
+        color: HEART_COLORS[Math.floor(Math.random() * HEART_COLORS.length)],
+        emoji: HEART_EMOJIS[Math.floor(Math.random() * HEART_EMOJIS.length)],
+      };
+      setHearts((prev) => [...prev.slice(-25), newHeart]);
+      setTimeout(() => {
+        setHearts((prev) => prev.filter((h) => h.id !== newHeart.id));
+      }, 1800);
+    });
+
+    // 5.9 Demande de montée sur scène reçue par l'hôte
+    ch.on("broadcast", { event: "guest_stage_request" }, ({ payload }: { payload: any }) => {
+      if (isHost && payload?.userId) {
+        setPendingGuestRequests((prev) => {
+          if (prev.some((r) => r.userId === payload.userId)) return prev;
+          return [...prev, payload];
+        });
+      }
+    });
+
+    // 5.10 Demande de montée sur scène acceptée
+    ch.on("broadcast", { event: "guest_stage_accepted" }, async ({ payload }: { payload: any }) => {
+      if (payload?.targetUserId === currentUserId) {
+        setMyStageRequestStatus("accepted");
+        setIsCoHost(true);
+        await startCamera(facingMode);
+      }
+      loadSalonData();
+    });
+
+    // 5.11 Fin de la session de scène pour l'invité
+    ch.on("broadcast", { event: "guest_stage_left" }, () => {
+      setIsCoHost(false);
+      setMyStageRequestStatus("none");
+      loadSalonData();
+    });
+
+    // Presence update pour le compteur de spectateurs
+    ch.on("presence", { event: "sync" }, () => {
+      const state = ch.presenceState();
+      const count = Object.keys(state).length;
+      if (count > 0) setViewerCount(Math.max(count, 1));
+    });
+
+    ch.subscribe(async (status: string) => {
+      if (status === "SUBSCRIBED") {
+        await ch.track({ joinedAt: new Date().toISOString() });
+        if (!isHost) {
+          ch.send({
+            type: "broadcast",
+            event: "viewer_join",
+            payload: { viewerId: viewerIdRef.current },
+          });
+        }
+      }
+    });
+
+    channelRef.current = ch;
+
+    return () => {
+      if (supabase && ch) {
+        supabase.removeChannel(ch);
+      }
+    };
+  }, [id, isHost, isCoHost, currentUserId, facingMode, loadSalonData]);
 
   // Scroll chat on new message
   useEffect(() => {
@@ -245,50 +620,74 @@ export default function SalonClient({ id }: { id: string }) {
     });
   }, [messages]);
 
-  // 4. Tap to Heart Animation
+  // Tap to Heart Animation
   const triggerHeart = (clientX?: number, clientY?: number) => {
     setLikeCount((prev) => prev + 1);
 
-    const x = clientX !== undefined ? clientX : window.innerWidth * 0.8;
-    const y = clientY !== undefined ? clientY : window.innerHeight * 0.7;
+    const xPos = clientX ?? Math.random() * (typeof window !== "undefined" ? window.innerWidth * 0.7 : 200) + 20;
+    const yPos = clientY ?? (typeof window !== "undefined" ? window.innerHeight - 150 : 400);
 
     const newHeart: HeartParticle = {
       id: Date.now() + Math.random(),
-      x: x + (Math.random() * 40 - 20),
-      y: y + (Math.random() * 40 - 20),
+      x: xPos,
+      y: yPos,
       color: HEART_COLORS[Math.floor(Math.random() * HEART_COLORS.length)],
       emoji: HEART_EMOJIS[Math.floor(Math.random() * HEART_EMOJIS.length)],
     };
 
     setHearts((prev) => [...prev.slice(-25), newHeart]);
 
-    // Nettoyer après l'animation
+    // Broadcast instantané aux autres utilisateurs
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: "broadcast",
+        event: "live_heart",
+        payload: {},
+      });
+    }
+
     setTimeout(() => {
       setHearts((prev) => prev.filter((h) => h.id !== newHeart.id));
     }, 1800);
   };
 
-  // 5. Send Message
+  // Send Message
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
     const text = inputText.trim();
     setInputText("");
 
-    // Optimistic UI : affichage instantané dans le chat
-    const tempId = "temp-" + Date.now();
+    const authorDisplayName = currentUserName && currentUserName !== "Moi" ? currentUserName : "Spectateur WAB";
+    const tempId = "msg-" + Date.now();
     const tempMessage: Message = {
       id: tempId,
-      author: currentUserName || "Moi",
+      author: authorDisplayName,
+      authorAvatarUrl: currentUserAvatar,
       content: text,
       createdAt: new Date().toISOString(),
     };
+
+    // Optimistic UI
     setMessages((prev) => [...prev, tempMessage]);
+
+    // Broadcast en temps réel sur le canal Supabase
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: "broadcast",
+        event: "live_chat_message",
+        payload: { message: tempMessage },
+      });
+    }
 
     try {
       const res = await fetch(`/api/wab/salons/${id}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: text, author: currentUserName }),
+        body: JSON.stringify({
+          content: text,
+          author: authorDisplayName,
+          authorAvatarUrl: currentUserAvatar,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.message) {
@@ -299,7 +698,7 @@ export default function SalonClient({ id }: { id: string }) {
     }
   };
 
-  // 6. Send Virtual Gift
+  // Send Virtual Gift
   const handleSendGift = async (gift: (typeof VIRTUAL_GIFTS)[0]) => {
     setShowGiftDrawer(false);
     setActiveGiftAnimation({ emoji: gift.emoji, name: gift.name });
@@ -310,16 +709,30 @@ export default function SalonClient({ id }: { id: string }) {
       setTimeout(() => triggerHeart(), i * 150);
     }
 
+    // Broadcast cadeau
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: "broadcast",
+        event: "live_gift",
+        payload: { emoji: gift.emoji, name: gift.name, senderName: currentUserName },
+      });
+    }
+
     setTimeout(() => {
       setActiveGiftAnimation(null);
     }, 2800);
+
+    const giftMessageText = `a offert un cadeau : ${gift.name} ${gift.emoji}`;
+    const authorDisplayName = currentUserName && currentUserName !== "Moi" ? currentUserName : "Spectateur WAB";
 
     try {
       const res = await fetch(`/api/wab/salons/${id}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          content: `a envoyé un cadeau : ${gift.name} ${gift.emoji}`,
+          content: giftMessageText,
+          author: authorDisplayName,
+          authorAvatarUrl: currentUserAvatar,
           giftType: gift.id,
         }),
       });
@@ -330,7 +743,119 @@ export default function SalonClient({ id }: { id: string }) {
     } catch {}
   };
 
-  // 7. End Live (Host)
+  // Demander à monter sur scène (Spectateur)
+  const handleRequestStage = async () => {
+    setMyStageRequestStatus("pending");
+    try {
+      await fetch(`/api/wab/salons/${id}/stage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "request",
+          userId: currentUserId || viewerIdRef.current,
+          name: currentUserName,
+          avatarUrl: currentUserAvatar,
+        }),
+      });
+
+      if (channelRef.current) {
+        channelRef.current.send({
+          type: "broadcast",
+          event: "guest_stage_request",
+          payload: {
+            userId: currentUserId || viewerIdRef.current,
+            name: currentUserName,
+            avatarUrl: currentUserAvatar,
+          },
+        });
+      }
+    } catch {
+      setMyStageRequestStatus("none");
+    }
+  };
+
+  // Accepter un invité sur scène (Hôte)
+  const handleAcceptStage = async (targetUserId: string, guestName: string, avatarUrl?: string) => {
+    try {
+      await fetch(`/api/wab/salons/${id}/stage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "accept", targetUserId }),
+      });
+
+      setPendingGuestRequests((prev) => prev.filter((r) => r.userId !== targetUserId));
+
+      if (channelRef.current) {
+        channelRef.current.send({
+          type: "broadcast",
+          event: "guest_stage_accepted",
+          payload: { targetUserId, guestName, avatarUrl },
+        });
+      }
+
+      loadSalonData();
+    } catch (err) {
+      console.warn("Échec acceptation invité:", err);
+    }
+  };
+
+  // Refuser une demande (Hôte)
+  const handleRejectStage = async (targetUserId: string) => {
+    try {
+      await fetch(`/api/wab/salons/${id}/stage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reject", targetUserId }),
+      });
+      setPendingGuestRequests((prev) => prev.filter((r) => r.userId !== targetUserId));
+    } catch {}
+  };
+
+  // Faire descendre ou quitter la scène
+  const handleLeaveStage = async () => {
+    try {
+      await fetch(`/api/wab/salons/${id}/stage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "leave" }),
+      });
+
+      setIsCoHost(false);
+      setMyStageRequestStatus("none");
+
+      if (channelRef.current) {
+        channelRef.current.send({
+          type: "broadcast",
+          event: "guest_stage_left",
+          payload: {},
+        });
+      }
+
+      loadSalonData();
+    } catch {}
+  };
+
+  const handleKickCoHost = async () => {
+    try {
+      await fetch(`/api/wab/salons/${id}/stage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "kick" }),
+      });
+
+      if (channelRef.current) {
+        channelRef.current.send({
+          type: "broadcast",
+          event: "guest_stage_left",
+          payload: {},
+        });
+      }
+
+      loadSalonData();
+    } catch {}
+  };
+
+  // End Live (Host)
   const handleEndLive = async () => {
     try {
       await fetch(`/api/wab/salons/${id}`, {
@@ -385,6 +910,12 @@ export default function SalonClient({ id }: { id: string }) {
     );
   }
 
+  // Photo de profil de l'hôte (réelle ou avatar par défaut élégant)
+  const hostAvatar =
+    salon.hostAvatarUrl ||
+    (isHost && currentUserAvatar ? currentUserAvatar : undefined) ||
+    "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=300&auto=format&fit=crop";
+
   return (
     <div
       className="fixed inset-0 z-[9999] w-screen h-[100dvh] bg-black text-white overflow-hidden select-none flex flex-col"
@@ -400,7 +931,109 @@ export default function SalonClient({ id }: { id: string }) {
       {/* 1. FLUX VIDÉO EN ARRIÈRE-PLAN (Style TikTok Live)        */}
       {/* ======================================================== */}
       <div className="absolute inset-0 z-0">
-        {isHost ? (
+        {salon.coHostUserId ? (
+          /* Mode Dual Live / Écran partagé TikTok (Hôte + Co-hôte) */
+          <div className="grid grid-rows-2 md:grid-rows-1 md:grid-cols-2 w-full h-full bg-slate-950">
+            {/* Slot 1 : Flux Hôte */}
+            <div className="relative w-full h-full overflow-hidden border-b md:border-b-0 md:border-r border-white/20 bg-black flex items-center justify-center">
+              {isHost ? (
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover"
+                />
+              ) : remoteHostStream ? (
+                <video
+                  ref={remoteHostVideoRef}
+                  autoPlay
+                  playsInline
+                  className="w-full h-full object-cover"
+                />
+              ) : hostLatestFrame ? (
+                <img src={hostLatestFrame} alt={salon.host} className="w-full h-full object-cover" />
+              ) : (
+                <div className="flex flex-col items-center justify-center p-4">
+                  <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-emerald-400 mb-2">
+                    <img src={hostAvatar} alt={salon.host} className="w-full h-full object-cover" />
+                  </div>
+                  <p className="text-xs font-bold text-white">{salon.host}</p>
+                </div>
+              )}
+
+              {/* Badge Hôte */}
+              <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20 flex items-center gap-1.5 z-10">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                <span className="text-[10px] font-black text-white uppercase tracking-wider">Hôte · {salon.host}</span>
+              </div>
+            </div>
+
+            {/* Slot 2 : Flux Co-Hôte / Invité */}
+            <div className="relative w-full h-full overflow-hidden bg-black flex items-center justify-center">
+              {isCoHost ? (
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover"
+                />
+              ) : remoteCoHostStream ? (
+                <video
+                  ref={remoteCoHostVideoRef}
+                  autoPlay
+                  playsInline
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center p-4">
+                  <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-amber-400 mb-2 bg-amber-900/40 flex items-center justify-center text-xl font-bold text-amber-300">
+                    {salon.coHostAvatarUrl ? (
+                      <img src={salon.coHostAvatarUrl} alt={salon.coHostName || "Co-hôte"} className="w-full h-full object-cover" />
+                    ) : (
+                      (salon.coHostName || "C").slice(0, 1).toUpperCase()
+                    )}
+                  </div>
+                  <p className="text-xs font-bold text-white">{salon.coHostName || "Invité en direct"}</p>
+                  <p className="text-[10px] text-amber-300">Sur scène avec l'hôte</p>
+                </div>
+              )}
+
+              {/* Badge Invité & Bouton Déconnexion */}
+              <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-amber-400/40 flex items-center gap-1.5 z-10">
+                <span className="material-symbols-outlined text-amber-400 text-xs">podium</span>
+                <span className="text-[10px] font-black text-amber-300 uppercase tracking-wider">
+                  {salon.coHostName || "Invité"}
+                </span>
+              </div>
+
+              {isHost && (
+                <button
+                  type="button"
+                  onClick={handleKickCoHost}
+                  className="absolute top-3 right-3 bg-red-600/80 hover:bg-red-700 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1 z-10 transition-transform active:scale-95"
+                  title="Faire descendre l'invité de la scène"
+                >
+                  <span className="material-symbols-outlined text-xs">close</span>
+                  <span>Descendre</span>
+                </button>
+              )}
+              {isCoHost && (
+                <button
+                  type="button"
+                  onClick={handleLeaveStage}
+                  className="absolute top-3 right-3 bg-red-600/80 hover:bg-red-700 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1 z-10 transition-transform active:scale-95"
+                  title="Quitter la scène"
+                >
+                  <span className="material-symbols-outlined text-xs">logout</span>
+                  <span>Quitter</span>
+                </button>
+              )}
+            </div>
+          </div>
+        ) : isHost ? (
+          /* Mode Plein Écran Hôte */
           <div className="relative w-full h-full">
             <video
               ref={videoRef}
@@ -452,29 +1085,49 @@ export default function SalonClient({ id }: { id: string }) {
             )}
           </div>
         ) : (
-          // Flux spectateur immersif
-          <div className="relative w-full h-full bg-gradient-to-b from-slate-900 via-[#00223a] to-black flex items-center justify-center">
-            {/* Visualisation interactive du direct */}
-            <div className="relative flex flex-col items-center">
-              <div className="relative">
-                <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-emerald-400 shadow-2xl animate-pulse">
-                  <img
-                    src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=300&auto=format&fit=crop"
-                    alt={salon.host}
-                    className="w-full h-full object-cover"
-                  />
+          /* Mode Plein Écran Spectateur */
+          <div className="relative w-full h-full bg-slate-950 flex items-center justify-center">
+            {remoteHostStream ? (
+              <video
+                ref={remoteHostVideoRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover"
+              />
+            ) : hostLatestFrame ? (
+              <div className="relative w-full h-full">
+                <img src={hostLatestFrame} alt={salon.host} className="w-full h-full object-cover" />
+                <div className="absolute top-4 left-4 bg-emerald-600/80 backdrop-blur text-white text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                  Flux Caméra Direct
                 </div>
-                <span className="absolute bottom-0 right-2 px-2 py-0.5 rounded-full bg-red-600 text-white font-black text-[10px] tracking-wider uppercase ring-2 ring-black">
-                  LIVE
-                </span>
               </div>
-              <h2 className="mt-4 font-display font-black text-xl text-white drop-shadow">
-                {salon.host}
-              </h2>
-              <p className="text-xs text-emerald-300 font-medium mt-1">
-                {salon.title}
-              </p>
-            </div>
+            ) : (
+              <div className="relative flex flex-col items-center text-center p-6">
+                <div className="relative">
+                  <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-emerald-400 shadow-2xl animate-pulse">
+                    <img
+                      src={hostAvatar}
+                      alt={salon.host}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span className="absolute bottom-0 right-2 px-2 py-0.5 rounded-full bg-red-600 text-white font-black text-[10px] tracking-wider uppercase ring-2 ring-black">
+                    LIVE
+                  </span>
+                </div>
+                <h2 className="mt-4 font-display font-black text-xl text-white drop-shadow">
+                  {salon.host}
+                </h2>
+                <p className="text-xs text-emerald-300 font-medium mt-1">
+                  {salon.title}
+                </p>
+                <p className="text-[11px] text-gray-400 mt-2 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  Connexion au flux vidéo de l'hôte...
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -483,14 +1136,59 @@ export default function SalonClient({ id }: { id: string }) {
       </div>
 
       {/* ======================================================== */}
+      {/* BANNIÈRE DEMANDES SUR SCÈNE (Visible par l'hôte)          */}
+      {/* ======================================================== */}
+      {isHost && pendingGuestRequests.length > 0 && (
+        <div className="absolute top-20 left-4 right-4 z-40 max-w-md mx-auto bg-black/85 backdrop-blur-md border border-amber-400/60 rounded-2xl p-3 shadow-2xl animate-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-amber-500/30 border border-amber-400/40 shrink-0 flex items-center justify-center font-bold text-amber-300 text-sm">
+                {pendingGuestRequests[0].avatarUrl ? (
+                  <img src={pendingGuestRequests[0].avatarUrl} alt={pendingGuestRequests[0].name} className="w-full h-full object-cover" />
+                ) : (
+                  pendingGuestRequests[0].name.slice(0, 1).toUpperCase()
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-black text-amber-300 truncate">
+                  {pendingGuestRequests[0].name}
+                </p>
+                <p className="text-[11px] text-gray-300">
+                  Souhaite monter en direct avec vous
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleRejectStage(pendingGuestRequests[0].userId)}
+                className="w-8 h-8 rounded-full bg-red-600/30 text-red-300 hover:bg-red-600 hover:text-white flex items-center justify-center transition"
+                title="Refuser"
+              >
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAcceptStage(pendingGuestRequests[0].userId, pendingGuestRequests[0].name, pendingGuestRequests[0].avatarUrl)}
+                className="px-3 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs shadow flex items-center gap-1 transition active:scale-95"
+              >
+                <span className="material-symbols-outlined text-sm">check</span>
+                <span>Accepter</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
       {/* 2. EN-TÊTE DU LIVE (Overlay Supérieur)                    */}
       {/* ======================================================== */}
       <div className="relative z-20 flex items-center justify-between p-3 sm:p-4 md:px-6 pt-[max(0.75rem,env(safe-area-inset-top))]">
         {/* Profil de l'Hôte */}
         <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-full pl-1.5 pr-3 py-1 border border-white/10">
-          <div className="w-8 h-8 rounded-full overflow-hidden bg-emerald-700 shrink-0">
+          <div className="w-8 h-8 rounded-full overflow-hidden bg-emerald-700 shrink-0 border border-white/20">
             <img
-              src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=160&auto=format&fit=crop"
+              src={hostAvatar}
               alt={salon.host}
               className="w-full h-full object-cover"
             />
@@ -523,7 +1221,7 @@ export default function SalonClient({ id }: { id: string }) {
 
         {/* Boutons d'action Supérieurs */}
         <div className="flex items-center gap-2">
-          {isHost && (
+          {(isHost || isCoHost) && (
             <>
               <button
                 type="button"
@@ -644,32 +1342,39 @@ export default function SalonClient({ id }: { id: string }) {
           className="max-h-60 overflow-y-auto space-y-2 pr-2 no-scrollbar"
         >
           {/* Message de bienvenue */}
-          <div className="bg-black/35 backdrop-blur-md rounded-2xl p-2.5 text-xs border border-white/10 leading-relaxed text-amber-300">
+          <div className="bg-black/40 backdrop-blur-md rounded-2xl p-2.5 text-xs border border-white/10 leading-relaxed text-amber-300">
             <span className="font-bold">✨ Bienvenue dans le Salon WAB !</span> Respectez les participants et partagez vos opportunités professionnelles.
           </div>
 
           {messages.map((m) => (
             <div
               key={m.id}
-              className={`bg-black/45 backdrop-blur-md rounded-2xl px-3 py-2 text-xs border border-white/10 ${
+              className={`bg-black/55 backdrop-blur-md rounded-2xl px-3 py-2 text-xs border border-white/10 flex items-start gap-2 ${
                 m.giftType
-                  ? "border-amber-400/60 bg-amber-950/40 text-amber-200"
+                  ? "border-amber-400/60 bg-amber-950/50 text-amber-200"
                   : "text-white"
               }`}
             >
-              <span className="font-extrabold text-emerald-400 mr-2">{m.author} :</span>
-              <span className="leading-snug">{m.content}</span>
+              {m.authorAvatarUrl && (
+                <div className="w-5 h-5 rounded-full overflow-hidden shrink-0 mt-0.5">
+                  <img src={m.authorAvatarUrl} alt={m.author} className="w-full h-full object-cover" />
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <span className="font-extrabold text-emerald-400 mr-1.5">{m.author || "Spectateur"} :</span>
+                <span className="leading-snug break-words">{m.content}</span>
+              </div>
             </div>
           ))}
         </div>
       </div>
 
       {/* ======================================================== */}
-      {/* 6. BARRE D'INTERACTION INFERIEURE (Input, Cadeau, Cœurs) */}
+      {/* 6. BARRE D'INTERACTION INFERIEURE (Input, Monter, Cadeau) */}
       {/* ======================================================== */}
       <div className="absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-4 right-4 z-30 flex items-center gap-2 pointer-events-auto">
         {/* Champ de saisie commentaire */}
-        <div className="flex-1 flex items-center bg-black/50 backdrop-blur-md rounded-full px-4 py-2 border border-white/20">
+        <div className="flex-1 flex items-center bg-black/60 backdrop-blur-md rounded-full px-4 py-2 border border-white/20 min-w-0">
           <input
             type="text"
             value={inputText}
@@ -682,12 +1387,47 @@ export default function SalonClient({ id }: { id: string }) {
             <button
               type="button"
               onClick={handleSendMessage}
-              className="text-emerald-400 hover:text-emerald-300 ml-2"
+              className="text-emerald-400 hover:text-emerald-300 ml-2 shrink-0"
             >
               <span className="material-symbols-outlined text-base">send</span>
             </button>
           )}
         </div>
+
+        {/* Bouton Monter sur scène / Live (Spectateur) */}
+        {!isHost && !isCoHost && (
+          <button
+            type="button"
+            onClick={handleRequestStage}
+            disabled={myStageRequestStatus === "pending"}
+            className={`h-11 px-3 rounded-full flex items-center gap-1.5 shadow-lg active:scale-95 transition-all shrink-0 font-bold text-xs ${
+              myStageRequestStatus === "pending"
+                ? "bg-amber-600/80 text-white cursor-wait"
+                : "bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white ring-2 ring-emerald-400/40"
+            }`}
+            title="Demander à monter sur le live pour partager son écran / caméra"
+          >
+            <span className="material-symbols-outlined text-lg">
+              {myStageRequestStatus === "pending" ? "hourglass_top" : "podium"}
+            </span>
+            <span className="hidden sm:inline">
+              {myStageRequestStatus === "pending" ? "En attente…" : "Monter"}
+            </span>
+          </button>
+        )}
+
+        {/* Bouton Quitter la scène (Co-Hôte) */}
+        {isCoHost && (
+          <button
+            type="button"
+            onClick={handleLeaveStage}
+            className="h-11 px-3 rounded-full bg-red-600/80 hover:bg-red-700 text-white flex items-center gap-1 text-xs font-bold shrink-0 shadow-lg active:scale-95"
+            title="Descendre de scène et redevenir spectateur"
+          >
+            <span className="material-symbols-outlined text-base">logout</span>
+            <span className="hidden sm:inline">Quitter</span>
+          </button>
+        )}
 
         {/* Bouton Cadeau Virtuel */}
         {!isHost && (
@@ -824,7 +1564,7 @@ export default function SalonClient({ id }: { id: string }) {
 
             <Link
               href="/wab/salons"
-              className="block w-full py-3 rounded-full bg-[#9e001f] text-white font-bold text-xs"
+              className="block w-full py-3 rounded-full bg-[#9e001f] text-white font-bold text-xs text-center"
             >
               Retour aux Salons
             </Link>

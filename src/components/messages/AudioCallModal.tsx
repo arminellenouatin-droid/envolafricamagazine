@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { ActiveAudioCall } from "@/app/api/messages/call/route";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 interface AudioCallModalProps {
   currentUserId: string;
@@ -33,15 +34,26 @@ export default function AudioCallModal({
   const ringtoneCtxRef = useRef<AudioContext | null>(null);
   const ringtoneIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  const channelRef = useRef<any>(null);
+  const offerRef = useRef<RTCSessionDescriptionInit | null>(call.offer || null);
+  const answerRef = useRef<RTCSessionDescriptionInit | null>(call.answer || null);
+  const callerStartedRef = useRef(false);
+  const recipientRingtoneStartedRef = useRef(false);
+
   // Play Gentle Ringtone via Web Audio API
   const startRingtone = useCallback(() => {
     try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!AudioCtx) return;
+      if (ringtoneCtxRef.current) return;
+
       const ctx = new AudioCtx();
       ringtoneCtxRef.current = ctx;
 
       const playBeep = () => {
+        if (!ringtoneCtxRef.current) return;
         if (ctx.state === "suspended") ctx.resume();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -85,10 +97,19 @@ export default function AudioCallModal({
       pcRef.current.close();
       pcRef.current = null;
     }
+    if (channelRef.current) {
+      try {
+        const supabase = getSupabaseBrowserClient();
+        if (supabase) supabase.removeChannel(channelRef.current);
+      } catch {}
+      channelRef.current = null;
+    }
   }, [stopRingtone]);
 
   // Setup WebRTC PeerConnection
   const initWebRTC = useCallback(async () => {
+    if (pcRef.current) return pcRef.current;
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       localStreamRef.current = stream;
@@ -97,6 +118,7 @@ export default function AudioCallModal({
         iceServers: [
           { urls: "stun:stun.l.google.com:19302" },
           { urls: "stun:stun1.l.google.com:19302" },
+          { urls: "stun:stun2.l.google.com:19302" },
         ],
       });
       pcRef.current = pc;
@@ -108,20 +130,39 @@ export default function AudioCallModal({
       pc.ontrack = (event) => {
         if (remoteAudioRef.current && event.streams[0]) {
           remoteAudioRef.current.srcObject = event.streams[0];
-          remoteAudioRef.current.play().catch(() => {});
+          remoteAudioRef.current.volume = isSpeakerOn ? 1.0 : 0.2;
+          remoteAudioRef.current.muted = false;
+          const playPromise = remoteAudioRef.current.play();
+          if (playPromise !== undefined) {
+            playPromise.catch((err) => {
+              console.warn("[WebRTC] Lecture audio automatique en attente :", err);
+            });
+          }
         }
       };
 
       // Handle ICE Candidates
       pc.onicecandidate = (event) => {
         if (event.candidate) {
+          const candidateData = event.candidate.toJSON();
+
+          // Broadcast via Supabase Realtime
+          if (channelRef.current) {
+            channelRef.current.send({
+              type: "broadcast",
+              event: "webrtc_ice",
+              payload: { candidate: candidateData, senderId: currentUserId },
+            });
+          }
+
+          // Fallback via API
           fetch("/api/messages/call", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               action: "signal",
               callId: call.id,
-              candidate: event.candidate.toJSON(),
+              candidate: candidateData,
             }),
           }).catch(() => {});
         }
@@ -133,18 +174,34 @@ export default function AudioCallModal({
       setErrorMessage("Impossible d'accéder au microphone. Veuillez autoriser l'accès audio.");
       return null;
     }
-  }, [call.id]);
+  }, [call.id, currentUserId, isSpeakerOn]);
 
   // Caller: create Offer
   const startCallingAsCaller = useCallback(async () => {
+    if (callerStartedRef.current) return;
+    callerStartedRef.current = true;
+
     startRingtone();
     const pc = await initWebRTC();
     if (!pc) return;
 
     try {
-      const offer = await pc.createOffer();
+      const offer = await pc.createOffer({
+        offerToReceiveAudio: true,
+      });
       await pc.setLocalDescription(offer);
+      offerRef.current = { type: offer.type, sdp: offer.sdp };
 
+      // Broadcast offer via Supabase Realtime
+      if (channelRef.current) {
+        channelRef.current.send({
+          type: "broadcast",
+          event: "webrtc_offer",
+          payload: { offer: { type: offer.type, sdp: offer.sdp } },
+        });
+      }
+
+      // Persist offer via API
       await fetch("/api/messages/call", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -162,20 +219,63 @@ export default function AudioCallModal({
   // Recipient: Accept Call
   const handleAcceptCall = async () => {
     stopRingtone();
+    setCallStatus("connected");
+
     const pc = await initWebRTC();
     if (!pc) return;
 
-    try {
-      // Fetch latest call state to get Offer
-      const res = await fetch(`/api/messages/call?callId=${encodeURIComponent(call.id)}`);
-      const data = await res.json();
-      const currentOffer = data.call?.offer;
+    // Débloquer l'élément audio de façon synchrone suite au clic utilisateur
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.play().catch(() => {});
+    }
 
+    let currentOffer = offerRef.current;
+
+    // Si l'offre n'a pas encore été reçue, demander via Supabase Realtime et interroger l'API
+    if (!currentOffer) {
+      if (channelRef.current) {
+        channelRef.current.send({
+          type: "broadcast",
+          event: "request_offer",
+          payload: {},
+        });
+      }
+
+      for (let attempt = 0; attempt < 6; attempt++) {
+        try {
+          const res = await fetch(`/api/messages/call?callId=${encodeURIComponent(call.id)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.call?.offer) {
+              currentOffer = data.call.offer;
+              offerRef.current = currentOffer;
+              break;
+            }
+          }
+        } catch {}
+        await new Promise((r) => setTimeout(r, 400));
+      }
+    }
+
+    try {
       if (currentOffer) {
-        await pc.setRemoteDescription(new RTCSessionDescription(currentOffer));
+        if (!pc.currentRemoteDescription) {
+          await pc.setRemoteDescription(new RTCSessionDescription(currentOffer));
+        }
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
+        answerRef.current = { type: answer.type, sdp: answer.sdp };
 
+        // Broadcast answer via Supabase Realtime
+        if (channelRef.current) {
+          channelRef.current.send({
+            type: "broadcast",
+            event: "webrtc_answer",
+            payload: { answer: { type: answer.type, sdp: answer.sdp } },
+          });
+        }
+
+        // Persist acceptation via API
         await fetch("/api/messages/call", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -185,17 +285,16 @@ export default function AudioCallModal({
             answer: { type: answer.type, sdp: answer.sdp },
           }),
         });
-
-        // Add any caller candidates already collected
-        if (Array.isArray(data.call?.callerCandidates)) {
-          for (const cand of data.call.callerCandidates) {
-            try {
-              await pc.addIceCandidate(new RTCIceCandidate(cand));
-            } catch {}
-          }
-        }
-
-        setCallStatus("connected");
+      } else {
+        // Envoi simple de l'action accept si l'offre n'est pas encore prête
+        await fetch("/api/messages/call", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "accept",
+            callId: call.id,
+          }),
+        });
       }
     } catch (e) {
       console.error("[WebRTC] Erreur acceptation appel :", e);
@@ -205,6 +304,17 @@ export default function AudioCallModal({
   // Reject / Hang up
   const handleEndCall = async () => {
     cleanupMedia();
+
+    if (channelRef.current) {
+      try {
+        channelRef.current.send({
+          type: "broadcast",
+          event: "call_ended",
+          payload: { by: currentUserId },
+        });
+      } catch {}
+    }
+
     const action = callStatus === "ringing" && isRecipient ? "reject" : "end";
     try {
       await fetch("/api/messages/call", {
@@ -228,14 +338,105 @@ export default function AudioCallModal({
     }
   };
 
-  // Poll call state
+  // Connect to Supabase Realtime for instant WebRTC signaling
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+
+    const ch = supabase.channel(`wab_audio_call_${call.id}`, {
+      config: { broadcast: { self: false } },
+    });
+
+    ch.on("broadcast", { event: "webrtc_offer" }, async ({ payload }: { payload: any }) => {
+      if (payload?.offer) {
+        offerRef.current = payload.offer;
+        if (isRecipient && pcRef.current && !pcRef.current.currentRemoteDescription) {
+          try {
+            await pcRef.current.setRemoteDescription(new RTCSessionDescription(payload.offer));
+            const answer = await pcRef.current.createAnswer();
+            await pcRef.current.setLocalDescription(answer);
+            ch.send({
+              type: "broadcast",
+              event: "webrtc_answer",
+              payload: { answer: { type: answer.type, sdp: answer.sdp } },
+            });
+            fetch("/api/messages/call", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "accept",
+                callId: call.id,
+                answer: { type: answer.type, sdp: answer.sdp },
+              }),
+            }).catch(() => {});
+          } catch (e) {
+            console.warn("[WebRTC] Erreur réponse automatique sur offre :", e);
+          }
+        }
+      }
+    });
+
+    ch.on("broadcast", { event: "webrtc_answer" }, async ({ payload }: { payload: any }) => {
+      if (payload?.answer) {
+        answerRef.current = payload.answer;
+        stopRingtone();
+        setCallStatus("connected");
+        if (pcRef.current && !pcRef.current.currentRemoteDescription) {
+          try {
+            await pcRef.current.setRemoteDescription(new RTCSessionDescription(payload.answer));
+          } catch (e) {
+            console.warn("[WebRTC] Erreur enregistrement réponse :", e);
+          }
+        }
+      }
+    });
+
+    ch.on("broadcast", { event: "webrtc_ice" }, async ({ payload }: { payload: any }) => {
+      if (payload?.candidate && pcRef.current) {
+        try {
+          await pcRef.current.addIceCandidate(new RTCIceCandidate(payload.candidate));
+        } catch {}
+      }
+    });
+
+    ch.on("broadcast", { event: "request_offer" }, () => {
+      if (isCaller && pcRef.current?.localDescription) {
+        ch.send({
+          type: "broadcast",
+          event: "webrtc_offer",
+          payload: { offer: pcRef.current.localDescription },
+        });
+      }
+    });
+
+    ch.on("broadcast", { event: "call_ended" }, () => {
+      cleanupMedia();
+      onCallUpdate(null);
+      onClose();
+    });
+
+    ch.subscribe();
+    channelRef.current = ch;
+
+    return () => {
+      if (supabase && ch) {
+        supabase.removeChannel(ch);
+      }
+    };
+  }, [call.id, cleanupMedia, isCaller, isRecipient, onClose, onCallUpdate, stopRingtone]);
+
+  // Initial call behavior (Caller starts, Recipient rings)
   useEffect(() => {
     if (isCaller && callStatus === "ringing") {
       startCallingAsCaller();
-    } else if (isRecipient && callStatus === "ringing") {
+    } else if (isRecipient && callStatus === "ringing" && !recipientRingtoneStartedRef.current) {
+      recipientRingtoneStartedRef.current = true;
       startRingtone();
     }
+  }, [isCaller, isRecipient, callStatus, startCallingAsCaller, startRingtone]);
 
+  // Polling fallback to ensure synchronization with disk/API
+  useEffect(() => {
     const poll = async () => {
       try {
         const res = await fetch(`/api/messages/call?callId=${encodeURIComponent(call.id)}`);
@@ -250,7 +451,14 @@ export default function AudioCallModal({
           return;
         }
 
-        setCallStatus(latestCall.status);
+        if (latestCall.status === "connected" && callStatus === "ringing") {
+          stopRingtone();
+          setCallStatus("connected");
+        }
+
+        if (latestCall.offer && !offerRef.current) {
+          offerRef.current = latestCall.offer;
+        }
 
         // Caller handling answer
         if (isCaller && latestCall.status === "connected" && latestCall.answer && pcRef.current) {
@@ -272,9 +480,9 @@ export default function AudioCallModal({
     pollTimerRef.current = setInterval(poll, 1500);
 
     return () => {
-      cleanupMedia();
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
     };
-  }, [call.id, cleanupMedia, isCaller, isRecipient, onCallUpdate, onClose, startCallingAsCaller, startRingtone, stopRingtone]);
+  }, [call.id, callStatus, cleanupMedia, isCaller, onClose, onCallUpdate, stopRingtone]);
 
   // Duration timer when connected
   useEffect(() => {
@@ -288,6 +496,13 @@ export default function AudioCallModal({
       if (durationTimerRef.current) clearInterval(durationTimerRef.current);
     };
   }, [callStatus, stopRingtone]);
+
+  // Synchronize speaker volume
+  useEffect(() => {
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.volume = isSpeakerOn ? 1.0 : 0.2;
+    }
+  }, [isSpeakerOn]);
 
   const otherPersonName = isCaller ? call.recipientName || "Contact" : call.callerName || "Contact";
   const otherPersonAvatar = isCaller ? call.recipientAvatar : call.callerAvatar;
@@ -389,11 +604,13 @@ export default function AudioCallModal({
                 type="button"
                 onClick={toggleMute}
                 aria-label={isMuted ? "Activer le micro" : "Couper le micro"}
-                className={`flex flex-col items-center gap-1 group`}
+                className="flex flex-col items-center gap-1 group"
               >
                 <div
                   className={`flex h-12 w-12 items-center justify-center rounded-full transition-transform group-hover:scale-105 active:scale-95 ${
-                    isMuted ? "bg-red-500/20 text-red-400 border border-red-500/40" : "bg-white/10 text-white hover:bg-white/20"
+                    isMuted
+                      ? "bg-red-500/20 text-red-400 border border-red-500/40"
+                      : "bg-white/10 text-white hover:bg-white/20"
                   }`}
                 >
                   <span className="material-symbols-outlined text-xl">
@@ -427,7 +644,9 @@ export default function AudioCallModal({
               >
                 <div
                   className={`flex h-12 w-12 items-center justify-center rounded-full transition-transform group-hover:scale-105 active:scale-95 ${
-                    isSpeakerOn ? "bg-teal-500/20 text-teal-300 border border-teal-500/40" : "bg-white/10 text-gray-400"
+                    isSpeakerOn
+                      ? "bg-teal-500/20 text-teal-300 border border-teal-500/40"
+                      : "bg-white/10 text-gray-400"
                   }`}
                 >
                   <span className="material-symbols-outlined text-xl">

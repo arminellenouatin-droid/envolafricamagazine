@@ -8,6 +8,7 @@ const demoSalons = [
     id: "salon-live-panafricain",
     hostUserId: "user-aicha",
     host: "Aïcha Bamba",
+    hostAvatarUrl: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=300&auto=format&fit=crop",
     title: "Opportunités Logistiques & Financement en Afrique de l'Ouest",
     description: "Session interactive en direct : retour d'expérience sur la levée de fonds et la structuration logistique à Abidjan et Dakar.",
     startsAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
@@ -19,6 +20,7 @@ const demoSalons = [
     id: "salon-live-tech",
     hostUserId: "user-moussa",
     host: "Moussa Diallo",
+    hostAvatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop",
     title: "Masterclass B2B : Vendre et exporter ses services depuis l'Afrique",
     description: "Débat live avec questions-réponses en direct pour les dirigeants de PME et consultants.",
     startsAt: new Date(Date.now() - 40 * 60 * 1000).toISOString(),
@@ -30,6 +32,7 @@ const demoSalons = [
     id: "salon-scheduled-fintech",
     hostUserId: "user-njeri",
     host: "Njeri Wanjiku",
+    hostAvatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop",
     title: "Le futur des paiements mobiles et de l'interopérabilité bancaire",
     description: "Analyse des tendances 2026-2027 avec les acteurs clés des fintechs africaines.",
     startsAt: new Date(Date.now() + 2 * 3600 * 1000).toISOString(),
@@ -97,15 +100,29 @@ export async function POST(request: NextRequest) {
   if (!Array.isArray(db.salons)) db.salons = [];
   if (!Array.isArray(db.salonParticipants)) db.salonParticipants = [];
 
+  let hostAvatarUrl: string | undefined = undefined;
+  if (typeof body.hostAvatarUrl === "string" && body.hostAvatarUrl.trim()) {
+    hostAvatarUrl = body.hostAvatarUrl.trim();
+  } else if (user) {
+    const profile = db.profiles.find((p) => p.userId === user.id);
+    hostAvatarUrl =
+      profile?.avatarUrl ||
+      (user as unknown as { avatar_url?: string; photo_url?: string; avatar?: string }).avatar_url ||
+      (user as unknown as { photo_url?: string }).photo_url ||
+      (user as unknown as { avatar?: string }).avatar;
+  }
+
   const salon = {
     id: uuid(),
     hostUserId,
     host,
+    hostAvatarUrl,
     title: body.title.trim().slice(0, 180),
     description: typeof body.description === "string" ? body.description.trim().slice(0, 4000) : "",
     startsAt,
     status: (isLiveNow ? "live" : "scheduled") as "live" | "scheduled",
     participants: 1,
+    guestRequests: [],
     createdAt: new Date().toISOString(),
   };
 

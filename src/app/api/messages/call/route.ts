@@ -23,26 +23,69 @@ export interface ActiveAudioCall {
   endedAt?: number;
 }
 
-// Mémoire partagée en runtime pour la signalisation temps réel des appels
+import fs from "fs";
+import path from "path";
+
+// Fichier de stockage partagé pour la signalisation des appels
+const CALLS_FILE = path.join(
+  process.platform === "win32"
+    ? path.join(process.cwd(), "src", "data", "wab-calls.json")
+    : "/tmp",
+  "wab-calls.json"
+);
+
+function loadActiveCalls(): Map<string, ActiveAudioCall> {
+  const map = new Map<string, ActiveAudioCall>();
+  try {
+    if (fs.existsSync(CALLS_FILE)) {
+      const data = JSON.parse(fs.readFileSync(CALLS_FILE, "utf-8")) as ActiveAudioCall[];
+      if (Array.isArray(data)) {
+        const now = Date.now();
+        for (const item of data) {
+          if (now - item.createdAt < 15 * 60 * 1000) {
+            map.set(item.id, item);
+          }
+        }
+      }
+    }
+  } catch {}
+  return map;
+}
+
+function persistActiveCalls(map: Map<string, ActiveAudioCall>) {
+  try {
+    fs.mkdirSync(path.dirname(CALLS_FILE), { recursive: true });
+    const list = Array.from(map.values());
+    fs.writeFileSync(CALLS_FILE, JSON.stringify(list, null, 2), "utf-8");
+  } catch {}
+}
+
 declare global {
   // eslint-disable-next-line no-var
   var __wabActiveCalls: Map<string, ActiveAudioCall> | undefined;
 }
 
 if (!global.__wabActiveCalls) {
-  global.__wabActiveCalls = new Map<string, ActiveAudioCall>();
+  global.__wabActiveCalls = loadActiveCalls();
 }
 
 const activeCalls = global.__wabActiveCalls;
 
-// Nettoyer les appels expirés (> 10 minutes)
+// Nettoyer les appels expirés (> 15 minutes) et synchroniser avec le fichier
 function cleanExpiredCalls() {
+  const diskCalls = loadActiveCalls();
   const now = Date.now();
+  for (const [id, call] of diskCalls.entries()) {
+    if (!activeCalls.has(id)) {
+      activeCalls.set(id, call);
+    }
+  }
   for (const [id, call] of activeCalls.entries()) {
-    if (now - call.createdAt > 10 * 60 * 1000) {
+    if (now - call.createdAt > 15 * 60 * 1000 || (call.status === "ended" && now - (call.endedAt || call.createdAt) > 60 * 1000)) {
       activeCalls.delete(id);
     }
   }
+  persistActiveCalls(activeCalls);
 }
 
 export async function GET(request: NextRequest) {
@@ -122,6 +165,7 @@ export async function POST(request: NextRequest) {
     };
 
     activeCalls.set(id, newCall);
+    persistActiveCalls(activeCalls);
 
     // Déclencher une notification pour l'utilisateur appelé
     createGlobalNotification({
@@ -160,6 +204,7 @@ export async function POST(request: NextRequest) {
       existing.answer = body.answer;
     }
     activeCalls.set(callId, existing);
+    persistActiveCalls(activeCalls);
     return NextResponse.json({ call: existing });
   }
 
@@ -168,6 +213,7 @@ export async function POST(request: NextRequest) {
     existing.status = "rejected";
     existing.endedAt = Date.now();
     activeCalls.set(callId, existing);
+    persistActiveCalls(activeCalls);
     return NextResponse.json({ call: existing });
   }
 
@@ -176,6 +222,7 @@ export async function POST(request: NextRequest) {
     existing.status = "ended";
     existing.endedAt = Date.now();
     activeCalls.set(callId, existing);
+    persistActiveCalls(activeCalls);
     return NextResponse.json({ call: existing });
   }
 
@@ -197,6 +244,7 @@ export async function POST(request: NextRequest) {
       }
     }
     activeCalls.set(callId, existing);
+    persistActiveCalls(activeCalls);
     return NextResponse.json({ call: existing });
   }
 
