@@ -206,7 +206,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${title} | Envol Africa WAB`,
     description,
     openGraph: {
-      type: "article",
+      type: isVideo ? "video.other" : "article",
       locale: "fr_FR",
       url: postUrl,
       siteName: "World Africa Business (WAB) | Envol Africa",
@@ -221,6 +221,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           alt: title,
         },
       ],
+      ...(isVideo && post.videoUrl
+        ? {
+            videos: [
+              {
+                url: post.videoUrl,
+                type: "video/mp4",
+                width: 1280,
+                height: 720,
+              },
+            ],
+          }
+        : {}),
     },
     twitter: {
       card: "summary_large_image",
