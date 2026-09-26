@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 interface Participant {
   id: string;
@@ -71,7 +72,11 @@ function formatDuration(seconds?: number) {
   return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
 }
 
-export default function MessagesPage() {
+function MessagesContent() {
+  const searchParams = useSearchParams();
+  const paramConversationId = searchParams.get("conversationId");
+  const paramUserId = searchParams.get("userId") || searchParams.get("targetUserId");
+
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string>("");
@@ -85,7 +90,7 @@ export default function MessagesPage() {
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
 
-  // New Chat Modal state
+  // Contacts state
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [followedContacts, setFollowedContacts] = useState<Contact[]>([]);
   const [suggestedContacts, setSuggestedContacts] = useState<Contact[]>([]);
@@ -116,9 +121,24 @@ export default function MessagesPage() {
       .catch(() => {});
 
     loadConversations();
+    loadContacts();
+
     const interval = setInterval(loadConversations, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  const loadContacts = async () => {
+    setLoadingContacts(true);
+    try {
+      const res = await fetch("/api/messages/contacts");
+      if (res.ok) {
+        const data = await res.json();
+        setFollowedContacts(data.followed || []);
+        setSuggestedContacts(data.suggested || []);
+      }
+    } catch {}
+    setLoadingContacts(false);
+  };
 
   const loadConversations = async () => {
     try {
@@ -134,7 +154,22 @@ export default function MessagesPage() {
 
         // Sync active conversation
         setActiveConversation((prev) => {
-          if (!prev) return data.conversations[0] || null;
+          if (!prev) {
+            // Sur mobile (< 768px), laisser null au chargement initial si aucun paramètre d'URL
+            if (typeof window !== "undefined" && window.innerWidth < 768 && !paramConversationId && !paramUserId) {
+              return null;
+            }
+            return data.conversations[0] || null;
+          }
+          if (prev.id.startsWith("temp-")) {
+            const foundReal = data.conversations.find(
+              (c: Conversation) =>
+                c.participant_a === prev.otherParticipant.id ||
+                c.participant_b === prev.otherParticipant.id ||
+                c.otherParticipant.id === prev.otherParticipant.id
+            );
+            return foundReal || prev;
+          }
           const found = data.conversations.find((c: Conversation) => c.id === prev.id);
           return found || prev;
         });
@@ -143,27 +178,63 @@ export default function MessagesPage() {
     setLoading(false);
   };
 
+  // 2. Traitement des paramètres d'URL (?conversationId= ou ?userId=)
+  useEffect(() => {
+    if (paramConversationId && conversations.length > 0) {
+      const found = conversations.find((c) => c.id === paramConversationId);
+      if (found) {
+        setActiveConversation(found);
+        return;
+      }
+    }
+
+    if (paramUserId) {
+      const existing = conversations.find(
+        (c) =>
+          c.participant_a === paramUserId ||
+          c.participant_b === paramUserId ||
+          c.otherParticipant.id === paramUserId
+      );
+
+      if (existing) {
+        setActiveConversation(existing);
+      } else {
+        const contact =
+          followedContacts.find((c) => c.userId === paramUserId) ||
+          suggestedContacts.find((c) => c.userId === paramUserId);
+
+        const tempConv: Conversation = {
+          id: `temp-${paramUserId}`,
+          participant_a: currentUserId,
+          participant_b: paramUserId,
+          otherParticipant: {
+            id: paramUserId,
+            fullName: contact?.fullName || "Ami WAB",
+            avatarUrl: contact?.avatarUrl,
+            headline: contact?.headline || "Membre du réseau WAB",
+          },
+          messages: [],
+          updated_at: new Date().toISOString(),
+        };
+        setActiveConversation(tempConv);
+      }
+    }
+  }, [paramConversationId, paramUserId, conversations, followedContacts, suggestedContacts, currentUserId]);
+
   // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [activeConversation?.messages]);
 
-  // Load contacts for the WhatsApp "+" button
-  const openNewChatModal = async () => {
+  // Open modal & reload contacts
+  const openNewChatModal = () => {
     setShowNewChatModal(true);
-    setLoadingContacts(true);
-    try {
-      const res = await fetch("/api/messages/contacts");
-      const data = await res.json();
-      setFollowedContacts(data.followed || []);
-      setSuggestedContacts(data.suggested || []);
-    } catch {}
-    setLoadingContacts(false);
+    loadContacts();
   };
 
-  const startConversationWith = async (contact: Contact) => {
+  const startConversationWith = (contact: Contact) => {
     setShowNewChatModal(false);
-    // Vérifier si conversation existante
+    // Vérifier si conversation déjà existante
     const existing = conversations.find(
       (c) =>
         c.participant_a === contact.userId ||
@@ -214,18 +285,34 @@ export default function MessagesPage() {
 
       const data = await res.json();
       if (res.ok && data.message) {
-        setActiveConversation((prev) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            id: data.message.conversation_id,
-            messages: [...prev.messages, data.message],
-          };
+        const updatedConversation: Conversation = {
+          ...activeConversation,
+          id: data.message.conversation_id,
+          messages: [...activeConversation.messages, data.message],
+          updated_at: data.message.created_at,
+        };
+
+        setActiveConversation(updatedConversation);
+
+        // Mettre à jour immédiatement la liste des discussions
+        setConversations((prev) => {
+          const filtered = prev.filter(
+            (c) => c.id !== activeConversation.id && c.id !== data.message.conversation_id
+          );
+          return [updatedConversation, ...filtered];
         });
+
         loadConversations();
+      } else {
+        setTextInput(textToSend);
+        alert(data.error || "Impossible d'envoyer le message. Veuillez réessayer.");
       }
-    } catch {}
-    setSending(false);
+    } catch {
+      setTextInput(textToSend);
+      alert("Erreur réseau lors de l'envoi du message.");
+    } finally {
+      setSending(false);
+    }
   };
 
   // Voice Note Recording Handlers
@@ -305,16 +392,20 @@ export default function MessagesPage() {
           });
           const msgData = await msgRes.json();
           if (msgRes.ok && msgData.message) {
-            setActiveConversation((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    id: msgData.message.conversation_id,
-                    messages: [...prev.messages, msgData.message],
-                  }
-                : null
-            );
+            const updated: Conversation = {
+              ...activeConversation,
+              id: msgData.message.conversation_id,
+              messages: [...activeConversation.messages, msgData.message],
+              updated_at: msgData.message.created_at,
+            };
+            setActiveConversation(updated);
+            setConversations((prev) => [
+              updated,
+              ...prev.filter((c) => c.id !== activeConversation.id && c.id !== msgData.message.conversation_id),
+            ]);
             loadConversations();
+          } else {
+            alert(msgData.error || "Impossible d'envoyer la note vocale.");
           }
         }
       } catch {
@@ -364,16 +455,20 @@ export default function MessagesPage() {
 
         const msgData = await msgRes.json();
         if (msgRes.ok && msgData.message) {
-          setActiveConversation((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  id: msgData.message.conversation_id,
-                  messages: [...prev.messages, msgData.message],
-                }
-              : null
-          );
+          const updated: Conversation = {
+            ...activeConversation,
+            id: msgData.message.conversation_id,
+            messages: [...activeConversation.messages, msgData.message],
+            updated_at: msgData.message.created_at,
+          };
+          setActiveConversation(updated);
+          setConversations((prev) => [
+            updated,
+            ...prev.filter((c) => c.id !== activeConversation.id && c.id !== msgData.message.conversation_id),
+          ]);
           loadConversations();
+        } else {
+          alert(msgData.error || "Impossible d'envoyer le fichier.");
         }
       } else {
         alert(uploadData.error || "Erreur de téléversement.");
@@ -425,15 +520,17 @@ export default function MessagesPage() {
 
         const msgData = await msgRes.json();
         if (msgRes.ok && msgData.message) {
-          setActiveConversation((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  id: msgData.message.conversation_id,
-                  messages: [...prev.messages, msgData.message],
-                }
-              : null
-          );
+          const updated: Conversation = {
+            ...activeConversation,
+            id: msgData.message.conversation_id,
+            messages: [...activeConversation.messages, msgData.message],
+            updated_at: msgData.message.created_at,
+          };
+          setActiveConversation(updated);
+          setConversations((prev) => [
+            updated,
+            ...prev.filter((c) => c.id !== activeConversation.id && c.id !== msgData.message.conversation_id),
+          ]);
           loadConversations();
         } else {
           alert(msgData.error || "Impossible d'envoyer la vidéo.");
@@ -522,6 +619,14 @@ export default function MessagesPage() {
               <h2 className="font-display font-black text-base text-[#111b21]">Discussions</h2>
             </div>
             <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={openNewChatModal}
+                className="p-2 text-[#9e001f] hover:bg-black/5 rounded-full flex items-center justify-center"
+                title="Nouvelle discussion"
+              >
+                <span className="material-symbols-outlined text-2xl">edit_square</span>
+              </button>
               <Link
                 href="/wab"
                 className="px-2.5 py-1 text-xs font-bold text-gray-700 hover:text-gray-900 rounded-full hover:bg-black/5 flex items-center gap-1 border border-gray-300 sm:hidden"
@@ -549,19 +654,75 @@ export default function MessagesPage() {
             </div>
           </div>
 
+          {/* Barre d'accès rapide aux comptes suivis (Amis WAB) */}
+          {followedContacts.length > 0 && (
+            <div className="px-3 py-2.5 bg-white border-b border-[#e9edef] shrink-0">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">
+                  Amis & Abonnements WAB ({followedContacts.length})
+                </span>
+                <button
+                  type="button"
+                  onClick={openNewChatModal}
+                  className="text-[11px] font-bold text-[#9e001f] hover:underline"
+                >
+                  Tous
+                </button>
+              </div>
+              <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none">
+                {followedContacts.slice(0, 10).map((contact) => (
+                  <button
+                    key={contact.id}
+                    type="button"
+                    onClick={() => startConversationWith(contact)}
+                    className="flex flex-col items-center shrink-0 w-14 group focus:outline-none text-left"
+                    title={`Discuter avec ${contact.fullName}`}
+                  >
+                    <div className="relative w-11 h-11 rounded-full overflow-hidden bg-gray-100 ring-2 ring-[#006874]/30 group-hover:ring-[#006874] transition-all">
+                      {contact.avatarUrl ? (
+                        <img src={contact.avatarUrl} alt={contact.fullName} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center font-bold text-gray-700 bg-emerald-100 text-xs">
+                          {contact.fullName.slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-1 ring-white" />
+                    </div>
+                    <span className="mt-1 text-[9px] font-bold text-gray-700 truncate w-full text-center group-hover:text-[#9e001f]">
+                      {contact.fullName.split(" ")[0]}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Liste des discussions */}
           <div className="flex-1 overflow-y-auto divide-y divide-[#f5f6f6]">
             {loading ? (
               <div className="p-8 text-center text-xs text-gray-500">Chargement de vos échanges...</div>
             ) : filteredConversations.length === 0 ? (
-              <div className="p-8 text-center text-xs text-gray-500">
+              <div className="p-6 text-center text-xs text-gray-500">
                 <span className="material-symbols-outlined text-4xl text-gray-300 mb-2">forum</span>
-                <p>Aucune conversation pour l'instant.</p>
-                <p className="mt-1 text-gray-400">Cliquez sur le bouton + ci-dessous pour démarrer une discussion.</p>
+                <p className="font-bold text-gray-700">Aucune discussion en cours.</p>
+                <p className="mt-1 text-gray-500">
+                  {followedContacts.length > 0
+                    ? "Sélectionnez l'un de vos amis WAB ci-dessus pour entamer une discussion."
+                    : "Cliquez sur le bouton + ci-dessous pour trouver vos contacts et amis WAB."}
+                </p>
+                <button
+                  type="button"
+                  onClick={openNewChatModal}
+                  className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#9e001f] text-white font-bold text-xs shadow hover:bg-[#c8102e]"
+                >
+                  <span className="material-symbols-outlined text-base">person_search</span>
+                  <span>Voir mes amis & contacts WAB</span>
+                </button>
               </div>
             ) : (
               filteredConversations.map((item) => {
                 const isSelected = activeConversation?.id === item.id;
+                // Messages sont en ordre chronologique croissant : le dernier message est le plus récent
                 const lastMsg = item.messages[item.messages.length - 1];
                 const parsedLast = lastMsg ? parseMessageBody(lastMsg.body) : null;
                 const isUnread = lastMsg && lastMsg.sender_id !== currentUserId && !lastMsg.read_at;
@@ -731,113 +892,123 @@ export default function MessagesPage() {
                   backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23d8cfc4' fill-opacity='0.25' fill-rule='evenodd'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E")`,
                 }}
               >
-                {activeConversation.messages.map((m) => {
-                  const isMe = m.sender_id === currentUserId;
-                  const parsed = parseMessageBody(m.body);
+                {activeConversation.messages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center p-6 text-gray-500">
+                    <span className="material-symbols-outlined text-4xl text-gray-400 mb-2">waving_hand</span>
+                    <p className="font-bold text-xs text-gray-700">Démarrez votre conversation avec {activeConversation.otherParticipant.fullName}</p>
+                    <p className="text-[11px] text-gray-400 mt-1 max-w-xs">
+                      Envoyez un message texte, un document ou une note vocale ci-dessous.
+                    </p>
+                  </div>
+                ) : (
+                  activeConversation.messages.map((m) => {
+                    const isMe = m.sender_id === currentUserId;
+                    const parsed = parseMessageBody(m.body);
 
-                  return (
-                    <div
-                      key={m.id}
-                      className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
-                    >
+                    return (
                       <div
-                        className={`max-w-[85%] md:max-w-[70%] rounded-2xl p-3 shadow-sm text-xs leading-relaxed ${
-                          isMe
-                            ? "bg-[#d9fdd3] text-[#111b21] rounded-tr-none"
-                            : "bg-white text-[#111b21] rounded-tl-none"
-                        }`}
+                        key={m.id}
+                        className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
                       >
-                        {/* TYPE 1 : Plain Text */}
-                        {parsed.type === "text" && (
-                          <p className="whitespace-pre-wrap">{parsed.text}</p>
-                        )}
+                        <div
+                          className={`max-w-[85%] md:max-w-[70%] rounded-2xl p-3 shadow-sm text-xs leading-relaxed ${
+                            isMe
+                              ? "bg-[#d9fdd3] text-[#111b21] rounded-tr-none"
+                              : "bg-white text-[#111b21] rounded-tl-none"
+                          }`}
+                        >
+                          {/* TYPE 1 : Plain Text */}
+                          {parsed.type === "text" && (
+                            <p className="whitespace-pre-wrap">{parsed.text}</p>
+                          )}
 
-                        {/* TYPE 2 : Vocal / Voice Note */}
-                        {parsed.type === "voice" && parsed.url && (
-                          <div className="flex items-center gap-3 py-1 min-w-[200px]">
-                            <span className="material-symbols-outlined text-[#9e001f] text-2xl">
-                              mic
-                            </span>
-                            <div className="flex-1">
-                              <audio controls src={parsed.url} className="w-full h-8" />
-                            </div>
-                            {parsed.duration && (
-                              <span className="text-[10px] text-gray-500 font-mono">
-                                {formatDuration(parsed.duration)}
+                          {/* TYPE 2 : Vocal / Voice Note */}
+                          {parsed.type === "voice" && parsed.url && (
+                            <div className="flex items-center gap-3 py-1 min-w-[200px]">
+                              <span className="material-symbols-outlined text-[#9e001f] text-2xl">
+                                mic
                               </span>
-                            )}
-                          </div>
-                        )}
+                              <div className="flex-1">
+                                <audio controls src={parsed.url} className="w-full h-8" />
+                              </div>
+                              {parsed.duration && (
+                                <span className="text-[10px] text-gray-500 font-mono">
+                                  {formatDuration(parsed.duration)}
+                                </span>
+                              )}
+                            </div>
+                          )}
 
-                        {/* TYPE 3 : Message Vidéo */}
-                        {parsed.type === "video" && parsed.url && (
-                          <div className="rounded-xl overflow-hidden my-1 bg-black max-w-[320px]">
-                            <video
-                              controls
-                              src={parsed.url}
-                              className="w-full max-h-[300px] object-cover"
-                            />
-                            {parsed.name && (
-                              <p className="p-1.5 text-[11px] text-white/90 bg-black/70 truncate">
-                                {parsed.name}
-                              </p>
-                            )}
-                          </div>
-                        )}
-
-                        {/* TYPE 4 : Image */}
-                        {parsed.type === "image" && parsed.url && (
-                          <div className="rounded-xl overflow-hidden my-1 max-w-[320px]">
-                            <img
-                              src={parsed.url}
-                              alt={parsed.name || "Photo"}
-                              className="w-full h-auto object-cover rounded-xl"
-                            />
-                          </div>
-                        )}
-
-                        {/* TYPE 5 : Document */}
-                        {parsed.type === "document" && parsed.url && (
-                          <a
-                            href={parsed.url}
-                            download={parsed.name}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-3 p-2.5 rounded-xl bg-black/5 hover:bg-black/10 transition-colors"
-                          >
-                            <span className="material-symbols-outlined text-2xl text-[#9e001f]">
-                              description
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <p className="font-bold text-xs truncate">{parsed.name || "Document"}</p>
-                              {parsed.size && (
-                                <p className="text-[10px] text-gray-500">
-                                  {(parsed.size / 1024).toFixed(0)} Ko
+                          {/* TYPE 3 : Message Vidéo */}
+                          {parsed.type === "video" && parsed.url && (
+                            <div className="rounded-xl overflow-hidden my-1 bg-black max-w-[320px]">
+                              <video
+                                controls
+                                src={parsed.url}
+                                className="w-full max-h-[300px] object-cover"
+                              />
+                              {parsed.name && (
+                                <p className="p-1.5 text-[11px] text-white/90 bg-black/70 truncate">
+                                  {parsed.name}
                                 </p>
                               )}
                             </div>
-                            <span className="material-symbols-outlined text-gray-600 text-sm">
-                              download
-                            </span>
-                          </a>
-                        )}
-
-                        <div className="flex items-center justify-end gap-1 mt-1 text-[9px] text-gray-400">
-                          <span>{formatTime(m.created_at)}</span>
-                          {isMe && (
-                            <span
-                              className={`material-symbols-outlined text-xs ${
-                                m.read_at ? "text-blue-500" : "text-gray-400"
-                              }`}
-                            >
-                              done_all
-                            </span>
                           )}
+
+                          {/* TYPE 4 : Image */}
+                          {parsed.type === "image" && parsed.url && (
+                            <div className="rounded-xl overflow-hidden my-1 max-w-[320px]">
+                              <img
+                                src={parsed.url}
+                                alt={parsed.name || "Photo"}
+                                className="w-full h-auto object-cover rounded-xl"
+                              />
+                            </div>
+                          )}
+
+                          {/* TYPE 5 : Document */}
+                          {parsed.type === "document" && parsed.url && (
+                            <a
+                              href={parsed.url}
+                              download={parsed.name}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center gap-3 p-2.5 rounded-xl bg-black/5 hover:bg-black/10 transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-2xl text-[#9e001f]">
+                                description
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className="font-bold text-xs truncate">{parsed.name || "Document"}</p>
+                                {parsed.size && (
+                                  <p className="text-[10px] text-gray-500">
+                                    {(parsed.size / 1024).toFixed(0)} Ko
+                                  </p>
+                                )}
+                              </div>
+                              <span className="material-symbols-outlined text-gray-600 text-sm">
+                                download
+                              </span>
+                            </a>
+                          )}
+
+                          <div className="flex items-center justify-end gap-1 mt-1 text-[9px] text-gray-400">
+                            <span>{formatTime(m.created_at)}</span>
+                            {isMe && (
+                              <span
+                                className={`material-symbols-outlined text-xs ${
+                                  m.read_at ? "text-blue-500" : "text-gray-400"
+                                }`}
+                              >
+                                done_all
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
                 <div ref={messagesEndRef} />
               </div>
 
@@ -914,7 +1085,7 @@ export default function MessagesPage() {
                         type="button"
                         onClick={handleSendTextMessage}
                         disabled={sending}
-                        className="w-10 h-10 rounded-full bg-[#9e001f] hover:bg-[#c8102e] text-white flex items-center justify-center shrink-0 transition-colors"
+                        className="w-10 h-10 rounded-full bg-[#9e001f] hover:bg-[#c8102e] text-white flex items-center justify-center shrink-0 transition-colors shadow"
                       >
                         <span className="material-symbols-outlined text-lg">send</span>
                       </button>
@@ -1042,7 +1213,7 @@ export default function MessagesPage() {
                           <img src={c.avatarUrl} alt={c.fullName} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center font-bold text-gray-600 text-sm">
-                            {c.fullName.slice(0, 1)}
+                            {c.fullName.slice(0, 1).toUpperCase()}
                           </div>
                         )}
                       </div>
@@ -1094,5 +1265,19 @@ export default function MessagesPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="fixed inset-0 z-[9999] bg-[#f0f2f5] flex items-center justify-center">
+          <div className="w-10 h-10 border-4 border-[#9e001f] border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <MessagesContent />
+    </Suspense>
   );
 }

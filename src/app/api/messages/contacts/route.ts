@@ -30,55 +30,113 @@ export async function GET() {
 
   if (supabase) {
     try {
-      // 1. Profils suivis
+      // 1. Profils suivis via wab_connections
       const { data: connections } = await supabase
         .from("wab_connections")
         .select("profile_id")
         .eq("follower_user_id", user.id);
 
-      const followedProfileIds = (connections ?? []).map((c) => c.profile_id);
+      const followedProfileIds = (connections ?? []).map((c) => c.profile_id).filter(Boolean);
 
       if (followedProfileIds.length > 0) {
+        // Sélectionner les profils sans la colonne fictive 'full_name'
         const { data: followedProfiles } = await supabase
           .from("wab_profiles")
-          .select("id,user_id,full_name,headline,avatar_url")
+          .select("id, user_id, headline, avatar_url")
           .in("id", followedProfileIds);
+
+        const followedUserIds = (followedProfiles ?? [])
+          .map((p) => p.user_id)
+          .filter((uid): uid is string => Boolean(uid));
+
+        const userMap = new Map<string, { prenom?: string | null; nom?: string | null; avatar?: string | null; email?: string | null }>();
+
+        if (followedUserIds.length > 0) {
+          const { data: usersData } = await supabase
+            .from("users")
+            .select("id, prenom, nom, avatar, email")
+            .in("id", followedUserIds);
+
+          (usersData ?? []).forEach((u) => userMap.set(u.id, u));
+        }
 
         (followedProfiles ?? []).forEach((p) => {
           if (p.user_id !== user.id) {
+            const u = userMap.get(p.user_id);
+            const fullName = u ? `${u.prenom || ""} ${u.nom || ""}`.trim() || u.email || "Ami WAB" : "Ami WAB";
             followed.push({
               id: p.id,
               userId: p.user_id,
-              fullName: p.full_name,
+              fullName,
               headline: p.headline || "Membre du réseau WAB",
-              avatarUrl: p.avatar_url,
+              avatarUrl: p.avatar_url || u?.avatar,
             });
           }
         });
       }
 
-      // 2. Profils suggérés (autres profils actifs)
+      // 2. Profils suggérés (autres profils WAB actifs)
       const { data: otherProfiles } = await supabase
         .from("wab_profiles")
-        .select("id,user_id,full_name,headline,avatar_url")
+        .select("id, user_id, headline, avatar_url")
         .neq("user_id", user.id)
-        .limit(20);
+        .limit(30);
 
-      (otherProfiles ?? []).forEach((p) => {
-        if (!followedProfileIds.includes(p.id)) {
-          suggested.push({
-            id: p.id,
-            userId: p.user_id,
-            fullName: p.full_name,
-            headline: p.headline || "Professionnel africain",
-            avatarUrl: p.avatar_url,
-          });
-        }
-      });
-    } catch {}
+      const otherUserIds = (otherProfiles ?? [])
+        .map((p) => p.user_id)
+        .filter((uid): uid is string => Boolean(uid && !followed.some((f) => f.userId === uid)));
+
+      if (otherUserIds.length > 0) {
+        const { data: otherUsers } = await supabase
+          .from("users")
+          .select("id, prenom, nom, avatar, email")
+          .in("id", otherUserIds);
+
+        const otherUserMap = new Map((otherUsers ?? []).map((u) => [u.id, u]));
+
+        (otherProfiles ?? []).forEach((p) => {
+          if (p.user_id !== user.id && !followed.some((f) => f.userId === p.user_id)) {
+            const u = otherUserMap.get(p.user_id);
+            const fullName = u ? `${u.prenom || ""} ${u.nom || ""}`.trim() || u.email || "Professionnel africain" : "Professionnel africain";
+            suggested.push({
+              id: p.id,
+              userId: p.user_id,
+              fullName,
+              headline: p.headline || "Professionnel africain",
+              avatarUrl: p.avatar_url || u?.avatar,
+            });
+          }
+        });
+      }
+
+      // 3. Compléter si nécessaire avec les autres membres réels de la plateforme
+      if (suggested.length < 10) {
+        const knownUserIds = new Set([user.id, ...followed.map((f) => f.userId), ...suggested.map((s) => s.userId)]);
+        const { data: generalUsers } = await supabase
+          .from("users")
+          .select("id, prenom, nom, avatar, email")
+          .limit(30);
+
+        (generalUsers ?? []).forEach((u) => {
+          if (!knownUserIds.has(u.id)) {
+            knownUserIds.add(u.id);
+            const fullName = `${u.prenom || ""} ${u.nom || ""}`.trim() || u.email || "Membre Envol Africa";
+            suggested.push({
+              id: u.id,
+              userId: u.id,
+              fullName,
+              headline: "Membre de l'écosystème",
+              avatarUrl: u.avatar,
+            });
+          }
+        });
+      }
+    } catch (err) {
+      console.error("[contacts] Erreur lors de la récupération des contacts Supabase:", err);
+    }
   }
 
-  // Fallback si base locale ou Supabase vide
+  // Fallback si base locale ou Supabase non configuré
   if (followed.length === 0 && suggested.length === 0) {
     try {
       const db = readWabDB();
@@ -101,33 +159,6 @@ export async function GET() {
           suggested.push(item);
         }
       });
-
-      // Si toujours vide, injecter quelques profils de référence
-      if (suggested.length === 0) {
-        suggested.push(
-          {
-            id: "sugg-1",
-            userId: "user-aicha",
-            fullName: "Aïcha Bamba",
-            headline: "Fondatrice · Abidjan Green Logistics",
-            avatarUrl: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=160&auto=format&fit=crop",
-          },
-          {
-            id: "sugg-2",
-            userId: "user-moussa",
-            fullName: "Moussa Diallo",
-            headline: "Consultant finance & stratégie · Dakar",
-            avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160&auto=format&fit=crop",
-          },
-          {
-            id: "sugg-3",
-            userId: "user-njeri",
-            fullName: "Njeri Wanjiku",
-            headline: "Product Lead · Fintech Africa · Nairobi",
-            avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160&auto=format&fit=crop",
-          }
-        );
-      }
     } catch {}
   }
 

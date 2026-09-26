@@ -24,59 +24,61 @@ export async function GET() {
     .order("updated_at", { ascending: false })
     .limit(50);
 
-  if (error) return NextResponse.json({ error: "Messagerie indisponible." }, { status: 503 });
+  if (error) {
+    console.error("[wab/messages] Erreur lecture conversations:", error.message);
+    return NextResponse.json({ error: "Messagerie indisponible." }, { status: 503 });
+  }
 
   const ids = (data ?? []).map((item) => item.id);
-  const { data: messages } = ids.length
+  // Tri CHRONOLOGIQUE croissant (oldest to newest) pour un affichage naturel en messagerie
+  const { data: rawMessages } = ids.length
     ? await supabase
         .from("wab_messages")
         .select("id,conversation_id,sender_id,body,read_at,created_at")
         .in("conversation_id", ids)
-        .order("created_at", { ascending: false })
-        .limit(300)
+        .order("created_at", { ascending: true })
+        .limit(1000)
     : { data: [] };
 
-  const unreadCount = (messages ?? []).filter((item) => item.sender_id !== user.id && !item.read_at).length;
+  const unreadCount = (rawMessages ?? []).filter((item) => item.sender_id !== user.id && !item.read_at).length;
 
   // Récupérer les informations des autres participants
   const otherUserIds = Array.from(
-    new Set((data ?? []).map((c) => (c.participant_a === user.id ? c.participant_b : c.participant_a)))
+    new Set((data ?? []).map((c) => (c.participant_a === user.id ? c.participant_b : c.participant_a)).filter(Boolean))
   );
 
   const participantMap: Record<string, { id: string; fullName: string; avatarUrl?: string; headline?: string }> = {};
 
   if (otherUserIds.length > 0) {
+    // Récupérer les profils WAB (sans colonne fictive full_name)
     const { data: profiles } = await supabase
       .from("wab_profiles")
-      .select("user_id,full_name,avatar_url,headline")
+      .select("id,user_id,headline,avatar_url")
       .in("user_id", otherUserIds);
 
-    (profiles ?? []).forEach((p) => {
-      participantMap[p.user_id] = {
-        id: p.user_id,
-        fullName: p.full_name,
-        avatarUrl: p.avatar_url,
-        headline: p.headline,
+    // Récupérer les comptes utilisateurs (nom, prénom, avatar)
+    const { data: usersData } = await supabase
+      .from("users")
+      .select("id,nom,prenom,avatar,email")
+      .in("id", otherUserIds);
+
+    const userMap = new Map((usersData ?? []).map((u) => [u.id, u]));
+    const profileMap = new Map((profiles ?? []).map((p) => [p.user_id, p]));
+
+    otherUserIds.forEach((uid) => {
+      const u = userMap.get(uid);
+      const p = profileMap.get(uid);
+      const fullName = u
+        ? `${u.prenom || ""} ${u.nom || ""}`.trim() || u.email || "Membre Envol Africa"
+        : "Membre Envol Africa";
+
+      participantMap[uid] = {
+        id: uid,
+        fullName,
+        avatarUrl: p?.avatar_url || u?.avatar,
+        headline: p?.headline || "Membre de l'écosystème",
       };
     });
-
-    // Chercher les profils manquants dans les comptes utilisateurs
-    const missingUserIds = otherUserIds.filter((uid) => !participantMap[uid]);
-    if (missingUserIds.length > 0) {
-      const { data: usersData } = await supabase
-        .from("users")
-        .select("id,nom,prenom,avatar,email")
-        .in("id", missingUserIds);
-
-      (usersData ?? []).forEach((u) => {
-        participantMap[u.id] = {
-          id: u.id,
-          fullName: `${u.prenom || ""} ${u.nom || ""}`.trim() || u.email || "Utilisateur Envol Africa",
-          avatarUrl: u.avatar,
-          headline: "Membre Envol Africa",
-        };
-      });
-    }
   }
 
   const conversations = (data ?? []).map((conversation) => {
@@ -87,12 +89,14 @@ export async function GET() {
       headline: "Membre de l'écosystème",
     };
 
+    // Conserver l'ordre chronologique des 50 derniers messages de la conversation
+    const convMessages = (rawMessages ?? []).filter((item) => item.conversation_id === conversation.id);
+    const sliced = convMessages.slice(-50);
+
     return {
       ...conversation,
       otherParticipant,
-      messages: (messages ?? [])
-        .filter((item) => item.conversation_id === conversation.id)
-        .slice(0, 30),
+      messages: sliced,
     };
   });
 
@@ -110,8 +114,8 @@ export async function POST(request: NextRequest) {
     type?: unknown;
   } | null;
 
-  if (typeof body?.body !== "string" || body.body.trim().length < 1 || body.body.length > 15000) {
-    return NextResponse.json({ error: "Message invalide." }, { status: 400 });
+  if (typeof body?.body !== "string" || body.body.trim().length < 1 || body.body.length > 4000) {
+    return NextResponse.json({ error: "Message invalide (longueur maximale : 4000 caractères)." }, { status: 400 });
   }
 
   // Vérifier la restriction sur l'envoi de vidéos
@@ -134,30 +138,60 @@ export async function POST(request: NextRequest) {
   if (!supabase) return NextResponse.json({ error: "Messagerie temporairement indisponible." }, { status: 503 });
 
   let conversationId = typeof body.conversationId === "string" ? body.conversationId : "";
-  if (!conversationId && typeof body.recipientId === "string") {
-    const a = user.id < body.recipientId ? user.id : body.recipientId;
-    const b = user.id < body.recipientId ? body.recipientId : user.id;
-    const { data, error } = await supabase
+
+  // Si pas de conversationId mais un recipientId fourni
+  if (!conversationId && typeof body.recipientId === "string" && body.recipientId.trim().length > 0) {
+    const targetUserId = body.recipientId.trim();
+
+    if (targetUserId === user.id) {
+      return NextResponse.json({ error: "Impossible de s'envoyer un message à soi-même." }, { status: 400 });
+    }
+
+    // 1. Chercher d'abord si une conversation existe déjà entre ces deux utilisateurs
+    const { data: existingConv } = await supabase
       .from("wab_conversations")
-      .upsert({ participant_a: a, participant_b: b, updated_at: new Date().toISOString() }, { onConflict: "participant_a,participant_b" })
       .select("id")
-      .single();
-    if (error || !data) return NextResponse.json({ error: "Impossible d’ouvrir la conversation." }, { status: 503 });
-    conversationId = data.id;
+      .or(`and(participant_a.eq.${user.id},participant_b.eq.${targetUserId}),and(participant_a.eq.${targetUserId},participant_b.eq.${user.id})`)
+      .maybeSingle();
+
+    if (existingConv?.id) {
+      conversationId = existingConv.id;
+    } else {
+      // 2. Si aucune conversation n'existe, en créer une nouvelle ordonnée
+      const a = user.id < targetUserId ? user.id : targetUserId;
+      const b = user.id < targetUserId ? targetUserId : user.id;
+
+      const { data: newConv, error: createError } = await supabase
+        .from("wab_conversations")
+        .upsert(
+          { participant_a: a, participant_b: b, updated_at: new Date().toISOString() },
+          { onConflict: "participant_a,participant_b" }
+        )
+        .select("id")
+        .single();
+
+      if (createError || !newConv) {
+        console.error("[wab/messages] Erreur création conversation:", createError?.message);
+        return NextResponse.json({ error: "Impossible d’ouvrir la conversation." }, { status: 503 });
+      }
+      conversationId = newConv.id;
+    }
   }
 
   if (!conversationId) return NextResponse.json({ error: "Destinataire requis." }, { status: 400 });
 
+  // Vérifier les droits d'accès à la conversation
   const { data: access } = await supabase
     .from("wab_conversations")
-    .select("id")
+    .select("id,participant_a,participant_b")
     .eq("id", conversationId)
     .or(`participant_a.eq.${user.id},participant_b.eq.${user.id}`)
     .maybeSingle();
 
   if (!access) return NextResponse.json({ error: "Conversation non autorisée." }, { status: 403 });
 
-  const { data: message, error } = await supabase
+  // Insérer le message
+  const { data: message, error: insertError } = await supabase
     .from("wab_messages")
     .insert({
       conversation_id: conversationId,
@@ -167,18 +201,19 @@ export async function POST(request: NextRequest) {
     .select("id,conversation_id,sender_id,body,read_at,created_at")
     .single();
 
-  if (error || !message) return NextResponse.json({ error: "Impossible d’envoyer le message." }, { status: 503 });
+  if (insertError || !message) {
+    console.error("[wab/messages] Erreur insertion message:", insertError?.message);
+    return NextResponse.json({ error: "Impossible d’envoyer le message." }, { status: 503 });
+  }
 
-  const { data: conversation } = await supabase
-    .from("wab_conversations")
-    .select("participant_a,participant_b")
-    .eq("id", conversationId)
-    .single();
-
-  const recipientId = conversation && conversation.participant_a === user.id ? conversation.participant_b : conversation?.participant_a;
+  // Notifier l'autre participant
+  const recipientId = access.participant_a === user.id ? access.participant_b : access.participant_a;
   if (recipientId) {
-    const notifSnippet = body.body.startsWith("{") ? "Vous a envoyé une pièce jointe ou un média" : body.body.trim().slice(0, 100);
-    await createGlobalNotification({
+    const notifSnippet = body.body.startsWith("{")
+      ? "Vous a envoyé une pièce jointe ou un média"
+      : body.body.trim().slice(0, 100);
+
+    createGlobalNotification({
       userId: recipientId,
       platform: "wab",
       type: "message",
@@ -187,10 +222,14 @@ export async function POST(request: NextRequest) {
       link: `/messages?conversationId=${encodeURIComponent(conversationId)}`,
       entityType: "wab_message",
       entityId: message.id,
-    });
+    }).catch(() => {});
   }
 
-  await supabase.from("wab_conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
+  // Mettre à jour l'horodatage de la conversation
+  await supabase
+    .from("wab_conversations")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", conversationId);
 
   return NextResponse.json({ message }, { status: 201 });
 }
