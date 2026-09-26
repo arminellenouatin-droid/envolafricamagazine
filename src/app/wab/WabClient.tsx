@@ -118,7 +118,7 @@ function formatPostTime(isoDate?: string): string {
   }
 }
 
-export default function WabClient() {
+export default function WabClient({ targetPostId }: { targetPostId?: string } = {}) {
   const { formatPrice } = useLocale();
   const [posts, setPosts] = useState<Post[]>([]);
   const [content, setContent] = useState("");
@@ -262,51 +262,112 @@ export default function WabClient() {
 
   useEffect(() => { loadFeed(1, true); }, [loadFeed]);
 
+  const [activeTargetId, setActiveTargetId] = useState<string | null>(targetPostId || null);
+  const hasScrolledRef = useRef(false);
+
+  // 1. Détection de l'ID cible (prop, hash #post-[id], ou param ?postId=)
   useEffect(() => {
-    let cancelled = false;
+    if (targetPostId) {
+      setActiveTargetId(targetPostId);
+      return;
+    }
+    if (typeof window !== "undefined") {
+      const hashId = window.location.hash.match(/^#post-(.+)$/)?.[1];
+      const queryId = new URLSearchParams(window.location.search).get("postId") || new URLSearchParams(window.location.search).get("post");
+      if (hashId) setActiveTargetId(hashId);
+      else if (queryId) setActiveTargetId(queryId);
+    }
+  }, [targetPostId]);
 
-    const handleHash = () => {
-      const sharedPostId = window.location.hash.match(/^#post-(.+)$/)?.[1];
-      if (!sharedPostId) return;
-
-      const scrollToPost = (attempt = 0) => {
-        if (cancelled) return;
-        const el = document.getElementById(`post-${sharedPostId}`);
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
-          setHighlightedPostId(sharedPostId);
-          setTimeout(() => {
-            if (!cancelled) {
-              setHighlightedPostId((curr) => (curr === sharedPostId ? null : curr));
-            }
-          }, 3500);
-        } else if (attempt < 15) {
-          setTimeout(() => scrollToPost(attempt + 1), 150);
-        }
-      };
-
-      if (postsRef.current.some((p) => p.id === sharedPostId)) {
-        scrollToPost();
-      } else {
-        fetch(`/api/wab/posts/${encodeURIComponent(sharedPostId)}`)
-          .then((response) => response.json().then((data) => ({ response, data })))
-          .then(({ response, data }) => {
-            if (cancelled || !response.ok || !data.post) return;
-            sharedPostRef.current = data.post as Post;
-            setPosts((items) => (items.some((post) => post.id === sharedPostId) ? items : [data.post as Post, ...items]));
-            scrollToPost();
-          })
-          .catch(() => undefined);
+  // 2. Écouter les changements de hash
+  useEffect(() => {
+    const onHashChange = () => {
+      const hashId = window.location.hash.match(/^#post-(.+)$/)?.[1];
+      if (hashId) {
+        hasScrolledRef.current = false;
+        setActiveTargetId(hashId);
       }
     };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
 
-    handleHash();
-    window.addEventListener("hashchange", handleHash);
+  // 3. Charger le post ciblé s'il n'est pas déjà dans le fil
+  useEffect(() => {
+    if (!activeTargetId) return;
+
+    let cancelled = false;
+    if (!postsRef.current.some((p) => p.id === activeTargetId)) {
+      fetch(`/api/wab/posts/${encodeURIComponent(activeTargetId)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (cancelled || !data?.post) return;
+          sharedPostRef.current = data.post as Post;
+          setPosts((prev) => {
+            if (prev.some((p) => p.id === activeTargetId)) return prev;
+            const next = [data.post as Post, ...prev];
+            postsRef.current = next;
+            return next;
+          });
+        })
+        .catch(() => undefined);
+    }
+
     return () => {
       cancelled = true;
-      window.removeEventListener("hashchange", handleHash);
     };
+  }, [activeTargetId]);
+
+  // 4. Fonction de défilement précis vers la publication
+  const scrollToTargetPost = useCallback((postId: string) => {
+    const el = document.getElementById(`post-${postId}`);
+    if (!el) return false;
+
+    const rect = el.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const targetY = rect.top + scrollTop - 85;
+
+    window.scrollTo({
+      top: Math.max(0, targetY),
+      behavior: "smooth",
+    });
+
+    setHighlightedPostId(postId);
+    hasScrolledRef.current = true;
+
+    setTimeout(() => {
+      setHighlightedPostId((curr) => (curr === postId ? null : curr));
+    }, 4500);
+
+    return true;
   }, []);
+
+  // 5. Scrutation active jusqu'à ce que le post soit rendu et scrollé
+  useEffect(() => {
+    if (!activeTargetId || hasScrolledRef.current) return;
+
+    let attempts = 0;
+    const maxAttempts = 35; // 35 * 100ms = 3.5s
+
+    const timer = setInterval(() => {
+      attempts++;
+      const done = scrollToTargetPost(activeTargetId);
+      if (done || attempts >= maxAttempts) {
+        clearInterval(timer);
+      }
+    }, 100);
+
+    return () => clearInterval(timer);
+  }, [activeTargetId, posts, scrollToTargetPost]);
+
+  // 6. Aligner l'URL sur /wab#post-[id] de manière transparente
+  useEffect(() => {
+    if (targetPostId && typeof window !== "undefined") {
+      try {
+        window.history.replaceState(null, "", `/wab#post-${targetPostId}`);
+      } catch {}
+    }
+  }, [targetPostId]);
 
   useEffect(() => {
     const node = marker.current;
@@ -972,7 +1033,20 @@ export default function WabClient() {
                               : (post.headline ? `${post.headline}` : "Membre Envol Africa")}
                           </p>
                           <div className="flex items-center gap-1.5 text-[11px] text-[#82888e]">
-                            <span>{formatPostTime(post.createdAt)}</span>
+                            <a
+                              href={`#post-${post.id}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                hasScrolledRef.current = false;
+                                setActiveTargetId(post.id);
+                                window.history.replaceState(null, "", `#post-${post.id}`);
+                                scrollToTargetPost(post.id);
+                              }}
+                              className="hover:underline hover:text-[#006874] transition-colors"
+                              title="Lien direct vers cette publication"
+                            >
+                              {formatPostTime(post.createdAt)}
+                            </a>
                             <span>·</span>
                             <span className="material-symbols-outlined text-[13px]" title="Visible publiquement">public</span>
                             {post.location && (

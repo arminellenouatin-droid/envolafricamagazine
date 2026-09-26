@@ -3,7 +3,8 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { readWabDB } from "@/lib/wab-db";
-import WabSinglePostView, { type SinglePostData } from "./WabSinglePostView";
+import WabClient from "../../WabClient";
+import type { SinglePostData } from "./WabSinglePostView";
 
 async function getSiteOrigin(): Promise<string> {
   try {
@@ -258,5 +259,5 @@ export default async function WabSharedPostPage({ params }: Props) {
     );
   }
 
-  return <WabSinglePostView post={post} />;
+  return <WabClient targetPostId={id} />;
 }
