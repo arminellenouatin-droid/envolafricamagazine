@@ -149,6 +149,7 @@ export default function WabClient() {
   const [postActionBusy, setPostActionBusy] = useState(false);
   const [postActionMessage, setPostActionMessage] = useState("");
   const [newPostCount, setNewPostCount] = useState(0);
+  const [highlightedPostId, setHighlightedPostId] = useState<string | null>(null);
   const [suggestedFollows, setSuggestedFollows] = useState<Record<string, boolean>>({});
   const marker = useRef<HTMLDivElement>(null);
   const feedTopRef = useRef<HTMLDivElement>(null);
@@ -239,19 +240,49 @@ export default function WabClient() {
   useEffect(() => { loadFeed(1, true); }, [loadFeed]);
 
   useEffect(() => {
-    const sharedPostId = window.location.hash.match(/^#post-(.+)$/)?.[1];
-    if (!sharedPostId) return;
     let cancelled = false;
-    fetch(`/api/wab/posts/${encodeURIComponent(sharedPostId)}`)
-      .then((response) => response.json().then((data) => ({ response, data })))
-      .then(({ response, data }) => {
-        if (cancelled || !response.ok || !data.post) return;
-        sharedPostRef.current = data.post as Post;
-        setPosts((items) => items.some((post) => post.id === sharedPostId) ? items : [data.post as Post, ...items]);
-        window.requestAnimationFrame(() => document.getElementById(`post-${sharedPostId}`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
-      })
-      .catch(() => undefined);
-    return () => { cancelled = true; };
+
+    const handleHash = () => {
+      const sharedPostId = window.location.hash.match(/^#post-(.+)$/)?.[1];
+      if (!sharedPostId) return;
+
+      const scrollToPost = (attempt = 0) => {
+        if (cancelled) return;
+        const el = document.getElementById(`post-${sharedPostId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          setHighlightedPostId(sharedPostId);
+          setTimeout(() => {
+            if (!cancelled) {
+              setHighlightedPostId((curr) => (curr === sharedPostId ? null : curr));
+            }
+          }, 3500);
+        } else if (attempt < 15) {
+          setTimeout(() => scrollToPost(attempt + 1), 150);
+        }
+      };
+
+      if (postsRef.current.some((p) => p.id === sharedPostId)) {
+        scrollToPost();
+      } else {
+        fetch(`/api/wab/posts/${encodeURIComponent(sharedPostId)}`)
+          .then((response) => response.json().then((data) => ({ response, data })))
+          .then(({ response, data }) => {
+            if (cancelled || !response.ok || !data.post) return;
+            sharedPostRef.current = data.post as Post;
+            setPosts((items) => (items.some((post) => post.id === sharedPostId) ? items : [data.post as Post, ...items]));
+            scrollToPost();
+          })
+          .catch(() => undefined);
+      }
+    };
+
+    handleHash();
+    window.addEventListener("hashchange", handleHash);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("hashchange", handleHash);
+    };
   }, []);
 
   useEffect(() => {
@@ -801,7 +832,11 @@ export default function WabClient() {
                 <Fragment key={post.id}>
                   <article
                     id={`post-${post.id}`}
-                    className="relative flex flex-col gap-3.5 overflow-hidden rounded-2xl border border-[#d8e2e6] bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5"
+                    className={`relative flex flex-col gap-3.5 overflow-hidden rounded-2xl border bg-white p-4 shadow-sm transition-all duration-500 sm:p-5 ${
+                      highlightedPostId === post.id
+                        ? "border-[#006874] ring-4 ring-[#006874]/30 shadow-lg scale-[1.01]"
+                        : "border-[#d8e2e6] hover:shadow-md"
+                    }`}
                   >
                     {/* Boosted badge & tracker */}
                     {post.isBoosted && (
