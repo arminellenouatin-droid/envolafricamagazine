@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import { createClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin, isProductionRuntime } from "@/lib/supabase-admin";
 import {
+  generateAffiliateCode,
   getArticleBySlug as getJsonArticleBySlug,
   getMagazineById as getJsonMagazineById,
   getUserByEmail as getJsonUserByEmail,
@@ -223,43 +224,81 @@ export async function updateUserAdmin(id: string, updates: { role?: string; nom?
   return mapUser(data as Record<string, unknown>);
 }
 
-export async function createUser(input: Omit<User, "id" | "createdAt">): Promise<User> {
+export async function createUser(input: Omit<User, "id" | "createdAt"> & { id?: string }): Promise<User> {
   const client = getAdminClient();
-  const id = uuidv4();
+  const id = (input.id && input.id.trim()) ? input.id.trim() : uuidv4();
   const createdAt = new Date().toISOString();
+
+  let affiliateCode = (input.affiliateCode && input.affiliateCode.trim() !== "")
+    ? input.affiliateCode.trim()
+    : generateAffiliateCode(input.prenom, input.nom);
+
   if (!client) {
     if (!canUseJsonFallback()) throw new ProductionDatabaseNotConfiguredError();
     const db = readDB();
-    const newUser: User = { ...input, id, createdAt };
+    const newUser: User = { ...input, id, createdAt, affiliateCode };
     db.users.push(newUser);
     writeDB(db);
     return newUser;
   }
-  const { data, error } = await client.from("users").insert({
-    id,
-    nom: input.nom,
-    prenom: input.prenom,
-    email: input.email,
-    password_hash: input.passwordHash,
-    role: input.role,
-    avatar: input.avatar ?? null,
-    lang: input.lang,
-    currency: input.currency,
-    created_at: createdAt,
-    is_verified: input.isVerified,
-    two_factor_enabled: input.twoFactorEnabled,
-    company: input.company ?? null,
-    country: input.country,
-    phone: input.phone ?? null,
-    affiliate_code: input.affiliateCode,
-    affiliate_accepted: input.affiliateAccepted ?? false,
-    referred_by: input.referredBy ?? null,
-    subscription: input.subscription ?? null,
-    favorites: input.favorites,
-    downloads: input.downloads,
-  }).select("*").single();
-  if (error) throw error;
-  return mapUser(data as Record<string, unknown>);
+
+  // Tentative d'insertion avec gestion résiliente des doublons de code affilié
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data, error } = await client.from("users").insert({
+      id,
+      nom: input.nom || "Utilisateur",
+      prenom: input.prenom || "Envol",
+      email: input.email.trim().toLowerCase(),
+      password_hash: input.passwordHash || `oauth:${id}`,
+      role: input.role || "user",
+      avatar: input.avatar ?? null,
+      lang: input.lang || "fr",
+      currency: input.currency || "XOF",
+      created_at: createdAt,
+      is_verified: input.isVerified ?? true,
+      two_factor_enabled: input.twoFactorEnabled ?? false,
+      company: input.company ?? null,
+      country: input.country || "BJ",
+      phone: input.phone ?? null,
+      affiliate_code: affiliateCode,
+      affiliate_accepted: input.affiliateAccepted ?? false,
+      referred_by: input.referredBy ?? null,
+      subscription: input.subscription ?? null,
+      favorites: input.favorites ?? [],
+      downloads: input.downloads ?? [],
+    }).select("*").single();
+
+    if (!error && data) {
+      return mapUser(data as Record<string, unknown>);
+    }
+
+    if (error) {
+      const isUniqueError = error.code === "23505" || String(error.message).includes("duplicate key");
+      const isAffiliateError = String(error.message).includes("affiliate_code") || String(error.details).includes("affiliate_code");
+      const isEmailError = String(error.message).includes("email") || String(error.details).includes("email");
+      const isIdError = String(error.message).includes("pkey") || String(error.details).includes("id");
+
+      if (isEmailError) {
+        const existing = await findUserByEmail(input.email);
+        if (existing) return existing;
+      }
+
+      if (isIdError) {
+        const existing = await findUserById(id);
+        if (existing) return existing;
+      }
+
+      if (isAffiliateError || isUniqueError) {
+        // Régénérer un code affilié unique aléatoire et réessayer
+        affiliateCode = `EAM-${Date.now().toString().slice(-4)}${Math.floor(1000 + Math.random() * 9000)}`;
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  throw new Error("Impossible de créer le compte après plusieurs tentatives.");
 }
 
 export async function updateUserAvatar(userId: string, avatar: string | null): Promise<User> {

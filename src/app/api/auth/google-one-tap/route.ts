@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createUser, findUserByEmail } from "@/lib/core-db";
 import { COOKIE_NAME, COOKIE_OPTIONS, generateToken } from "@/lib/auth";
+import { generateAffiliateCode } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
       isVerified: true,
       twoFactorEnabled: false,
       country: "BJ",
-      affiliateCode: "",
+      affiliateCode: generateAffiliateCode(prenom, nom),
       favorites: [],
       downloads: [],
     }));

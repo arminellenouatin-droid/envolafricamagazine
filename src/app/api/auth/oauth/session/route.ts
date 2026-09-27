@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { createUser, findUserByEmail } from "@/lib/core-db";
+import { createUser, findUserByEmail, findUserById } from "@/lib/core-db";
 import { COOKIE_NAME, COOKIE_OPTIONS, generateToken } from "@/lib/auth";
+import { generateAffiliateCode } from "@/lib/db";
 
 function getSupabaseClient() {
   const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -25,20 +26,25 @@ export async function POST(request: NextRequest) {
     const email = String(socialUser.email).trim().toLowerCase();
     const fullName = String(metadata.full_name || metadata.name || "").trim();
     const nameParts = fullName.split(/\s+/).filter(Boolean);
-    const existing = await findUserByEmail(email);
+    const prenom = String(metadata.given_name || nameParts[0] || "Envol").trim();
+    const nom = String(metadata.family_name || nameParts.slice(1).join(" ") || "Utilisateur").trim();
+    const avatar = typeof metadata.avatar_url === "string" ? metadata.avatar_url : (typeof metadata.picture === "string" ? metadata.picture : undefined);
+
+    const existing = (await findUserByEmail(email)) || (await findUserById(socialUser.id));
     const user = existing || await createUser({
-      nom: String(metadata.family_name || nameParts.slice(1).join(" ") || "Utilisateur"),
-      prenom: String(metadata.given_name || nameParts[0] || "Envol"),
+      id: socialUser.id,
+      nom,
+      prenom,
       email,
       passwordHash: `oauth:${socialUser.id}`,
       role: "user",
-      avatar: typeof metadata.avatar_url === "string" ? metadata.avatar_url : (typeof metadata.picture === "string" ? metadata.picture : undefined),
+      avatar,
       lang: "fr",
       currency: "XOF",
       isVerified: true,
       twoFactorEnabled: false,
       country: "BJ",
-      affiliateCode: "",
+      affiliateCode: generateAffiliateCode(prenom, nom),
       favorites: [],
       downloads: [],
     });
