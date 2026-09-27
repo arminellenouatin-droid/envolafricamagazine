@@ -9,9 +9,32 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Connexion requise." }, { status: 401 });
   const supabase = getSupabaseAdmin();
   if (!supabase) return NextResponse.json({ error: "Service fournisseur indisponible." }, { status: 503 });
-  const { data, error } = await supabase.from("marketplace_suppliers").select("id,user_id,business_name,description,country_code,city,certification_status,certification_expires_at,rating,created_at,updated_at").eq("user_id", user.id).limit(1).maybeSingle();
+  const { data, error } = await supabase.from("marketplace_suppliers").select("id,user_id,business_name,description,country_code,city,certification_status,certification_expires_at,rating,call_available,created_at,updated_at").eq("user_id", user.id).limit(1).maybeSingle();
   if (error) return NextResponse.json({ error: "Impossible de charger la boutique." }, { status: 502 });
   return NextResponse.json({ supplier: data, certificationPriceXof: CERTIFICATION_PRICE_XOF });
+}
+
+export async function PATCH(request: NextRequest) {
+  const user = await getCurrentUserFromCookie();
+  if (!user) return NextResponse.json({ error: "Connexion requise." }, { status: 401 });
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return NextResponse.json({ error: "Service indisponible." }, { status: 503 });
+
+  const body = (await request.json().catch(() => null)) as { callAvailable?: boolean; call_available?: boolean } | null;
+  const callAvailable = body?.callAvailable ?? body?.call_available;
+  if (typeof callAvailable !== "boolean") {
+    return NextResponse.json({ error: "Paramètre callAvailable requis." }, { status: 400 });
+  }
+
+  const { data, error } = await supabase
+    .from("marketplace_suppliers")
+    .update({ call_available: callAvailable, updated_at: new Date().toISOString() })
+    .eq("user_id", user.id)
+    .select("id, user_id, business_name, call_available")
+    .single();
+
+  if (error) return NextResponse.json({ error: "Impossible de mettre à jour la disponibilité." }, { status: 502 });
+  return NextResponse.json({ supplier: data });
 }
 
 export async function POST(request: NextRequest) {

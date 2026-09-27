@@ -1,42 +1,131 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import {
+  getMarketplaceMessages,
+  insertMarketplaceMessage,
+  getMarketplaceConversationById,
+} from "@/lib/marketplace/db";
+import {
+  inspectMarketplaceMessage,
+  recordCircumventionAttempt,
+} from "@/lib/marketplace/anti-circumvention";
+import { MarketplaceAttachment, MarketplaceMessageType } from "@/lib/marketplace/types";
 
-const CONTACT_PATTERNS = [
-  /(?:https?:\/\/|www\.)\S+/i,
-  /\b[\w.+-]+@[\w-]+\.[\w.-]+\b/i,
-  /(?:\+|00)?\d[\d .()/-]{7,}\d/i,
-  /(?:whatsapp|telegram|signal|t[ée]l[ée]gram|imo|wechat|facebook\.com|instagram\.com)/i,
-];
+export async function GET(request: NextRequest) {
+  const user = await getCurrentUserFromCookie();
+  if (!user) return NextResponse.json({ error: "Connexion requise." }, { status: 401 });
 
-function inspectMessage(body: string) {
-  const match = CONTACT_PATTERNS.find((pattern) => pattern.test(body));
-  return match ? "Les coordonnées, liens et moyens de contact externes sont interdits dans la messagerie Marketplace." : null;
+  const { searchParams } = new URL(request.url);
+  const conversationId = searchParams.get("conversationId");
+
+  if (!conversationId) {
+    return NextResponse.json({ error: "Identifiant de conversation requis." }, { status: 400 });
+  }
+
+  // Vérifier les droits d'accès
+  const conversation = await getMarketplaceConversationById(
+    conversationId,
+    user.id,
+    ["admin", "gerant"].includes(user.role)
+  );
+
+  if (!conversation) {
+    return NextResponse.json({ error: "Conversation non autorisée ou introuvable." }, { status: 403 });
+  }
+
+  const messages = await getMarketplaceMessages(conversationId, user.id, true);
+  return NextResponse.json({ messages, conversation });
 }
 
 export async function POST(request: NextRequest) {
   const user = await getCurrentUserFromCookie();
   if (!user) return NextResponse.json({ error: "Connexion requise." }, { status: 401 });
-  const body = await request.json().catch(() => null) as { conversationId?: string; productId?: string; supplierId?: string; message?: string; warningAcknowledged?: boolean } | null;
-  if (!body || typeof body.message !== "string" || body.message.trim().length < 1 || body.message.length > 4000) return NextResponse.json({ error: "Message invalide." }, { status: 400 });
-  if (!body.warningAcknowledged) return NextResponse.json({ error: "Veuillez confirmer que vous restez dans la messagerie EAM.", requiresWarning: true }, { status: 428 });
-  const moderationReason = inspectMessage(body.message.trim());
-  if (moderationReason) return NextResponse.json({ error: moderationReason, blocked: true }, { status: 422 });
-  const supabase = getSupabaseAdmin();
-  if (!supabase) return NextResponse.json({ error: "Messagerie temporairement indisponible." }, { status: 503 });
 
-  let conversationId = body.conversationId;
-  if (!conversationId) {
-    if (!body.productId || !body.supplierId) return NextResponse.json({ error: "Conversation incomplète." }, { status: 400 });
-    const { data: conversation, error: conversationError } = await supabase.from("marketplace_conversations").upsert({ product_id: body.productId, buyer_id: user.id, supplier_id: body.supplierId, warning_acknowledged_at: new Date().toISOString() }, { onConflict: "product_id,buyer_id,supplier_id" }).select("id").single();
-    if (conversationError || !conversation) return NextResponse.json({ error: "Impossible d’ouvrir la conversation." }, { status: 502 });
-    conversationId = conversation.id;
-  } else {
-    const { error: accessError } = await supabase.from("marketplace_conversations").select("id").eq("id", conversationId).or(`buyer_id.eq.${user.id},supplier_id.eq.${user.id}`).limit(1).single();
-    if (accessError) return NextResponse.json({ error: "Conversation non autorisée." }, { status: 403 });
+  const body = (await request.json().catch(() => null)) as {
+    conversationId?: string;
+    body?: string;
+    media?: MarketplaceAttachment[];
+    messageType?: MarketplaceMessageType;
+    isQuickReply?: boolean;
+    callMeta?: any;
+  } | null;
+
+  if (!body?.conversationId) {
+    return NextResponse.json({ error: "Identifiant de conversation manquant." }, { status: 400 });
   }
 
-  const { data: message, error } = await supabase.from("marketplace_messages").insert({ conversation_id: conversationId, sender_id: user.id, body: body.message.trim(), moderation_status: "pending" }).select("id,conversation_id,body,moderation_status,created_at").single();
-  if (error) return NextResponse.json({ error: "Impossible d’envoyer le message." }, { status: 502 });
-  return NextResponse.json({ message, notice: "Message transmis à la modération technique avant livraison au destinataire." }, { status: 201 });
+  const textContent = (body.body || "").trim();
+  const mediaList = Array.isArray(body.media) ? body.media : [];
+
+  if (!textContent && mediaList.length === 0 && !body.callMeta) {
+    return NextResponse.json({ error: "Le contenu du message ne peut pas être vide." }, { status: 400 });
+  }
+
+  // 1. Contrôle d'accès à la conversation
+  const conversation = await getMarketplaceConversationById(
+    body.conversationId,
+    user.id,
+    ["admin", "gerant"].includes(user.role)
+  );
+
+  if (!conversation) {
+    return NextResponse.json({ error: "Accès refusé à cette conversation." }, { status: 403 });
+  }
+
+  // 2. Si la conversation est en litige, elle est gelée en lecture seule pour acheteur et vendeur
+  if (conversation.status === "disputed" && !["admin", "gerant"].includes(user.role)) {
+    return NextResponse.json(
+      {
+        error: "Cette conversation est actuellement gelée en raison d'un litige en cours d'examen par le support.",
+        frozen: true,
+      },
+      { status: 423 }
+    );
+  }
+
+  // 3. Filtrage Anti-Contournement strict côté serveur (PRD Section 12)
+  if (textContent) {
+    const circumventionResult = inspectMarketplaceMessage(textContent);
+    if (!circumventionResult.allowed) {
+      await recordCircumventionAttempt(
+        user.id,
+        body.conversationId,
+        circumventionResult.matchedCategory || "unknown",
+        textContent
+      );
+
+      return NextResponse.json(
+        {
+          error: circumventionResult.reason,
+          blocked: true,
+          category: circumventionResult.matchedCategory,
+        },
+        { status: 422 }
+      );
+    }
+  }
+
+  // 4. Déterminer le rôle de l'expéditeur
+  const isSupplier = conversation.supplier?.user_id === user.id;
+  const senderRole = isSupplier ? "supplier" : "buyer";
+  const messageType = body.messageType || (mediaList.length > 0 ? "document" : "text");
+
+  // 5. Insertion garantie non modifiable
+  const message = await insertMarketplaceMessage({
+    conversationId: body.conversationId,
+    senderId: user.id,
+    senderRole,
+    messageType,
+    body: textContent || null,
+    media: mediaList,
+    isQuickReply: Boolean(body.isQuickReply),
+    callMeta: body.callMeta || {},
+  });
+
+  if (!message) {
+    return NextResponse.json({ error: "Impossible d’enregistrer le message." }, { status: 502 });
+  }
+
+  return NextResponse.json({ message }, { status: 201 });
 }
