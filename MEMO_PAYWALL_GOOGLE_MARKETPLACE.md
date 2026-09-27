@@ -15,10 +15,15 @@
 - **Sécurité RLS & Paywall Serveur** : Le contenu intégral des articles cryptés est tronqué côté serveur avant envoi du HTML/JSON pour les non-abonnés (Règle AGENTS.md §3.7).
 - **Responsive** : Validation sur mobile, tablette et desktop.
 
-## 3. Plan d'exécution
-- [ ] Étape 1 : Refonte de `src/components/ArticlePaywall.tsx` (bordeaux/or, typographie, badges de valeur, boutons CTA).
-- [ ] Étape 2 : Harmonisation de `GoogleOneTapPrompt.tsx` (temporisation après cookies, suppression scrim bloquant mobile).
-- [ ] Étape 3 : Sécurisation et robustesse de `src/app/auth/callback/page.tsx` (support code PKCE + tokens hash fragment + échange session Supabase).
-- [ ] Étape 4 : Déblocage de `public/firebase-messaging-sw.js` (domaine Vercel autorisé, audit complet rédigé).
-- [ ] Étape 5 : Routage intelligent Marketplace / WAB dans `src/app/marketplace/MarketplaceClient.tsx` et `src/app/messages/page.tsx`.
-- [ ] Étape 6 : Tests complets, build Next.js, rapport d'audit et déploiement en production.
+## 3. Plan d'exécution & Livrables Réalisés
+- [x] Étape 1 : Refonte de `src/components/ArticlePaywall.tsx` (bordeaux/or, typographie agrandie et en gras, badges de valeur, bouton "Découvrez nos abonnements" vers `/abonnement`).
+- [x] Étape 2 : Harmonisation de `GoogleOneTapPrompt.tsx` (temporisation après cookies via `eam_cookie_consent_updated`, suppression du voile opaque bloquant sur mobile).
+- [x] Étape 3 : Sécurisation et robustesse de `src/app/auth/callback/page.tsx` (support code PKCE + tokens hash fragment `#access_token=...` + échange session Supabase).
+- [x] Étape 4 : Déblocage de `public/firebase-messaging-sw.js` (domaine Vercel autorisé dans `isAllowedHost`, redirection de notification adaptable).
+- [x] Étape 5 : Routage intelligent Marketplace / WAB dans `src/app/marketplace/MarketplaceClient.tsx` et `src/app/messages/page.tsx` avec sélecteur d'onglets ergonomique.
+- [x] Étape 6 : Résolution de l'erreur HTTP 500 lors de la connexion d'un nouveau compte Google :
+  - Identification de la collision de contrainte d'unicité `users_affiliate_code_key` (`affiliateCode: ""` inséré pour les nouveaux comptes Google alors qu'un utilisateur avait déjà un code vide).
+  - Nettoyage du compte existant en base de données avec assignation d'un code affilié valide.
+  - Blindage de `createUser` dans `src/lib/core-db.ts` avec génération automatique de code affilié unique et boucle de retry/fallback automatique en cas de collision.
+  - Sécurisation de `/api/auth/oauth/callback`, `/api/auth/oauth/session` et `/api/auth/google-one-tap` avec try/catch, synchronisation de l'id `socialUser.id` et génération de codes affiliés valides.
+- [x] Étape 7 : Tests complets (`npx tsc`, `npx next build` 100% sans erreur), commits et déploiement en production sur GitHub/Vercel.
