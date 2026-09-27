@@ -172,6 +172,22 @@ function MessagesContent() {
     return () => clearInterval(interval);
   }, []);
 
+  // Redirection automatique vers la messagerie Marketplace si l'utilisateur y naviguait
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const platform = searchParams.get("platform");
+    const currentPlatform = sessionStorage.getItem("eam_current_platform");
+    const referrer = document.referrer || "";
+    const isFromMarketplace =
+      platform === "marketplace" ||
+      currentPlatform === "marketplace" ||
+      referrer.includes("/marketplace");
+
+    if (isFromMarketplace && !paramConversationId && !paramUserId && !paramCallId) {
+      window.location.replace("/marketplace/messages");
+    }
+  }, [paramConversationId, paramUserId, paramCallId, searchParams]);
+
   // Détecter un appel direct via URL ?callId=
   useEffect(() => {
     if (paramCallId && currentUserId) {
@@ -803,6 +819,22 @@ function MessagesContent() {
               Discussions directes et confidentielles
             </p>
           </div>
+        </div>
+
+        {/* Sélecteur de plateforme Messagerie WAB <-> Marketplace */}
+        <div className="flex items-center rounded-full bg-black/30 p-1 border border-white/15 text-xs font-bold">
+          <span className="flex items-center gap-1.5 rounded-full bg-[#9e001f] px-3 py-1 text-white shadow-sm">
+            <span className="material-symbols-outlined text-[15px]">chat</span>
+            <span>Réseau WAB</span>
+          </span>
+          <Link
+            href="/marketplace/messages"
+            className="flex items-center gap-1.5 rounded-full px-3 py-1 text-white/80 hover:text-white transition"
+            title="Accéder à la messagerie transactionnelle Marketplace"
+          >
+            <span className="material-symbols-outlined text-[15px]">storefront</span>
+            <span className="hidden sm:inline">Marketplace</span>
+          </Link>
         </div>
 
         <div className="flex items-center gap-2">

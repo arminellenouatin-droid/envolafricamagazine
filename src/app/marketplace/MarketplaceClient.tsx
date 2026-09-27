@@ -113,6 +113,12 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
   const [selectedProduct, setSelectedProduct] = useState<ProductWithMeta | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("eam_current_platform", "marketplace");
+    } catch {}
+  }, []);
+
   const loadProducts = useCallback(async (nextPage: number, replace = false) => {
     setLoading(true); setError("");
     try {

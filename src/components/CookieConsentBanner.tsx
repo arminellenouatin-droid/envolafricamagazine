@@ -35,6 +35,9 @@ export default function CookieConsentBanner() {
           ad_storage: "granted",
         });
       }
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("eam_cookie_consent_updated"));
+      }
     } catch {}
     setVisible(false);
   };
@@ -47,6 +50,9 @@ export default function CookieConsentBanner() {
           analytics_storage: "denied",
           ad_storage: "denied",
         });
+      }
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("eam_cookie_consent_updated"));
       }
     } catch {}
     setVisible(false);

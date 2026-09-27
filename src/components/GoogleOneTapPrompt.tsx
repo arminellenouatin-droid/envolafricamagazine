@@ -38,26 +38,62 @@ export default function GoogleOneTapPrompt({ user }: GoogleOneTapPromptProps) {
     // Si l'utilisateur est déjà connecté, ne rien afficher
     if (user) return;
 
-    // Ne pas afficher si l'utilisateur a fermé l'invitation durant cette session
-    if (typeof window !== "undefined") {
-      const dismissed = sessionStorage.getItem("eam_google_prompt_dismissed");
-      if (dismissed) return;
-    }
+    if (typeof window === "undefined") return;
 
-    // Afficher après un léger délai agréable (1.2s)
-    const timer = setTimeout(() => {
-      setVisible(true);
-    }, 1200);
+    // Ne pas afficher si l'utilisateur a déjà fermé l'invitation durant cette session
+    const dismissed = sessionStorage.getItem("eam_google_prompt_dismissed");
+    if (dismissed) return;
+
+    let timer: NodeJS.Timeout | null = null;
+
+    const triggerPrompt = (delayMs: number) => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        // Double vérification si l'utilisateur ne l'a pas fermé entre-temps
+        if (!sessionStorage.getItem("eam_google_prompt_dismissed")) {
+          setVisible(true);
+        }
+      }, delayMs);
+    };
+
+    // Vérifier si le bandeau de cookies est en attente
+    const consent = localStorage.getItem("eam_cookie_consent");
+    if (consent) {
+      // Les cookies sont déjà gérés : déclencher après un délai ergonomique de 1.8s
+      triggerPrompt(1800);
+    } else {
+      // Les cookies ne sont pas encore acceptés/refusés : attendre l'interaction de l'utilisateur
+      // pour éviter la superposition de deux tiroirs en bas d'écran
+      const onCookieAnswered = () => {
+        triggerPrompt(1500);
+      };
+      window.addEventListener("eam_cookie_consent_updated", onCookieAnswered, { once: true });
+      window.addEventListener("storage", (e) => {
+        if (e.key === "eam_cookie_consent" && e.newValue) {
+          triggerPrompt(1500);
+        }
+      }, { once: true });
+    }
 
     // Initialiser également Google Identity Services pour le One Tap natif Google si disponible
     const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    if (googleClientId && typeof window !== "undefined") {
+    if (googleClientId) {
       const script = document.createElement("script");
       script.src = "https://accounts.google.com/gsi/client";
       script.async = true;
       script.defer = true;
       script.onload = () => {
-        const google = (window as unknown as { google?: { accounts?: { id?: { initialize: (config: unknown) => void; prompt: (cb?: unknown) => void } } } }).google;
+        const google = (window as unknown as {
+          google?: {
+            accounts?: {
+              id?: {
+                initialize: (config: unknown) => void;
+                prompt: (cb?: unknown) => void;
+              };
+            };
+          };
+        }).google;
+
         if (google?.accounts?.id) {
           google.accounts.id.initialize({
             client_id: googleClientId,
@@ -92,7 +128,9 @@ export default function GoogleOneTapPrompt({ user }: GoogleOneTapPromptProps) {
       document.head.appendChild(script);
     }
 
-    return () => clearTimeout(timer);
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [user]);
 
   if (!visible || user) return null;
@@ -134,87 +172,74 @@ export default function GoogleOneTapPrompt({ user }: GoogleOneTapPromptProps) {
   };
 
   return (
-    <>
-      {/* Scrim / Fond sombre cliquable pour refermer le tiroir sur mobile */}
-      <div
-        aria-hidden="true"
-        onClick={handleDismiss}
-        className="fixed inset-0 z-[1000] bg-black/50 backdrop-blur-[2px] transition-opacity animate-in fade-in duration-300 md:hidden"
-      />
-
-      {/* Tiroir Dark sortant du bas de l'écran sur mobile / Carte d'angle sur desktop */}
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Connexion rapide avec Google"
-        className="fixed inset-x-0 bottom-0 z-[1001] w-full rounded-t-3xl border-t border-white/15 bg-[#091522] p-5 pt-3 pb-[max(1.75rem,env(safe-area-inset-bottom)+0.75rem)] text-white shadow-[0_-12px_45px_rgba(0,0,0,0.7)] animate-in slide-in-from-bottom duration-300 ease-out md:bottom-6 md:right-6 md:left-auto md:w-96 md:rounded-2xl md:border md:border-white/15 md:pb-5 md:pt-4 md:shadow-2xl"
-      >
-        {/* Poignée du tiroir (mobile drawer drag indicator) */}
-        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-white/25 md:hidden" />
-
-        <div className="overflow-hidden">
-          {/* En-tête du tiroir avec logo et bouton fermer */}
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white/10 p-2 border border-white/10 shadow-inner">
-                <GoogleGLogo className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="font-display text-sm font-black text-white">
-                  Connexion à Envol Africa
-                </p>
-                <p className="text-[12px] text-slate-300 line-clamp-1">
-                  Accédez à vos articles, kiosque et services
-                </p>
-              </div>
+    <div
+      role="dialog"
+      aria-modal="false"
+      aria-label="Connexion rapide avec Google"
+      className="fixed inset-x-3 bottom-3 z-[9990] mx-auto max-w-sm rounded-2xl border border-white/20 bg-[#091522]/95 p-4 text-white shadow-[0_12px_45px_rgba(0,0,0,0.65)] backdrop-blur-md animate-in slide-in-from-bottom duration-300 ease-out md:bottom-6 md:right-6 md:left-auto md:mx-0 md:w-96 md:p-5"
+    >
+      <div className="overflow-hidden">
+        {/* En-tête du tiroir avec logo et bouton fermer */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10 p-2 border border-white/10 shadow-inner">
+              <GoogleGLogo className="h-5 w-5" />
             </div>
+            <div>
+              <p className="font-display text-sm font-black text-white">
+                Connexion à Envol Africa
+              </p>
+              <p className="text-[12px] text-slate-300 line-clamp-1">
+                Accédez à vos articles, kiosque et services
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleDismiss}
+            aria-label="Fermer l'invitation"
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-slate-400 transition hover:bg-white/10 hover:text-white"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Bouton de connexion Google 1-clic direct */}
+        <div className="mt-3.5 flex flex-col gap-2.5">
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={loading}
+            className="flex h-11 w-full items-center justify-center gap-3 rounded-full bg-white px-5 text-xs font-black text-[#1f1f1f] shadow-lg transition-all hover:bg-slate-100 hover:shadow-xl active:scale-[0.98] disabled:opacity-70"
+          >
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-700 border-t-transparent" />
+                <span>Connexion à Google en cours…</span>
+              </div>
+            ) : (
+              <>
+                <GoogleGLogo className="h-5 w-5" />
+                <span className="text-[13px] tracking-wide font-bold">Continuer avec Google</span>
+              </>
+            )}
+          </button>
+
+          <div className="flex items-center justify-between px-1 pt-0.5 text-[11px] text-slate-400">
+            <span className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              1 clic • Sans mot de passe
+            </span>
             <button
               type="button"
               onClick={handleDismiss}
-              aria-label="Fermer l'invitation"
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-slate-400 transition hover:bg-white/10 hover:text-white"
+              className="font-medium text-emerald-400 hover:text-emerald-300 hover:underline"
             >
-              ✕
+              Plus tard
             </button>
-          </div>
-
-          {/* Bouton de connexion Google 1-clic direct */}
-          <div className="mt-4 flex flex-col gap-2.5">
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              disabled={loading}
-              className="flex h-12 w-full items-center justify-center gap-3 rounded-full bg-white px-5 text-xs font-black text-[#1f1f1f] shadow-lg transition-all hover:bg-slate-100 hover:shadow-xl active:scale-[0.98] disabled:opacity-70"
-            >
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-700 border-t-transparent" />
-                  <span>Connexion à Google en cours…</span>
-                </div>
-              ) : (
-                <>
-                  <GoogleGLogo className="h-5 w-5" />
-                  <span className="text-[13px] tracking-wide">Continuer avec Google</span>
-                </>
-              )}
-            </button>
-
-            <div className="flex items-center justify-between px-2 pt-1 text-[11px] text-slate-400">
-              <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                1 clic • Sans mot de passe
-              </span>
-              <button
-                type="button"
-                onClick={handleDismiss}
-                className="font-medium text-emerald-400 hover:text-emerald-300 hover:underline"
-              >
-                Plus tard
-              </button>
-            </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -201,6 +201,9 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
   };
 
   useEffect(() => {
+    try {
+      sessionStorage.setItem("eam_current_platform", "wab");
+    } catch {}
     fetch("/api/auth/me")
       .then((response) => response.json())
       .then((data) => setCurrentUser(data.user ?? null))

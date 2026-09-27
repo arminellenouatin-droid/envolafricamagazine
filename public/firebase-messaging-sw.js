@@ -63,9 +63,15 @@ function toAbsoluteUrl(url) {
 messaging.onBackgroundMessage((payload) => {
   const hostname = self.location.hostname;
   const isObsoleteDomain = hostname.includes("alokpe") || hostname.includes("envolafricamagazinealokpe");
-  const isAllowedHost = hostname === "envolafrica.site" || hostname === "localhost" || hostname === "127.0.0.1";
+  const isAllowedHost =
+    hostname === "envolafrica.site" ||
+    hostname === "www.envolafrica.site" ||
+    hostname.endsWith("vercel.app") ||
+    hostname.includes("envolafrica") ||
+    hostname === "localhost" ||
+    hostname === "127.0.0.1";
 
-  // Si la notification arrive sur l'ancien domaine ou un miroir secondaire non-autorisé :
+  // Si la notification arrive sur un domaine tiers non autorisé :
   if (isObsoleteDomain || !isAllowedHost) {
     // 1. Se désinscrire auprès du PushManager
     if (self.registration && self.registration.pushManager) {
@@ -129,20 +135,28 @@ self.addEventListener("notificationclick", (event) => {
     ? event.notification.data.href
     : "/";
 
-  // Toujours rediriger vers le domaine canonique officiel envolafrica.site
+  // Redirection canonique adaptée selon l'environnement actif
   let targetUrl;
+  const currentOrigin = (self.location && self.location.origin) ? self.location.origin : "https://envolafrica.site";
+  const defaultBase = currentOrigin.includes("vercel.app") || currentOrigin.includes("localhost")
+    ? currentOrigin
+    : "https://envolafrica.site";
+
   try {
-    targetUrl = new URL(rawHref, "https://envolafrica.site");
-    if (!targetUrl.origin.includes("envolafrica.site")) {
-      targetUrl = new URL(targetUrl.pathname + targetUrl.search, "https://envolafrica.site");
-    }
+    targetUrl = new URL(rawHref, defaultBase);
   } catch {
-    targetUrl = new URL("/", "https://envolafrica.site");
+    targetUrl = new URL("/", defaultBase);
   }
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (windows) => {
-      const existing = windows.find((client) => "focus" in client && client.url.includes("envolafrica.site"));
+      const existing = windows.find(
+        (client) =>
+          "focus" in client &&
+          (client.url.includes("envolafrica.site") ||
+            client.url.includes("vercel.app") ||
+            client.url.includes("localhost"))
+      );
       if (existing) {
         await existing.focus();
         return existing.navigate(targetUrl.href);

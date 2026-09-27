@@ -657,6 +657,16 @@ export default function MarketplaceMessagesClient() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Bascule vers Réseau WAB */}
+            <Link
+              href="/messages"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#eadfce] bg-[#fcf9f8] px-3 py-1.5 text-xs font-bold text-[#725f4d] transition hover:border-[#9e001f] hover:text-[#9e001f]"
+              title="Accéder à la messagerie sociale WAB"
+            >
+              <span className="material-symbols-outlined text-[15px]">chat</span>
+              <span className="hidden sm:inline">Réseau WAB</span>
+            </Link>
+
             {/* Perspective Switcher */}
             <div className="flex items-center rounded-full border border-[#eadfce] bg-[#fcf9f8] p-1 text-xs font-bold">
               <button
