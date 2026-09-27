@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import CommentsPanel from "./CommentsPanel";
 import PostActions from "./PostActions";
 import PostMedia from "./PostMedia";
@@ -152,12 +153,30 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
   const [highlightedPostId, setHighlightedPostId] = useState<string | null>(null);
   const [suggestedFollows, setSuggestedFollows] = useState<Record<string, boolean>>({});
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("default");
+  const [liveSalons, setLiveSalons] = useState<any[]>([]);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const marker = useRef<HTMLDivElement>(null);
   const feedTopRef = useRef<HTMLDivElement>(null);
   const postsRef = useRef<Post[]>([]);
   const pendingNewPostsRef = useRef<Post[]>([]);
   const sharedPostRef = useRef<Post | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const checkMessages = () => {
+      fetch("/api/wab/messages")
+        .then((res) => res.json())
+        .then((data) => {
+          if (typeof data.unreadCount === "number") {
+            setUnreadMessagesCount(data.unreadCount);
+          }
+        })
+        .catch(() => {});
+    };
+    checkMessages();
+    const timer = window.setInterval(checkMessages, 20000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
@@ -194,6 +213,12 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
       .then((response) => response.json())
       .then((data) => setGroups(data.groups ?? []))
       .catch(() => setGroups([]));
+    fetch("/api/wab/salons?status=live")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.salons) setLiveSalons(data.salons.filter((s: any) => s.status === "live"));
+      })
+      .catch(() => {});
     const draft = sessionStorage.getItem("wab-publish-draft");
     if (draft) {
       try {
@@ -664,6 +689,68 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                   >
                     <span className="material-symbols-outlined text-base">close</span>
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* Salons en Direct WAB (PRD Section 3.4 & 7.1) */}
+            {liveSalons.length > 0 && (
+              <div className="rounded-2xl border border-red-200/80 bg-gradient-to-r from-red-950 via-[#3d0810] to-[#082843] p-3.5 text-white shadow-md">
+                <div className="flex items-center justify-between gap-3 mb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                    </span>
+                    <span className="text-[11px] font-black uppercase tracking-wider text-red-300">
+                      En direct sur WAB
+                    </span>
+                  </div>
+                  <Link
+                    href="/salons"
+                    className="text-[11px] font-bold text-amber-300 hover:text-amber-200 flex items-center gap-1 transition-colors"
+                  >
+                    <span>Tous les salons ({liveSalons.length})</span>
+                    <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                  </Link>
+                </div>
+
+                <div className="flex gap-2.5 overflow-x-auto pb-1">
+                  {liveSalons.map((salon) => (
+                    <Link
+                      key={salon.id}
+                      href={`/wab/salons/${salon.id}`}
+                      className="group shrink-0 w-64 rounded-xl border border-white/10 bg-black/40 backdrop-blur-sm p-2.5 hover:bg-black/60 transition-all flex items-center gap-3"
+                    >
+                      <div className="relative w-11 h-11 rounded-full overflow-hidden ring-2 ring-red-500 shrink-0">
+                        {salon.hostAvatarUrl ? (
+                          <img src={salon.hostAvatarUrl} alt={salon.host} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-red-800 flex items-center justify-center font-black text-xs text-white">
+                            {salon.host?.[0] || "L"}
+                          </div>
+                        )}
+                        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-black" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between text-[10px] text-white/70 mb-0.5">
+                          <span className="font-bold text-white truncate max-w-[110px]">{salon.host}</span>
+                          <span className="inline-flex items-center gap-0.5 text-red-400 font-bold shrink-0">
+                            <span className="material-symbols-outlined text-[10px]">visibility</span>
+                            {salon.participants || 1}
+                          </span>
+                        </div>
+                        <p className="text-[11px] font-bold text-white/95 truncate group-hover:text-amber-300 transition-colors">
+                          {salon.title}
+                        </p>
+                        {salon.salesModeEnabled && (
+                          <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded bg-amber-500/20 text-[9px] text-amber-300 font-semibold">
+                            🛍️ Live Shopping
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
                 </div>
               </div>
             )}
@@ -1343,6 +1430,31 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
 
         </div>
       </div>
+
+      {/* Bouton d'accès rapide flottant à la messagerie WAB */}
+      <Link
+        href="/messages"
+        aria-label={`Ouvrir la messagerie WAB${unreadMessagesCount ? ` (${unreadMessagesCount} non lus)` : ""}`}
+        title="Messagerie instantanée WAB"
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 rounded-full bg-white pl-3.5 pr-4 py-2.5 shadow-[0_8px_30px_rgb(0,0,0,0.14)] border border-[#cbe8e4] transition-all hover:scale-105 hover:shadow-2xl active:scale-95 group focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#006874]"
+      >
+        <div className="relative flex items-center justify-center">
+          <img src="/wab-message-icon.webp" alt="" className="h-7 w-7 object-contain drop-shadow" />
+          {unreadMessagesCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 grid min-h-4 min-w-4 place-items-center rounded-full bg-[#c1121f] px-1 text-[9px] font-extrabold text-white animate-pulse">
+              {unreadMessagesCount > 99 ? "99+" : unreadMessagesCount}
+            </span>
+          )}
+        </div>
+        <div className="text-left leading-tight hidden xs:block">
+          <span className="block text-xs font-black text-[#001325] group-hover:text-[#006874] transition-colors">
+            Messagerie
+          </span>
+          <span className="block text-[10px] font-semibold text-emerald-600">
+            En direct
+          </span>
+        </div>
+      </Link>
     </main>
   );
 }

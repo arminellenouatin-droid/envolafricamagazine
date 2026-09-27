@@ -13,6 +13,7 @@ export interface ActiveAudioCall {
   recipientName?: string;
   recipientAvatar?: string;
   conversationId: string;
+  callType?: "audio" | "video";
   status: "ringing" | "connected" | "rejected" | "ended" | "missed";
   offer?: RTCSessionDescriptionInit | null;
   answer?: RTCSessionDescriptionInit | null;
@@ -137,6 +138,7 @@ export async function POST(request: NextRequest) {
   if (action === "initiate") {
     const recipientId = String(body.recipientId || "");
     const conversationId = String(body.conversationId || "");
+    const callType: "audio" | "video" = body.callType === "video" ? "video" : "audio";
     if (!recipientId) {
       return NextResponse.json({ error: "Destinataire requis." }, { status: 400 });
     }
@@ -156,6 +158,7 @@ export async function POST(request: NextRequest) {
       recipientName: body.recipientName ? String(body.recipientName) : undefined,
       recipientAvatar: body.recipientAvatar ? String(body.recipientAvatar) : undefined,
       conversationId,
+      callType,
       status: "ringing",
       offer: body.offer || null,
       answer: null,
@@ -168,12 +171,18 @@ export async function POST(request: NextRequest) {
     persistActiveCalls(activeCalls);
 
     // Déclencher une notification pour l'utilisateur appelé
+    const notifTitle = callType === "video" ? "🎥 Appel vidéo entrant" : "📞 Appel audio entrant";
+    const notifBody =
+      callType === "video"
+        ? `${callerName} vous appelle en vidéo direct sur la messagerie WAB.`
+        : `${callerName} vous appelle en direct sur la messagerie WAB.`;
+
     createGlobalNotification({
       userId: recipientId,
       platform: "wab",
-      type: "audio_call",
-      title: "📞 Appel audio entrant",
-      body: `${callerName} vous appelle en direct sur la messagerie WAB.`,
+      type: callType === "video" ? "video_call" : "audio_call",
+      title: notifTitle,
+      body: notifBody,
       link: `/messages?conversationId=${encodeURIComponent(conversationId)}&callId=${id}`,
       dedupeKey: `call-${id}`,
     }).catch(() => {});
@@ -199,7 +208,7 @@ export async function POST(request: NextRequest) {
   // 2. ACCEPT CALL
   if (action === "accept") {
     existing.status = "connected";
-    existing.connectedAt = Date.now();
+    existing.connectedAt = existing.connectedAt || Date.now();
     if (body.answer) {
       existing.answer = body.answer;
     }
@@ -226,7 +235,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ call: existing });
   }
 
-  // 5. SIGNAL (Offer, Answer, ICE candidates)
+  // 5. UPGRADE TO VIDEO
+  if (action === "upgrade_video") {
+    existing.callType = "video";
+    activeCalls.set(callId, existing);
+    persistActiveCalls(activeCalls);
+    return NextResponse.json({ call: existing });
+  }
+
+  // 6. SIGNAL (Offer, Answer, ICE candidates)
   if (action === "signal") {
     if (body.offer && existing.callerId === user.id) {
       existing.offer = body.offer;
@@ -237,10 +254,17 @@ export async function POST(request: NextRequest) {
       existing.connectedAt = existing.connectedAt || Date.now();
     }
     if (body.candidate) {
+      const cand = body.candidate;
       if (existing.callerId === user.id) {
-        existing.callerCandidates.push(body.candidate);
+        const exists = existing.callerCandidates.some(
+          (c) => c.candidate === cand.candidate && c.sdpMid === cand.sdpMid
+        );
+        if (!exists) existing.callerCandidates.push(cand);
       } else {
-        existing.recipientCandidates.push(body.candidate);
+        const exists = existing.recipientCandidates.some(
+          (c) => c.candidate === cand.candidate && c.sdpMid === cand.sdpMid
+        );
+        if (!exists) existing.recipientCandidates.push(cand);
       }
     }
     activeCalls.set(callId, existing);

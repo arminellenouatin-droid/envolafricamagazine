@@ -83,31 +83,74 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!user) return NextResponse.json({ error: "Connexion requise." }, { status: 401 });
 
   const db = readWabDB();
-  const salon = db.salons.find((item) => item.id === id && item.hostUserId === user.id);
-  if (!salon) return NextResponse.json({ error: "Action réservée à l’animateur." }, { status: 403 });
+  const salon = db.salons.find((item) => item.id === id);
+  if (!salon) return NextResponse.json({ error: "Salon introuvable." }, { status: 404 });
+
+  const isHost = salon.hostUserId === user.id;
+  const isModerator = Array.isArray(salon.moderatorUserIds) && salon.moderatorUserIds.includes(user.id);
+  const isAdmin = user.role === "admin";
+
+  if (!isHost && !isModerator && !isAdmin) {
+    return NextResponse.json({ error: "Action non autorisée sur ce salon." }, { status: 403 });
+  }
 
   const body = await request.json().catch(() => ({}));
 
-  if (body.status) {
-    if (!["scheduled", "live", "ended", "cancelled"].includes(body.status)) {
-      return NextResponse.json({ error: "Statut invalide." }, { status: 400 });
+  // Host or Admin only: status, coHost, replay, pinnedProduct
+  if (isHost || isAdmin) {
+    if (body.status) {
+      if (!["scheduled", "live", "ended", "cancelled"].includes(body.status)) {
+        return NextResponse.json({ error: "Statut invalide." }, { status: 400 });
+      }
+      salon.status = body.status;
+      if (body.status === "ended") salon.endsAt = new Date().toISOString();
     }
-    salon.status = body.status;
-    if (body.status === "ended") salon.endsAt = new Date().toISOString();
+
+    if (typeof body.replayUrl === "string") {
+      salon.replayUrl = body.replayUrl.slice(0, 1000);
+    }
+
+    if (typeof body.replayPublic === "boolean") {
+      salon.replayPublic = body.replayPublic;
+    }
+
+    if ("coHostUserId" in body) {
+      salon.coHostUserId = body.coHostUserId || undefined;
+      salon.coHostName = body.coHostName || undefined;
+      salon.coHostAvatarUrl = body.coHostAvatarUrl || undefined;
+    }
+
+    if (Array.isArray(body.guestRequests)) {
+      salon.guestRequests = body.guestRequests;
+    }
+
+    if ("pinnedProduct" in body) {
+      salon.pinnedProduct = body.pinnedProduct;
+    }
+
+    if (typeof body.allowStageRequests === "boolean") {
+      salon.allowStageRequests = body.allowStageRequests;
+    }
+
+    if (Array.isArray(body.moderatorUserIds)) {
+      salon.moderatorUserIds = body.moderatorUserIds;
+    }
   }
 
-  if (typeof body.replayUrl === "string") {
-    salon.replayUrl = body.replayUrl.slice(0, 1000);
+  // Host, Moderator, or Admin: Muting, Banning
+  if (Array.isArray(body.mutedUserIds)) {
+    salon.mutedUserIds = body.mutedUserIds;
   }
 
-  if ("coHostUserId" in body) {
-    salon.coHostUserId = body.coHostUserId || undefined;
-    salon.coHostName = body.coHostName || undefined;
-    salon.coHostAvatarUrl = body.coHostAvatarUrl || undefined;
+  if (Array.isArray(body.bannedUserIds)) {
+    salon.bannedUserIds = body.bannedUserIds;
   }
 
-  if (Array.isArray(body.guestRequests)) {
-    salon.guestRequests = body.guestRequests;
+  if (body.stats && typeof body.stats === "object") {
+    salon.stats = {
+      ...salon.stats,
+      ...body.stats,
+    };
   }
 
   writeWabDB(db);

@@ -92,12 +92,45 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       (user as unknown as { avatar?: string }).avatar;
   }
 
+  // Vérifier exclusion ou mise en sourdine
+  if (Array.isArray(salon.bannedUserIds) && salon.bannedUserIds.includes(userId)) {
+    return NextResponse.json({ error: "Vous avez été exclu de ce salon." }, { status: 403 });
+  }
+  if (Array.isArray(salon.mutedUserIds) && salon.mutedUserIds.includes(userId)) {
+    return NextResponse.json({ error: "Vous êtes actuellement en sourdine dans ce salon." }, { status: 403 });
+  }
+
+  // Règle anti-contournement WAB (PRD Section 8.3 & 22.3) :
+  // Détection des numéros de téléphone (ex: +229 97 ..., 06 12 34 56 78), WhatsApp et liens externes non WAB
+  const phonePattern = /(?:\+?\d{1,4}[-.\s]?)?(?:\(?\d{2,4}\)?[-.\s]?)?\d{2,4}[-.\s]?\d{2,4}[-.\s]?\d{2,4}/g;
+  const digitsOnly = content.replace(/\D/g, "");
+  const hasSuspiciousPhone = digitsOnly.length >= 8 && phonePattern.test(content);
+  const hasOffPlatformLink = /(?:wa\.me|whatsapp\.com|t\.me|telegram|virement|paiement direct|cash|contactez-moi sur whatsapp)/i.test(content);
+
+  if (hasSuspiciousPhone || hasOffPlatformLink) {
+    return NextResponse.json(
+      {
+        error: "Règle anti-contournement WAB : Les coordonnées personnelles (téléphone, WhatsApp, paiement direct) sont strictement interdites dans le chat en direct pour garantir la traçabilité et la protection des acheteurs.",
+      },
+      { status: 400 }
+    );
+  }
+
+  // Filtre mots sensibles / injures
+  const vulgarWords = ["con", "connard", "salope", "merde", "putain", "arnaque", "escroc", "fdp", "bâtard"];
+  let sanitizedContent = content;
+  vulgarWords.forEach((word) => {
+    const reg = new RegExp(`\\b${word}\\b`, "gi");
+    sanitizedContent = sanitizedContent.replace(reg, "*".repeat(word.length));
+  });
+
   // Auto-join participant si pas encore inscrit
   if (!db.salonParticipants.some((item) => item.salonId === id && item.userId === userId)) {
     db.salonParticipants.push({
       salonId: id,
       userId,
       name: authorName,
+      role: salon.hostUserId === userId ? "host" : "viewer",
       joinedAt: new Date().toISOString(),
     });
     salon.participants = db.salonParticipants.filter((p) => p.salonId === id).length;
@@ -109,8 +142,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     userId,
     author: authorName,
     authorAvatarUrl,
-    content,
+    content: sanitizedContent,
     giftType: typeof body.giftType === "string" ? body.giftType : undefined,
+    giftAmount: Number(body.giftAmount) || undefined,
     createdAt: new Date().toISOString(),
   };
 
@@ -118,4 +152,35 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   writeWabDB(db);
 
   return NextResponse.json({ message }, { status: 201 });
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const user = await getCurrentUserFromCookie();
+  const { id } = await params;
+  if (!user) return NextResponse.json({ error: "Connexion requise." }, { status: 401 });
+
+  const { searchParams } = new URL(request.url);
+  const messageId = searchParams.get("messageId");
+  if (!messageId) return NextResponse.json({ error: "Identifiant de message manquant." }, { status: 400 });
+
+  const db = readWabDB();
+  const salon = db.salons.find((item) => item.id === id);
+  if (!salon) return NextResponse.json({ error: "Salon introuvable." }, { status: 404 });
+
+  const message = db.salonMessages.find((m) => m.id === messageId && m.salonId === id);
+  if (!message) return NextResponse.json({ error: "Message introuvable." }, { status: 404 });
+
+  const isHost = salon.hostUserId === user.id;
+  const isModerator = Array.isArray(salon.moderatorUserIds) && salon.moderatorUserIds.includes(user.id);
+  const isAuthor = message.userId === user.id;
+  const isAdmin = user.role === "admin";
+
+  if (!isHost && !isModerator && !isAuthor && !isAdmin) {
+    return NextResponse.json({ error: "Action non autorisée." }, { status: 403 });
+  }
+
+  db.salonMessages = db.salonMessages.filter((m) => m.id !== messageId);
+  writeWabDB(db);
+
+  return NextResponse.json({ success: true, deletedMessageId: messageId });
 }

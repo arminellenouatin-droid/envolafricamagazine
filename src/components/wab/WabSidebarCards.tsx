@@ -10,8 +10,9 @@ export type WabUser = {
   role?: string;
 };
 
-const navItems = [
+const navItems: Array<{ label: string; href: string; icon: string; customIcon?: string }> = [
   { label: "Fil d'actualité", href: "/wab", icon: "newspaper" },
+  { label: "Messagerie WAB", href: "/messages", icon: "chat", customIcon: "/wab-message-icon.webp" },
   { label: "Mon Réseau", href: "/wab/profil", icon: "group" },
   { label: "Salons & Événements", href: "/salons", icon: "forum" },
   { label: "Offres d'emploi", href: "/emploi", icon: "work" },
@@ -186,9 +187,13 @@ export default function WabSidebarCards({
                     : "text-[#43474d] hover:bg-[#f3f7f6] hover:text-[#001325]"
                 }`}
               >
-                <span className={`material-symbols-outlined text-[20px] ${isActive ? "text-[#006874]" : "text-[#5f6368]"}`}>
-                  {item.icon}
-                </span>
+                {item.customIcon ? (
+                  <img src={item.customIcon} alt="" className="h-5 w-5 object-contain" />
+                ) : (
+                  <span className={`material-symbols-outlined text-[20px] ${isActive ? "text-[#006874]" : "text-[#5f6368]"}`}>
+                    {item.icon}
+                  </span>
+                )}
                 <span>{item.label}</span>
               </Link>
             );

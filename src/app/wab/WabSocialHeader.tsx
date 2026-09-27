@@ -73,7 +73,7 @@ export default function WabSocialHeader({ avatar }: { avatar?: string }) {
             aria-label={`Messages${messages ? `, ${messages} non lus` : ""}`}
             title="Messagerie instantanée"
           >
-            <span className="material-symbols-outlined">mail</span>
+            <img src="/wab-message-icon.webp" alt="Messagerie WAB" className="h-6 w-6 object-contain" />
             <Badge count={messages} />
           </Link>
 

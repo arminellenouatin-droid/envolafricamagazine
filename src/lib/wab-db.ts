@@ -8,7 +8,7 @@ export type WabPost = { id: string; author: string; authorAvatarUrl?: string; au
 export type WabPage = { id: string; ownerUserId: string; name: string; slug: string; logoUrl?: string; avatarUrl?: string; coverUrl?: string; description?: string; status: "active" | "archived"; createdAt: string; updatedAt: string };
 export type WabGroup = { id: string; ownerUserId: string; name: string; slug: string; description?: string; logoUrl?: string; avatarUrl?: string; coverUrl?: string; privacy: "community" | "private"; status: "active" | "archived"; createdAt: string; updatedAt: string };
 export type WabGroupMember = { groupId: string; userId: string; role: "owner" | "moderator" | "member"; status: "active" | "pending" | "blocked"; createdAt: string };
-export type WabProfile = { id: string; userId: string; fullName: string; headline: string; about: string; companyName?: string; industry?: string; country: string; city?: string; avatarUrl?: string; photoUrl?: string; status: "active" | "silent" | "banned"; createdAt: string; updatedAt: string; };
+export type WabProfile = { id: string; userId: string; fullName: string; headline: string; about: string; companyName?: string; industry?: string; country: string; city?: string; avatarUrl?: string; photoUrl?: string; coins?: number; status: "active" | "silent" | "banned"; createdAt: string; updatedAt: string; };
 export type WabReaction = { postId: string; userId: string; createdAt: string };
 export type WabMediaReaction = { mediaType: "story" | "reel"; mediaId: string; userId: string; reaction: "love" | "like" | "laugh" | "sad" | "cry" | "wow"; createdAt: string };
 export type WabMediaComment = { id: string; mediaType: "story" | "reel"; mediaId: string; userId: string; author: string; content: string; status: "published" | "hidden"; createdAt: string };
@@ -26,7 +26,28 @@ export type WabSalon = {
   startsAt: string;
   endsAt?: string;
   status: "scheduled" | "live" | "ended" | "cancelled";
+  theme?: string;
+  visibility?: "public" | "followers" | "invite";
+  coverUrl?: string;
+  allowStageRequests?: boolean;
+  salesModeEnabled?: boolean;
+  pinnedProduct?: {
+    id: string;
+    title: string;
+    priceXof: number;
+    image: string;
+    supplier: string;
+    installment?: boolean;
+    months?: number;
+    isFlash?: boolean;
+    flashPriceXof?: number;
+    flashEndsAt?: string;
+  } | null;
+  moderatorUserIds?: string[];
+  mutedUserIds?: string[];
+  bannedUserIds?: string[];
   replayUrl?: string;
+  replayPublic?: boolean;
   participants: number;
   coHostUserId?: string;
   coHostName?: string;
@@ -38,16 +59,124 @@ export type WabSalon = {
     requestedAt: string;
     status: "pending" | "accepted" | "rejected";
   }>;
+  stats?: {
+    peakViewers: number;
+    totalViews: number;
+    totalCoinsReceived: number;
+    totalSalesXof: number;
+    durationSeconds?: number;
+  };
   createdAt: string;
 };
-export type WabSalonParticipant = { salonId: string; userId: string; name: string; joinedAt: string };
-export type WabSalonMessage = { id: string; salonId: string; userId: string; author: string; authorAvatarUrl?: string; content: string; giftType?: string; createdAt: string };
+export type WabSalonParticipant = { salonId: string; userId: string; name: string; joinedAt: string; role?: "host" | "cohost" | "guest" | "moderator" | "viewer" };
+export type WabSalonMessage = { id: string; salonId: string; userId: string; author: string; authorAvatarUrl?: string; content: string; giftType?: string; giftAmount?: number; createdAt: string };
 export type WabBoost = { id: string; postId: string; userId: string; budgetXof: number; durationDays: number; audienceType?: "community" | "public"; targetCountries: string[]; targetIndustries: string[]; paymentId?: string; status: "pending" | "active" | "ended" | "cancelled" | "failed"; startsAt?: string; endsAt?: string; createdAt: string };
 export type WabConnection = { followerUserId: string; profileId: string; createdAt: string };
 export type WabNotification = { id: string; userId: string; type: string; title: string; body: string; href?: string; readAt?: string; createdAt: string };
 export type WabStory = { id: string; author: string; authorUserId?: string; avatarUrl?: string; mediaUrl: string; mimeType: string; caption?: string; createdAt: string; expiresAt: string; views: number; likes: number; moderationStatus: "published" | "pending_review" | "hidden" };
 export type WabReel = { id: string; author: string; authorUserId?: string; avatarUrl?: string; mediaUrl: string; mimeType: string; caption: string; createdAt: string; views: number; likes: number; moderationStatus: "published" | "pending_review" | "hidden" };
-export type WabDatabase = { posts: WabPost[]; pages: WabPage[]; groups: WabGroup[]; groupMembers: WabGroupMember[]; profiles: WabProfile[]; reactions: WabReaction[]; comments: WabComment[]; reports: WabReport[]; views: WabView[]; rewards: WabReward[]; stories: WabStory[]; reels: WabReel[]; salons: WabSalon[]; salonParticipants: WabSalonParticipant[]; salonMessages: WabSalonMessage[]; boosts: WabBoost[]; connections: WabConnection[]; notifications: WabNotification[]; mediaReactions: WabMediaReaction[]; mediaComments: WabMediaComment[] };
+
+export type WabCoinTransaction = {
+  id: string;
+  userId: string;
+  type: "recharge" | "gift_sent" | "gift_received";
+  amountCoins: number;
+  amountXof?: number;
+  paymentId?: string;
+  status: "completed" | "pending" | "failed";
+  createdAt: string;
+  metadata?: any;
+};
+
+export type WabCreatorWallet = {
+  userId: string;
+  availableXof: number;
+  pendingXof: number;
+  totalEarnedXof: number;
+  totalCoinsReceived: number;
+  updatedAt: string;
+};
+
+export type WabWithdrawalRequest = {
+  id: string;
+  userId: string;
+  amountXof: number;
+  paymentMethod: "mobile_money" | "bank_transfer";
+  phoneOrAccount: string;
+  operator?: string;
+  status: "pending" | "approved" | "rejected";
+  requestedAt: string;
+  processedAt?: string;
+  notes?: string;
+};
+
+export type WabLiveOrder = {
+  id: string;
+  salonId: string;
+  productId: string;
+  productTitle: string;
+  productImage?: string;
+  buyerId: string;
+  buyerName: string;
+  sellerId: string;
+  totalXof: number;
+  platformCommissionXof: number;
+  netSellerXof: number;
+  paymentMode: "full" | "installment";
+  months?: number;
+  status: "pending_payment" | "paid_escrow" | "delivered" | "funds_released" | "cancelled";
+  createdAt: string;
+};
+
+export type WabLiveReport = {
+  id: string;
+  salonId: string;
+  reporterId: string;
+  reporterName?: string;
+  targetType: "salon" | "message" | "user";
+  targetId: string;
+  reason: string;
+  status: "pending" | "approved" | "rejected";
+  createdAt: string;
+  resolvedAt?: string;
+};
+
+export type WabLiveSettings = {
+  coinRateXof: number;
+  giftCommissionRate: number;
+  salesCommissionRate: number;
+  minWithdrawalXof: number;
+  retentionDaysReplay: number;
+};
+
+export type WabDatabase = {
+  posts: WabPost[];
+  pages: WabPage[];
+  groups: WabGroup[];
+  groupMembers: WabGroupMember[];
+  profiles: WabProfile[];
+  reactions: WabReaction[];
+  comments: WabComment[];
+  reports: WabReport[];
+  views: WabView[];
+  rewards: WabReward[];
+  stories: WabStory[];
+  reels: WabReel[];
+  salons: WabSalon[];
+  salonParticipants: WabSalonParticipant[];
+  salonMessages: WabSalonMessage[];
+  boosts: WabBoost[];
+  connections: WabConnection[];
+  notifications: WabNotification[];
+  mediaReactions: WabMediaReaction[];
+  mediaComments: WabMediaComment[];
+  coinTransactions: WabCoinTransaction[];
+  creatorWallets: WabCreatorWallet[];
+  withdrawalRequests: WabWithdrawalRequest[];
+  liveOrders: WabLiveOrder[];
+  liveReports: WabLiveReport[];
+  liveSettings: WabLiveSettings;
+};
 const seed: WabPost[] = [
  { id: "wab-1", author: "Aïcha Bamba", authorAvatarUrl: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=160&auto=format&fit=crop", headline: "Fondatrice · Abidjan Green Logistics", location: "Abidjan, Côte d’Ivoire", content: "Nous ouvrons notre programme de partenaires pour accélérer la logistique urbaine durable en Afrique de l’Ouest. Nous recherchons des opérateurs, investisseurs et experts de la chaîne du froid.", type: "opportunity", tags: ["Logistique", "Partenariat", "Côte d’Ivoire"], views: 1840, watchSeconds: 0, likes: 126, comments: 18, shares: 0, isBoosted: true, createdAt: "2026-08-15T08:00:00.000Z", moderationStatus: "published" },
  { id: "wab-2", author: "Moussa Diallo", authorAvatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160&auto=format&fit=crop", headline: "Consultant finance & stratégie", location: "Dakar, Sénégal", content: "Trois leviers concrets pour rendre une PME exportatrice : une offre normalisée, une logistique tracée et une stratégie de paiement adaptée à chaque marché cible.", type: "text", tags: ["PME", "Export", "Finance"], views: 960, watchSeconds: 0, likes: 74, comments: 9, shares: 0, isBoosted: false, createdAt: "2026-08-15T07:20:00.000Z", moderationStatus: "published" },
@@ -99,6 +228,18 @@ function getEmptySeedDb(): WabDatabase {
     notifications: [],
     mediaReactions: [],
     mediaComments: [],
+    coinTransactions: [],
+    creatorWallets: [],
+    withdrawalRequests: [],
+    liveOrders: [],
+    liveReports: [],
+    liveSettings: {
+      coinRateXof: 10,
+      giftCommissionRate: 0.30,
+      salesCommissionRate: 0.10,
+      minWithdrawalXof: 5000,
+      retentionDaysReplay: 30,
+    },
   };
 }
 
@@ -124,6 +265,18 @@ function sanitizeDb(data: Partial<WabDatabase>): WabDatabase {
     notifications: data.notifications ?? [],
     mediaReactions: data.mediaReactions ?? [],
     mediaComments: data.mediaComments ?? [],
+    coinTransactions: data.coinTransactions ?? [],
+    creatorWallets: data.creatorWallets ?? [],
+    withdrawalRequests: data.withdrawalRequests ?? [],
+    liveOrders: data.liveOrders ?? [],
+    liveReports: data.liveReports ?? [],
+    liveSettings: data.liveSettings ?? {
+      coinRateXof: 10,
+      giftCommissionRate: 0.30,
+      salesCommissionRate: 0.10,
+      minWithdrawalXof: 5000,
+      retentionDaysReplay: 30,
+    },
   };
 }
 

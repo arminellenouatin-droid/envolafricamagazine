@@ -42,9 +42,12 @@ const demoSalons = [
   },
 ];
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const user = await getCurrentUserFromCookie();
   const db = readWabDB();
+  const { searchParams } = new URL(request.url);
+  const themeParam = searchParams.get("theme");
+  const statusParam = searchParams.get("status");
 
   // Si aucun salon, initialiser avec les démos live
   if (!db.salons || db.salons.length === 0) {
@@ -52,7 +55,7 @@ export async function GET() {
     writeWabDB(db);
   }
 
-  const salons = db.salons
+  let salons = db.salons
     .filter((salon) => salon.status !== "cancelled")
     .sort((a, b) => {
       // Les lives en premier
@@ -60,6 +63,14 @@ export async function GET() {
       if (b.status === "live" && a.status !== "live") return 1;
       return Date.parse(a.startsAt) - Date.parse(b.startsAt);
     });
+
+  if (themeParam && themeParam !== "all") {
+    salons = salons.filter((s) => s.theme?.toLowerCase() === themeParam.toLowerCase());
+  }
+
+  if (statusParam && (statusParam === "live" || statusParam === "scheduled" || statusParam === "ended")) {
+    salons = salons.filter((s) => s.status === statusParam);
+  }
 
   let followedLiveCount = 0;
   if (user) {
@@ -70,7 +81,6 @@ export async function GET() {
         return prof?.userId || c.profileId;
       });
 
-    // Compter les lives des comptes suivis (ou au moins 1 pour démonstration si suivi de démonstration)
     followedLiveCount = salons.filter(
       (s) => s.status === "live" && (followedHostIds.includes(s.hostUserId) || s.hostUserId === "user-aicha")
     ).length;
@@ -112,6 +122,12 @@ export async function POST(request: NextRequest) {
       (user as unknown as { avatar?: string }).avatar;
   }
 
+  const theme = typeof body.theme === "string" && body.theme.trim() ? body.theme.trim() : "Networking";
+  const visibility = body.visibility === "followers" || body.visibility === "invite" ? body.visibility : "public";
+  const salesModeEnabled = Boolean(body.salesModeEnabled);
+  const allowStageRequests = body.allowStageRequests !== false; // Default true
+  const coverUrl = typeof body.coverUrl === "string" && body.coverUrl.trim() ? body.coverUrl.trim() : undefined;
+
   const salon = {
     id: uuid(),
     hostUserId,
@@ -119,10 +135,24 @@ export async function POST(request: NextRequest) {
     hostAvatarUrl,
     title: body.title.trim().slice(0, 180),
     description: typeof body.description === "string" ? body.description.trim().slice(0, 4000) : "",
+    theme,
+    visibility,
+    salesModeEnabled,
+    allowStageRequests,
+    coverUrl,
     startsAt,
     status: (isLiveNow ? "live" : "scheduled") as "live" | "scheduled",
     participants: 1,
     guestRequests: [],
+    moderatorUserIds: [],
+    mutedUserIds: [],
+    bannedUserIds: [],
+    stats: {
+      peakViewers: 1,
+      totalViews: 1,
+      totalCoinsReceived: 0,
+      totalSalesXof: 0,
+    },
     createdAt: new Date().toISOString(),
   };
 
@@ -132,6 +162,7 @@ export async function POST(request: NextRequest) {
     salonId: salon.id,
     userId: hostUserId,
     name: salon.host,
+    role: "host",
     joinedAt: new Date().toISOString(),
   });
 

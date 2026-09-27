@@ -4,6 +4,21 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
+interface PinnedProduct {
+  id: string;
+  title: string;
+  priceXof: number;
+  image: string;
+  supplier: string;
+  vendorName?: string;
+  installment?: boolean;
+  months?: number;
+  isFlash?: boolean;
+  flashPriceXof?: number;
+  flashDiscountPercent?: number;
+  flashEndsAt?: string;
+}
+
 interface Salon {
   id: string;
   hostUserId: string;
@@ -11,10 +26,20 @@ interface Salon {
   hostAvatarUrl?: string;
   title: string;
   description: string;
+  theme?: string;
+  visibility?: "public" | "followers" | "invite";
+  coverUrl?: string;
+  salesModeEnabled?: boolean;
+  allowStageRequests?: boolean;
+  pinnedProduct?: PinnedProduct | null;
+  moderatorUserIds?: string[];
+  mutedUserIds?: string[];
+  bannedUserIds?: string[];
   startsAt: string;
   endsAt?: string;
   status: "scheduled" | "live" | "ended" | "cancelled";
   replayUrl?: string;
+  replayPublic?: boolean;
   participants: number;
   coHostUserId?: string;
   coHostName?: string;
@@ -26,14 +51,23 @@ interface Salon {
     requestedAt: string;
     status: "pending" | "accepted" | "rejected";
   }>;
+  stats?: {
+    peakViewers: number;
+    totalViews: number;
+    totalCoinsReceived: number;
+    totalSalesXof: number;
+    durationSeconds?: number;
+  };
 }
 
 interface Message {
   id: string;
+  userId?: string;
   author: string;
   authorAvatarUrl?: string;
   content: string;
   giftType?: string;
+  giftAmount?: number;
   createdAt: string;
 }
 
@@ -46,11 +80,11 @@ interface HeartParticle {
 }
 
 const VIRTUAL_GIFTS = [
-  { id: "rose", name: "Rose Panafricaine", emoji: "🌹", price: 100 },
-  { id: "cafe", name: "Café Éthiopien", emoji: "☕", price: 500 },
-  { id: "couronne", name: "Couronne Royale", emoji: "👑", price: 2000 },
-  { id: "lion", name: "Lion Panafricain", emoji: "🦁", price: 5000 },
-  { id: "diamant", name: "Diamant Brut", emoji: "💎", price: 10000 },
+  { id: "rose", name: "Rose Panafricaine", emoji: "🌹", coins: 5, priceXof: 50 },
+  { id: "cafe", name: "Café Éthiopien", emoji: "☕", coins: 25, priceXof: 250 },
+  { id: "couronne", name: "Couronne Royale", emoji: "👑", coins: 100, priceXof: 1000 },
+  { id: "lion", name: "Lion Panafricain", emoji: "🦁", coins: 500, priceXof: 5000 },
+  { id: "diamant", name: "Diamant Brut", emoji: "💎", coins: 1000, priceXof: 10000 },
 ];
 
 const HEART_COLORS = ["#ff2a6d", "#05d9e8", "#ffc837", "#00ff87", "#9e001f", "#ff6b6b"];
@@ -105,6 +139,34 @@ export default function SalonClient({ id }: { id: string }) {
   // Stage Requests (Co-Hosting / TikTok Dual Live)
   const [myStageRequestStatus, setMyStageRequestStatus] = useState<"none" | "pending" | "accepted">("none");
   const [pendingGuestRequests, setPendingGuestRequests] = useState<Array<{ userId: string; name: string; avatarUrl?: string }>>([]);
+
+  // Live Shopping states (PRD Lot 4)
+  const [pinnedProduct, setPinnedProduct] = useState<PinnedProduct | null>(null);
+  const [showProductSheet, setShowProductSheet] = useState(false);
+  const [showHostProductsDrawer, setShowHostProductsDrawer] = useState(false);
+  const [availableProducts, setAvailableProducts] = useState<any[]>([]);
+  const [buyingProduct, setBuyingProduct] = useState(false);
+  const [cartSuccessToast, setCartSuccessToast] = useState(false);
+  const [purchaseToast, setPurchaseToast] = useState<string | null>(null);
+
+  // WAB Coins & Virtual Gifts states (PRD Lot 3)
+  const [myCoins, setMyCoins] = useState<number>(50);
+  const [showRechargeModal, setShowRechargeModal] = useState(false);
+  const [recharging, setRecharging] = useState(false);
+  const [giftQuantity, setGiftQuantity] = useState<number>(1);
+  const [showTopContributorsDrawer, setShowTopContributorsDrawer] = useState(false);
+
+  // Moderation & Reporting states (PRD Lot 2 & Lot 5)
+  const [showReportModal, setShowReportModal] = useState<{ open: boolean; targetType: "salon" | "message" | "user"; targetId: string } | null>(null);
+  const [reportReason, setReportReason] = useState("");
+  const [reportSuccess, setReportSuccess] = useState(false);
+  const [moderationModal, setModerationModal] = useState<{ open: boolean; user: { id: string; name: string; messageId?: string } } | null>(null);
+  const [isModerator, setIsModerator] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+
+  // Post-Live Replay & Timer
+  const [publishReplay, setPublishReplay] = useState(true);
+  const [liveDurationSeconds, setLiveDurationSeconds] = useState(0);
 
   // WebRTC Peer Connections & Supabase Channel
   const viewerIdRef = useRef<string>("");
@@ -583,6 +645,31 @@ export default function SalonClient({ id }: { id: string }) {
       loadSalonData();
     });
 
+    // 5.12 Produit épinglé en direct (Live Shopping PRD Lot 4)
+    ch.on("broadcast", { event: "product_pinned" }, ({ payload }: { payload: any }) => {
+      if (payload) {
+        setPinnedProduct(payload);
+      }
+    });
+
+    // 5.13 Produit désépinglé
+    ch.on("broadcast", { event: "product_unpinned" }, () => {
+      setPinnedProduct(null);
+    });
+
+    // 5.14 Sanction modération reçue
+    ch.on("broadcast", { event: "participant_sanction" }, ({ payload }: { payload: any }) => {
+      if (payload?.targetUserId === currentUserId) {
+        if (payload.action === "mute") {
+          setIsMuted(true);
+          alert("Vous avez été mis en sourdine par un modérateur pour ce direct.");
+        } else if (payload.action === "kick" || payload.action === "ban") {
+          alert("Vous avez été exclu de ce salon par l'hôte ou la modération.");
+          window.location.assign("/salons");
+        }
+      }
+    });
+
     // Presence update pour le compteur de spectateurs
     ch.on("presence", { event: "sync" }, () => {
       const state = ch.presenceState();
@@ -698,51 +785,6 @@ export default function SalonClient({ id }: { id: string }) {
     }
   };
 
-  // Send Virtual Gift
-  const handleSendGift = async (gift: (typeof VIRTUAL_GIFTS)[0]) => {
-    setShowGiftDrawer(false);
-    setActiveGiftAnimation({ emoji: gift.emoji, name: gift.name });
-    setGiftCount((prev) => prev + 1);
-
-    // Burst hearts
-    for (let i = 0; i < 6; i++) {
-      setTimeout(() => triggerHeart(), i * 150);
-    }
-
-    // Broadcast cadeau
-    if (channelRef.current) {
-      channelRef.current.send({
-        type: "broadcast",
-        event: "live_gift",
-        payload: { emoji: gift.emoji, name: gift.name, senderName: currentUserName },
-      });
-    }
-
-    setTimeout(() => {
-      setActiveGiftAnimation(null);
-    }, 2800);
-
-    const giftMessageText = `a offert un cadeau : ${gift.name} ${gift.emoji}`;
-    const authorDisplayName = currentUserName && currentUserName !== "Moi" ? currentUserName : "Spectateur WAB";
-
-    try {
-      const res = await fetch(`/api/wab/salons/${id}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: giftMessageText,
-          author: authorDisplayName,
-          authorAvatarUrl: currentUserAvatar,
-          giftType: gift.id,
-        }),
-      });
-      const data = await res.json();
-      if (data.message) {
-        setMessages((prev) => [...prev, data.message]);
-      }
-    } catch {}
-  };
-
   // Demander à monter sur scène (Spectateur)
   const handleRequestStage = async () => {
     setMyStageRequestStatus("pending");
@@ -855,13 +897,313 @@ export default function SalonClient({ id }: { id: string }) {
     } catch {}
   };
 
+  // 1. Charger le solde de Coins
+  const loadCoins = useCallback(async () => {
+    try {
+      const res = await fetch("/api/wab/coins");
+      const data = await res.json();
+      if (data && typeof data.coins === "number") {
+        setMyCoins(data.coins);
+      }
+    } catch {}
+  }, []);
+
+  // 2. Charger les produits Marketplace disponibles & produit épinglé
+  const loadProducts = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/wab/salons/${id}/products`);
+      const data = await res.json();
+      if (data) {
+        if (data.pinnedProduct !== undefined) setPinnedProduct(data.pinnedProduct);
+        if (Array.isArray(data.availableProducts)) setAvailableProducts(data.availableProducts);
+      }
+    } catch {}
+  }, [id]);
+
+  useEffect(() => {
+    loadCoins();
+    loadProducts();
+  }, [loadCoins, loadProducts]);
+
+  // Timer de durée de live
+  useEffect(() => {
+    if (salon?.status === "live") {
+      const timer = setInterval(() => {
+        setLiveDurationSeconds((s) => s + 1);
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [salon?.status]);
+
+  // Calcul dynamique des meilleurs donateurs (Top Contributeurs PRD Section 9.3)
+  const topContributors = (() => {
+    const map = new Map<string, { name: string; avatarUrl?: string; totalCoins: number }>();
+    messages.forEach((m) => {
+      if (m.giftType && m.giftAmount && m.author) {
+        const existing = map.get(m.author) || { name: m.author, avatarUrl: m.authorAvatarUrl, totalCoins: 0 };
+        existing.totalCoins += m.giftAmount;
+        map.set(m.author, existing);
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => b.totalCoins - a.totalCoins).slice(0, 10);
+  })();
+
+  // Envoi de cadeau avec débits/crédits en Coins (PRD Section 9.2)
+  const handleSendGift = async (gift: any, quantity: number = giftQuantity) => {
+    const totalCostCoins = (gift.coins || 5) * quantity;
+    if (myCoins < totalCostCoins) {
+      setShowGiftDrawer(false);
+      setShowRechargeModal(true);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/wab/coins", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "send_gift",
+          salonId: id,
+          giftType: gift.name,
+          coinsCost: gift.coins,
+          quantity,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 402) {
+          setShowGiftDrawer(false);
+          setShowRechargeModal(true);
+        } else {
+          alert(data.error || "Impossible d'envoyer le cadeau.");
+        }
+        return;
+      }
+
+      setMyCoins(data.remainingCoins);
+      setGiftCount((prev) => prev + quantity);
+      setActiveGiftAnimation({ emoji: gift.emoji, name: `${quantity > 1 ? `${quantity}x ` : ""}${gift.name}` });
+      setTimeout(() => setActiveGiftAnimation(null), 3500);
+
+      if (channelRef.current && data.giftMessage) {
+        channelRef.current.send({
+          type: "broadcast",
+          event: "live_chat_message",
+          payload: { message: data.giftMessage },
+        });
+        channelRef.current.send({
+          type: "broadcast",
+          event: "live_gift",
+          payload: { emoji: gift.emoji, name: `${quantity > 1 ? `${quantity}x ` : ""}${gift.name}` },
+        });
+        setMessages((prev) => [...prev, data.giftMessage]);
+      }
+      setShowGiftDrawer(false);
+    } catch (err) {
+      console.warn("Échec envoi cadeau:", err);
+    }
+  };
+
+  // Recharge rapide de Coins (PRD Section 9.1)
+  const handleRechargePack = async (pack: any) => {
+    setRecharging(true);
+    try {
+      const res = await fetch("/api/wab/coins", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "recharge",
+          packId: pack.id,
+          instantSimulation: true,
+        }),
+      });
+      const data = await res.json();
+      if (data.checkoutUrl) {
+        window.location.assign(data.checkoutUrl);
+      } else if (data.success) {
+        setMyCoins(data.coins);
+        setShowRechargeModal(false);
+        setPurchaseToast(`Recharge réussie ! ${pack.coins} Coins WAB crédités.`);
+        setTimeout(() => setPurchaseToast(null), 3500);
+      } else {
+        alert(data.error || "Impossible d'initialiser la recharge.");
+      }
+    } catch (err: any) {
+      alert(err?.message || "Erreur de recharge.");
+    } finally {
+      setRecharging(false);
+    }
+  };
+
+  // Épingler un produit Marketplace en direct (PRD Section 8.2)
+  const handlePinProduct = async (product: any, isFlash = false, discount = 15, duration = 10) => {
+    try {
+      const res = await fetch(`/api/wab/salons/${id}/products`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: product.id,
+          isFlash,
+          flashDiscountPercent: discount,
+          flashMinutes: duration,
+        }),
+      });
+      const data = await res.json();
+      if (data.pinnedProduct) {
+        setPinnedProduct(data.pinnedProduct);
+        setShowHostProductsDrawer(false);
+        if (channelRef.current) {
+          channelRef.current.send({
+            type: "broadcast",
+            event: "product_pinned",
+            payload: data.pinnedProduct,
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("Erreur épinglage:", err);
+    }
+  };
+
+  const handleUnpinProduct = async () => {
+    try {
+      await fetch(`/api/wab/salons/${id}/products`, { method: "DELETE" });
+      setPinnedProduct(null);
+      if (channelRef.current) {
+        channelRef.current.send({
+          type: "broadcast",
+          event: "product_unpinned",
+          payload: {},
+        });
+      }
+    } catch {}
+  };
+
+  // Achat 1-Clic Moneroo (Spectateur)
+  const handleBuyProductNow = async (product: any, paymentMode: "full" | "installment" = "full", months = 1) => {
+    try {
+      setBuyingProduct(true);
+      const res = await fetch("/api/marketplace/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: product.id,
+          paymentMode,
+          months,
+        }),
+      });
+      const data = await res.json();
+      if (data.checkoutUrl) {
+        window.location.assign(data.checkoutUrl);
+      } else if (data.order) {
+        setPurchaseToast("Commande initiée sous séquestre sécurisé WAB !");
+        setShowProductSheet(false);
+        setTimeout(() => setPurchaseToast(null), 4000);
+      } else {
+        alert(data.error || "Impossible d'initier la commande.");
+      }
+    } catch (err: any) {
+      alert(err?.message || "Erreur de paiement.");
+    } finally {
+      setBuyingProduct(false);
+    }
+  };
+
+  // Ajout au Panier général (/panier)
+  const handleAddToCart = (product: any) => {
+    try {
+      const saved = localStorage.getItem("eam_cart_items");
+      const cart = saved ? JSON.parse(saved) : [];
+      cart.push({
+        id: product.id,
+        title: product.title,
+        price: product.flashPriceXof || product.priceXof,
+        image: product.image,
+        quantity: 1,
+        source: "live_salon",
+        salonId: id,
+      });
+      localStorage.setItem("eam_cart_items", JSON.stringify(cart));
+      setCartSuccessToast(true);
+      setShowProductSheet(false);
+      setTimeout(() => setCartSuccessToast(false), 3500);
+    } catch {}
+  };
+
+  // Modération : Mute / Kick / Ban / Delete (PRD Section 10.1)
+  const handleModerateAction = async (action: "mute" | "kick" | "ban" | "delete", targetUserId?: string, messageId?: string) => {
+    try {
+      if (action === "delete" && messageId) {
+        await fetch(`/api/wab/salons/${id}/messages?messageId=${encodeURIComponent(messageId)}`, {
+          method: "DELETE",
+        });
+        setMessages((prev) => prev.filter((m) => m.id !== messageId));
+      } else if (targetUserId) {
+        let updateBody: any = {};
+        if (action === "mute") {
+          updateBody = { mutedUserIds: [...(salon?.mutedUserIds || []), targetUserId] };
+        } else if (action === "kick" || action === "ban") {
+          updateBody = { bannedUserIds: [...(salon?.bannedUserIds || []), targetUserId] };
+        }
+
+        await fetch(`/api/wab/salons/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updateBody),
+        });
+
+        if (channelRef.current) {
+          channelRef.current.send({
+            type: "broadcast",
+            event: "participant_sanction",
+            payload: { action, targetUserId },
+          });
+        }
+      }
+      setModerationModal(null);
+    } catch (err) {
+      console.warn("Erreur modération:", err);
+    }
+  };
+
+  // Signalement (PRD Section 10.2)
+  const handleSubmitReport = async () => {
+    if (!showReportModal || !reportReason.trim()) return;
+    try {
+      const res = await fetch(`/api/wab/salons/${id}/reports`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetType: showReportModal.targetType,
+          targetId: showReportModal.targetId,
+          reason: reportReason.trim(),
+        }),
+      });
+      if (res.ok) {
+        setReportSuccess(true);
+        setTimeout(() => {
+          setShowReportModal(null);
+          setReportSuccess(false);
+          setReportReason("");
+        }, 2000);
+      }
+    } catch {}
+  };
+
   // End Live (Host)
   const handleEndLive = async () => {
     try {
+      const minutes = Math.floor(liveDurationSeconds / 60);
+      const seconds = liveDurationSeconds % 60;
+      const formattedDuration = `${minutes > 0 ? `${minutes} min ` : ""}${seconds}s`;
+
       await fetch(`/api/wab/salons/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "ended" }),
+        body: JSON.stringify({
+          status: "ended",
+          replayPublic: publishReplay,
+        }),
       });
 
       if (streamRef.current) {
@@ -870,7 +1212,7 @@ export default function SalonClient({ id }: { id: string }) {
 
       setShowEndModal(false);
       setLiveSummary({
-        duration: "42 min 18s",
+        duration: formattedDuration || "35 min",
         viewers: viewerCount,
         likes: likeCount,
       });
@@ -1220,7 +1562,44 @@ export default function SalonClient({ id }: { id: string }) {
         </div>
 
         {/* Boutons d'action Supérieurs */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Top Contributeurs */}
+          <button
+            type="button"
+            onClick={() => setShowTopContributorsDrawer(true)}
+            className="h-8 px-2 sm:px-2.5 rounded-full bg-black/50 backdrop-blur-md border border-amber-400/50 text-amber-300 flex items-center gap-1 text-[11px] sm:text-xs font-bold hover:bg-black/70 transition active:scale-95 shadow"
+            title="Classement des contributeurs"
+          >
+            <span className="text-xs">🥇</span>
+            <span className="hidden sm:inline font-black max-w-[70px] truncate">
+              {topContributors[0]?.name || "Dons"}
+            </span>
+          </button>
+
+          {/* Solde Coins & Recharger */}
+          <button
+            type="button"
+            onClick={() => setShowRechargeModal(true)}
+            className="h-8 px-2 sm:px-2.5 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-400/20 border border-yellow-400/60 text-yellow-300 flex items-center gap-1 text-[11px] sm:text-xs font-black hover:bg-yellow-400/30 transition active:scale-95 shadow"
+            title="Recharger des Coins WAB"
+          >
+            <span>🪙</span>
+            <span>{myCoins}</span>
+            <span className="text-[10px] bg-yellow-400 text-black px-1 rounded-full font-black ml-0.5">+</span>
+          </button>
+
+          {/* Bouton Signaler (Spectateur) */}
+          {!isHost && (
+            <button
+              type="button"
+              onClick={() => setShowReportModal({ open: true, targetType: "salon", targetId: id })}
+              className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-gray-300 hover:text-red-400 hover:border-red-400/40 flex items-center justify-center transition active:scale-95"
+              title="Signaler ce live"
+            >
+              <span className="material-symbols-outlined text-sm">flag</span>
+            </button>
+          )}
+
           {(isHost || isCoHost) && (
             <>
               <button
@@ -1334,6 +1713,65 @@ export default function SalonClient({ id }: { id: string }) {
       )}
 
       {/* ======================================================== */}
+      {/* 4.5 PRODUIT ÉPINGLÉ EN DIRECT (LIVE SHOPPING PRD LOT 4)   */}
+      {/* ======================================================== */}
+      {pinnedProduct && (
+        <div className="absolute bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+19.5rem)] left-4 right-4 max-w-sm z-30 pointer-events-auto">
+          <div className="bg-slate-900/90 backdrop-blur-xl border border-emerald-500/50 rounded-2xl p-2.5 shadow-2xl flex items-center justify-between gap-3 animate-in slide-in-from-left duration-300">
+            <div
+              className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
+              onClick={() => setShowProductSheet(true)}
+            >
+              <div className="w-12 h-12 rounded-xl overflow-hidden bg-black/50 border border-white/20 shrink-0 relative">
+                <img src={pinnedProduct.image} alt={pinnedProduct.title} className="w-full h-full object-cover" />
+                {pinnedProduct.isFlash && (
+                  <span className="absolute top-0 left-0 bg-red-600 text-white font-black text-[9px] px-1 rounded-br">
+                    FLASH
+                  </span>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] uppercase font-black tracking-wider text-emerald-400 bg-emerald-950/60 px-1.5 py-0.5 rounded">
+                    En vedette
+                  </span>
+                  {pinnedProduct.isFlash && (
+                    <span className="text-[10px] font-black text-red-400 animate-pulse">
+                      ⚡ -{pinnedProduct.flashDiscountPercent || 15}%
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs font-bold text-white truncate mt-0.5">{pinnedProduct.title}</p>
+                <p className="text-xs font-black text-amber-300">
+                  {(pinnedProduct.flashPriceXof || pinnedProduct.priceXof || 0).toLocaleString("fr-FR")} XOF
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowProductSheet(true)}
+                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs font-black shadow transition active:scale-95"
+              >
+                Acheter
+              </button>
+              {isHost && (
+                <button
+                  type="button"
+                  onClick={handleUnpinProduct}
+                  className="w-7 h-7 rounded-full bg-white/10 hover:bg-red-600/40 text-gray-300 hover:text-white flex items-center justify-center transition"
+                  title="Désépingler le produit"
+                >
+                  <span className="material-symbols-outlined text-sm">close</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
       {/* 5. OVERLAY CHAT EN DIRECT FLOTTANT (En bas à gauche)      */}
       {/* ======================================================== */}
       <div className="absolute bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+3.75rem)] left-4 right-20 z-20 max-w-sm pointer-events-auto">
@@ -1361,9 +1799,34 @@ export default function SalonClient({ id }: { id: string }) {
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <span className="font-extrabold text-emerald-400 mr-1.5">{m.author || "Spectateur"} :</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isHost || isModerator) {
+                      setModerationModal({
+                        open: true,
+                        user: { id: m.userId || m.author, name: m.author, messageId: m.id },
+                      });
+                    }
+                  }}
+                  className={`font-extrabold text-emerald-400 mr-1.5 ${
+                    isHost || isModerator ? "hover:underline cursor-pointer" : "cursor-default"
+                  }`}
+                >
+                  {m.author || "Spectateur"} :
+                </button>
                 <span className="leading-snug break-words">{m.content}</span>
               </div>
+              {(isHost || isModerator) && (
+                <button
+                  type="button"
+                  onClick={() => handleModerateAction("delete", undefined, m.id)}
+                  className="text-gray-400 hover:text-red-400 text-[10px] ml-1 shrink-0 p-0.5"
+                  title="Supprimer ce message"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -1380,10 +1843,11 @@ export default function SalonClient({ id }: { id: string }) {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-            placeholder="Ajouter un commentaire..."
-            className="w-full bg-transparent text-xs text-white placeholder-white/60 focus:outline-none"
+            placeholder={isMuted ? "Vous êtes en sourdine..." : "Ajouter un commentaire..."}
+            disabled={isMuted}
+            className="w-full bg-transparent text-xs text-white placeholder-white/60 focus:outline-none disabled:opacity-50"
           />
-          {inputText.trim() && (
+          {inputText.trim() && !isMuted && (
             <button
               type="button"
               onClick={handleSendMessage}
@@ -1393,6 +1857,19 @@ export default function SalonClient({ id }: { id: string }) {
             </button>
           )}
         </div>
+
+        {/* Bouton Boutique Live (Hôte) */}
+        {isHost && (
+          <button
+            type="button"
+            onClick={() => setShowHostProductsDrawer(true)}
+            className="h-11 px-3 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white flex items-center gap-1.5 shadow-lg active:scale-95 transition-all shrink-0 font-bold text-xs"
+            title="Gérer les produits Live Shopping"
+          >
+            <span className="material-symbols-outlined text-base">storefront</span>
+            <span className="hidden sm:inline">Boutique</span>
+          </button>
+        )}
 
         {/* Bouton Monter sur scène / Live (Spectateur) */}
         {!isHost && !isCoHost && (
@@ -1456,56 +1933,557 @@ export default function SalonClient({ id }: { id: string }) {
       </div>
 
       {/* ======================================================== */}
-      {/* 7. TIROIR DES CADEAUX VIRTUELS (Bottom Drawer)           */}
+      {/* 7. TIROIR DES CADEAUX VIRTUELS & COINS (PRD LOT 3)       */}
       {/* ======================================================== */}
       {showGiftDrawer && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#1b1c1c] border-t border-white/20 rounded-t-3xl p-6 max-w-lg mx-auto w-full animate-in slide-in-from-bottom duration-200">
-            <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
+        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#181a1b] border-t border-amber-400/30 rounded-t-3xl p-5 max-w-lg mx-auto w-full shadow-2xl animate-in slide-in-from-bottom duration-300">
+            {/* Header du tiroir */}
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
               <div className="flex items-center gap-2">
                 <span className="text-xl">🎁</span>
-                <h3 className="font-display font-black text-sm text-white">
-                  Envoyer un Cadeau en Direct
-                </h3>
+                <div>
+                  <h3 className="font-display font-black text-sm text-white">
+                    Envoyer un Cadeau en Direct
+                  </h3>
+                  <p className="text-[10px] text-gray-400">
+                    Soutenez l'hôte et boostez la visibilité du salon
+                  </p>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowGiftDrawer(false)}
-                className="text-gray-400 hover:text-white"
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
+
+              {/* Solde & Recharger */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-yellow-400/10 border border-yellow-400/30 text-yellow-300 text-xs font-black">
+                  <span>🪙</span>
+                  <span>{myCoins}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowGiftDrawer(false);
+                    setShowRechargeModal(true);
+                  }}
+                  className="px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-black text-[11px] font-black hover:opacity-90 active:scale-95 transition"
+                >
+                  + Recharger
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowGiftDrawer(false)}
+                  className="w-7 h-7 rounded-full bg-white/10 text-gray-300 hover:text-white flex items-center justify-center ml-1"
+                >
+                  <span className="material-symbols-outlined text-base">close</span>
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
-              {VIRTUAL_GIFTS.map((gift) => (
-                <button
-                  key={gift.id}
-                  onClick={() => handleSendGift(gift)}
-                  className="flex flex-col items-center justify-center p-3 rounded-2xl bg-white/5 hover:bg-white/15 border border-white/10 transition-all hover:scale-105 active:scale-95 text-center group"
-                >
-                  <span className="text-3xl mb-1.5 group-hover:scale-110 transition-transform">
-                    {gift.emoji}
-                  </span>
-                  <span className="text-[11px] font-bold text-white line-clamp-1">
-                    {gift.name}
-                  </span>
-                  <span className="text-[10px] font-extrabold text-amber-400 mt-1">
-                    {gift.price.toLocaleString("fr-FR")} XOF
-                  </span>
-                </button>
-              ))}
+            {/* Sélecteur de quantité rapide (Style TikTok) */}
+            <div className="flex items-center justify-between mb-3 text-xs">
+              <span className="text-gray-400 text-[11px] font-bold">Quantité :</span>
+              <div className="flex items-center gap-1.5">
+                {[1, 5, 10].map((qty) => (
+                  <button
+                    key={qty}
+                    type="button"
+                    onClick={() => setGiftQuantity(qty)}
+                    className={`px-2.5 py-0.5 rounded-full font-black text-xs transition ${
+                      giftQuantity === qty
+                        ? "bg-amber-400 text-black shadow"
+                        : "bg-white/10 text-gray-300 hover:bg-white/20"
+                    }`}
+                  >
+                    x{qty}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Grille des cadeaux */}
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
+              {VIRTUAL_GIFTS.map((gift) => {
+                const totalCost = gift.coins * giftQuantity;
+                const canAfford = myCoins >= totalCost;
+                return (
+                  <button
+                    key={gift.id}
+                    type="button"
+                    onClick={() => handleSendGift(gift, giftQuantity)}
+                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all text-center relative ${
+                      canAfford
+                        ? "bg-white/5 hover:bg-white/15 border-white/15 hover:border-amber-400/50 hover:scale-105 active:scale-95"
+                        : "bg-white/5 border-white/5 opacity-60 hover:opacity-100"
+                    }`}
+                  >
+                    <span className="text-3xl mb-1 drop-shadow">{gift.emoji}</span>
+                    <span className="text-[11px] font-bold text-white line-clamp-1">
+                      {gift.name}
+                    </span>
+                    <div className="flex items-center gap-1 mt-1 text-[11px] font-black text-amber-300">
+                      <span>🪙</span>
+                      <span>{totalCost}</span>
+                    </div>
+                    <span className="text-[9px] text-gray-400">
+                      ({gift.priceXof * giftQuantity} F)
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
       )}
 
       {/* ======================================================== */}
-      {/* 8. MODAL CONFIRMATION ARRÊT DU LIVE                      */}
+      {/* 8. FICHE PRODUIT ÉPINGLÉ (LIVE SHOPPING SPECTATEUR)      */}
+      {/* ======================================================== */}
+      {showProductSheet && pinnedProduct && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#181a1b] border-t border-emerald-500/40 rounded-t-3xl p-6 max-w-lg mx-auto w-full shadow-2xl animate-in slide-in-from-bottom duration-300">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-emerald-400">shopping_bag</span>
+                <h3 className="font-display font-black text-sm text-white">
+                  Achat en Direct sous Séquestre WAB
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowProductSheet(false)}
+                className="w-8 h-8 rounded-full bg-white/10 text-gray-300 hover:text-white flex items-center justify-center"
+              >
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+
+            <div className="flex gap-4 items-start mb-5">
+              <div className="w-24 h-24 rounded-2xl overflow-hidden bg-black/50 border border-white/20 shrink-0 relative">
+                <img src={pinnedProduct.image} alt={pinnedProduct.title} className="w-full h-full object-cover" />
+                {pinnedProduct.isFlash && (
+                  <span className="absolute top-1 left-1 bg-red-600 text-white font-black text-[9px] px-1.5 py-0.5 rounded shadow">
+                    VENTE FLASH
+                  </span>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] uppercase font-black text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded">
+                    Marketplace WAB
+                  </span>
+                  {pinnedProduct.vendorName && (
+                    <span className="text-[11px] text-gray-400 truncate">
+                      Par {pinnedProduct.vendorName}
+                    </span>
+                  )}
+                </div>
+                <h4 className="font-bold text-white text-base mt-1 line-clamp-2">
+                  {pinnedProduct.title}
+                </h4>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <span className="text-xl font-display font-black text-amber-300">
+                    {(pinnedProduct.flashPriceXof || pinnedProduct.priceXof || 0).toLocaleString("fr-FR")} XOF
+                  </span>
+                  {pinnedProduct.isFlash && (
+                    <span className="text-xs text-gray-400 line-through">
+                      {(pinnedProduct.priceXof || 0).toLocaleString("fr-FR")} XOF
+                    </span>
+                  )}
+                </div>
+                <p className="text-[10px] text-emerald-400/90 flex items-center gap-1 mt-1">
+                  <span className="material-symbols-outlined text-xs">verified_user</span>
+                  Paiement bloqué sous séquestre jusqu'à livraison conforme
+                </p>
+              </div>
+            </div>
+
+            {/* Actions d'achat */}
+            <div className="space-y-2">
+              <button
+                type="button"
+                disabled={buyingProduct}
+                onClick={() => handleBuyProductNow(pinnedProduct, "full")}
+                className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-sm shadow-xl flex items-center justify-center gap-2 active:scale-98 transition disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-lg">bolt</span>
+                <span>Acheter en 1-Clic (Moneroo / Mobile Money)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAddToCart(pinnedProduct)}
+                className="w-full py-2.5 rounded-2xl border border-white/20 bg-white/5 hover:bg-white/10 text-white font-bold text-xs flex items-center justify-center gap-2 active:scale-98 transition"
+              >
+                <span className="material-symbols-outlined text-base">add_shopping_cart</span>
+                <span>Ajouter au Panier WAB (/panier)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 9. TIROIR BOUTIQUE DU LIVE SHOPPING (HÔTE)                */}
+      {/* ======================================================== */}
+      {showHostProductsDrawer && isHost && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#181a1b] border-t border-purple-500/40 rounded-t-3xl p-6 max-w-lg mx-auto w-full max-h-[80vh] flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4 shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-purple-400 text-2xl">storefront</span>
+                <div>
+                  <h3 className="font-display font-black text-sm text-white">
+                    Boutique Live Shopping
+                  </h3>
+                  <p className="text-[10px] text-gray-400">
+                    Épinglez un produit Marketplace en vedette pendant votre direct
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowHostProductsDrawer(false)}
+                className="w-8 h-8 rounded-full bg-white/10 text-gray-300 hover:text-white flex items-center justify-center"
+              >
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+
+            {/* Produit actuellement épinglé */}
+            {pinnedProduct && (
+              <div className="p-3 rounded-2xl bg-purple-950/40 border border-purple-500/50 mb-4 flex items-center justify-between gap-3 shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-10 h-10 rounded-xl overflow-hidden bg-black/50 border border-white/20 shrink-0">
+                    <img src={pinnedProduct.image} alt={pinnedProduct.title} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[9px] font-black uppercase text-purple-300">Actuellement Épinglé</span>
+                    <p className="text-xs font-bold text-white truncate">{pinnedProduct.title}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleUnpinProduct}
+                  className="px-3 py-1.5 rounded-xl bg-red-600/80 hover:bg-red-700 text-white font-black text-xs shrink-0 transition"
+                >
+                  Désépingler
+                </button>
+              </div>
+            )}
+
+            {/* Liste des produits disponibles */}
+            <div className="overflow-y-auto space-y-2.5 flex-1 pr-1">
+              {availableProducts.length === 0 ? (
+                <div className="text-center py-8 text-gray-400 text-xs">
+                  <span className="material-symbols-outlined text-3xl mb-2 text-gray-500">inventory_2</span>
+                  <p>Aucun produit Marketplace disponible.</p>
+                </div>
+              ) : (
+                availableProducts.map((prod) => (
+                  <div
+                    key={prod.id}
+                    className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-400/40 flex items-center justify-between gap-3 transition"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-black/50 border border-white/20 shrink-0">
+                        <img src={prod.image} alt={prod.title} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-white truncate">{prod.title}</p>
+                        <p className="text-xs font-black text-amber-300">
+                          {(prod.priceXof || 0).toLocaleString("fr-FR")} XOF
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handlePinProduct(prod, false)}
+                        className="px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-[11px] transition active:scale-95"
+                      >
+                        Épingler
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handlePinProduct(prod, true, 15, 10)}
+                        className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-black text-[11px] shadow transition active:scale-95"
+                        title="Vente Flash -15% pendant 10 minutes"
+                      >
+                        ⚡ Flash -15%
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 10. MODAL RECHARGE COINS WAB (PRD LOT 3)                 */}
+      {/* ======================================================== */}
+      {showRechargeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-[#181a1b] border border-amber-400/50 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-amber-500/20 to-yellow-400/20 border border-yellow-400/40 text-yellow-300 flex items-center justify-center mx-auto mb-3 text-2xl">
+              🪙
+            </div>
+            <h3 className="font-display font-black text-lg text-white mb-1">
+              Recharger des Coins WAB
+            </h3>
+            <p className="text-xs text-gray-400 mb-5">
+              Utilisez vos Coins pour offrir des cadeaux virtuels et soutenir vos créateurs préférés.
+            </p>
+
+            <div className="space-y-2.5 mb-6 text-left">
+              {[
+                { id: "pack-100", coins: 100, priceXof: 1000, label: "Découverte" },
+                { id: "pack-500", coins: 500, priceXof: 4750, label: "Populaire (-5%)", badge: "POPULAIRE" },
+                { id: "pack-1200", coins: 1200, priceXof: 10800, label: "Super Fan (-10%)" },
+                { id: "pack-3000", coins: 3000, priceXof: 25500, label: "Mécène VIP (-15%)", badge: "VIP" },
+              ].map((pack) => (
+                <button
+                  key={pack.id}
+                  type="button"
+                  disabled={recharging}
+                  onClick={() => handleRechargePack(pack)}
+                  className="w-full p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-amber-400/60 flex items-center justify-between transition group active:scale-98 disabled:opacity-50"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl">🪙</span>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-black text-white">{pack.coins} Coins</span>
+                        {pack.badge && (
+                          <span className="text-[9px] font-black bg-amber-400 text-black px-1.5 py-0.2 rounded">
+                            {pack.badge}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-gray-400">{pack.label}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-black text-amber-300">
+                    {pack.priceXof.toLocaleString("fr-FR")} XOF
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowRechargeModal(false)}
+              className="w-full py-2.5 rounded-xl border border-white/20 text-xs font-bold text-white hover:bg-white/10 transition"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 11. CLASSEMENT DES TOP CONTRIBUTEURS (PRD LOT 3)          */}
+      {/* ======================================================== */}
+      {showTopContributorsDrawer && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#181a1b] border-t border-amber-400/40 rounded-t-3xl p-6 max-w-lg mx-auto w-full max-h-[75vh] flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4 shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🏆</span>
+                <div>
+                  <h3 className="font-display font-black text-sm text-white">
+                    Top Contributeurs du Salon
+                  </h3>
+                  <p className="text-[10px] text-gray-400">
+                    Membres ayant le plus soutenu ce direct
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTopContributorsDrawer(false)}
+                className="w-8 h-8 rounded-full bg-white/10 text-gray-300 hover:text-white flex items-center justify-center"
+              >
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+
+            <div className="overflow-y-auto space-y-2 flex-1 pr-1">
+              {topContributors.length === 0 ? (
+                <div className="text-center py-8 text-gray-400 text-xs">
+                  <span className="text-3xl mb-2 block">🎁</span>
+                  <p>Aucun don enregistré pour le moment.</p>
+                  <p className="text-[10px] text-gray-500 mt-1">Soyez le premier à offrir un cadeau à l'hôte !</p>
+                </div>
+              ) : (
+                topContributors.map((c, idx) => (
+                  <div
+                    key={c.name}
+                    className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="font-display font-black text-base w-6 text-center">
+                        {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx + 1}`}
+                      </span>
+                      <div className="w-9 h-9 rounded-full overflow-hidden bg-amber-500/20 border border-amber-400/30 shrink-0">
+                        {c.avatarUrl ? (
+                          <img src={c.avatarUrl} alt={c.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center font-bold text-amber-300 text-xs">
+                            {c.name.slice(0, 1).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs font-bold text-white truncate">{c.name}</p>
+                    </div>
+
+                    <div className="flex items-center gap-1 font-display font-black text-xs text-amber-300">
+                      <span>🪙</span>
+                      <span>{c.totalCoins} Coins</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 12. FEUILLE D'ACTION MODÉRATION (HÔTE / MODÉRATEUR)       */}
+      {/* ======================================================== */}
+      {moderationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-[#181a1b] border border-red-500/40 rounded-3xl max-w-xs w-full p-5 text-center shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center mx-auto mb-3">
+              <span className="material-symbols-outlined text-2xl">gavel</span>
+            </div>
+            <h3 className="font-display font-black text-sm text-white mb-0.5">
+              Modérer {moderationModal.user.name}
+            </h3>
+            <p className="text-[11px] text-gray-400 mb-4">
+              Sélectionnez une action de modération pour ce participant.
+            </p>
+
+            <div className="space-y-2 mb-4 text-left text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => handleModerateAction("mute", moderationModal.user.id)}
+                className="w-full p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white flex items-center gap-2 border border-white/10 transition"
+              >
+                <span className="material-symbols-outlined text-base text-amber-400">volume_off</span>
+                <span>Mettre en sourdine (Mute)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleModerateAction("kick", moderationModal.user.id)}
+                className="w-full p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-amber-300 flex items-center gap-2 border border-white/10 transition"
+              >
+                <span className="material-symbols-outlined text-base text-amber-400">logout</span>
+                <span>Expulser du live (Kick)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleModerateAction("ban", moderationModal.user.id)}
+                className="w-full p-2.5 rounded-xl bg-red-600/20 hover:bg-red-600/30 text-red-300 flex items-center gap-2 border border-red-500/30 transition"
+              >
+                <span className="material-symbols-outlined text-base text-red-400">block</span>
+                <span>Bannir définitivement</span>
+              </button>
+
+              {moderationModal.user.messageId && (
+                <button
+                  type="button"
+                  onClick={() => handleModerateAction("delete", undefined, moderationModal.user.messageId)}
+                  className="w-full p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 flex items-center gap-2 border border-white/10 transition"
+                >
+                  <span className="material-symbols-outlined text-base text-gray-400">delete</span>
+                  <span>Supprimer ce message</span>
+                </button>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setModerationModal(null)}
+              className="w-full py-2 rounded-xl border border-white/20 text-xs font-bold text-white hover:bg-white/10 transition"
+            >
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 13. MODAL SIGNALEMENT SPECTATEUR (PRD LOT 5)             */}
+      {/* ======================================================== */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-[#181a1b] border border-white/20 rounded-3xl max-w-sm w-full p-6 text-left shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="material-symbols-outlined text-red-400 text-xl">flag</span>
+              <h3 className="font-display font-black text-sm text-white">
+                Signaler ce salon ou un participant
+              </h3>
+            </div>
+            <p className="text-xs text-gray-400 mb-4">
+              Aidez l'équipe de modération WAB à maintenir un environnement professionnel et bienveillant.
+            </p>
+
+            {reportSuccess ? (
+              <div className="p-4 rounded-2xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-xs text-center font-bold">
+                ✓ Signalement transmis à l'équipe de modération. Merci de votre contribution !
+              </div>
+            ) : (
+              <>
+                <label className="block text-xs font-bold text-gray-300 mb-1.5">
+                  Motif du signalement :
+                </label>
+                <select
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-black/60 border border-white/20 text-xs text-white mb-4 focus:outline-none focus:border-red-400"
+                >
+                  <option value="">Sélectionnez un motif...</option>
+                  <option value="Propos injurieux ou haineux">Propos injurieux ou haineux</option>
+                  <option value="Tentative de fraude / vente hors-plateforme">Tentative de fraude / vente hors-plateforme</option>
+                  <option value="Contenu à caractère inapproprié">Contenu à caractère inapproprié</option>
+                  <option value="Spam ou harcèlement répétitif">Spam ou harcèlement répétitif</option>
+                  <option value="Autre motif grave">Autre motif grave</option>
+                </select>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowReportModal(null)}
+                    className="flex-1 py-2.5 rounded-xl border border-white/20 text-xs font-bold text-white hover:bg-white/10"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!reportReason}
+                    onClick={handleSubmitReport}
+                    className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-xs font-bold text-white"
+                  >
+                    Envoyer
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 14. MODAL CONFIRMATION ARRÊT DU LIVE                     */}
       {/* ======================================================== */}
       {showEndModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-[#1b1c1c] border border-white/20 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-[#181a1b] border border-white/20 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl">
             <span className="material-symbols-outlined text-4xl text-red-500 mb-3">
               power_settings_new
             </span>
@@ -1526,7 +2504,7 @@ export default function SalonClient({ id }: { id: string }) {
               <button
                 type="button"
                 onClick={handleEndLive}
-                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white"
+                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow-lg active:scale-95 transition"
               >
                 Arrêter le Live
               </button>
@@ -1536,39 +2514,92 @@ export default function SalonClient({ id }: { id: string }) {
       )}
 
       {/* ======================================================== */}
-      {/* 9. MODAL BILAN APRES LIVE                                */}
+      {/* 15. MODAL BILAN POST-LIVE (PRD LOT 6)                     */}
       {/* ======================================================== */}
       {liveSummary && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
-          <div className="bg-[#1b1c1c] border border-emerald-500/40 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <div className="bg-[#181a1b] border border-emerald-500/40 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-4 text-3xl">
               <span className="material-symbols-outlined text-3xl">emoji_events</span>
             </div>
             <h3 className="font-display font-black text-xl text-white mb-1">
               Direct Terminé !
             </h3>
-            <p className="text-xs text-gray-400 mb-6">
-              Félicitations pour votre salon professionnel sur WAB.
+            <p className="text-xs text-gray-400 mb-5">
+              Bilan de votre salon professionnel sur World Africa Business.
             </p>
 
-            <div className="grid grid-cols-2 gap-3 mb-6 text-left">
-              <div className="bg-white/5 rounded-xl p-3 border border-white/10">
-                <span className="text-[10px] text-gray-400 uppercase font-bold">Spectateurs</span>
-                <p className="text-lg font-black text-white">{liveSummary.viewers}</p>
+            <div className="grid grid-cols-2 gap-2.5 mb-5 text-left">
+              <div className="bg-white/5 rounded-2xl p-3 border border-white/10">
+                <span className="text-[10px] text-gray-400 uppercase font-black">Durée</span>
+                <p className="text-base font-black text-white">{liveSummary.duration}</p>
               </div>
-              <div className="bg-white/5 rounded-xl p-3 border border-white/10">
-                <span className="text-[10px] text-gray-400 uppercase font-bold">J'aime reçus</span>
-                <p className="text-lg font-black text-red-400">{liveSummary.likes}</p>
+              <div className="bg-white/5 rounded-2xl p-3 border border-white/10">
+                <span className="text-[10px] text-gray-400 uppercase font-black">Spectateurs</span>
+                <p className="text-base font-black text-emerald-400">{liveSummary.viewers}</p>
+              </div>
+              <div className="bg-white/5 rounded-2xl p-3 border border-white/10">
+                <span className="text-[10px] text-gray-400 uppercase font-black">J'aime reçus</span>
+                <p className="text-base font-black text-red-400">{liveSummary.likes}</p>
+              </div>
+              <div className="bg-white/5 rounded-2xl p-3 border border-white/10">
+                <span className="text-[10px] text-gray-400 uppercase font-black">Cadeaux collectés</span>
+                <p className="text-base font-black text-amber-300">{giftCount}</p>
               </div>
             </div>
 
-            <Link
-              href="/wab/salons"
-              className="block w-full py-3 rounded-full bg-[#9e001f] text-white font-bold text-xs text-center"
-            >
-              Retour aux Salons
-            </Link>
+            {/* Toggle Replay */}
+            {isHost && (
+              <label className="flex items-center gap-2 p-3 rounded-2xl bg-white/5 border border-white/10 mb-5 cursor-pointer text-left">
+                <input
+                  type="checkbox"
+                  checked={publishReplay}
+                  onChange={(e) => setPublishReplay(e.target.checked)}
+                  className="rounded text-emerald-500 focus:ring-0 w-4 h-4"
+                />
+                <span className="text-xs text-gray-300 font-bold leading-tight">
+                  Publier le replay du salon pour la communauté WAB
+                </span>
+              </label>
+            )}
+
+            <div className="space-y-2">
+              {isHost && (
+                <Link
+                  href="/wab/createur"
+                  className="block w-full py-3 rounded-full bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-xs text-center shadow-lg transition active:scale-95"
+                >
+                  Voir mes gains créateur
+                </Link>
+              )}
+              <Link
+                href="/wab/salons"
+                className="block w-full py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-xs text-center transition"
+              >
+                Retour aux Salons
+              </Link>
+            </div>
           </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 16. TOAST NOTIFICATIONS (ACHAT & PANIER)                 */}
+      {/* ======================================================== */}
+      {purchaseToast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white px-4 py-2.5 rounded-full shadow-2xl font-bold text-xs flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
+          <span className="material-symbols-outlined text-base">verified</span>
+          <span>{purchaseToast}</span>
+        </div>
+      )}
+
+      {cartSuccessToast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900 border border-emerald-400 text-white px-4 py-2.5 rounded-full shadow-2xl font-bold text-xs flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
+          <span className="material-symbols-outlined text-base text-emerald-400">check_circle</span>
+          <span>Produit ajouté au panier WAB !</span>
+          <Link href="/panier" className="underline text-emerald-300 font-black ml-1">
+            Voir mon panier
+          </Link>
         </div>
       )}
     </div>

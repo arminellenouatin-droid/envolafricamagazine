@@ -4,6 +4,9 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import AudioCallModal from "@/components/messages/AudioCallModal";
+import VoiceNotePlayer from "@/components/messages/VoiceNotePlayer";
+import ImageLightboxModal from "@/components/messages/ImageLightboxModal";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { ActiveAudioCall } from "@/app/api/messages/call/route";
 
 interface Participant {
@@ -116,7 +119,17 @@ function MessagesContent() {
   const recordIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const docInputRef = useRef<HTMLInputElement>(null);
+  const audioFileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Lightbox, Reactions, Attachment menu & Typing indicators
+  const [lightboxImage, setLightboxImage] = useState<{ url: string; name?: string } | null>(null);
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [isOtherTyping, setIsOtherTyping] = useState(false);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [reactions, setReactions] = useState<Record<string, string[]>>({});
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Vérifier la permission des notifications au chargement
   useEffect(() => {
@@ -192,8 +205,9 @@ function MessagesContent() {
             if (!prev || (prev.id !== data.incomingCall.id && (prev.status === "ended" || prev.status === "rejected"))) {
               if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
                 try {
-                  const notif = new Notification(`📞 Appel audio de ${data.incomingCall.callerName}`, {
-                    body: "Cliquez pour décrocher l'appel audio en direct sur WAB.",
+                  const isVid = data.incomingCall.callType === "video";
+                  const notif = new Notification(`${isVid ? "🎥 Appel vidéo" : "📞 Appel audio"} de ${data.incomingCall.callerName}`, {
+                    body: "Cliquez pour décrocher l'appel en direct sur WAB.",
                     icon: data.incomingCall.callerAvatar || "/favicon.ico",
                     tag: `call-${data.incomingCall.id}`,
                   });
@@ -210,7 +224,7 @@ function MessagesContent() {
       } catch {}
     };
 
-    const callInterval = setInterval(checkIncomingCalls, 3500);
+    const callInterval = setInterval(checkIncomingCalls, 2500);
     checkIncomingCalls();
 
     return () => {
@@ -219,11 +233,40 @@ function MessagesContent() {
     };
   }, [currentUserId]);
 
-  // Initier un appel audio vers le contact actif
-  const initiateAudioCall = async () => {
+  // Écoute temps réel des indicateurs de frappe (typing)
+  useEffect(() => {
+    if (!activeConversation || activeConversation.id.startsWith("temp-")) return;
+
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+
+    const channel = supabase.channel(`wab_chat_${activeConversation.id}`, {
+      config: { broadcast: { self: false } },
+    });
+
+    channel.on("broadcast", { event: "typing" }, ({ payload }: { payload: any }) => {
+      if (payload?.senderId !== currentUserId) {
+        setIsOtherTyping(Boolean(payload?.isTyping));
+      }
+    });
+
+    channel.subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activeConversation?.id, currentUserId]);
+
+  // Initier un appel (audio ou vidéo) vers le contact actif
+  const initiateCall = async (callType: "audio" | "video" = "audio") => {
     if (!activeConversation || !currentUserId) return;
     const recipientId = activeConversation.otherParticipant.id;
     if (!recipientId || recipientId === currentUserId) return;
+
+    if (callType === "video" && !canSendVideo) {
+      setShowVideoUpgradeModal(true);
+      return;
+    }
 
     try {
       const res = await fetch("/api/messages/call", {
@@ -235,16 +278,17 @@ function MessagesContent() {
           recipientName: activeConversation.otherParticipant.fullName,
           recipientAvatar: activeConversation.otherParticipant.avatarUrl,
           conversationId: activeConversation.id,
+          callType,
         }),
       });
       const data = await res.json();
       if (res.ok && data.call) {
         setActiveCall(data.call);
       } else {
-        alert(data.error || "Impossible d'initier l'appel audio.");
+        alert(data.error || "Impossible d'initier l'appel.");
       }
     } catch {
-      alert("Erreur de connexion lors du lancement de l'appel audio.");
+      alert("Erreur de connexion lors du lancement de l'appel.");
     }
   };
 
@@ -421,6 +465,36 @@ function MessagesContent() {
       };
       setActiveConversation(tempConv);
     }
+  };
+
+  // Handle typing indicator broadcast
+  const handleTextInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setTextInput(val);
+
+    if (!activeConversation || activeConversation.id.startsWith("temp-")) return;
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+
+    try {
+      const channel = supabase.channel(`wab_chat_${activeConversation.id}`);
+      channel.send({
+        type: "broadcast",
+        event: "typing",
+        payload: { senderId: currentUserId, isTyping: true },
+      });
+
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        try {
+          channel.send({
+            type: "broadcast",
+            event: "typing",
+            payload: { senderId: currentUserId, isTyping: false },
+          });
+        } catch {}
+      }, 2500);
+    } catch {}
   };
 
   // Send Text Message
@@ -714,8 +788,12 @@ function MessagesContent() {
       {/* Top Application Header */}
       <div className="h-12 md:h-14 px-3 sm:px-4 bg-[#082843] text-white flex items-center justify-between shrink-0 shadow-md z-30 pt-[env(safe-area-inset-top,0px)]">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#9e001f] text-white flex items-center justify-center font-bold text-xs shadow">
-            <span className="material-symbols-outlined text-base">chat</span>
+          <div className="w-8 h-8 rounded-full overflow-hidden bg-[#9e001f] text-white flex items-center justify-center font-bold text-xs shadow shrink-0">
+            <img
+              src="/wab-message-icon.webp"
+              alt="WAB Messagerie"
+              className="w-full h-full object-contain p-0.5"
+            />
           </div>
           <div>
             <h1 className="font-display font-black text-xs sm:text-sm text-white tracking-wide leading-tight">
@@ -745,13 +823,10 @@ function MessagesContent() {
         type="file"
         ref={fileInputRef}
         className="hidden"
-        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,audio/*"
+        accept="image/*"
         onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (!f) return;
-          const mime = f.type;
-          const type = mime.startsWith("image/") ? "image" : mime.startsWith("audio/") ? "audio" : "document";
-          handleFileUpload(e, type);
+          handleFileUpload(e, "image");
+          e.target.value = "";
         }}
       />
       <input
@@ -759,7 +834,30 @@ function MessagesContent() {
         ref={videoInputRef}
         className="hidden"
         accept="video/mp4,video/webm,video/quicktime"
-        onChange={handleVideoUpload}
+        onChange={(e) => {
+          handleVideoUpload(e);
+          e.target.value = "";
+        }}
+      />
+      <input
+        type="file"
+        ref={docInputRef}
+        className="hidden"
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
+        onChange={(e) => {
+          handleFileUpload(e, "document");
+          e.target.value = "";
+        }}
+      />
+      <input
+        type="file"
+        ref={audioFileInputRef}
+        className="hidden"
+        accept="audio/*"
+        onChange={(e) => {
+          handleFileUpload(e, "audio");
+          e.target.value = "";
+        }}
       />
 
       <div className="flex-1 flex w-full h-[calc(100%-3rem)] bg-white overflow-hidden border-t border-[#d1d7db]">
@@ -774,8 +872,12 @@ function MessagesContent() {
           {/* Top Bar Gauche */}
           <div className="h-14 sm:h-16 px-4 bg-[#f0f2f5] flex items-center justify-between border-b border-[#e9edef] shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-[#9e001f] text-white flex items-center justify-center font-bold text-sm">
-                <span className="material-symbols-outlined text-lg">chat</span>
+              <div className="w-9 h-9 rounded-full overflow-hidden bg-[#9e001f] text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
+                <img
+                  src="/wab-message-icon.webp"
+                  alt="Discussions WAB"
+                  className="w-full h-full object-contain p-0.5"
+                />
               </div>
               <h2 className="font-display font-black text-base text-[#111b21]">Discussions</h2>
             </div>
@@ -1027,36 +1129,34 @@ function MessagesContent() {
                     <h2 className="font-bold text-sm text-[#111b21] truncate">
                       {activeConversation.otherParticipant.fullName}
                     </h2>
-                    <p className="text-[11px] text-gray-500 truncate">
-                      {activeConversation.otherParticipant.headline || "En ligne sur le réseau"}
-                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                      <p className="text-[11px] text-gray-500 truncate">
+                        {isOtherTyping ? (
+                          <span className="text-emerald-600 font-bold animate-pulse">en train d&apos;écrire...</span>
+                        ) : (
+                          activeConversation.otherParticipant.headline || "En ligne sur le réseau"
+                        )}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2">
                   <button
                     type="button"
-                    onClick={initiateAudioCall}
+                    onClick={() => initiateCall("audio")}
                     className="p-2 rounded-full hover:bg-black/5 text-emerald-700 hover:text-emerald-800 transition"
-                    title="Lancer un appel audio WAB"
+                    title="Lancer un appel vocal WAB"
                   >
                     <span className="material-symbols-outlined text-xl">call</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => {
-                      if (!canSendVideo) setShowVideoUpgradeModal(true);
-                      else videoInputRef.current?.click();
-                    }}
-                    className={`p-2 rounded-full hover:bg-black/5 ${
-                      canSendVideo ? "text-emerald-700" : "text-gray-400"
-                    }`}
-                    title={
-                      canSendVideo
-                        ? "Envoyer un message vidéo (WAB Business)"
-                        : "Vidéo réservée aux créateurs / WAB Business"
-                    }
+                    onClick={() => initiateCall("video")}
+                    className="p-2 rounded-full hover:bg-black/5 text-[#9e001f] hover:text-[#c8102e] transition"
+                    title="Lancer un appel vidéo WAB"
                   >
                     <span className="material-symbols-outlined text-xl">videocam</span>
                   </button>
@@ -1111,18 +1211,12 @@ function MessagesContent() {
 
                           {/* TYPE 2 : Vocal / Voice Note */}
                           {parsed.type === "voice" && parsed.url && (
-                            <div className="flex items-center gap-3 py-1 min-w-[200px]">
-                              <span className="material-symbols-outlined text-[#9e001f] text-2xl">
-                                mic
-                              </span>
-                              <div className="flex-1">
-                                <audio controls src={parsed.url} className="w-full h-8" />
-                              </div>
-                              {parsed.duration && (
-                                <span className="text-[10px] text-gray-500 font-mono">
-                                  {formatDuration(parsed.duration)}
-                                </span>
-                              )}
+                            <div className="py-1 min-w-[220px]">
+                              <VoiceNotePlayer
+                                url={parsed.url}
+                                duration={parsed.duration}
+                                isMe={isMe}
+                              />
                             </div>
                           )}
 
@@ -1144,12 +1238,21 @@ function MessagesContent() {
 
                           {/* TYPE 4 : Image */}
                           {parsed.type === "image" && parsed.url && (
-                            <div className="rounded-xl overflow-hidden my-1 max-w-[320px]">
+                            <div
+                              className="rounded-xl overflow-hidden my-1 max-w-[320px] cursor-pointer group relative"
+                              onClick={() => setLightboxImage({ url: parsed.url!, name: parsed.name })}
+                              title="Cliquer pour agrandir"
+                            >
                               <img
                                 src={parsed.url}
                                 alt={parsed.name || "Photo"}
-                                className="w-full h-auto object-cover rounded-xl"
+                                className="w-full h-auto object-cover rounded-xl group-hover:scale-[1.02] transition-transform duration-200"
                               />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                <span className="material-symbols-outlined text-white text-3xl opacity-0 group-hover:opacity-100 transition-opacity drop-shadow">
+                                  zoom_in
+                                </span>
+                              </div>
                             </div>
                           )}
 
@@ -1196,6 +1299,18 @@ function MessagesContent() {
                     );
                   })
                 )}
+                {isOtherTyping && (
+                  <div className="flex items-center gap-2 text-xs text-gray-500 bg-white/90 backdrop-blur-sm px-3.5 py-2 rounded-2xl w-fit shadow-xs border border-gray-100">
+                    <div className="flex gap-1 items-center">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#9e001f] animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#9e001f] animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#9e001f] animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                    <span className="text-[11px] font-medium text-gray-600">
+                      {activeConversation.otherParticipant.fullName.split(" ")[0]} est en train d&apos;écrire...
+                    </span>
+                  </div>
+                )}
                 <div ref={messagesEndRef} />
               </div>
 
@@ -1227,40 +1342,90 @@ function MessagesContent() {
                   </div>
                 ) : (
                   <>
-                    {/* Bouton Pièce Jointe */}
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-black/5 shrink-0"
-                      title="Joindre un fichier (document, image, son)"
-                    >
-                      <span className="material-symbols-outlined text-2xl">attach_file</span>
-                    </button>
+                    {/* Popover Pièces Jointes */}
+                    <div className="relative shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setShowAttachMenu((prev) => !prev)}
+                        className={`p-2 rounded-full transition-all shrink-0 ${
+                          showAttachMenu
+                            ? "bg-[#9e001f] text-white rotate-45"
+                            : "text-gray-500 hover:text-gray-700 hover:bg-black/5"
+                        }`}
+                        title="Joindre un fichier (photo, document, audio, vidéo)"
+                      >
+                        <span className="material-symbols-outlined text-2xl transition-transform">attach_file</span>
+                      </button>
 
-                    {/* Bouton Vidéo (Réservé créateur/business) */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!canSendVideo) setShowVideoUpgradeModal(true);
-                        else videoInputRef.current?.click();
-                      }}
-                      className={`p-2 rounded-full hover:bg-black/5 shrink-0 ${
-                        canSendVideo ? "text-emerald-700" : "text-gray-400"
-                      }`}
-                      title={
-                        canSendVideo
-                          ? "Envoyer un message vidéo"
-                          : "Envoi vidéo réservé aux créateurs WAB"
-                      }
-                    >
-                      <span className="material-symbols-outlined text-2xl">videocam</span>
-                    </button>
+                      {showAttachMenu && (
+                        <div
+                          className="absolute bottom-12 left-0 mb-2 bg-white rounded-2xl shadow-xl border border-gray-100 p-2 w-52 flex flex-col gap-1 z-30 animate-in fade-in slide-in-from-bottom-2 duration-150"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowAttachMenu(false);
+                              fileInputRef.current?.click();
+                            }}
+                            className="flex items-center gap-3 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 rounded-xl transition text-left"
+                          >
+                            <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                              <span className="material-symbols-outlined text-base">image</span>
+                            </span>
+                            <span>Photos & Médias</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowAttachMenu(false);
+                              docInputRef.current?.click();
+                            }}
+                            className="flex items-center gap-3 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 rounded-xl transition text-left"
+                          >
+                            <span className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                              <span className="material-symbols-outlined text-base">description</span>
+                            </span>
+                            <span>Document (PDF...)</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowAttachMenu(false);
+                              audioFileInputRef.current?.click();
+                            }}
+                            className="flex items-center gap-3 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 rounded-xl transition text-left"
+                          >
+                            <span className="w-8 h-8 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                              <span className="material-symbols-outlined text-base">audiotrack</span>
+                            </span>
+                            <span>Fichier Audio</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowAttachMenu(false);
+                              if (!canSendVideo) setShowVideoUpgradeModal(true);
+                              else videoInputRef.current?.click();
+                            }}
+                            className="flex items-center gap-3 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 rounded-xl transition text-left"
+                          >
+                            <span className="w-8 h-8 rounded-full bg-red-100 text-[#9e001f] flex items-center justify-center shrink-0">
+                              <span className="material-symbols-outlined text-base">videocam</span>
+                            </span>
+                            <span>Message Vidéo</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
 
                     {/* Champ Texte */}
                     <input
                       type="text"
                       value={textInput}
-                      onChange={(e) => setTextInput(e.target.value)}
+                      onChange={handleTextInputChange}
                       onKeyDown={(e) => e.key === "Enter" && handleSendTextMessage()}
                       placeholder="Tapez un message..."
                       className="flex-1 min-w-0 bg-white text-xs rounded-full px-4 py-2.5 sm:py-3 border border-transparent focus:outline-none focus:ring-1 focus:ring-[#9e001f]"
@@ -1453,7 +1618,17 @@ function MessagesContent() {
       )}
 
       {/* ======================================================== */}
-      {/* MODAL APPEL AUDIO WEBRTC                                */}
+      {/* MODAL LIGHTBOX IMAGE                                     */}
+      {/* ======================================================== */}
+      <ImageLightboxModal
+        isOpen={Boolean(lightboxImage)}
+        imageUrl={lightboxImage?.url || ""}
+        imageName={lightboxImage?.name}
+        onClose={() => setLightboxImage(null)}
+      />
+
+      {/* ======================================================== */}
+      {/* MODAL APPEL AUDIO / VIDEO WEBRTC                         */}
       {/* ======================================================== */}
       {activeCall && currentUserId && (
         <AudioCallModal
