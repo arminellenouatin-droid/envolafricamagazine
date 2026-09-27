@@ -141,10 +141,10 @@ export default function AffiliationPage() {
   // CHARGEMENT INITIAL
   if (loadingUser) {
     return (
-      <main className="min-h-screen bg-[#FFFCF5] flex items-center justify-center p-6">
+      <main className="affiliation-page min-h-screen bg-[#fcf9f8] flex items-center justify-center p-6 text-[#2b2525]">
         <div className="text-center space-y-3">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#0A1931] border-r-transparent align-[-0.125em]" />
-          <p className="font-serif text-sm font-bold text-[#0A1931]">Chargement de votre espace...</p>
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#9e001f] border-r-transparent align-[-0.125em]" />
+          <p className="font-serif text-sm font-bold text-[#2b2525]">Chargement de votre espace...</p>
         </div>
       </main>
     );
@@ -153,40 +153,40 @@ export default function AffiliationPage() {
   // ÉCRAN 1 : Visiteur NON connecté (pas encore de compte)
   if (!user) {
     return (
-      <main className="min-h-screen bg-[#FFFCF5] px-4 py-12">
+      <main className="affiliation-page min-h-screen bg-[#fcf9f8] px-4 py-12 text-[#2b2525]">
         <div className="mx-auto max-w-4xl space-y-8">
-          {/* En-tête d'accueil */}
-          <div className="rounded-[28px] border border-zinc-200 bg-white p-8 text-center shadow-sm">
-            <span className="inline-block rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/40 px-4 py-1 text-xs font-black uppercase tracking-wider text-[#0A1931]">
+          {/* En-tête d'accueil éditorial */}
+          <div className="rounded-[28px] border border-[#e5bdbb]/80 bg-white p-8 md:p-10 text-center shadow-sm">
+            <span className="inline-block rounded-full bg-[#f2e8e6] border border-[#e5bdbb] px-4 py-1.5 text-xs font-black uppercase tracking-wider text-[#9e001f]">
               Programme Partenaire & Ambassadeurs
             </span>
-            <h1 className="mt-4 font-serif text-3xl md:text-4xl font-black text-[#0A1931]">
-              Devenez Ambassadeur Envol Africa
+            <h1 className="mt-4 font-serif text-3xl md:text-5xl font-black text-[#2b2525]">
+              Devenez Ambassadeur <span className="text-[#9e001f]">Envol Africa</span>
             </h1>
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-zinc-600">
+            <p className="mx-auto mt-3 max-w-2xl text-sm md:text-base leading-relaxed text-[#746665]">
               Rejoignez notre réseau exclusif 5×5, recommandez l’excellence éditoriale et générez des revenus récurrents sur 5 générations complètes sur les ventes de magazines et abonnements.
             </p>
 
             {/* Piliers du programme */}
             <div className="mt-8 grid gap-4 text-left sm:grid-cols-3">
-              <div className="rounded-2xl border border-zinc-100 bg-[#FFFCF5] p-5 shadow-xs">
-                <span className="material-symbols-outlined text-[28px] text-[#D4AF37]">account_tree</span>
-                <h3 className="mt-2 text-sm font-black text-[#0A1931]">Matrice MLM 5×5</h3>
-                <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+              <div className="rounded-2xl border border-[#e5bdbb]/80 bg-[#fcf9f8] p-5 shadow-xs hover:border-[#9e001f]/40 transition">
+                <span className="material-symbols-outlined text-[28px] text-[#9e001f]">account_tree</span>
+                <h3 className="mt-2 text-sm font-black text-[#2b2525]">Matrice MLM 5×5</h3>
+                <p className="mt-1 text-xs leading-relaxed text-[#746665]">
                   5 filleuls directs max. Le débordement profite à toute votre équipe descendante.
                 </p>
               </div>
-              <div className="rounded-2xl border border-zinc-100 bg-[#FFFCF5] p-5 shadow-xs">
-                <span className="material-symbols-outlined text-[28px] text-[#0A1931]">payments</span>
-                <h3 className="mt-2 text-sm font-black text-[#0A1931]">15% Reversement Global</h3>
-                <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+              <div className="rounded-2xl border border-[#e5bdbb]/80 bg-[#fcf9f8] p-5 shadow-xs hover:border-[#9e001f]/40 transition">
+                <span className="material-symbols-outlined text-[28px] text-[#9e001f]">payments</span>
+                <h3 className="mt-2 text-sm font-black text-[#2b2525]">15% Reversement Global</h3>
+                <p className="mt-1 text-xs leading-relaxed text-[#746665]">
                   70% reversés sur 5 niveaux (40%, 25%, 15%, 12%, 8%), 10% prime annuelle, 20% cérémonie.
                 </p>
               </div>
-              <div className="rounded-2xl border border-zinc-100 bg-[#FFFCF5] p-5 shadow-xs">
-                <span className="material-symbols-outlined text-[28px] text-[#16a34a]">phone_iphone</span>
-                <h3 className="mt-2 text-sm font-black text-[#0A1931]">Retraits Mobile Money</h3>
-                <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+              <div className="rounded-2xl border border-[#e5bdbb]/80 bg-[#fcf9f8] p-5 shadow-xs hover:border-[#9e001f]/40 transition">
+                <span className="material-symbols-outlined text-[28px] text-emerald-700">phone_iphone</span>
+                <h3 className="mt-2 text-sm font-black text-[#2b2525]">Retraits Mobile Money</h3>
+                <p className="mt-1 text-xs leading-relaxed text-[#746665]">
                   Paiements rapides dès 10 000 XOF (MTN, Moov, Orange, Wave). 0 frais d’adhésion.
                 </p>
               </div>
@@ -197,34 +197,34 @@ export default function AffiliationPage() {
           <GratificationPolicy />
 
           {/* Bloc Inscription & Connexion */}
-          <div className="rounded-[28px] border border-[#e5bdbb] bg-white p-8 md:p-10 text-center shadow-lg space-y-5">
-            <span className="inline-block rounded-full bg-[#9e001f]/10 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#9e001f]">
+          <div className="rounded-[28px] border border-[#e5bdbb] bg-white p-8 md:p-10 text-center shadow-md space-y-5">
+            <span className="inline-block rounded-full bg-[#f2e8e6] px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#9e001f] border border-[#e5bdbb]">
               Adhésion 100% Gratuite
             </span>
-            <h2 className="font-serif text-2xl md:text-3xl font-black text-[#0A1931]">
+            <h2 className="font-serif text-2xl md:text-3xl font-black text-[#2b2525]">
               Inscrivez-vous pour rejoindre le réseau
             </h2>
-            <p className="mx-auto max-w-xl text-sm leading-relaxed text-zinc-600">
-              Pour obtenir votre lien d'affiliation officiel, créer votre descendance 5×5 et percevoir vos commissions, créez un compte en 1 minute ou connectez-vous.
+            <p className="mx-auto max-w-xl text-sm leading-relaxed text-[#746665]">
+              Pour obtenir votre lien d&apos;affiliation officiel, créer votre descendance 5×5 et percevoir vos commissions, créez un compte en 1 minute ou connectez-vous.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
               <Link
                 href="/auth/register?redirect=/affiliation"
-                className="w-full sm:w-auto rounded-full bg-[#0A1931] hover:bg-black px-8 py-4 text-sm font-black text-white shadow-md transition flex items-center justify-center gap-2"
+                className="w-full sm:w-auto rounded-full bg-[#9e001f] hover:bg-[#7f0019] px-8 py-4 text-sm font-black text-white shadow-md transition flex items-center justify-center gap-2 active:scale-95"
               >
-                <span>Créer mon compte & M'affilier</span>
+                <span>Créer mon compte & M&apos;affilier</span>
                 <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
               </Link>
               <Link
                 href="/auth/login?redirect=/affiliation"
-                className="w-full sm:w-auto rounded-full border border-zinc-300 hover:bg-zinc-50 px-8 py-4 text-sm font-bold text-[#0A1931] transition"
+                className="w-full sm:w-auto rounded-full border border-[#e5bdbb] bg-white hover:bg-[#fff0ef] hover:border-[#9e001f] px-8 py-4 text-sm font-bold text-[#2b2525] transition active:scale-95"
               >
                 Déjà un compte ? Se connecter
               </Link>
             </div>
 
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs text-[#746665]">
               Aucun frais d’entrée • Vente réelle de magazines et abonnements uniquement
             </p>
           </div>
@@ -236,18 +236,18 @@ export default function AffiliationPage() {
   // ÉCRAN 2 : Utilisateur connecté mais NON encore affilié (Onboarding & Activation)
   if (user && !isAffiliate) {
     return (
-      <main className="min-h-screen bg-[#FFFCF5] px-4 py-12">
+      <main className="affiliation-page min-h-screen bg-[#fcf9f8] px-4 py-12 text-[#2b2525]">
         <div className="mx-auto max-w-4xl space-y-8">
           {/* En-tête d'accueil */}
-          <div className="rounded-[28px] border border-zinc-200 bg-white p-8 text-center shadow-sm">
-            <span className="inline-block rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/40 px-4 py-1 text-xs font-black uppercase tracking-wider text-[#0A1931]">
+          <div className="rounded-[28px] border border-[#e5bdbb]/80 bg-white p-8 text-center shadow-sm">
+            <span className="inline-block rounded-full bg-[#f2e8e6] border border-[#e5bdbb] px-4 py-1.5 text-xs font-black uppercase tracking-wider text-[#9e001f]">
               Programme Partenaire & Ambassadeurs
             </span>
-            <h1 className="mt-4 font-serif text-3xl md:text-4xl font-black text-[#0A1931]">
-              Rejoindre le Réseau d'Ambassadeurs Envol Africa
+            <h1 className="mt-4 font-serif text-3xl md:text-4xl font-black text-[#2b2525]">
+              Rejoindre le Réseau d&apos;Ambassadeurs Envol Africa
             </h1>
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-zinc-600">
-              Développez votre communauté, parrainez jusqu'à 5 partenaires directs et percevez des
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-[#746665]">
+              Développez votre communauté, parrainez jusqu&apos;à 5 partenaires directs et percevez des
               gratifications sur 5 générations complètes sur les ventes de magazines et abonnements.
             </p>
           </div>
@@ -259,9 +259,9 @@ export default function AffiliationPage() {
           />
 
           {/* Bouton d'adhésion */}
-          <div className="rounded-[24px] bg-white border p-6 text-center shadow-sm space-y-4">
+          <div className="rounded-[24px] bg-white border border-[#e5bdbb]/80 p-6 md:p-8 text-center shadow-sm space-y-4">
             {notice && (
-              <p className={`text-sm font-bold ${notice.includes("Félicitations") ? "text-emerald-700" : "text-amber-800"}`}>
+              <p className={`text-sm font-bold ${notice.includes("Félicitations") ? "text-emerald-700" : "text-[#9e001f]"}`}>
                 {notice}
               </p>
             )}
@@ -270,20 +270,20 @@ export default function AffiliationPage() {
               <button
                 onClick={activate}
                 disabled={!policyAccepted || activating}
-                className="w-full sm:w-auto rounded-full bg-[#0A1931] hover:bg-black px-8 py-4 text-sm font-black text-white shadow-md disabled:cursor-not-allowed disabled:opacity-40 transition"
+                className="w-full sm:w-auto rounded-full bg-[#9e001f] hover:bg-[#7f0019] px-8 py-4 text-sm font-black text-white shadow-md disabled:cursor-not-allowed disabled:opacity-40 transition active:scale-95"
               >
                 {activating ? "Activation en cours..." : "✓ Oui, j'accepte et je m'affilie"}
               </button>
               <Link
                 href="/"
-                className="w-full sm:w-auto rounded-full border border-zinc-300 px-6 py-4 text-sm font-bold text-zinc-600 hover:bg-zinc-50 transition"
+                className="w-full sm:w-auto rounded-full border border-[#e5bdbb] bg-white px-6 py-4 text-sm font-bold text-[#746665] hover:bg-[#fff0ef] hover:border-[#9e001f] transition"
               >
                 Pas maintenant
               </Link>
             </div>
             {!policyAccepted && (
-              <p className="text-xs text-zinc-400">
-                (Veuillez cocher la case d'acceptation de la charte ci-dessus pour débloquer le bouton)
+              <p className="text-xs text-[#746665]">
+                (Veuillez cocher la case d&apos;acceptation de la charte ci-dessus pour débloquer le bouton)
               </p>
             )}
           </div>
@@ -303,45 +303,45 @@ export default function AffiliationPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#FFFCF5] px-4 py-10">
+    <main className="affiliation-page min-h-screen bg-[#fcf9f8] px-4 py-10 text-[#2b2525]">
       <div className="mx-auto max-w-6xl space-y-8">
-        {/* En-tête principal */}
+        {/* En-tête principal éditorial */}
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#D4AF37]">
+            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#9e001f]">
               Programme Partenaire & Ambassadeurs
             </p>
-            <h1 className="mt-2 font-serif text-3xl md:text-4xl font-black text-[#0A1931]">
+            <h1 className="mt-2 font-serif text-3xl md:text-4xl font-black text-[#2b2525]">
               Votre Espace Ambassadeur
             </h1>
-            <p className="mt-1 text-sm text-zinc-600">
-              Code Officiel : <strong className="font-mono text-[#D4AF37] bg-[#0A1931] px-2 py-0.5 rounded text-xs">{user?.affiliateCode || "En cours..."}</strong> • Suivez votre descendance et vos gains.
+            <p className="mt-1 text-sm text-[#746665]">
+              Code Officiel : <strong className="font-mono text-[#9e001f] bg-[#f2e8e6] border border-[#e5bdbb] px-2.5 py-0.5 rounded text-xs font-black">{user?.affiliateCode || "En cours..."}</strong> • Suivez votre descendance et vos gains.
             </p>
           </div>
           <Link
             href="/compte"
-            className="rounded-full border border-zinc-200 bg-white px-5 py-2.5 text-xs font-bold text-[#0A1931] hover:bg-zinc-50 shadow-sm"
+            className="rounded-full border border-[#e5bdbb] bg-white px-5 py-2.5 text-xs font-bold text-[#2b2525] hover:bg-[#fff0ef] hover:border-[#9e001f] shadow-sm transition"
           >
             ← Retour à mon compte
           </Link>
         </div>
 
         {/* Barre d'onglets principale */}
-        <div className="flex gap-2 overflow-x-auto border-b border-zinc-200 pb-1">
+        <div className="flex gap-2 overflow-x-auto border-b border-[#e5bdbb] pb-1 custom-scrollbar">
           {tabs.map(([key, label, icon]) => (
             <button
               key={key}
               onClick={() => setTab(key)}
               className={`whitespace-nowrap border-b-2 px-4 py-3 text-xs md:text-sm font-bold transition flex items-center gap-1.5 ${
                 tab === key
-                  ? "border-[#0A1931] text-[#0A1931] font-black"
-                  : "border-transparent text-zinc-500 hover:text-[#0A1931]"
+                  ? "border-[#9e001f] text-[#9e001f] font-black"
+                  : "border-transparent text-[#746665] hover:text-[#2b2525] hover:border-[#e5bdbb]"
               }`}
             >
               <span>{icon}</span>
               <span>{label}</span>
               {key === "network" && networkData?.totalNetworkCount > 0 && (
-                <span className="ml-1 rounded-full bg-[#D4AF37] px-2 py-0.5 text-[10px] font-black text-[#0A1931]">
+                <span className="ml-1 rounded-full bg-[#f2e8e6] border border-[#e5bdbb] px-2 py-0.5 text-[10px] font-black text-[#9e001f]">
                   {networkData.totalNetworkCount}
                 </span>
               )}
@@ -350,7 +350,7 @@ export default function AffiliationPage() {
         </div>
 
         {notice && (
-          <p className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800 font-medium">
+          <p className="rounded-xl bg-[#fff0ef] border border-[#e5bdbb] px-4 py-3 text-sm text-[#9e001f] font-medium">
             {notice}
           </p>
         )}
@@ -359,54 +359,54 @@ export default function AffiliationPage() {
         {tab === "dashboard" && (
           <div className="space-y-6">
             <div className="grid gap-5 md:grid-cols-3">
-              <div className="rounded-2xl bg-[#0A1931] p-6 text-white shadow-sm">
-                <p className="text-xs text-white/60 uppercase font-bold tracking-wider">
+              <div className="rounded-[24px] bg-[#9e001f] p-6 text-white shadow-md border border-[#800019]">
+                <p className="text-xs text-white/80 uppercase font-bold tracking-wider">
                   Commissions Cumulées
                 </p>
-                <p className="mt-2 text-3xl font-black notranslate" translate="no">{formatPrice(total)}</p>
-                <p className="mt-1 text-xs text-white/60">Gains totaux Magazine & Marketplace</p>
+                <p className="mt-2 text-3xl font-serif font-black notranslate" translate="no">{formatPrice(total)}</p>
+                <p className="mt-1 text-xs text-white/80">Gains totaux Magazine & Marketplace</p>
               </div>
 
-              <div className="rounded-2xl bg-white p-6 shadow-sm border">
-                <p className="text-xs text-zinc-500 uppercase font-bold tracking-wider">
+              <div className="rounded-[24px] bg-white p-6 shadow-sm border border-[#e5bdbb]/80">
+                <p className="text-xs text-[#746665] uppercase font-bold tracking-wider">
                   Disponible au Retrait
                 </p>
-                <p className="mt-2 text-3xl font-black text-emerald-700 notranslate" translate="no">
+                <p className="mt-2 text-3xl font-serif font-black text-emerald-700 notranslate" translate="no">
                   {formatPrice(available)}
                 </p>
-                <p className="mt-1 text-xs text-zinc-400">Seuil de retrait : {formatPrice(10000)}</p>
+                <p className="mt-1 text-xs text-[#746665]">Seuil de retrait : {formatPrice(10000)}</p>
               </div>
 
-              <div className="rounded-2xl bg-[#D4AF37] p-6 shadow-sm">
-                <p className="text-xs text-[#0A1931]/70 uppercase font-bold tracking-wider">
+              <div className="rounded-[24px] bg-[#f4ecea] p-6 shadow-sm border border-[#e5bdbb] text-[#2b2525]">
+                <p className="text-xs text-[#746665] uppercase font-bold tracking-wider">
                   Taille du Réseau
                 </p>
-                <p className="mt-2 text-3xl font-black text-[#0A1931]">
+                <p className="mt-2 text-3xl font-serif font-black text-[#2b2525]">
                   {networkData?.totalNetworkCount ?? 0} Membre(s)
                 </p>
-                <p className="mt-1 text-xs text-[#0A1931]/80">
+                <p className="mt-1 text-xs text-[#746665]">
                   {networkData?.directCount ?? 0} / 5 filleuls directs
                 </p>
               </div>
             </div>
 
             {/* Raccourci vers Mon Réseau */}
-            <div className="rounded-2xl bg-gradient-to-r from-[#0A1931] to-[#162F59] p-6 text-white shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="rounded-[24px] bg-gradient-to-r from-[#2b2525] to-[#421c22] p-6 md:p-8 text-white shadow-md border border-[#522930] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
-                <span className="text-[10px] font-black uppercase text-[#D4AF37] tracking-wider">
+                <span className="text-[10px] font-black uppercase text-[#ffdad8] tracking-wider bg-[#9e001f]/50 border border-[#ffdad8]/30 px-2.5 py-0.5 rounded-full">
                   Arbre Matriciel 5×5
                 </span>
-                <h3 className="text-xl font-serif font-black mt-1">
+                <h3 className="text-xl md:text-2xl font-serif font-black mt-2 text-white">
                   Explorez Toute Votre Descendance (N1 à N5)
                 </h3>
-                <p className="text-xs text-zinc-300 mt-1 max-w-xl">
+                <p className="text-xs text-white/80 mt-1 max-w-xl leading-relaxed">
                   Consultez chaque branche, chaque niveau de parrainage et visualisez les filleuls de vos
-                  filleuls jusqu'à la 5ᵉ génération.
+                  filleuls jusqu&apos;à la 5ᵉ génération.
                 </p>
               </div>
               <button
                 onClick={() => setTab("network")}
-                className="rounded-full bg-[#D4AF37] hover:bg-amber-400 text-[#0A1931] font-black text-xs px-6 py-3 shadow transition shrink-0"
+                className="rounded-full bg-[#9e001f] hover:bg-[#7f0019] text-white font-black text-xs px-6 py-3.5 shadow-md transition shrink-0 active:scale-95"
               >
                 Ouvrir Mon Réseau 5×5 →
               </button>
@@ -423,21 +423,21 @@ export default function AffiliationPage() {
 
         {/* 3. ONGLET : LIEN AFFILIÉ */}
         {tab === "link" && (
-          <section className="rounded-2xl bg-white p-6 shadow-sm border space-y-4">
+          <section className="rounded-[24px] bg-white p-6 md:p-8 shadow-sm border border-[#e5bdbb]/80 space-y-4">
             <div>
-              <h2 className="text-xl font-black text-[#0A1931]">Votre Lien d'Affiliation Officiel</h2>
-              <p className="mt-1 text-sm text-zinc-600">
+              <h2 className="text-xl font-serif font-black text-[#2b2525]">Votre Lien d&apos;Affiliation Officiel</h2>
+              <p className="mt-1 text-sm text-[#746665]">
                 Partagez ce lien officiel pour parrainer vos filleuls directs ou recommander les abonnements et le kiosque.
               </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <div className="min-w-0 flex-1 rounded-xl bg-zinc-50 border border-zinc-200 px-5 py-3 font-mono text-sm text-zinc-700 select-all">
+              <div className="min-w-0 flex-1 rounded-xl bg-[#fcf9f8] border border-[#e5bdbb] px-5 py-3 font-mono text-sm text-[#2b2525] select-all">
                 {affiliateLink}
               </div>
               <button
                 onClick={copyLink}
-                className="rounded-xl bg-[#0A1931] px-6 py-3 text-sm font-bold text-white hover:bg-black transition shrink-0"
+                className="rounded-xl bg-[#9e001f] px-6 py-3 text-sm font-bold text-white hover:bg-[#7f0019] transition shrink-0 shadow-sm active:scale-95"
               >
                 {copied ? "Copié !" : "Copier le lien"}
               </button>
@@ -450,7 +450,7 @@ export default function AffiliationPage() {
                 href={`https://wa.me/?text=${encodeURIComponent(
                   `Découvrez Envol Africa Magazine et rejoignez mon réseau : ${affiliateLink}`
                 )}`}
-                className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700"
+                className="rounded-full bg-[#25D366] hover:bg-[#20ba59] px-4 py-2 text-xs font-bold text-white shadow-sm transition"
               >
                 Partager sur WhatsApp
               </a>
@@ -460,7 +460,7 @@ export default function AffiliationPage() {
                 href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
                   affiliateLink
                 )}`}
-                className="rounded-full bg-[#0A1931] px-4 py-2 text-xs font-bold text-white hover:bg-black"
+                className="rounded-full bg-[#0077b5] hover:bg-[#005f93] px-4 py-2 text-xs font-bold text-white shadow-sm transition"
               >
                 Partager sur LinkedIn
               </a>
@@ -470,10 +470,10 @@ export default function AffiliationPage() {
 
         {/* 4. ONGLET : COMMISSIONS */}
         {tab === "commissions" && (
-          <section className="rounded-2xl bg-white p-6 shadow-sm border">
-            <h2 className="text-xl font-black text-[#0A1931]">Historique des Commissions</h2>
+          <section className="rounded-[24px] bg-white p-6 md:p-8 shadow-sm border border-[#e5bdbb]/80">
+            <h2 className="text-xl font-serif font-black text-[#2b2525]">Historique des Commissions</h2>
             {earnings.length === 0 ? (
-              <p className="mt-6 rounded-xl bg-zinc-50 p-8 text-center text-sm text-zinc-500">
+              <p className="mt-6 rounded-xl bg-[#fcf9f8] border border-[#e5bdbb] p-8 text-center text-sm text-[#746665]">
                 Aucune commission pour le moment. Partagez votre lien officiel pour commencer.
               </p>
             ) : (
@@ -481,15 +481,15 @@ export default function AffiliationPage() {
                 {earnings.map((item) => (
                   <div
                     key={item.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-zinc-50 border p-4"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#fcf9f8] border border-[#e5bdbb]/80 p-4 hover:border-[#9e001f]/40 transition"
                   >
                     <div>
-                      <p className="text-sm font-bold">Commande #{String(item.orderId).slice(0, 8)}</p>
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-sm font-bold text-[#2b2525]">Commande #{String(item.orderId).slice(0, 8)}</p>
+                      <p className="text-xs text-[#746665]">
                         {new Date(item.createdAt).toLocaleDateString("fr-FR")} · Statut : {item.status}
                       </p>
                     </div>
-                    <strong className="text-emerald-700 font-mono text-base">
+                    <strong className="text-[#9e001f] font-mono text-base font-bold">
                       +{Number(item.commission).toLocaleString("fr-FR")} F
                     </strong>
                   </div>
@@ -501,32 +501,32 @@ export default function AffiliationPage() {
 
         {/* 5. ONGLET : RETRAITS MOBILE MONEY */}
         {tab === "payout" && (
-          <section className="rounded-2xl bg-white p-6 shadow-sm border space-y-4">
+          <section className="rounded-[24px] bg-white p-6 md:p-8 shadow-sm border border-[#e5bdbb]/80 space-y-4">
             <div>
-              <h2 className="text-xl font-black text-[#0A1931]">Demande de Retrait Mobile Money</h2>
-              <p className="mt-1 text-sm text-zinc-600">
-                Retrait de vos gains d'affiliation dès <strong>{formatPrice(10000)}</strong> via MTN, Moov, Orange
+              <h2 className="text-xl font-serif font-black text-[#2b2525]">Demande de Retrait Mobile Money</h2>
+              <p className="mt-1 text-sm text-[#746665]">
+                Retrait de vos gains d&apos;affiliation dès <strong>{formatPrice(10000)}</strong> via MTN, Moov, Orange
                 ou Wave.
               </p>
             </div>
 
-            <div className="rounded-xl bg-zinc-50 border p-5 space-y-4">
-              <p className="text-sm">
+            <div className="rounded-xl bg-[#fcf9f8] border border-[#e5bdbb] p-5 space-y-4">
+              <p className="text-sm text-[#2b2525]">
                 Montant actuellement disponible au retrait :{" "}
-                <strong className="text-emerald-700 text-lg font-black notranslate" translate="no">
+                <strong className="text-emerald-700 text-lg font-serif font-black notranslate" translate="no">
                   {formatPrice(available)}
                 </strong>
               </p>
 
               <div className="grid gap-3 sm:grid-cols-3">
                 <div>
-                  <label className="block text-xs font-bold text-zinc-600 mb-1">
+                  <label className="block text-xs font-bold text-[#746665] mb-1">
                     Opérateur Mobile Money *
                   </label>
                   <select
                     value={mmProvider}
                     onChange={(e) => setMmProvider(e.target.value)}
-                    className="w-full h-10 px-3 text-xs border rounded-xl bg-white font-bold"
+                    className="w-full h-10 px-3 text-xs border border-[#e5bdbb] rounded-xl bg-white font-bold text-[#2b2525] focus:border-[#9e001f] outline-none"
                   >
                     <option value="MTN">MTN Mobile Money</option>
                     <option value="MOOV">Moov Money</option>
@@ -535,7 +535,7 @@ export default function AffiliationPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-zinc-600 mb-1">
+                  <label className="block text-xs font-bold text-[#746665] mb-1">
                     Numéro de Téléphone *
                   </label>
                   <input
@@ -543,11 +543,11 @@ export default function AffiliationPage() {
                     placeholder="ex: 0197000000"
                     value={mmNumber}
                     onChange={(e) => setMmNumber(e.target.value)}
-                    className="w-full h-10 px-3 text-xs border rounded-xl bg-white font-mono"
+                    className="w-full h-10 px-3 text-xs border border-[#e5bdbb] rounded-xl bg-white font-mono text-[#2b2525] focus:border-[#9e001f] outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-zinc-600 mb-1">
+                  <label className="block text-xs font-bold text-[#746665] mb-1">
                     Montant souhaité (XOF)
                   </label>
                   <input
@@ -557,7 +557,7 @@ export default function AffiliationPage() {
                     placeholder={`Max : ${available}`}
                     value={withdrawAmount}
                     onChange={(e) => setWithdrawAmount(e.target.value)}
-                    className="w-full h-10 px-3 text-xs border rounded-xl bg-white"
+                    className="w-full h-10 px-3 text-xs border border-[#e5bdbb] rounded-xl bg-white text-[#2b2525] focus:border-[#9e001f] outline-none"
                   />
                 </div>
               </div>
@@ -565,7 +565,7 @@ export default function AffiliationPage() {
               <button
                 onClick={requestPayout}
                 disabled={available < 10000}
-                className="mt-2 rounded-full bg-[#0A1931] hover:bg-black px-6 py-3 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40 transition"
+                className="mt-2 rounded-full bg-[#9e001f] hover:bg-[#7f0019] px-7 py-3.5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40 shadow-md transition active:scale-95"
               >
                 {available >= 10000
                   ? "Demander le retrait Mobile Money"

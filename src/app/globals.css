@@ -386,13 +386,28 @@ h1, h2, h3, h4, .font-display {
 .dark ::-webkit-scrollbar-thumb { background: #f0b27e; }
 
 
-/* Subscription dark-mode contrast: explicit legacy utility colors must remain readable on dark cards. */
-.dark .subscription-page { background: var(--background) !important; color: var(--foreground) !important; }
+/* Subscription, Affiliation & Don dark-mode contrast: explicit utility colors remain readable on dark cards. */
+.dark .subscription-page,
+.dark .affiliation-page,
+.dark .don-page { background: var(--background) !important; color: var(--foreground) !important; }
 .dark .subscription-page [class*="text-[#0A1931]"],
 .dark .subscription-page [class*="text-zinc-700"],
-.dark .subscription-page [class*="text-zinc-600"] { color: #f5f3ee !important; }
-.dark .subscription-page [class*="text-zinc-500"] { color: #c8b8b6 !important; }
-.dark .subscription-page [class*="bg-[#FFFCF5]"] { background: var(--background) !important; }
-.dark .subscription-page [class*="bg-white"] { background: var(--surface-container-lowest) !important; border-color: var(--outline-variant) !important; }
-.dark .subscription-page [class*="bg-zinc-50"] { background: var(--surface-container) !important; }
-.dark .subscription-page [class*="border-zinc"] { border-color: var(--outline-variant) !important; }
+.dark .subscription-page [class*="text-zinc-600"],
+.dark .affiliation-page [class*="text-[#2b2525]"],
+.dark .don-page [class*="text-[#2b2525]"] { color: #f5f3ee !important; }
+.dark .subscription-page [class*="text-zinc-500"],
+.dark .affiliation-page [class*="text-[#746665]"],
+.dark .don-page [class*="text-[#746665]"] { color: #c8b8b6 !important; }
+.dark .subscription-page [class*="bg-[#FFFCF5]"],
+.dark .affiliation-page [class*="bg-[#fcf9f8]"],
+.dark .don-page [class*="bg-[#fcf9f8]"] { background: var(--background) !important; }
+.dark .subscription-page [class*="bg-white"],
+.dark .affiliation-page [class*="bg-white"],
+.dark .don-page [class*="bg-white"] { background: var(--surface-container-lowest) !important; border-color: var(--outline-variant) !important; }
+.dark .subscription-page [class*="bg-zinc-50"],
+.dark .affiliation-page [class*="bg-[#f4ecea]"],
+.dark .don-page [class*="bg-[#f4ecea]"] { background: var(--surface-container) !important; }
+.dark .subscription-page [class*="border-zinc"],
+.dark .affiliation-page [class*="border-[#e5bdbb]"],
+.dark .don-page [class*="border-[#e5bdbb]"] { border-color: var(--outline-variant) !important; }
+
