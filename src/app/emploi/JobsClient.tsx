@@ -37,6 +37,16 @@ const sectors = [
   "Industrie",
 ];
 
+const contractTypes = [
+  "CDI",
+  "CDD",
+  "Télétravail",
+  "Freelance",
+  "En ligne",
+  "Bénévolat",
+  "Stage",
+];
+
 const countryFromLocale: Record<string, string> = {
   BJ: "Bénin",
   CI: "Côte d’Ivoire",
@@ -60,6 +70,7 @@ export default function JobsClient() {
   const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
   const [sector, setSector] = useState("");
+  const [contractType, setContractType] = useState("");
   const sentinel = useRef<HTMLDivElement | null>(null);
 
   const availableCities = getCitiesForCountry(country);
@@ -71,6 +82,7 @@ export default function JobsClient() {
     if (country) params.set("country", country);
     if (city) params.set("city", city);
     if (sector) params.set("sector", sector);
+    if (contractType) params.set("contractType", contractType);
     const interests = JSON.parse(localStorage.getItem("ea_jobs_interests") ?? "[]") as string[];
     if (interests.length) params.set("interests", interests.slice(0, 10).join(","));
     try {
@@ -82,7 +94,7 @@ export default function JobsClient() {
     } finally {
       setLoading(false);
     }
-  }, [country, city, search, sector]);
+  }, [country, city, search, sector, contractType]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -249,6 +261,41 @@ export default function JobsClient() {
               Rechercher
             </button>
           </form>
+
+          {/* Filtres Tactiles par Types de Contrat */}
+          <div className="mt-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+            <span className="shrink-0 text-xs font-bold uppercase tracking-wider text-slate-300">
+              Types de contrat :
+            </span>
+            <button
+              type="button"
+              onClick={() => setContractType("")}
+              className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all ${
+                contractType === ""
+                  ? "bg-[#9e001f] text-white shadow-md shadow-[#9e001f]/30"
+                  : "border border-white/20 bg-white/10 text-slate-200 hover:bg-white/20"
+              }`}
+            >
+              Tous
+            </button>
+            {contractTypes.map((item) => {
+              const isActive = contractType === item;
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setContractType(isActive ? "" : item)}
+                  className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all ${
+                    isActive
+                      ? "bg-[#8ee0c0] text-[#071b36] shadow-md shadow-[#8ee0c0]/30"
+                      : "border border-white/20 bg-white/10 text-slate-200 hover:bg-white/20"
+                  }`}
+                >
+                  {item}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </section>
 
@@ -271,6 +318,7 @@ export default function JobsClient() {
               {country ? ` · Filtré sur ${country}` : ""}
               {city ? ` (${city})` : ""}
               {sector ? ` · Secteur ${sector}` : ""}
+              {contractType ? ` · Contrat ${contractType}` : ""}
             </p>
           </div>
 

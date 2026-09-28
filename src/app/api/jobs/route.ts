@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
   const country = searchParams.get("country") ?? "";
   const city = searchParams.get("city") ?? "";
   const sector = searchParams.get("sector") ?? "";
+  const contractType = searchParams.get("contractType") ?? "";
   const interests = (searchParams.get("interests") ?? "").split(",").map(normalize).filter(Boolean).slice(0, 10);
   const supabaseOffers = await listPublishedJobsOffers();
   if (isProductionRuntime() && !supabaseOffers.configured) return NextResponse.json({ error: "Le service Jobs est temporairement indisponible, la persistance Supabase doit être configurée." }, { status: 503 });
@@ -31,6 +32,15 @@ export async function GET(request: NextRequest) {
     .filter((offer) => !country || offer.country === country)
     .filter((offer) => !city || normalize(offer.city) === normalize(city))
     .filter((offer) => !sector || offer.sector === sector)
+    .filter((offer) => {
+      if (!contractType) return true;
+      const target = normalize(contractType);
+      const current = normalize(offer.contractType || "");
+      if (target === "teletravail" || target === "en ligne") {
+        return current.includes("remote") || current.includes("teletravail") || current.includes("ligne");
+      }
+      return current === target || current.includes(target);
+    })
     .sort((a, b) => {
       const score = (offer: typeof a) => {
         const searchable = normalize(`${offer.title} ${offer.description} ${offer.sector} ${offer.skills.join(" ")}`);
