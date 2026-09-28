@@ -24,6 +24,7 @@ export type WabPostRow = {
   source_id?: string | null;
   source_url?: string | null;
   source_title?: string | null;
+  background_color?: string | null;
   page_id?: string | null;
   group_id?: string | null;
 
@@ -202,31 +203,53 @@ export async function createWabPostInSupabase(profileId: string, input: {
   groupId?: string;
   visibility?: "public" | "community" | "group";
   audience?: { countries?: string[]; industries?: string[] };
+  backgroundColor?: string;
 }) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false as const, post: null };
 
   const moderationStatus = "published";
 
-  const { data, error } = await supabase
+  const mediaWithBg = input.backgroundColor
+    ? [...(input.media || []), { path: "", mimeType: "wab/background", name: input.backgroundColor }]
+    : (input.media || []);
+
+  const basePayload: Record<string, unknown> = {
+    author_id: profileId,
+    content: input.content,
+    content_type: input.type,
+    media: mediaWithBg,
+    moderation_status: moderationStatus,
+    views_count: 0,
+    likes_count: 0,
+    comments_count: 0,
+    shares_count: 0,
+    page_id: input.pageId ?? null,
+    group_id: input.groupId ?? null,
+    visibility: input.visibility ?? "public",
+    audience: input.audience ?? {}
+  };
+
+  const selectFields = "*, wab_pages:page_id(id, name, slug, logo_url, owner_user_id), wab_groups:group_id(id, name, slug, logo_url, owner_user_id), wab_profiles:author_id(id, user_id, headline, avatar_url, city, country_code, users:user_id(prenom, nom, full_name, avatar))";
+
+  let { data, error } = await supabase
     .from("wab_posts")
     .insert({
-      author_id: profileId,
-      content: input.content,
-      content_type: input.type,
-      media: input.media || [],
-      moderation_status: moderationStatus,
-      views_count: 0,
-      likes_count: 0,
-      comments_count: 0,
-      shares_count: 0,
-      page_id: input.pageId ?? null,
-      group_id: input.groupId ?? null,
-      visibility: input.visibility ?? "public",
-      audience: input.audience ?? {}
+      ...basePayload,
+      ...(input.backgroundColor ? { background_color: input.backgroundColor } : {})
     })
-    .select("*, wab_pages:page_id(id, name, slug, logo_url, owner_user_id), wab_groups:group_id(id, name, slug, logo_url, owner_user_id), wab_profiles:author_id(id, user_id, headline, avatar_url, city, country_code, users:user_id(prenom, nom, full_name, avatar))")
+    .select(selectFields)
     .single();
+
+  if (error && input.backgroundColor && error.message?.toLowerCase().includes("background_color")) {
+    const retry = await supabase
+      .from("wab_posts")
+      .insert(basePayload)
+      .select(selectFields)
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) return { configured: true as const, post: null, error };
   return { configured: true as const, post: data as WabPostRow };

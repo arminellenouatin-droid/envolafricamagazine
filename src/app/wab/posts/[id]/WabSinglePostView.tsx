@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import PostActions from "../../PostActions";
 import RichTextContent from "@/components/RichTextContent";
+import { getWabBackground } from "@/lib/wab-backgrounds";
 
 export interface SinglePostData {
   id: string;
@@ -15,6 +16,7 @@ export interface SinglePostData {
   content: string;
   type: string;
   media: Array<{ path: string; mimeType: string; name: string; size?: number; mediaUrl?: string }>;
+  backgroundColor?: string;
   videoUrl?: string;
   imageUrl?: string;
   views: number;
@@ -90,6 +92,7 @@ export default function WabSinglePostView({ post }: { post: SinglePostData }) {
   })();
 
   const isVideo = post.type === "video" || post.media.some((m) => m.mimeType?.startsWith("video/"));
+  const bgPreset = getWabBackground(post.backgroundColor);
 
   return (
     <main className="min-h-screen bg-[#f0f2f5] py-6 sm:py-10">
@@ -178,17 +181,39 @@ export default function WabSinglePostView({ post }: { post: SinglePostData }) {
             )}
           </div>
 
-          {/* Contenu textuel */}
-          <div
-            className="mt-5 text-sm sm:text-[15px] leading-relaxed text-[#111e1d] font-['Arial_Black',sans-serif]"
-            style={{ fontFamily: "'Arial Black', 'Arial Bold', Gadget, sans-serif" }}
-          >
-            <RichTextContent
-              value={post.content}
-              className="font-['Arial_Black',sans-serif]"
+          {/* Contenu textuel avec ou sans arrière-plan couleur style Facebook */}
+          {bgPreset ? (
+            <div
+              className="my-5 flex min-h-[260px] sm:min-h-[320px] w-full items-center justify-center rounded-2xl p-6 sm:p-10 text-center shadow-inner transition-all"
+              style={{
+                background: bgPreset.gradient,
+                color: bgPreset.textColor,
+              }}
+            >
+              <div
+                className="max-w-xl text-lg sm:text-2xl font-['Arial_Black',sans-serif] leading-snug tracking-tight drop-shadow-md"
+                style={{ fontFamily: "'Arial Black', 'Arial Bold', Gadget, sans-serif" }}
+              >
+                <RichTextContent
+                  value={post.content}
+                  className="text-white font-['Arial_Black',sans-serif]"
+                  style={{ fontFamily: "'Arial Black', 'Arial Bold', Gadget, sans-serif" }}
+                  linkClassName="[&_a]:font-black [&_a]:underline [&_a]:text-amber-200 hover:[&_a]:text-white"
+                />
+              </div>
+            </div>
+          ) : (
+            <div
+              className="mt-5 text-sm sm:text-[15px] leading-relaxed text-[#111e1d] font-['Arial_Black',sans-serif]"
               style={{ fontFamily: "'Arial Black', 'Arial Bold', Gadget, sans-serif" }}
-            />
-          </div>
+            >
+              <RichTextContent
+                value={post.content}
+                className="font-['Arial_Black',sans-serif]"
+                style={{ fontFamily: "'Arial Black', 'Arial Bold', Gadget, sans-serif" }}
+              />
+            </div>
+          )}
 
           {/* Lecteur Vidéo Natif */}
           {post.videoUrl && (

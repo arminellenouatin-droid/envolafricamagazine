@@ -12,10 +12,12 @@ import DiscoveryCarousel from "./DiscoveryCarousel";
 import { hasWabUnlimitedRole, WAB_BUSINESS_MONTHLY_PRICE } from "@/lib/wab-access";
 import { optimizeSelectedImages } from "@/lib/client-image-optimizer";
 import RichTextEditor from "@/components/RichTextEditor";
+import RichTextContent from "@/components/RichTextContent";
 import ExpandablePostText from "@/components/wab/ExpandablePostText";
 import WabSidebarCards from "@/components/wab/WabSidebarCards";
 import { useLocale } from "@/components/LocaleProvider";
 import { uploadWabMedia, readJsonResponse } from "@/lib/wab-upload-client";
+import { WAB_BACKGROUND_PRESETS, getWabBackground } from "@/lib/wab-backgrounds";
 
 type PublishPage = { id: string; name: string; logoUrl?: string; logo_url?: string };
 type PublishGroup = { id: string; name: string; privacy: "community" | "private" };
@@ -51,6 +53,7 @@ type Post = {
   content: string;
   type: string;
   media?: Array<{ path: string; mimeType: string; name: string }>;
+  backgroundColor?: string;
   tags: string[];
   views: number;
   likes: number;
@@ -127,6 +130,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedBg, setSelectedBg] = useState<string | null>(null);
   const [publishOpen, setPublishOpen] = useState(false);
   const [visitorCountry, setVisitorCountry] = useState("");
   const [page, setPage] = useState(1);
@@ -484,6 +488,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
   async function chooseFiles(files: FileList | null) {
     const picked = Array.from(files ?? []).slice(0, 10);
     if (!picked.length) return;
+    setSelectedBg(null);
     setMessage("Optimisation des fichiers en cours…");
     try {
       const result = await optimizeSelectedImages(picked);
@@ -605,6 +610,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
           type,
           tags: [],
           media,
+          backgroundColor: selectedFiles.length === 0 ? selectedBg || undefined : undefined,
           pageId: publishTarget === "page" ? selectedPageId : undefined,
           groupId: publishTarget === "group" ? selectedGroupId : undefined
         })
@@ -618,6 +624,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
       setPosts((items) => [data.post!, ...items]);
       setContent("");
       setSelectedFiles([]);
+      setSelectedBg(null);
       setPublishOpen(false);
       setUpgradeRequired(null);
       sessionStorage.removeItem("wab-publish-draft");
@@ -888,6 +895,78 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                       </button>
                     ))}
                   </div>
+
+                  {/* Arrière-plan de couleur pour les publications texte seul (Style Facebook) */}
+                  {selectedFiles.length === 0 && (
+                    <div className="mt-3 rounded-2xl border border-[#d8e2e6] bg-[#f8fafb] p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-[18px] text-[#006874]">palette</span>
+                          <span className="text-xs font-bold text-[#082843]">Couleur d’arrière-plan (Texte seul)</span>
+                        </div>
+                        {selectedBg && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedBg(null)}
+                            className="text-[11px] font-bold text-red-600 hover:underline"
+                          >
+                            ✕ Aucun fond
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Pastilles de couleurs */}
+                      <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedBg(null)}
+                          title="Texte standard sans fond"
+                          className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-transform hover:scale-105 ${
+                            !selectedBg ? "border-[#006874] ring-2 ring-[#006874]/30" : "border-gray-300 bg-white"
+                          }`}
+                        >
+                          <span className="text-[10px] font-black text-gray-500">Aa</span>
+                        </button>
+
+                        {WAB_BACKGROUND_PRESETS.map((preset) => {
+                          const isActive = selectedBg === preset.id;
+                          return (
+                            <button
+                              key={preset.id}
+                              type="button"
+                              onClick={() => setSelectedBg(preset.id)}
+                              title={preset.name}
+                              style={{ background: preset.gradient }}
+                              className={`h-8 w-8 rounded-full border-2 transition-all hover:scale-110 shadow-sm ${
+                                isActive ? "border-white ring-2 ring-[#006874] scale-110" : "border-transparent"
+                              }`}
+                            />
+                          );
+                        })}
+                      </div>
+
+                      {/* Aperçu en direct si un arrière-plan est sélectionné */}
+                      {selectedBg && (
+                        (() => {
+                          const bgPreset = getWabBackground(selectedBg);
+                          if (!bgPreset) return null;
+                          return (
+                            <div
+                              className="mt-3 flex min-h-[120px] items-center justify-center rounded-xl p-4 text-center shadow-inner"
+                              style={{ background: bgPreset.gradient }}
+                            >
+                              <p
+                                className="text-sm sm:text-base font-['Arial_Black',sans-serif] text-white drop-shadow-md leading-snug line-clamp-4"
+                                style={{ fontFamily: "'Arial Black', 'Arial Bold', Gadget, sans-serif" }}
+                              >
+                                {content.replace(/<[^>]*>/g, "").trim() || "Aperçu de votre publication avec arrière-plan…"}
+                              </p>
+                            </div>
+                          );
+                        })()
+                      )}
+                    </div>
+                  )}
 
                   {/* Destination (Profile, Page, Group) */}
                   <div className="mt-4 rounded-xl border border-[#d8e2e6] bg-[#fafcfb] p-3 text-xs">
@@ -1200,51 +1279,111 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                     </div>
 
                     {/* Post Content */}
-                    <div
-                      className="text-sm leading-relaxed text-[#111e1d] font-['Arial_Black',sans-serif]"
-                      style={{ fontFamily: "'Arial Black', 'Arial Bold', Gadget, sans-serif" }}
-                    >
-                      <ExpandablePostText value={post.content} />
-
-                      {/* Source URL if magazine republication */}
-                      {post.sourceUrl && (
-                        <a
-                          href={post.sourceUrl}
-                          className="mt-3 flex items-center justify-between rounded-xl border border-[#d1e9e6] bg-[#f7fcfb] p-3 transition hover:bg-[#eefcfa] group"
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <span className="material-symbols-outlined text-[22px] text-[#006874]">menu_book</span>
-                            <div>
-                              <p className="text-xs font-bold text-[#006874] group-hover:underline">
-                                {post.sourceTitle ? post.sourceTitle : "Lire le numéro dans le Kiosque Envol Africa"}
-                              </p>
-                              <p className="text-[10px] text-[#5f6368]">Édition officielle Envol Africa Magazine</p>
+                    {post.backgroundColor ? (
+                      (() => {
+                        const bgPreset = getWabBackground(post.backgroundColor);
+                        if (!bgPreset) {
+                          return (
+                            <div
+                              className="text-sm leading-relaxed text-[#111e1d] font-['Arial_Black',sans-serif]"
+                              style={{ fontFamily: "'Arial Black', 'Arial Bold', Gadget, sans-serif" }}
+                            >
+                              <ExpandablePostText value={post.content} />
                             </div>
+                          );
+                        }
+                        return (
+                          <div>
+                            <div
+                              className="my-2 flex min-h-[200px] sm:min-h-[260px] w-full items-center justify-center rounded-2xl p-6 sm:p-10 text-center shadow-inner transition-all"
+                              style={{
+                                background: bgPreset.gradient,
+                                color: bgPreset.textColor,
+                              }}
+                            >
+                              <div
+                                className="max-w-xl text-base sm:text-xl font-['Arial_Black',sans-serif] leading-snug tracking-tight drop-shadow-md"
+                                style={{ fontFamily: "'Arial Black', 'Arial Bold', Gadget, sans-serif" }}
+                              >
+                                <RichTextContent
+                                  value={post.content}
+                                  className="text-white font-['Arial_Black',sans-serif]"
+                                  style={{ fontFamily: "'Arial Black', 'Arial Bold', Gadget, sans-serif" }}
+                                  linkClassName="[&_a]:font-black [&_a]:underline [&_a]:text-amber-200 hover:[&_a]:text-white"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Source URL if magazine republication */}
+                            {post.sourceUrl && (
+                              <a
+                                href={post.sourceUrl}
+                                className="mt-3 flex items-center justify-between rounded-xl border border-[#d1e9e6] bg-[#f7fcfb] p-3 transition hover:bg-[#eefcfa] group"
+                              >
+                                <div className="flex items-center gap-2.5">
+                                  <span className="material-symbols-outlined text-[22px] text-[#006874]">menu_book</span>
+                                  <div>
+                                    <p className="text-xs font-bold text-[#006874] group-hover:underline">
+                                      {post.sourceTitle ? post.sourceTitle : "Lire le numéro dans le Kiosque Envol Africa"}
+                                    </p>
+                                    <p className="text-[10px] text-[#5f6368]">Édition officielle Envol Africa Magazine</p>
+                                  </div>
+                                </div>
+                                <span className="material-symbols-outlined text-[18px] text-[#006874] group-hover:translate-x-1 transition-transform">
+                                  arrow_forward
+                                </span>
+                              </a>
+                            )}
                           </div>
-                          <span className="material-symbols-outlined text-[18px] text-[#006874] group-hover:translate-x-1 transition-transform">
-                            arrow_forward
-                          </span>
-                        </a>
-                      )}
+                        );
+                      })()
+                    ) : (
+                      <div
+                        className="text-sm leading-relaxed text-[#111e1d] font-['Arial_Black',sans-serif]"
+                        style={{ fontFamily: "'Arial Black', 'Arial Bold', Gadget, sans-serif" }}
+                      >
+                        <ExpandablePostText value={post.content} />
 
-                      {/* Tags */}
-                      {post.tags && post.tags.length > 0 && (
-                        <div className="mt-2.5 flex flex-wrap gap-1.5">
-                          {post.tags.map((tag) => (
-                            <span key={tag} className="rounded-full bg-[#f0f4f6] px-2.5 py-0.5 text-[11px] font-semibold text-[#006874]">
-                              #{tag}
+                        {/* Source URL if magazine republication */}
+                        {post.sourceUrl && (
+                          <a
+                            href={post.sourceUrl}
+                            className="mt-3 flex items-center justify-between rounded-xl border border-[#d1e9e6] bg-[#f7fcfb] p-3 transition hover:bg-[#eefcfa] group"
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className="material-symbols-outlined text-[22px] text-[#006874]">menu_book</span>
+                              <div>
+                                <p className="text-xs font-bold text-[#006874] group-hover:underline">
+                                  {post.sourceTitle ? post.sourceTitle : "Lire le numéro dans le Kiosque Envol Africa"}
+                                </p>
+                                <p className="text-[10px] text-[#5f6368]">Édition officielle Envol Africa Magazine</p>
+                              </div>
+                            </div>
+                            <span className="material-symbols-outlined text-[18px] text-[#006874] group-hover:translate-x-1 transition-transform">
+                              arrow_forward
                             </span>
-                          ))}
-                        </div>
-                      )}
+                          </a>
+                        )}
 
-                      {/* Media Attachments (Covers, multi-images, documents) */}
-                      {post.media && (
-                        <div className="mt-3">
-                          <PostMedia postId={post.id} media={post.media} />
-                        </div>
-                      )}
-                    </div>
+                        {/* Tags */}
+                        {post.tags && post.tags.length > 0 && (
+                          <div className="mt-2.5 flex flex-wrap gap-1.5">
+                            {post.tags.map((tag) => (
+                              <span key={tag} className="rounded-full bg-[#f0f4f6] px-2.5 py-0.5 text-[11px] font-semibold text-[#006874]">
+                                #{tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Media Attachments (Covers, multi-images, documents) */}
+                        {post.media && (
+                          <div className="mt-3">
+                            <PostMedia postId={post.id} media={post.media} />
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* LinkedIn Reactions Summary Bar */}
                     <div className="flex items-center justify-between border-t border-[#edf2f4] pt-2 text-[11px] text-[#5f6368]">

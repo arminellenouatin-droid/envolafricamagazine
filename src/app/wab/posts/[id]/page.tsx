@@ -77,10 +77,13 @@ async function getPostData(id: string, origin = "https://envolafrica.vercel.app"
           "Afrique";
 
         const rawMediaList = Array.isArray(postData.media) ? postData.media : [];
+        const bgFromMedia = rawMediaList.find((m: any) => m && m.mimeType === "wab/background")?.name;
+        const backgroundColor = postData.background_color || bgFromMedia || undefined;
+        const cleanRawMediaList = rawMediaList.filter((m: any) => m.mimeType !== "wab/background");
 
         // Résoudre les URLs des médias
         const resolvedMediaList = await Promise.all(
-          rawMediaList.map(async (m: any) => {
+          cleanRawMediaList.map(async (m: any) => {
             const url = m.mediaUrl || (await resolveMediaUrl(supabase, m.path));
             return {
               ...m,
@@ -117,6 +120,7 @@ async function getPostData(id: string, origin = "https://envolafrica.vercel.app"
           content: data.content || "",
           type: data.content_type || "text",
           media: resolvedMediaList,
+          backgroundColor,
           videoUrl,
           imageUrl,
           views: data.views_count || 0,
@@ -138,9 +142,10 @@ async function getPostData(id: string, origin = "https://envolafrica.vercel.app"
   try {
     const localPost = readWabDB().posts.find((item) => item.id === id && item.moderationStatus === "published");
     if (localPost) {
-      const isVideo = localPost.type === "video" || localPost.media?.some((m) => m.mimeType?.startsWith("video/"));
-      const videoMedia = localPost.media?.find((m) => m.mimeType?.startsWith("video/"));
-      const imageMedia = localPost.media?.find((m) => m.mimeType?.startsWith("image/"));
+      const cleanMedia = (localPost.media || []).filter((m) => m.mimeType !== "wab/background");
+      const isVideo = localPost.type === "video" || cleanMedia.some((m) => m.mimeType?.startsWith("video/"));
+      const videoMedia = cleanMedia.find((m) => m.mimeType?.startsWith("video/"));
+      const imageMedia = cleanMedia.find((m) => m.mimeType?.startsWith("image/"));
 
       let imageUrl = imageMedia?.path;
       if (!imageUrl) {
@@ -158,7 +163,8 @@ async function getPostData(id: string, origin = "https://envolafrica.vercel.app"
         location: localPost.location || "Afrique",
         content: localPost.content,
         type: localPost.type,
-        media: localPost.media || [],
+        media: cleanMedia,
+        backgroundColor: localPost.backgroundColor || localPost.media?.find((m) => m.mimeType === "wab/background")?.name,
         videoUrl: videoMedia?.path,
         imageUrl,
         views: localPost.views || 0,

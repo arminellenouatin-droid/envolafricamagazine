@@ -35,6 +35,12 @@ export async function GET(request: NextRequest) {
         row.wab_profiles?.users?.avatar ||
         undefined;
 
+      const bgFromMedia = Array.isArray(row.media)
+        ? row.media.find((m) => m && m.mimeType === "wab/background")?.name
+        : undefined;
+      const backgroundColor = row.background_color || bgFromMedia || undefined;
+      const cleanMedia = (row.media ?? []).filter((m) => m.mimeType !== "wab/background");
+
       return {
         id: row.id,
         author: authorName,
@@ -51,7 +57,8 @@ export async function GET(request: NextRequest) {
         location: [row.wab_profiles?.city, row.wab_profiles?.country_code].filter(Boolean).join(", ") || "Afrique",
         content: row.content,
         type: row.content_type,
-        media: row.media ?? [],
+        media: cleanMedia,
+        backgroundColor,
         tags: [],
         views: row.views_count ?? 0,
         watchSeconds: row.watch_seconds ?? 0,
@@ -206,6 +213,11 @@ export async function POST(request: NextRequest) {
       : []
   };
 
+  const backgroundColor =
+    media.length === 0 && typeof body.backgroundColor === "string" && body.backgroundColor.trim()
+      ? body.backgroundColor.trim()
+      : undefined;
+
   const supabaseProfile = await getWabProfileByUserId(user.id);
   if (supabaseProfile.configured) {
     let wabProfile = supabaseProfile.profile;
@@ -233,7 +245,8 @@ export async function POST(request: NextRequest) {
       pageId,
       groupId,
       visibility,
-      audience
+      audience,
+      backgroundColor
     });
 
     if (!created.post) return NextResponse.json({ error: "Impossible d’enregistrer votre publication." }, { status: 500 });
@@ -247,6 +260,11 @@ export async function POST(request: NextRequest) {
 
     const rowProfile = row.wab_profiles;
     const authorAvatarUrl = user.avatar || rowProfile?.avatar_url || (rowProfile as unknown as { users?: { avatar?: string } })?.users?.avatar || undefined;
+    const bgFromMedia = Array.isArray(row.media)
+      ? row.media.find((m) => m && m.mimeType === "wab/background")?.name
+      : undefined;
+    const finalBg = row.background_color || bgFromMedia || backgroundColor;
+    const cleanMedia = (row.media ?? []).filter((m) => m.mimeType !== "wab/background");
 
     return NextResponse.json(
       {
@@ -266,7 +284,8 @@ export async function POST(request: NextRequest) {
           location: [rowProfile?.city, rowProfile?.country_code].filter(Boolean).join(", ") || user.country || "Afrique",
           content: row.content,
           type: row.content_type,
-          media: row.media ?? [],
+          media: cleanMedia,
+          backgroundColor: finalBg,
           tags,
           views: row.views_count ?? 0,
           watchSeconds: row.watch_seconds ?? 0,
@@ -302,6 +321,7 @@ export async function POST(request: NextRequest) {
     content,
     type,
     media,
+    backgroundColor,
     tags
   });
 
