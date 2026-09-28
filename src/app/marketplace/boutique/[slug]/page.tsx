@@ -48,13 +48,15 @@ export default async function BoutiqueSlugPage({
 }) {
   const { slug } = await params;
   const sp = await searchParams;
-  const viewModeParam = typeof sp.view === "string" ? sp.view : "";
+  const searchEntries = Object.entries(sp).flatMap(([k, v]) =>
+    Array.isArray(v) ? v.map((item) => [k, item]) : v ? [[k, v]] : []
+  );
+  const q = searchEntries.length > 0 ? `?${new URLSearchParams(searchEntries).toString()}` : "";
 
   // 1. Recherche directe par slug de boutique
   const supplier = await findSupplierBySlugOrId(slug);
 
   if (supplier && supplier.vendor_slug) {
-    const q = viewModeParam ? `?view=${encodeURIComponent(viewModeParam)}` : "";
     redirect(`/marketplace/boutique/${encodeURIComponent(supplier.vendor_slug)}/${encodeURIComponent(supplier.slug || slug)}${q}`);
   }
 
@@ -77,7 +79,6 @@ export default async function BoutiqueSlugPage({
     if (vendorStore) {
       const sSlug = generateStoreSlug(vendorStore.business_name);
       const vSlug = generateVendorSlug((vendorStore as any).users);
-      const q = viewModeParam ? `?view=${encodeURIComponent(viewModeParam)}` : "";
       redirect(`/marketplace/boutique/${encodeURIComponent(vSlug)}/${encodeURIComponent(sSlug)}${q}`);
     }
   }

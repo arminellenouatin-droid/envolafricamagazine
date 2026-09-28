@@ -79,6 +79,29 @@ export default async function VendorStorePage({
 
     const { data: pData } = await query;
     initialProducts = pData || [];
+
+    if (initialProducts.length > 0) {
+      try {
+        const productIds = initialProducts.map((p) => p.id);
+        const { data: affData } = await supabase
+          .from("product_affiliations")
+          .select("id, product_id, commission_rate, is_active")
+          .in("product_id", productIds);
+
+        if (affData) {
+          const affMap = new Map<string, Array<{ id: string; commission_rate: number; is_active: boolean }>>();
+          for (const aff of affData) {
+            if (!affMap.has(aff.product_id)) affMap.set(aff.product_id, []);
+            affMap.get(aff.product_id)!.push(aff);
+          }
+          for (const p of initialProducts) {
+            p.product_affiliations = affMap.get(p.id) || [];
+          }
+        }
+      } catch {
+        // Silently continue
+      }
+    }
   }
 
   // Récupérer les autres boutiques du vendeur pour le sélecteur rapide

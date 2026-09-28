@@ -34,5 +34,17 @@ export async function activateMonerooEntitlements(paymentId: string) {
   const installment = await supabase.from("marketplace_installments").update({ status: "paid", paid_at: now.toISOString() }).eq("provider_payment_id", paymentId).eq("status", "due").select("id").maybeSingle();
   results.marketplaceInstallment = Boolean(installment.data);
 
+  // Certification boutique vendeur marketplace (50 000 XOF/an)
+  const certification = await supabase
+    .from("marketplace_suppliers")
+    .update({
+      certification_status: "pending",
+      updated_at: now.toISOString(),
+    })
+    .eq("certification_payment_id", paymentId)
+    .select("id")
+    .maybeSingle();
+  results.marketplaceCertification = Boolean(certification.data);
+
   return { configured: true as const, results };
 }

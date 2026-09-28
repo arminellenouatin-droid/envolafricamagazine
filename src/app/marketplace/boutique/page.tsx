@@ -207,7 +207,7 @@ export default function MarketplaceBoutiquePage() {
       const actionParam = params.get("action");
       const targetStoreId = preferredStoreId || params.get("storeId");
 
-      if (fetchedStores.length === 0 || actionParam === "create-store" || actionParam === "new-store") {
+      if (actionParam === "create-store" || actionParam === "new-store") {
         setViewMode("new-store");
         setSelectedStore(null);
       } else if (targetStoreId) {
@@ -726,7 +726,29 @@ export default function MarketplaceBoutiquePage() {
               </span>
             </div>
 
-            <div className="mt-4 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {stores.length === 0 ? (
+              <div className="mt-4 rounded-[28px] border-2 border-dashed border-[#eadfce] bg-white p-10 text-center shadow-xs">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#fff5f2] border border-[#f5d5d3] text-3xl">
+                  🏪
+                </div>
+                <h3 className="mt-4 font-display text-xl font-black text-[#2a211a]">
+                  Vous n'avez pas encore de boutique configurée
+                </h3>
+                <p className="mx-auto mt-2 max-w-md text-xs leading-5 text-[#806c58]">
+                  Créez votre première vitrine marchande Envol Africa pour vendre vos produits physiques, créations artisanales, articles numériques ou services partout en Afrique.
+                </p>
+                <div className="mt-6 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={openNewStoreForm}
+                    className="rounded-full bg-[#9e001f] px-6 py-3 text-xs font-black text-white hover:bg-[#80001a] transition shadow-md flex items-center gap-2"
+                  >
+                    <span>+</span> Créer ma première boutique
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {stores.map((s) => {
                 const sSlug = s.slug || generateStoreSlug(s.business_name);
                 const vSlug = (s as any).vendor_slug || "vendeur";
@@ -815,9 +837,10 @@ export default function MarketplaceBoutiquePage() {
                 </span>
               </div>
             </div>
-          </div>
+          )}
         </div>
-      </main>
+      </div>
+    </main>
     );
   }
 
