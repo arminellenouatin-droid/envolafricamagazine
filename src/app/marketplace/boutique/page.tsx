@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { useLocale } from "@/components/LocaleProvider";
 import MarketplaceProductForm from "@/components/marketplace/MarketplaceProductForm";
+import { generateStoreSlug } from "@/lib/marketplace-slug";
 
 type Supplier = {
   id: string;
   business_name: string;
+  slug?: string;
   description?: string | null;
   country_code?: string | null;
   city?: string | null;
@@ -146,25 +148,10 @@ export default function MarketplaceBoutiquePage() {
     }
   };
 
-  const selectStore = async (store: Supplier, updateUrl = true) => {
-    setSelectedStore(store);
-    setViewMode("store-detail");
-    setError("");
-    setMessage("");
-    setBusinessName(store.business_name || "");
-    setDescription(store.description || "");
-    setCountryCode(store.country_code || "BJ");
-    setCity(store.city || "");
-
-    if (updateUrl) {
-      const url = new URL(window.location.href);
-      url.searchParams.set("storeId", store.id);
-      url.searchParams.delete("action");
-      window.history.replaceState(null, "", url.toString());
-    }
-
-    await loadProductsForStore(store.id);
-    await loadAnalyticsForStore(store.id);
+  const selectStore = async (store: Supplier) => {
+    const sSlug = store.slug || generateStoreSlug(store.business_name);
+    const vSlug = (store as any).vendor_slug || "vendeur";
+    window.location.assign(`/marketplace/boutique/${vSlug}/${sSlug}`);
   };
 
   const goToStoresList = async () => {
@@ -226,7 +213,7 @@ export default function MarketplaceBoutiquePage() {
       } else if (targetStoreId) {
         const match = fetchedStores.find((s) => s.id === targetStoreId);
         if (match) {
-          await selectStore(match, false);
+          await selectStore(match);
         } else {
           setViewMode("stores-list");
         }
@@ -299,9 +286,9 @@ export default function MarketplaceBoutiquePage() {
       if (!response.ok) throw new Error(data.error || "Création impossible.");
       const newStore = data.supplier;
       setStores((prev) => [newStore, ...prev]);
-      setMessage(`Félicitations ! Votre boutique "${newStore.business_name}" est créée. Vous pouvez maintenant publier vos produits.`);
-      await selectStore(newStore, true);
-      switchSection("product");
+      const sSlug = newStore.slug || generateStoreSlug(newStore.business_name);
+      const vSlug = newStore.vendor_slug || "vendeur";
+      window.location.assign(`/marketplace/boutique/${vSlug}/${sSlug}`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Création impossible.");
     } finally {
@@ -740,69 +727,74 @@ export default function MarketplaceBoutiquePage() {
             </div>
 
             <div className="mt-4 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {stores.map((s) => (
-                <div
-                  key={s.id}
-                  className="group flex flex-col justify-between rounded-[24px] border border-[#eadfce] bg-white p-6 shadow-sm hover:border-[#9e001f] hover:shadow-md transition"
-                >
-                  <div>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff5f2] border border-[#f5d5d3] text-xl font-black text-[#9e001f]">
-                        🏪
+              {stores.map((s) => {
+                const sSlug = s.slug || generateStoreSlug(s.business_name);
+                const vSlug = (s as any).vendor_slug || "vendeur";
+                const fullStorePath = `/marketplace/boutique/${vSlug}/${sSlug}`;
+
+                return (
+                  <div
+                    key={s.id}
+                    className="group flex flex-col justify-between rounded-[24px] border border-[#eadfce] bg-white p-6 shadow-sm hover:border-[#9e001f] hover:shadow-md transition"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff5f2] border border-[#f5d5d3] text-xl font-black text-[#9e001f]">
+                          🏪
+                        </div>
+                        <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800">
+                          {s.certification_status === "certified" ? "✓ Certifiée" : "Active"}
+                        </span>
                       </div>
-                      <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800">
-                        {s.certification_status === "verified" ? "Vérifiée" : "Active"}
-                      </span>
+
+                      <h3 className="mt-4 font-display text-lg font-black text-[#2a211a] group-hover:text-[#9e001f] transition">
+                        {s.business_name}
+                      </h3>
+
+                      <p className="mt-1 text-xs text-[#806c58]">
+                        📍 {s.city ? `${s.city}, ` : ""}{s.country_code || "Afrique"} · {s.rating ? `⭐ ${s.rating}` : "Nouveau vendeur"}
+                      </p>
+
+                      <div className="mt-2.5 flex items-center gap-1.5 text-[11px] text-[#9e001f] bg-[#fff5f2] px-2.5 py-1 rounded-lg border border-[#f5d5d3] font-mono">
+                        <span className="truncate">{fullStorePath}</span>
+                      </div>
+
+                      <p className="mt-3 line-clamp-2 text-xs leading-5 text-[#725f4d]">
+                        {s.description || "Boutique officielle sur Envol Africa Marketplace."}
+                      </p>
+
+                      <div className="mt-4 flex items-center gap-2 rounded-xl bg-[#fffdfb] border border-[#eadfce] p-2.5 text-xs text-[#2a211a]">
+                        <span className="font-black text-[#9e001f]">{s.products_count ?? 0}</span>
+                        <span className="text-[#806c58]">produit(s) actuellement au catalogue</span>
+                      </div>
                     </div>
 
-                    <h3 className="mt-4 font-display text-lg font-black text-[#2a211a] group-hover:text-[#9e001f] transition">
-                      {s.business_name}
-                    </h3>
-
-                    <p className="mt-1 text-xs text-[#806c58]">
-                      📍 {s.city ? `${s.city}, ` : ""}{s.country_code || "Afrique"} · {s.rating ? `⭐ ${s.rating}` : "Nouveau vendeur"}
-                    </p>
-
-                    <p className="mt-3 line-clamp-2 text-xs leading-5 text-[#725f4d]">
-                      {s.description || "Boutique officielle sur Envol Africa Marketplace."}
-                    </p>
-
-                    <div className="mt-4 flex items-center gap-2 rounded-xl bg-[#fffdfb] border border-[#eadfce] p-2.5 text-xs text-[#2a211a]">
-                      <span className="font-black text-[#9e001f]">{s.products_count ?? 0}</span>
-                      <span className="text-[#806c58]">produit(s) actuellement au catalogue</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 space-y-2 pt-4 border-t border-[#f2e7d8]">
-                    <button
-                      type="button"
-                      onClick={() => void selectStore(s)}
-                      className="w-full rounded-full bg-[#9e001f] py-2.5 text-xs font-black text-white hover:bg-[#80001a] transition shadow-xs"
-                    >
-                      Gérer cette boutique →
-                    </button>
-
-                    <div className="flex items-center justify-between text-[11px] px-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void selectStore(s);
-                          switchSection("product");
-                        }}
-                        className="font-bold text-[#a36300] hover:underline"
-                      >
-                        + Publier un produit
-                      </button>
+                    <div className="mt-6 space-y-2 pt-4 border-t border-[#f2e7d8]">
                       <Link
-                        href={`/marketplace?fournisseur=${encodeURIComponent(s.business_name)}`}
-                        className="font-bold text-[#806c58] hover:text-[#9e001f] hover:underline"
+                        href={fullStorePath}
+                        className="block w-full text-center rounded-full bg-[#9e001f] py-2.5 text-xs font-black text-white hover:bg-[#80001a] transition shadow-xs"
                       >
-                        Vitrine client ↗
+                        Gérer cette boutique →
                       </Link>
+
+                      <div className="flex items-center justify-between text-[11px] px-1">
+                        <Link
+                          href={`${fullStorePath}`}
+                          className="font-bold text-[#a36300] hover:underline"
+                        >
+                          + Publier un produit
+                        </Link>
+                        <Link
+                          href={`${fullStorePath}?view=public`}
+                          className="font-bold text-[#806c58] hover:text-[#9e001f] hover:underline"
+                        >
+                          Vitrine client ↗
+                        </Link>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {/* Carte Ajouter une boutique */}
               <div

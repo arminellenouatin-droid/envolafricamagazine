@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { isPrismaConfigured, prisma } from "@/lib/prisma";
+import { generateStoreSlug, generateVendorSlug } from "@/lib/marketplace-slug";
 
 const CERTIFICATION_PRICE_XOF = 50000;
 
@@ -50,8 +51,14 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  const vendorSlug = generateVendorSlug(user);
+  const vendorName = `${user.prenom || ""} ${user.nom || ""}`.trim() || user.email?.split("@")[0] || "Vendeur";
+
   const storesWithStats = allStores.map((s) => ({
     ...s,
+    slug: generateStoreSlug(s.business_name),
+    vendor_slug: vendorSlug,
+    vendor_name: vendorName,
     products_count: countsMap[s.id] || 0,
   }));
 
@@ -156,9 +163,15 @@ export async function POST(request: NextRequest) {
       .select("id,user_id,business_name,description,country_code,city,certification_status,certification_expires_at,rating,created_at,updated_at")
       .single();
 
+    const vendorSlug = generateVendorSlug(user);
+    const vendorName = `${user.prenom || ""} ${user.nom || ""}`.trim() || user.email?.split("@")[0] || "Vendeur";
+
     if (updateErr) return NextResponse.json({ error: "Impossible de modifier la boutique." }, { status: 502 });
-    return NextResponse.json({ supplier: updated, certificationPriceXof: CERTIFICATION_PRICE_XOF });
+    return NextResponse.json({ supplier: { ...updated, slug: generateStoreSlug(updated.business_name), vendor_slug: vendorSlug, vendor_name: vendorName }, certificationPriceXof: CERTIFICATION_PRICE_XOF });
   }
+
+  const vendorSlug = generateVendorSlug(user);
+  const vendorName = `${user.prenom || ""} ${user.nom || ""}`.trim() || user.email?.split("@")[0] || "Vendeur";
 
   // Création d'une NOUVELLE boutique
   const { data, error } = await supabase
@@ -181,10 +194,10 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (fallbackErr) return NextResponse.json({ error: "Impossible d'enregistrer la boutique." }, { status: 502 });
-      return NextResponse.json({ supplier: fallback, certificationPriceXof: CERTIFICATION_PRICE_XOF }, { status: 201 });
+      return NextResponse.json({ supplier: { ...fallback, slug: generateStoreSlug(fallback.business_name), vendor_slug: vendorSlug, vendor_name: vendorName }, certificationPriceXof: CERTIFICATION_PRICE_XOF }, { status: 201 });
     }
     return NextResponse.json({ error: "Impossible d’enregistrer la boutique : " + error.message }, { status: 502 });
   }
 
-  return NextResponse.json({ supplier: data, certificationPriceXof: CERTIFICATION_PRICE_XOF }, { status: 201 });
+  return NextResponse.json({ supplier: { ...data, slug: generateStoreSlug(data.business_name), vendor_slug: vendorSlug, vendor_name: vendorName }, certificationPriceXof: CERTIFICATION_PRICE_XOF }, { status: 201 });
 }

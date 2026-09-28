@@ -67,23 +67,55 @@ export async function GET(request: NextRequest) {
     .filter((magazine) => !query || `${magazine.title} ${magazine.description} ${magazine.numero}`.toLowerCase().includes(query.toLowerCase()))
     .map(toMagazineMarketplaceProduct);
 
-  if (supabase && supplierId) {
+  if (supplierId) {
+    if (!supabase) {
+      return NextResponse.json({ products: [], page: 0, hasMore: false, source: "none" });
+    }
     const requestQuery = supabase
       .from("marketplace_products")
-      .select("id,title,description,category,country_code,city,price_xof,stock_quantity,media,product_video_url,product_video_mime,product_video_size,product_type,delivery_type,installment_enabled,installment_months_max,is_boosted,boost_ends_at,status,supplier_id,marketplace_suppliers!inner(business_name,certification_status,rating),product_affiliations(id,commission_rate,is_active)")
+      .select("id,title,description,category,country_code,city,price_xof,stock_quantity,media,product_video_url,product_video_mime,product_video_size,product_type,delivery_type,installment_enabled,installment_months_max,is_boosted,boost_ends_at,status,supplier_id,marketplace_suppliers!inner(business_name,certification_status,rating)")
       .eq("supplier_id", supplierId)
       .order("created_at", { ascending: false })
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
     const { data, error } = await requestQuery;
-    if (!error && data) {
-      return NextResponse.json({ products: data, page, hasMore: data.length === PAGE_SIZE, source: "supabase" });
+    if (error) {
+      return NextResponse.json({ products: [], page: 0, hasMore: false, error: error.message }, { status: 500 });
     }
+    const loadedProducts = data || [];
+    if (loadedProducts.length > 0) {
+      try {
+        const productIds = loadedProducts.map((p) => p.id);
+        const { data: affData } = await supabase
+          .from("product_affiliations")
+          .select("id,product_id,commission_rate,is_active")
+          .in("product_id", productIds);
+        if (affData) {
+          const affMap = new Map<string, Array<{ id: string; commission_rate: number; is_active: boolean }>>();
+          for (const aff of affData) {
+            if (!affMap.has(aff.product_id)) affMap.set(aff.product_id, []);
+            affMap.get(aff.product_id)!.push(aff);
+          }
+          for (const p of loadedProducts as any[]) {
+            p.product_affiliations = affMap.get(p.id) || [];
+          }
+        }
+      } catch {
+        // Silently skip
+      }
+    }
+    // RETOUR STRICT POUR LA BOUTIQUE DEMANDÉE (AUCUN DÉVERSEMENT SUR LES SEEDS/MAGAZINES)
+    return NextResponse.json({
+      products: loadedProducts,
+      page,
+      hasMore: loadedProducts.length === PAGE_SIZE,
+      source: "supabase",
+    });
   }
 
   if (supabase && category !== MAGAZINE_MARKETPLACE_CATEGORY) {
     let requestQuery = supabase
       .from("marketplace_products")
-      .select("id,title,description,category,country_code,city,price_xof,media,product_video_url,product_video_mime,product_video_size,product_type,delivery_type,installment_enabled,installment_months_max,is_boosted,boost_ends_at,marketplace_suppliers!inner(business_name,certification_status,rating),product_affiliations(id,commission_rate,is_active)")
+      .select("id,title,description,category,country_code,city,price_xof,media,product_video_url,product_video_mime,product_video_size,product_type,delivery_type,installment_enabled,installment_months_max,is_boosted,boost_ends_at,marketplace_suppliers!inner(business_name,certification_status,rating)")
       .eq("status", "published")
       .order("is_boosted", { ascending: false })
       .order("created_at", { ascending: false })
@@ -94,6 +126,25 @@ export async function GET(request: NextRequest) {
     if (country) requestQuery = requestQuery.eq("country_code", country);
     const { data, error } = await requestQuery;
     if (!error && data && data.length > 0) {
+      try {
+        const productIds = data.map((p) => p.id);
+        const { data: affData } = await supabase
+          .from("product_affiliations")
+          .select("id,product_id,commission_rate,is_active")
+          .in("product_id", productIds);
+        if (affData) {
+          const affMap = new Map<string, Array<{ id: string; commission_rate: number; is_active: boolean }>>();
+          for (const aff of affData) {
+            if (!affMap.has(aff.product_id)) affMap.set(aff.product_id, []);
+            affMap.get(aff.product_id)!.push(aff);
+          }
+          for (const p of data as any[]) {
+            p.product_affiliations = affMap.get(p.id) || [];
+          }
+        }
+      } catch {
+        // Silently skip
+      }
       const merged = page === 0 ? [...magazineProducts, ...data].slice(0, PAGE_SIZE) : data;
       return NextResponse.json({ products: merged, page, hasMore: data.length === PAGE_SIZE || magazineProducts.length > PAGE_SIZE, source: "supabase" });
     }
