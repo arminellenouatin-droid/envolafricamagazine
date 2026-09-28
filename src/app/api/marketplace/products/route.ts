@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
   const { getCurrentUserFromCookie } = await import("@/lib/auth");
   const user = await getCurrentUserFromCookie();
   if (!user) return NextResponse.json({ error: "Connexion requise." }, { status: 401 });
-  const body = await request.json().catch(() => null) as { title?: string; description?: string; category?: string; countryCode?: string; city?: string; priceXof?: number; stockQuantity?: number; media?: unknown[]; installmentEnabled?: boolean; installmentMonthsMax?: number; productType?: string; deliveryType?: string; digitalFileUrl?: string; digitalExternalUrl?: string; digitalAccessInstructions?: string; digitalDownloadLimit?: number; serviceDurationMinutes?: number; trainingAccessDays?: number; enableAffiliation?: boolean; affiliationRate?: number; status?: string } | null;
+  const body = await request.json().catch(() => null) as { title?: string; description?: string; category?: string; countryCode?: string; city?: string; priceXof?: number; stockQuantity?: number; media?: unknown[]; installmentEnabled?: boolean; installmentMonthsMax?: number; productType?: string; deliveryType?: string; digitalFileUrl?: string; digitalExternalUrl?: string; digitalAccessInstructions?: string; digitalDownloadLimit?: number; serviceDurationMinutes?: number; trainingAccessDays?: number; enableAffiliation?: boolean; affiliationRate?: number; status?: string; supplierId?: string } | null;
   const allowedTypes = ["physical", "service", "training", "digital", "downloadable"];
   const allowedDelivery = ["shipping", "online", "download", "external_link"];
   const productType = allowedTypes.includes(body?.productType || "") ? body?.productType : "physical";
@@ -19,14 +19,24 @@ export async function POST(request: NextRequest) {
   if (!body || typeof body.title !== "string" || body.title.trim().length < 3 || body.title.length > 180 || typeof body.category !== "string" || !Number.isInteger(body.priceXof) || Number(body.priceXof) < 100 || !Number.isInteger(body.stockQuantity) || Number(body.stockQuantity) < 0 || (requiresDigital && deliveryType === "download" && !body.digitalFileUrl && !body.digitalExternalUrl) || (deliveryType === "external_link" && !body.digitalExternalUrl)) return NextResponse.json({ error: "Informations produit invalides. Les produits payants doivent être d’au moins 100 XOF et un produit numérique doit avoir un fichier ou un lien de livraison." }, { status: 400 });
   const supabase = getSupabaseAdmin();
   if (!supabase) return NextResponse.json({ error: "Catalogue temporairement indisponible." }, { status: 503 });
-  const { data: supplier, error: supplierError } = await supabase.from("marketplace_suppliers").select("id").eq("user_id", user.id).single();
-  if (supplierError || !supplier) return NextResponse.json({ error: "Créez d’abord votre boutique fournisseur." }, { status: 403 });
-  const slug = `${body.title.trim().toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${Date.now().toString(36)}`;
+
+  let targetSupplierId = body?.supplierId;
+  if (targetSupplierId) {
+    const { data: s } = await supabase.from("marketplace_suppliers").select("id").eq("id", targetSupplierId).eq("user_id", user.id).maybeSingle();
+    if (!s) return NextResponse.json({ error: "Boutique sélectionnée introuvable." }, { status: 403 });
+    targetSupplierId = s.id;
+  } else {
+    const { data: s } = await supabase.from("marketplace_suppliers").select("id").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (!s) return NextResponse.json({ error: "Créez d’abord votre boutique fournisseur." }, { status: 403 });
+    targetSupplierId = s.id;
+  }
+
+  const slug = `${body.title.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${Date.now().toString(36)}`;
   const media = Array.isArray(body.media) ? body.media.slice(0, 20) : [];
   const installmentEnabled = Boolean(body.installmentEnabled);
   const months = installmentEnabled ? Math.min(12, Math.max(1, Number(body.installmentMonthsMax) || 1)) : null;
   const initialStatus = body.status === "draft" ? "draft" : "published";
-  const { data, error } = await supabase.from("marketplace_products").insert({ supplier_id: supplier.id, title: body.title.trim(), slug, description: typeof body.description === "string" ? body.description.trim().slice(0, 6000) : null, category: body.category.trim().slice(0, 100), country_code: typeof body.countryCode === "string" ? body.countryCode.slice(0, 2).toUpperCase() : null, city: typeof body.city === "string" ? body.city.trim().slice(0, 120) : null, price_xof: body.priceXof, stock_quantity: body.stockQuantity, media, status: initialStatus, installment_enabled: installmentEnabled, installment_months_max: months, product_type: productType, delivery_type: deliveryType, digital_file_url: typeof body.digitalFileUrl === "string" ? body.digitalFileUrl.trim().slice(0, 2000) : null, digital_external_url: typeof body.digitalExternalUrl === "string" ? body.digitalExternalUrl.trim().slice(0, 2000) : null, digital_access_instructions: typeof body.digitalAccessInstructions === "string" ? body.digitalAccessInstructions.trim().slice(0, 4000) : null, digital_download_limit: Math.min(50, Math.max(1, Number(body.digitalDownloadLimit) || 5)), service_duration_minutes: Number.isInteger(body.serviceDurationMinutes) ? body.serviceDurationMinutes : null, training_access_days: Number.isInteger(body.trainingAccessDays) ? body.trainingAccessDays : null }).select("id,slug,title,status,product_type,delivery_type,created_at").single();
+  const { data, error } = await supabase.from("marketplace_products").insert({ supplier_id: targetSupplierId, title: body.title.trim(), slug, description: typeof body.description === "string" ? body.description.trim().slice(0, 6000) : null, category: body.category.trim().slice(0, 100), country_code: typeof body.countryCode === "string" ? body.countryCode.slice(0, 2).toUpperCase() : null, city: typeof body.city === "string" ? body.city.trim().slice(0, 120) : null, price_xof: body.priceXof, stock_quantity: body.stockQuantity, media, status: initialStatus, installment_enabled: installmentEnabled, installment_months_max: months, product_type: productType, delivery_type: deliveryType, digital_file_url: typeof body.digitalFileUrl === "string" ? body.digitalFileUrl.trim().slice(0, 2000) : null, digital_external_url: typeof body.digitalExternalUrl === "string" ? body.digitalExternalUrl.trim().slice(0, 2000) : null, digital_access_instructions: typeof body.digitalAccessInstructions === "string" ? body.digitalAccessInstructions.trim().slice(0, 4000) : null, digital_download_limit: Math.min(50, Math.max(1, Number(body.digitalDownloadLimit) || 5)), service_duration_minutes: Number.isInteger(body.serviceDurationMinutes) ? body.serviceDurationMinutes : null, training_access_days: Number.isInteger(body.trainingAccessDays) ? body.trainingAccessDays : null }).select("id,slug,title,status,product_type,delivery_type,created_at").single();
   if (error) return NextResponse.json({ error: "Impossible de publier le produit." }, { status: 502 });
 
   if (body.enableAffiliation) {
@@ -121,21 +131,17 @@ export async function PATCH(request: NextRequest) {
   const productId = body?.productId;
   if (!productId) return NextResponse.json({ error: "ID produit manquant." }, { status: 400 });
 
-  // Vérifier que le vendeur est bien propriétaire de la boutique et du produit
-  const { data: supplier, error: supplierError } = await supabase
-    .from("marketplace_suppliers")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-
-  if (supplierError || !supplier) return NextResponse.json({ error: "Boutique introuvable." }, { status: 403 });
+  // Vérifier que le vendeur est bien propriétaire du produit via l'une de ses boutiques
+  const { data: userStores } = await supabase.from("marketplace_suppliers").select("id").eq("user_id", user.id);
+  const storeIds = (userStores || []).map((s) => s.id);
+  if (storeIds.length === 0) return NextResponse.json({ error: "Boutique introuvable." }, { status: 403 });
 
   const { data: product, error: productError } = await supabase
     .from("marketplace_products")
-    .select("id, status")
+    .select("id, status, supplier_id")
     .eq("id", productId)
-    .eq("supplier_id", supplier.id)
-    .single();
+    .in("supplier_id", storeIds)
+    .maybeSingle();
 
   if (productError || !product) return NextResponse.json({ error: "Produit introuvable ou non autorisé." }, { status: 404 });
 
@@ -154,8 +160,7 @@ export async function PATCH(request: NextRequest) {
     const { error: updateError } = await supabase
       .from("marketplace_products")
       .update(updates)
-      .eq("id", productId)
-      .eq("supplier_id", supplier.id);
+      .eq("id", productId);
 
     if (updateError) return NextResponse.json({ error: "Erreur lors de la mise à jour." }, { status: 502 });
   }
@@ -188,19 +193,15 @@ export async function DELETE(request: NextRequest) {
   const productId = searchParams.get("id");
   if (!productId) return NextResponse.json({ error: "ID produit manquant." }, { status: 400 });
 
-  const { data: supplier, error: supplierError } = await supabase
-    .from("marketplace_suppliers")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-
-  if (supplierError || !supplier) return NextResponse.json({ error: "Boutique introuvable." }, { status: 403 });
+  const { data: userStores } = await supabase.from("marketplace_suppliers").select("id").eq("user_id", user.id);
+  const storeIds = (userStores || []).map((s) => s.id);
+  if (storeIds.length === 0) return NextResponse.json({ error: "Boutique introuvable." }, { status: 403 });
 
   const { error: deleteError } = await supabase
     .from("marketplace_products")
     .delete()
     .eq("id", productId)
-    .eq("supplier_id", supplier.id);
+    .in("supplier_id", storeIds);
 
   if (deleteError) {
     // Si lié à une commande ou clé étrangère, archiver au lieu de bloquer
@@ -208,7 +209,7 @@ export async function DELETE(request: NextRequest) {
       .from("marketplace_products")
       .update({ status: "archived", updated_at: new Date().toISOString() })
       .eq("id", productId)
-      .eq("supplier_id", supplier.id);
+      .in("supplier_id", storeIds);
     return NextResponse.json({ success: true, message: "Produit retiré du catalogue (archivé pour l'historique)." });
   }
 

@@ -23,7 +23,9 @@ const RLS_SQL = [
   "REVOKE ALL ON public.affiliate_product_wallets FROM anon, authenticated;",
   "REVOKE ALL ON public.product_affiliations FROM anon, authenticated;",
   "REVOKE ALL ON public.marketplace_commissions FROM anon, authenticated;",
-  "REVOKE ALL ON public.marketplace_download_tokens FROM anon, authenticated;"
+  "REVOKE ALL ON public.marketplace_download_tokens FROM anon, authenticated;",
+  "ALTER TABLE IF EXISTS public.marketplace_suppliers DROP CONSTRAINT IF EXISTS marketplace_suppliers_user_id_key;",
+  "CREATE INDEX IF NOT EXISTS idx_marketplace_suppliers_user_id ON public.marketplace_suppliers(user_id);"
 ];
 
 export async function POST(req: NextRequest) {

@@ -1,36 +1,62 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const user = await getCurrentUserFromCookie();
   if (!user) return NextResponse.json({ error: "Connexion requise." }, { status: 401 });
   const supabase = getSupabaseAdmin();
   if (!supabase) return NextResponse.json({ error: "Service indisponible." }, { status: 503 });
 
-  const { data: supplier, error: supplierError } = await supabase
+  const { data: userStores, error: storesError } = await supabase
     .from("marketplace_suppliers")
-    .select("id, business_name, rating, certification_status")
+    .select("id, business_name, rating, certification_status, country_code, city, created_at")
     .eq("user_id", user.id)
-    .maybeSingle();
+    .order("created_at", { ascending: false });
 
-  if (supplierError || !supplier) {
-    return NextResponse.json({ hasStore: false, stats: null });
+  if (storesError || !userStores || userStores.length === 0) {
+    return NextResponse.json({ hasStore: false, stats: null, stores: [] });
   }
 
-  // Fetch orders for this supplier
-  const { data: orders } = await supabase
+  const storeIdParam = request.nextUrl.searchParams.get("storeId") || request.nextUrl.searchParams.get("supplierId");
+  const allStoreIds = userStores.map((s) => s.id);
+
+  let targetStoreIds: string[] = allStoreIds;
+  let activeSupplier = userStores[0];
+
+  if (storeIdParam && storeIdParam !== "all") {
+    const found = userStores.find((s) => s.id === storeIdParam);
+    if (found) {
+      activeSupplier = found;
+      targetStoreIds = [found.id];
+    }
+  }
+
+  // Fetch orders for targeted store(s)
+  let ordersQuery = supabase
     .from("marketplace_orders")
     .select("id, product_id, total_xof, payment_mode, status, created_at, marketplace_products(title, price_xof)")
-    .eq("supplier_id", supplier.id)
     .order("created_at", { ascending: false })
     .limit(100);
 
+  if (targetStoreIds.length === 1) {
+    ordersQuery = ordersQuery.eq("supplier_id", targetStoreIds[0]);
+  } else {
+    ordersQuery = ordersQuery.in("supplier_id", targetStoreIds);
+  }
+  const { data: orders } = await ordersQuery;
+
   // Fetch product counts
-  const { data: products } = await supabase
+  let productsQuery = supabase
     .from("marketplace_products")
-    .select("id, title, price_xof, status, stock_quantity, is_boosted")
-    .eq("supplier_id", supplier.id);
+    .select("id, title, price_xof, status, stock_quantity, is_boosted");
+
+  if (targetStoreIds.length === 1) {
+    productsQuery = productsQuery.eq("supplier_id", targetStoreIds[0]);
+  } else {
+    productsQuery = productsQuery.in("supplier_id", targetStoreIds);
+  }
+  const { data: products } = await productsQuery;
 
   const orderList = orders || [];
   const productList = products || [];
@@ -47,7 +73,9 @@ export async function GET() {
 
   return NextResponse.json({
     hasStore: true,
-    supplier,
+    supplier: activeSupplier,
+    stores: userStores,
+    isAllStores: targetStoreIds.length > 1,
     stats: {
       totalRevenueXof,
       pendingRevenueXof,
