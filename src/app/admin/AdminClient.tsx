@@ -22,13 +22,96 @@ const LANDING_ARTICLE_TAGS = ["Fil d’infos Image", "Fil d’infos Titres", "Ma
 type ManagedLandingItem = { id: string; title: string; description?: string; mediaUrl?: string; mediaType?: "image" | "video" | "youtube"; href?: string; date?: string; location?: string };
 const youtubeVideoId = (value: string) => { const match = value.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/i); return match?.[1] || ""; };
 
-const adminPlatforms: Array<{ id: AdminPlatform; label: string; accent: string; description: string; href: string; modules: string[] }> = [
-  { id: "magazine", label: "Magazine", accent: "#9e001f", description: "Articles, éditions, abonnements, commandes et KPI éditoriaux.", href: "/admin", modules: ["Articles", "Magazines", "Abonnements", "Commandes", "Affiliation", "KPI"] },
-  { id: "jobs", label: "Jobs", accent: "#087e8b", description: "Offres, candidats, entreprises, abonnements et modération.", href: "/emploi/admin", modules: ["Offres", "Candidats", "Entreprises", "Abonnements", "Modération"] },
-  { id: "wab", label: "WAB", accent: "#006874", description: "Publications, Salons en direct, modération, récompenses et retraits.", href: "/wab/admin", modules: ["Salons & Directs", "Publications", "Signalements", "Profils", "Campagnes", "Récompenses"] },
-  { id: "marketplace", label: "Marketplace", accent: "#7c3aed", description: "Vendeurs, produits, commandes, commissions, litiges et versements.", href: "/marketplace/admin", modules: ["Vendeurs", "Produits", "Commandes", "Commissions", "Litiges", "Versements"] },
-  { id: "financement", label: "Crowdfunding", accent: "#b45309", description: "Projets, investisseurs, documents, paiements et remboursements.", href: "/admin/crowdfunding", modules: ["Projets soumis", "Validation", "Investisseurs", "Documents", "Paiements", "Remboursements"] },
-  { id: "awards", label: "Africa Awards", accent: "#b5832f", description: "Compétitions, inscriptions, candidatures, nominés, votes, animateurs et lives.", href: "/africa-awards/admin/dashboard", modules: ["Créer une compétition", "Ouvrir les inscriptions", "Valider les candidatures", "Nominés et votes", "Animateurs et lives", "Paiements Awards"] },
+type AdminModule = { label: string; href: string; detail: string };
+
+const adminPlatforms: Array<{ id: AdminPlatform; label: string; accent: string; description: string; href: string; modules: AdminModule[] }> = [
+  {
+    id: "magazine",
+    label: "Magazine",
+    accent: "#9e001f",
+    description: "Articles, éditions, abonnements, commandes et KPI éditoriaux.",
+    href: "/admin",
+    modules: [
+      { label: "Articles & Rédaction", href: "/admin", detail: "Rédiger, publier et traduire les articles du magazine." },
+      { label: "Éditions & Magazines", href: "/admin", detail: "Gérer les parutions, PDF protégés et couvertures." },
+      { label: "Abonnements", href: "/admin", detail: "Gérer les formules d'abonnement et lecteurs abonnés." },
+      { label: "Commandes Magazines", href: "/admin", detail: "Suivre les achats individuels et abonnements payés." },
+      { label: "Affiliation Réseau", href: "/admin", detail: "Arbre de parrainage, commissions et demandes de retrait." },
+      { label: "KPIs Éditoriaux", href: "/admin", detail: "Performances de lecture, vues et engagement." },
+    ],
+  },
+  {
+    id: "jobs",
+    label: "Jobs",
+    accent: "#087e8b",
+    description: "Offres, candidats, entreprises, abonnements et modération.",
+    href: "/emploi/admin",
+    modules: [
+      { label: "Modération des offres", href: "/emploi/admin", detail: "Valider ou suspendre les offres d'emploi déposées." },
+      { label: "Modération des candidats", href: "/emploi/admin", detail: "Contrôler les CV et profils de candidats publics." },
+      { label: "Publier une offre officielle", href: "/emploi/publier-offre", detail: "Créer une offre d'emploi ou de stage directement." },
+      { label: "Banque de profils candidats", href: "/emploi/candidats", detail: "Consulter l'annuaire des talents africains." },
+      { label: "Abonnements & Forfaits", href: "/emploi/abonnements", detail: "Formules recruteurs et options de boost des offres." },
+    ],
+  },
+  {
+    id: "wab",
+    label: "WAB",
+    accent: "#006874",
+    description: "Publications, Salons en direct, modération, récompenses et retraits.",
+    href: "/wab/admin",
+    modules: [
+      { label: "Salons & Directs", href: "/wab/admin", detail: "Superviser les lives, régie de battle et diffusions actives." },
+      { label: "Publications & Flux", href: "/wab/admin", detail: "Modérer les posts, photos, vidéos et stories." },
+      { label: "Signalements & Sanctions", href: "/wab/admin", detail: "Traiter les signalements de contenus et comportements." },
+      { label: "Profils & Créateurs", href: "/wab/admin", detail: "Badges de vérification et statut des créateurs." },
+      { label: "Récompenses & Retraits", href: "/wab/admin", detail: "Gérer le taux du coin WAB, cadeaux et retraits Mobile Money." },
+    ],
+  },
+  {
+    id: "marketplace",
+    label: "Marketplace",
+    accent: "#7c3aed",
+    description: "Vendeurs, produits, commandes, commissions, litiges et versements.",
+    href: "/marketplace/admin",
+    modules: [
+      { label: "Vendeurs & Boutiques", href: "/marketplace/admin?tab=suppliers", detail: "Gérer les fournisseurs, les boutiques et les certifications officielles." },
+      { label: "Produits & Modération", href: "/marketplace/admin?tab=products", detail: "Examiner les produits, catégories, prix, stocks et offres." },
+      { label: "Commandes & Séquestre", href: "/marketplace/admin?tab=orders", detail: "Suivre les paiements encaissés, fonds bloqués et livraisons." },
+      { label: "Arbitrage des Litiges", href: "/marketplace/admin?tab=disputes", detail: "Trancher les litiges acheteurs/vendeurs et libérer les fonds." },
+      { label: "Boosts & Visibilité", href: "/marketplace/admin?tab=boosts", detail: "Suivre les packs de mise en avant souscrits par les vendeurs." },
+      { label: "Commissions & Retraits", href: "/compte?platform=marketplace", detail: "Contrôler le montant brut, la commission Envol Africa et le net vendeur." },
+    ],
+  },
+  {
+    id: "financement",
+    label: "Crowdfunding",
+    accent: "#b45309",
+    description: "Projets, investisseurs, documents, paiements et remboursements.",
+    href: "/admin/crowdfunding",
+    modules: [
+      { label: "Projets à valider", href: "/admin/crowdfunding?statut=en_attente_validation", detail: "Examiner et valider les projets de financement soumis." },
+      { label: "Campagnes en cours", href: "/admin/crowdfunding?statut=en_cours", detail: "Suivre les levées de fonds et montants collectés." },
+      { label: "Dashboard Financement", href: "/financement/dashboard", detail: "Vue analytique des flux d'investissement participatif." },
+      { label: "Espace Investisseurs", href: "/financement/dashboard/investisseur", detail: "Suivi des investisseurs et contributions." },
+      { label: "Espace Porteurs de projets", href: "/financement/dashboard/porteur", detail: "Accompagnement et pièces justificatives des porteurs." },
+    ],
+  },
+  {
+    id: "awards",
+    label: "Africa Awards",
+    accent: "#b5832f",
+    description: "Compétitions, inscriptions, candidatures, nominés, votes, animateurs et lives.",
+    href: "/africa-awards/admin/dashboard",
+    modules: [
+      { label: "Dashboard Général", href: "/africa-awards/admin/dashboard", detail: "Vue d'ensemble des compétitions, votes et candidats réels." },
+      { label: "Créer une compétition", href: "/africa-awards/admin/dashboard/competitions/new", detail: "Lancer une nouvelle compétition ou édition Awards." },
+      { label: "Gérer les compétitions", href: "/africa-awards/admin/dashboard/competitions", detail: "Cycle de vie, ouverture des votes et clôture." },
+      { label: "Validation des demandes", href: "/africa-awards/admin/dashboard/requests", detail: "Examiner les demandes des organisateurs et animateurs." },
+      { label: "Valider les candidatures", href: "/africa-awards/admin/dashboard/applications", detail: "Examiner les dossiers et promouvoir en nominés officiels." },
+      { label: "Sponsors & Partenaires", href: "/africa-awards/admin/dashboard/sponsors", detail: "Gérer la régie publicitaire et partenaires des Awards." },
+    ],
+  },
 ];
 
 function LandingManagedContent({ blockKey, title, description, items, onChange }: { blockKey: string; title: string; description: string; items: ManagedLandingItem[]; onChange: (items: ManagedLandingItem[]) => void }) {
@@ -55,12 +138,46 @@ function PlatformAdminLanding({ platform, user }: { platform: AdminPlatform; use
     <div className="space-y-6">
       <section className="overflow-hidden rounded-[24px] p-7 text-white shadow-lg" style={{ background: `linear-gradient(135deg, ${config.accent}, #0A1931)` }}>
         <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-          <div><p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/70">Projet administré</p><h1 className="mt-2 text-3xl font-black">Administration {config.label}</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-white/80">{config.description} Cette vue est préparée pour {user?.prenom || "l’équipe"} et son niveau de permission <strong>{user?.role || "staff"}</strong>.</p></div>
-          <Link href={config.href} className="inline-flex h-11 items-center justify-center rounded-full bg-white px-5 text-xs font-black text-[#0A1931] shadow-sm">Ouvrir le module opérationnel →</Link>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/70">Plateforme administrée</p>
+            <h1 className="mt-2 text-3xl font-black">Administration {config.label}</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/80">
+              {config.description} Cette vue est configurée pour {user?.prenom || "l’équipe"} ({user?.role || "administrateur"}).
+            </p>
+          </div>
+          <Link href={config.href} className="inline-flex h-11 items-center justify-center rounded-full bg-white px-5 text-xs font-black text-[#0A1931] shadow-sm hover:bg-zinc-100 transition">
+            Ouvrir le module opérationnel →
+          </Link>
         </div>
       </section>
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {config.modules.map((module, index) => <div key={module} className="rounded-[18px] border border-zinc-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Module {String(index + 1).padStart(2, "0")}</span><span className="grid h-8 w-8 place-items-center rounded-full text-xs font-black text-white" style={{ backgroundColor: config.accent }}>{index + 1}</span></div><h2 className="mt-4 text-base font-black text-[#0A1931]">{module}</h2><p className="mt-2 text-xs leading-5 text-zinc-600">Espace de pilotage prévu dans la verticale {config.label}, avec contrôle des droits et traçabilité des actions.</p><span className="mt-4 inline-flex rounded-full bg-zinc-100 px-3 py-1 text-[10px] font-bold text-zinc-500">À connecter / vérifier</span></div>)}
+        {config.modules.map((module, index) => (
+          <div key={module.label} className="flex flex-col justify-between rounded-[20px] border border-zinc-200 bg-white p-5 shadow-sm hover:border-[#9e001f] transition">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
+                  Module {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="grid h-7 w-7 place-items-center rounded-full text-[11px] font-black text-white" style={{ backgroundColor: config.accent }}>
+                  {index + 1}
+                </span>
+              </div>
+              <h2 className="mt-3 text-base font-black text-[#0A1931]">{module.label}</h2>
+              <p className="mt-1 text-xs leading-5 text-zinc-600">{module.detail}</p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between">
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                ✓ Connecté
+              </span>
+              <Link
+                href={module.href}
+                className="inline-flex items-center gap-1 rounded-full bg-[#0A1931] text-white px-3.5 py-1.5 text-xs font-bold hover:bg-[#9e001f] transition"
+              >
+                Gérer →
+              </Link>
+            </div>
+          </div>
+        ))}
       </section>
     </div>
   );

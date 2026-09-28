@@ -1,33 +1,69 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUserFromCookie } from "@/lib/auth";
+import MarketplaceAdminClient from "./MarketplaceAdminClient";
 
-const modules = [
-  ["Vendeurs et boutiques", "Gérer les fournisseurs, les boutiques, les certifications et les statuts de validation.", "/marketplace/boutique"],
-  ["Produits et modération", "Examiner les produits, catégories, médias, prix, stocks et demandes de publication.", "/marketplace/boutique#catalogue"],
-  ["Commandes et fonds bloqués", "Suivre les paiements encaissés par Envol Africa, les confirmations de réception et les litiges.", "/marketplace/commandes"],
-  ["Commissions Marketplace", "Configurer le taux de commission et contrôler le montant brut, la commission et le net vendeur.", "/compte?platform=marketplace"],
-  ["Demandes de versement", "Valider ou refuser les demandes de versement lorsque le client a confirmé la réception.", "/marketplace/commandes#versements"],
-  ["Affiliation Marketplace", "Suivre l’attribution et les commissions d’affiliation propres aux transactions Marketplace.", "/compte?platform=marketplace&tab=affiliation"],
-];
+export const dynamic = "force-dynamic";
 
-export default async function MarketplaceAdminPage({ searchParams }: { searchParams?: Promise<{ section?: string }> }) {
+export default async function MarketplaceAdminPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ tab?: string; section?: string }>;
+}) {
   const user = await getCurrentUserFromCookie();
   if (!user) redirect("/auth/login?next=/marketplace/admin");
-  const params = searchParams ? await searchParams : {};
-  if (!["admin", "gerant"].includes(user.role)) {
-    const targetSection = params?.section || "products";
-    redirect(`/marketplace/boutique?section=${encodeURIComponent(targetSection)}`);
+
+  if (!["admin", "administrateur", "gerant"].includes(user.role)) {
+    redirect("/marketplace");
   }
 
-  return <main className="min-h-screen bg-[#FFFCF5] px-4 py-10 sm:px-8">
-    <div className="mx-auto max-w-6xl">
-      <div className="rounded-[28px] bg-[#0A1931] p-8 text-white shadow-xl">
-        <p className="text-xs font-black uppercase tracking-[0.2em] text-white/60">Espace administrateur</p>
-        <h1 className="mt-3 text-3xl font-black">Administration Marketplace</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-white/75">Un espace dédié au pilotage des vendeurs, produits, commandes, commissions et versements. Les comptes et sessions restent communs à toute la plateforme, mais les données affichées ici sont exclusivement Marketplace.</p>
+  const params = searchParams ? await searchParams : {};
+  const requestedTab = (params?.tab || params?.section || "suppliers") as any;
+
+  return (
+    <main className="min-h-screen bg-[#fcf9f8] px-4 py-8 text-[#2a211a] sm:px-6 md:px-10 lg:px-16">
+      <div className="mx-auto max-w-7xl">
+        {/* Navigation retour administration générale */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <Link
+            href="/admin"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#9e001f] hover:underline"
+          >
+            ← Retour à l&apos;Administration Générale
+          </Link>
+
+          <div className="flex items-center gap-3">
+            <span className="rounded-full bg-[#0A1931] text-white px-3 py-1 text-xs font-black">
+              Session Admin · {user.prenom || user.email}
+            </span>
+            <Link
+              href="/marketplace"
+              target="_blank"
+              className="rounded-full border border-zinc-200 bg-white px-3.5 py-1 text-xs font-bold text-zinc-700 hover:bg-zinc-50"
+            >
+              Voir le Marketplace ↗
+            </Link>
+          </div>
+        </div>
+
+        {/* Hero Bannière */}
+        <div className="mt-6 rounded-[28px] bg-[#0A1931] p-6 text-white md:p-8 shadow-xl">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ffca63]/20 px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-[#ffca63]">
+            🛡️ Module Marketplace Officiel
+          </span>
+          <h1 className="mt-3 font-display text-2xl font-black md:text-3xl">
+            Supervision & Administration Marketplace
+          </h1>
+          <p className="mt-2 max-w-3xl text-xs sm:text-sm leading-6 text-white/75">
+            Pilotez l&apos;ensemble des boutiques, vendeurs, produits, commandes, livraisons, fonds sous séquestre et litiges à l&apos;échelle panafricaine.
+          </p>
+        </div>
+
+        {/* Client Dashboard */}
+        <div className="mt-6">
+          <MarketplaceAdminClient initialTab={requestedTab} />
+        </div>
       </div>
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{modules.map(([title, detail, href]) => <section key={title} className="rounded-[22px] border border-zinc-200 bg-white p-6 shadow-sm"><h2 className="font-black text-[#0A1931]">{title}</h2><p className="mt-3 text-sm leading-6 text-zinc-600">{detail}</p><Link href={href} className="mt-5 inline-flex rounded-full bg-[#9e001f] px-4 py-2 text-xs font-black text-white">Ouvrir le module →</Link></section>)}</div>
-    </div>
-  </main>;
+    </main>
+  );
 }
