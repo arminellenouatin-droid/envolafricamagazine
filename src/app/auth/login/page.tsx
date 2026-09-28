@@ -26,10 +26,20 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const r = new URLSearchParams(window.location.search).get("redirect");
+      const sp = new URLSearchParams(window.location.search);
+      const r = sp.get("redirect") || sp.get("next");
       if (r) setRedirectParam(r);
+
+      fetch("/api/auth/me", { cache: "no-store" })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.user) {
+            router.replace(r || "/compte");
+          }
+        })
+        .catch(() => {});
     }
-  }, []);
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

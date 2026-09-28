@@ -7,14 +7,46 @@ const MONTHLY_PENALTY_RATE = 0.02;
 
 function addMonths(date: Date, months: number) { const next = new Date(date); next.setMonth(next.getMonth() + months); return next; }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const user = await getCurrentUserFromCookie();
   if (!user) return NextResponse.json({ error: "Connexion requise." }, { status: 401 });
   const supabase = getSupabaseAdmin();
   if (!supabase) return NextResponse.json({ error: "Commandes temporairement indisponibles." }, { status: 503 });
-  const { data, error } = await supabase.from("marketplace_orders").select("id,product_id,supplier_id,total_xof,payment_mode,status,received_at,created_at,updated_at,marketplace_installments(id,sequence_no,due_at,principal_xof,penalty_xof,paid_at,status)").eq("buyer_id", user.id).order("created_at", { ascending: false }).limit(50);
+
+  const role = request.nextUrl.searchParams.get("role");
+  const filter = request.nextUrl.searchParams.get("filter");
+
+  let supplierId: string | null = null;
+  if (role === "seller") {
+    const { data: supplier } = await supabase
+      .from("marketplace_suppliers")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!supplier) {
+      return NextResponse.json({ orders: [], penaltyRateMonthly: MONTHLY_PENALTY_RATE, isSupplier: false });
+    }
+    supplierId = supplier.id;
+  }
+
+  let query = supabase
+    .from("marketplace_orders")
+    .select("id,product_id,supplier_id,buyer_id,total_xof,payment_mode,status,received_at,created_at,updated_at,marketplace_products(title,price_xof,media),marketplace_installments(id,sequence_no,due_at,principal_xof,penalty_xof,paid_at,status)");
+
+  if (role === "seller" && supplierId) {
+    query = query.eq("supplier_id", supplierId);
+  } else {
+    query = query.eq("buyer_id", user.id);
+  }
+
+  if (filter === "installments") {
+    query = query.eq("payment_mode", "installment");
+  }
+
+  const { data, error } = await query.order("created_at", { ascending: false }).limit(50);
   if (error) return NextResponse.json({ error: "Impossible de charger les commandes." }, { status: 502 });
-  return NextResponse.json({ orders: data, penaltyRateMonthly: MONTHLY_PENALTY_RATE });
+  return NextResponse.json({ orders: data, penaltyRateMonthly: MONTHLY_PENALTY_RATE, isSupplier: Boolean(supplierId) });
 }
 
 export async function POST(request: NextRequest) {

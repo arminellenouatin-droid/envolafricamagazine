@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
   if (supabase && supplierId) {
     const requestQuery = supabase
       .from("marketplace_products")
-      .select("id,title,description,category,country_code,city,price_xof,media,product_video_url,product_video_mime,product_video_size,product_type,delivery_type,installment_enabled,installment_months_max,is_boosted,boost_ends_at,status,supplier_id,marketplace_suppliers!inner(business_name,certification_status,rating),product_affiliations(id,commission_rate,is_active)")
+      .select("id,title,description,category,country_code,city,price_xof,stock_quantity,media,product_video_url,product_video_mime,product_video_size,product_type,delivery_type,installment_enabled,installment_months_max,is_boosted,boost_ends_at,status,supplier_id,marketplace_suppliers!inner(business_name,certification_status,rating),product_affiliations(id,commission_rate,is_active)")
       .eq("supplier_id", supplierId)
       .order("created_at", { ascending: false })
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
@@ -100,4 +100,117 @@ export async function GET(request: NextRequest) {
   const start = page * PAGE_SIZE;
   const fallbackProducts = category === MAGAZINE_MARKETPLACE_CATEGORY ? magazineProducts : [...(page === 0 ? magazineProducts : []), ...filtered];
   return NextResponse.json({ products: fallbackProducts.slice(start, start + PAGE_SIZE), page, hasMore: start + PAGE_SIZE < fallbackProducts.length, source: "seed" });
+}
+
+export async function PATCH(request: NextRequest) {
+  const { getCurrentUserFromCookie } = await import("@/lib/auth");
+  const user = await getCurrentUserFromCookie();
+  if (!user) return NextResponse.json({ error: "Connexion requise." }, { status: 401 });
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return NextResponse.json({ error: "Catalogue temporairement indisponible." }, { status: 503 });
+
+  const body = (await request.json().catch(() => null)) as {
+    productId?: string;
+    stockQuantity?: number;
+    priceXof?: number;
+    status?: string;
+    enableAffiliation?: boolean;
+    affiliationRate?: number;
+  } | null;
+
+  const productId = body?.productId;
+  if (!productId) return NextResponse.json({ error: "ID produit manquant." }, { status: 400 });
+
+  // Vérifier que le vendeur est bien propriétaire de la boutique et du produit
+  const { data: supplier, error: supplierError } = await supabase
+    .from("marketplace_suppliers")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (supplierError || !supplier) return NextResponse.json({ error: "Boutique introuvable." }, { status: 403 });
+
+  const { data: product, error: productError } = await supabase
+    .from("marketplace_products")
+    .select("id, status")
+    .eq("id", productId)
+    .eq("supplier_id", supplier.id)
+    .single();
+
+  if (productError || !product) return NextResponse.json({ error: "Produit introuvable ou non autorisé." }, { status: 404 });
+
+  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (typeof body?.stockQuantity === "number" && body.stockQuantity >= 0) {
+    updates.stock_quantity = Math.floor(body.stockQuantity);
+  }
+  if (typeof body?.priceXof === "number" && body.priceXof >= 100) {
+    updates.price_xof = Math.floor(body.priceXof);
+  }
+  if (typeof body?.status === "string" && ["published", "draft"].includes(body.status)) {
+    updates.status = body.status;
+  }
+
+  if (Object.keys(updates).length > 1) {
+    const { error: updateError } = await supabase
+      .from("marketplace_products")
+      .update(updates)
+      .eq("id", productId)
+      .eq("supplier_id", supplier.id);
+
+    if (updateError) return NextResponse.json({ error: "Erreur lors de la mise à jour." }, { status: 502 });
+  }
+
+  if (typeof body?.enableAffiliation === "boolean") {
+    try {
+      const { enableProductAffiliation, disableProductAffiliation } = await import("@/lib/affiliation/marketplace");
+      if (body.enableAffiliation) {
+        const rate = typeof body.affiliationRate === "number" ? Math.min(0.5, Math.max(0.01, body.affiliationRate)) : 0.10;
+        await enableProductAffiliation({ productId, vendorId: user.id, commissionRate: rate });
+      } else {
+        await disableProductAffiliation({ productId, vendorId: user.id });
+      }
+    } catch (affErr) {
+      console.warn("Affiliation update error:", affErr);
+    }
+  }
+
+  return NextResponse.json({ success: true, message: "Produit mis à jour avec succès." });
+}
+
+export async function DELETE(request: NextRequest) {
+  const { getCurrentUserFromCookie } = await import("@/lib/auth");
+  const user = await getCurrentUserFromCookie();
+  if (!user) return NextResponse.json({ error: "Connexion requise." }, { status: 401 });
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return NextResponse.json({ error: "Catalogue temporairement indisponible." }, { status: 503 });
+
+  const { searchParams } = new URL(request.url);
+  const productId = searchParams.get("id");
+  if (!productId) return NextResponse.json({ error: "ID produit manquant." }, { status: 400 });
+
+  const { data: supplier, error: supplierError } = await supabase
+    .from("marketplace_suppliers")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (supplierError || !supplier) return NextResponse.json({ error: "Boutique introuvable." }, { status: 403 });
+
+  const { error: deleteError } = await supabase
+    .from("marketplace_products")
+    .delete()
+    .eq("id", productId)
+    .eq("supplier_id", supplier.id);
+
+  if (deleteError) {
+    // Si lié à une commande ou clé étrangère, archiver au lieu de bloquer
+    await supabase
+      .from("marketplace_products")
+      .update({ status: "archived", updated_at: new Date().toISOString() })
+      .eq("id", productId)
+      .eq("supplier_id", supplier.id);
+    return NextResponse.json({ success: true, message: "Produit retiré du catalogue (archivé pour l'historique)." });
+  }
+
+  return NextResponse.json({ success: true, message: "Produit supprimé avec succès." });
 }

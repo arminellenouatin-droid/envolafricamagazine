@@ -177,10 +177,10 @@ export const PLATFORM_CONFIGS: Record<PlatformKey, PlatformConfig> = {
         title: "Boutique & Produits",
         icon: "storefront",
         items: [
-          { label: "Créer un compte vendeur", href: "/auth/register?role=vendeur&next=/marketplace/boutique", icon: "person_add", description: "Devenez vendeur certifié Envol Africa" },
+          { label: "Créer un compte vendeur", href: "/marketplace/boutique?action=create-store", icon: "person_add", description: "Devenez vendeur certifié Envol Africa" },
           { label: "Créer / Gérer ma boutique", href: "/marketplace/boutique", icon: "store", description: "Paramétrez votre vitrine et coordonnées" },
           { label: "Publier un nouveau produit", href: "/marketplace/boutique?section=product", icon: "add_box", description: "Articles physiques, digitaux ou services" },
-          { label: "Gérer mes produits & stocks", href: "/marketplace/admin?section=products", icon: "inventory_2", description: "Catalogue, disponibilités et tarifs" },
+          { label: "Gérer mes produits & stocks", href: "/marketplace/boutique?section=products", icon: "inventory_2", description: "Catalogue, disponibilités et tarifs" },
         ],
       },
       {
@@ -189,7 +189,7 @@ export const PLATFORM_CONFIGS: Record<PlatformKey, PlatformConfig> = {
         items: [
           { label: "Booster mes produits", href: "/marketplace/boutique?section=boost", icon: "rocket_launch", description: "Mettez vos produits en avant dans les rayons" },
           { label: "Mettre en affiliation", href: "/marketplace/boutique?section=affiliate", icon: "group_add", description: "Rémunérez les ambassadeurs pour vendre plus" },
-          { label: "Statistiques & chiffre d'affaires", href: "/marketplace/admin?section=analytics", icon: "monitoring", description: "Suivez vos ventes, conversions et revenus" },
+          { label: "Statistiques & chiffre d'affaires", href: "/marketplace/boutique?section=analytics", icon: "monitoring", description: "Suivez vos ventes, conversions et revenus" },
           { label: "Commandes & paiements échelonnés", href: "/marketplace/commandes", icon: "receipt_long", description: "Gestion des expéditions et paiements" },
         ],
       },

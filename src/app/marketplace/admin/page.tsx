@@ -11,10 +11,14 @@ const modules = [
   ["Affiliation Marketplace", "Suivre l’attribution et les commissions d’affiliation propres aux transactions Marketplace.", "/compte?platform=marketplace&tab=affiliation"],
 ];
 
-export default async function MarketplaceAdminPage() {
+export default async function MarketplaceAdminPage({ searchParams }: { searchParams?: Promise<{ section?: string }> }) {
   const user = await getCurrentUserFromCookie();
   if (!user) redirect("/auth/login?next=/marketplace/admin");
-  if (!["admin", "gerant"].includes(user.role)) redirect("/compte?platform=marketplace&role=seller");
+  const params = searchParams ? await searchParams : {};
+  if (!["admin", "gerant"].includes(user.role)) {
+    const targetSection = params?.section || "products";
+    redirect(`/marketplace/boutique?section=${encodeURIComponent(targetSection)}`);
+  }
 
   return <main className="min-h-screen bg-[#FFFCF5] px-4 py-10 sm:px-8">
     <div className="mx-auto max-w-6xl">

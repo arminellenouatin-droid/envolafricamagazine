@@ -1,110 +1,1269 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useLocale } from "@/components/LocaleProvider";
 import MarketplaceProductForm from "@/components/marketplace/MarketplaceProductForm";
 
-type Supplier = { id: string; business_name: string; description?: string | null; country_code?: string | null; city?: string | null; certification_status?: string | null; rating?: number | null };
-type Product = { id: string; title: string; price_xof?: number; image?: string; media?: unknown; status?: string; product_video_url?: string | null; supplier_id?: string; supplier?: string; product_affiliations?: { id: string; commission_rate: number; is_active: boolean }[] };
+type Supplier = {
+  id: string;
+  business_name: string;
+  description?: string | null;
+  country_code?: string | null;
+  city?: string | null;
+  certification_status?: string | null;
+  rating?: number | null;
+};
 
-const countries = [{ code: "BJ", label: "Bénin" }, { code: "CI", label: "Côte d’Ivoire" }, { code: "SN", label: "Sénégal" }, { code: "TG", label: "Togo" }, { code: "CM", label: "Cameroun" }, { code: "BF", label: "Burkina Faso" }, { code: "ML", label: "Mali" }];
+type ProductAffiliation = {
+  id: string;
+  commission_rate: number;
+  is_active: boolean;
+};
+
+type Product = {
+  id: string;
+  title: string;
+  price_xof?: number;
+  stock_quantity?: number;
+  category?: string;
+  country_code?: string;
+  city?: string;
+  image?: string;
+  media?: unknown;
+  status?: string;
+  is_boosted?: boolean;
+  boost_ends_at?: string | null;
+  product_type?: string;
+  delivery_type?: string;
+  product_video_url?: string | null;
+  supplier_id?: string;
+  supplier?: string;
+  product_affiliations?: ProductAffiliation[];
+};
+
+type AnalyticsStats = {
+  totalRevenueXof: number;
+  pendingRevenueXof: number;
+  totalOrders: number;
+  completedOrdersCount: number;
+  pendingOrdersCount: number;
+  averageBasketXof: number;
+  totalProductsCount: number;
+  publishedProductsCount: number;
+  boostedProductsCount: number;
+  recentSales: Array<{
+    id: string;
+    total_xof: number;
+    payment_mode: string;
+    status: string;
+    created_at: string;
+    marketplace_products?: { title?: string; price_xof?: number } | null;
+  }>;
+};
+
+type Section = "dashboard" | "product" | "products" | "boost" | "affiliate" | "analytics" | "video";
+
+const countries = [
+  { code: "BJ", label: "Bénin" },
+  { code: "CI", label: "Côte d’Ivoire" },
+  { code: "SN", label: "Sénégal" },
+  { code: "TG", label: "Togo" },
+  { code: "CM", label: "Cameroun" },
+  { code: "BF", label: "Burkina Faso" },
+  { code: "ML", label: "Mali" },
+  { code: "NG", label: "Nigeria" },
+  { code: "GH", label: "Ghana" },
+];
 
 export default function MarketplaceBoutiquePage() {
   const [supplier, setSupplier] = useState<Supplier | null>(null);
   const [checking, setChecking] = useState(true);
   const [step, setStep] = useState(1);
-  const [section, setSection] = useState<"dashboard" | "video">("dashboard");
+  const [section, setSection] = useState<Section>("dashboard");
   const [businessName, setBusinessName] = useState("");
   const [description, setDescription] = useState("");
   const [countryCode, setCountryCode] = useState("BJ");
   const [city, setCity] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
+  const [analytics, setAnalytics] = useState<AnalyticsStats | null>(null);
+
+  // Boost form state
+  const [selectedBoostProductId, setSelectedBoostProductId] = useState("");
+  const [boostPlanDays, setBoostPlanDays] = useState(7);
+  const [boostAmountXof, setBoostAmountXof] = useState(2500);
+
+  // Affiliate form state
+  const [selectedAffiliateProductId, setSelectedAffiliateProductId] = useState("");
+  const [affiliateRate, setAffiliateRate] = useState(0.10);
+  const [affiliateEnabled, setAffiliateEnabled] = useState(true);
+
+  // Video state
   const [videoActive, setVideoActive] = useState(false);
   const [remaining, setRemaining] = useState(10);
-  const [productId, setProductId] = useState("");
+  const [videoProductId, setVideoProductId] = useState("");
   const [file, setFile] = useState<File | null>(null);
+
+  // Global UX state
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [, startTransition] = useTransition();
   const { formatPrice } = useLocale();
 
-  const loadSupplier = async () => {
-    setChecking(true);
+  const loadSupplierData = async () => {
     try {
       const response = await fetch("/api/marketplace/suppliers", { cache: "no-store" });
-      if (response.status === 401) { window.location.assign("/auth/login?next=/marketplace/boutique"); return; }
-      const data = await response.json();
-      setSupplier(data.supplier || null);
-      if (data.supplier) {
-        setBusinessName(data.supplier.business_name || "");
-        setDescription(data.supplier.description || "");
-        setCountryCode(data.supplier.country_code || "BJ");
-        setCity(data.supplier.city || "");
-        fetch(`/api/marketplace/products?supplierId=${encodeURIComponent(data.supplier.id)}`, { cache: "no-store" })
-          .then((res) => res.ok ? res.json() : { products: [] })
-          .then((pData) => setProducts(pData.products || []))
-          .catch(() => undefined);
+      if (response.status === 401) {
+        window.location.assign("/auth/login?next=/marketplace/boutique");
+        return;
       }
-    } catch { setError("Impossible de vérifier votre boutique."); }
-    finally { setChecking(false); }
+      const data = await response.json();
+      const currentSupplier = data.supplier || null;
+      setSupplier(currentSupplier);
+
+      if (currentSupplier) {
+        setBusinessName(currentSupplier.business_name || "");
+        setDescription(currentSupplier.description || "");
+        setCountryCode(currentSupplier.country_code || "BJ");
+        setCity(currentSupplier.city || "");
+
+        // Load supplier products
+        const pRes = await fetch(`/api/marketplace/products?supplierId=${encodeURIComponent(currentSupplier.id)}`, { cache: "no-store" });
+        if (pRes.ok) {
+          const pData = await pRes.json();
+          const loadedProducts = pData.products || [];
+          setProducts(loadedProducts);
+          if (loadedProducts.length > 0) {
+            setSelectedBoostProductId((prev) => prev || loadedProducts[0].id);
+            setSelectedAffiliateProductId((prev) => prev || loadedProducts[0].id);
+          }
+        }
+
+        // Load analytics
+        fetch("/api/marketplace/analytics", { cache: "no-store" })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((aData) => {
+            if (aData?.stats) setAnalytics(aData.stats);
+          })
+          .catch(() => {});
+      }
+    } catch {
+      setError("Impossible de vérifier votre boutique.");
+    } finally {
+      setChecking(false);
+    }
   };
 
-  useEffect(() => { const requested = new URLSearchParams(window.location.search).get("section"); if (requested === "video") window.setTimeout(() => setSection("video"), 0); fetch("/api/marketplace/suppliers", { cache: "no-store" }).then(async (response) => { if (response.status === 401) { window.location.assign("/auth/login?next=/marketplace/boutique"); return null; } return response.json(); }).then((data) => { if (!data) return; const current = data.supplier || null; setSupplier(current); if (current) { setBusinessName(current.business_name || ""); setDescription(current.description || ""); setCountryCode(current.country_code || "BJ"); setCity(current.city || ""); } }).catch(() => setError("Impossible de vérifier votre boutique.")).finally(() => setChecking(false)); }, []);
   useEffect(() => {
-    if (!supplier) return;
-    fetch(`/api/marketplace/products?supplierId=${encodeURIComponent(supplier.id)}`, { cache: "no-store" }).then((response) => response.ok ? response.json() : { products: [] }).then((data) => setProducts(data.products || [])).catch(() => undefined);
-  }, [supplier]);
-  useEffect(() => { if (section !== "video" || !supplier) return; fetch("/api/marketplace/video-subscription", { cache: "no-store" }).then((response) => response.json()).then((data) => { setVideoActive(Boolean(data.active)); setRemaining(Number(data.remaining ?? 10)); }).catch(() => undefined); }, [section, supplier]);
+    const params = new URLSearchParams(window.location.search);
+    const requestedSection = params.get("section") as Section | null;
+    const action = params.get("action");
+
+    if (requestedSection && ["dashboard", "product", "products", "boost", "affiliate", "analytics", "video"].includes(requestedSection)) {
+      setSection(requestedSection);
+    } else if (window.location.hash === "#publier") {
+      setSection("product");
+    }
+
+    if (action === "create-store") {
+      setMessage("Bienvenue dans l'espace vendeur Envol Africa. Finalisez la configuration de votre vitrine ci-dessous.");
+    }
+
+    void loadSupplierData();
+  }, []);
+
+  useEffect(() => {
+    if (section !== "video" || !supplier) return;
+    fetch("/api/marketplace/video-subscription", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        setVideoActive(Boolean(data.active));
+        setRemaining(Number(data.remaining ?? 10));
+      })
+      .catch(() => {});
+  }, [section, supplier]);
+
+  const switchSection = (newSec: Section) => {
+    startTransition(() => {
+      setSection(newSec);
+      setMessage("");
+      setError("");
+      const url = new URL(window.location.href);
+      url.searchParams.set("section", newSec);
+      url.searchParams.delete("action");
+      window.history.replaceState(null, "", url.toString());
+    });
+  };
 
   const createStore = async () => {
-    if (businessName.trim().length < 2) { setError("Saisissez le nom de votre boutique."); setStep(1); return; }
-    setBusy(true); setError("");
+    if (businessName.trim().length < 2) {
+      setError("Saisissez le nom de votre boutique.");
+      setStep(1);
+      return;
+    }
+    setBusy(true);
+    setError("");
     try {
-      const response = await fetch("/api/marketplace/suppliers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessName, description, countryCode, city }) });
+      const response = await fetch("/api/marketplace/suppliers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ businessName, description, countryCode, city }),
+      });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Création impossible.");
-      setSupplier(data.supplier); setMessage("Votre boutique est créée. Bienvenue dans votre espace vendeur.");
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "Création impossible."); }
-    finally { setBusy(false); }
+      setSupplier(data.supplier);
+      setMessage("Félicitations ! Votre boutique africaine est créée. Vous pouvez maintenant publier vos produits.");
+      switchSection("product");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Création impossible.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const updateProductStock = async (productId: string, stockQuantity: number) => {
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const response = await fetch("/api/marketplace/products", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, stockQuantity }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Mise à jour impossible.");
+      setProducts((prev) => prev.map((p) => (p.id === productId ? { ...p, stock_quantity: stockQuantity } : p)));
+      setMessage("Stock mis à jour avec succès.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Mise à jour impossible.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggleProductStatus = async (productId: string, currentStatus: string) => {
+    const newStatus = currentStatus === "published" ? "draft" : "published";
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch("/api/marketplace/products", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, status: newStatus }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Mise à jour impossible.");
+      setProducts((prev) => prev.map((p) => (p.id === productId ? { ...p, status: newStatus } : p)));
+      setMessage(`Produit ${newStatus === "published" ? "mis en ligne" : "placé en brouillon"}.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Mise à jour impossible.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteProduct = async (productId: string) => {
+    if (!confirm("Voulez-vous vraiment retirer ce produit du catalogue ?")) return;
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/marketplace/products?id=${encodeURIComponent(productId)}`, {
+        method: "DELETE",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Suppression impossible.");
+      setProducts((prev) => prev.filter((p) => p.id !== productId));
+      setMessage(data.message || "Produit supprimé.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Suppression impossible.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const launchBoost = async () => {
+    if (!selectedBoostProductId) {
+      setError("Veuillez sélectionner un produit à booster.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch("/api/marketplace/boosts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: selectedBoostProductId,
+          durationDays: boostPlanDays,
+          amountXof: boostAmountXof,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Impossible d'initialiser le boost.");
+      if (data.checkoutUrl) {
+        window.location.assign(data.checkoutUrl);
+      } else {
+        setMessage("Demande de boost prise en compte.");
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Erreur de boost.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveProductAffiliation = async () => {
+    if (!selectedAffiliateProductId) {
+      setError("Sélectionnez un produit pour configurer l'affiliation.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch("/api/marketplace/products", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: selectedAffiliateProductId,
+          enableAffiliation: affiliateEnabled,
+          affiliationRate: affiliateRate,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Configuration impossible.");
+      setMessage("Paramètres d'affiliation enregistrés avec succès.");
+      void loadSupplierData();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Erreur d'affiliation.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const activateVideo = async () => {
-    setBusy(true); setError("");
-    try { const response = await fetch("/api/marketplace/video-subscription", { method: "POST" }); const data = await response.json(); if (response.status === 401) { window.location.assign("/auth/login?next=/marketplace/boutique?section=video"); return; } if (!response.ok || !data.checkout_url) throw new Error(data.error || "Paiement indisponible."); window.location.assign(data.checkout_url); } catch (cause) { setError(cause instanceof Error ? cause.message : "Impossible d’activer l’option vidéo."); } finally { setBusy(false); }
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch("/api/marketplace/video-subscription", { method: "POST" });
+      const data = await response.json();
+      if (response.status === 401) {
+        window.location.assign("/auth/login?next=/marketplace/boutique?section=video");
+        return;
+      }
+      if (!response.ok || !data.checkout_url) throw new Error(data.error || "Paiement indisponible.");
+      window.location.assign(data.checkout_url);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Impossible d’activer l’option vidéo.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const uploadVideo = async () => {
-    if (!productId || !file) { setError("Sélectionnez un produit et une vidéo."); return; }
-    if (file.size > 3 * 1024 * 1024) { setError("La vidéo doit peser au maximum 3 Mo."); return; }
-    setBusy(true); setError(""); setMessage("");
-    try { const form = new FormData(); form.append("productId", productId); form.append("file", file); const response = await fetch("/api/marketplace/products/video/upload", { method: "POST", body: form }); const data = await response.json(); if (!response.ok) throw new Error(data.error || "Upload impossible."); setMessage(`Vidéo associée au produit. Il vous reste ${data.remaining} emplacement(s).`); setRemaining(Number(data.remaining)); setFile(null); } catch (cause) { setError(cause instanceof Error ? cause.message : "Upload impossible."); } finally { setBusy(false); }
+    if (!videoProductId || !file) {
+      setError("Sélectionnez un produit et une vidéo.");
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      setError("La vidéo doit peser au maximum 3 Mo.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const form = new FormData();
+      form.append("productId", videoProductId);
+      form.append("file", file);
+      const response = await fetch("/api/marketplace/products/video/upload", { method: "POST", body: form });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Upload impossible.");
+      setMessage(`Vidéo associée au produit. Il vous reste ${data.remaining} emplacement(s).`);
+      setRemaining(Number(data.remaining));
+      setFile(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Upload impossible.");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  if (checking) return <main className="grid min-h-screen place-items-center bg-[#fcf9f8] p-6 text-sm text-[#725f4d]">Vérification de votre boutique…</main>;
+  if (checking) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-[#fcf9f8] p-6 text-sm text-[#725f4d]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#9e001f] border-t-transparent"></div>
+          <p className="font-bold text-[#2a211a]">Vérification de votre compte vendeur…</p>
+        </div>
+      </main>
+    );
+  }
 
-  if (!supplier) return <main className="min-h-screen bg-[#fcf9f8] px-5 py-10 text-[#2a211a] md:px-10"><div className="mx-auto max-w-3xl"><Link href="/marketplace" className="text-xs font-bold text-[#9e001f]">← Retour au Marketplace</Link><div className="mt-8 rounded-[28px] bg-[#2a211a] p-7 text-white md:p-10"><p className="text-xs font-black uppercase tracking-[0.2em] text-[#ffca63]">Première étape</p><h1 className="mt-3 font-display text-3xl font-black md:text-4xl">Créons votre boutique africaine</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-white/70">Nous allons vous guider en quelques étapes. Vous pourrez ensuite publier vos produits et suivre votre activité.</p><div className="mt-7 flex gap-2">{[1, 2, 3].map((item) => <span key={item} className={`h-2 flex-1 rounded-full ${item <= step ? "bg-[#ffca63]" : "bg-white/20"}`} />)}</div></div><section className="mt-6 rounded-[24px] border border-[#eadfce] bg-white p-6 md:p-8">{step === 1 && <div><p className="text-xs font-black uppercase tracking-[0.16em] text-[#a36300]">Étape 1 sur 3</p><h2 className="mt-2 font-display text-2xl font-black">Le nom de votre boutique</h2><label className="mt-5 block text-sm font-bold">Nom commercial<input value={businessName} onChange={(event) => setBusinessName(event.target.value)} placeholder="Ex. Yekpon Digit Store" className="mt-2 h-12 w-full rounded-xl border border-[#eadfce] px-4 outline-none focus:border-[#9e001f]" /></label><button type="button" onClick={() => businessName.trim().length >= 2 ? setStep(2) : setError("Saisissez le nom de votre boutique.")} className="mt-6 rounded-full bg-[#9e001f] px-6 py-3 text-sm font-black text-white">Continuer</button></div>}{step === 2 && <div><p className="text-xs font-black uppercase tracking-[0.16em] text-[#a36300]">Étape 2 sur 3</p><h2 className="mt-2 font-display text-2xl font-black">Présentez votre activité</h2><textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Décrivez votre activité, vos produits et votre savoir-faire…" className="mt-5 min-h-32 w-full rounded-xl border border-[#eadfce] p-4 text-sm outline-none focus:border-[#9e001f]" /><div className="mt-4 grid gap-3 sm:grid-cols-2"><select value={countryCode} onChange={(event) => setCountryCode(event.target.value)} className="h-12 rounded-xl border border-[#eadfce] px-3 text-sm">{countries.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}</select><input value={city} onChange={(event) => setCity(event.target.value)} placeholder="Ville" className="h-12 rounded-xl border border-[#eadfce] px-4 text-sm" /></div><div className="mt-6 flex gap-3"><button type="button" onClick={() => setStep(1)} className="rounded-full border border-[#eadfce] px-6 py-3 text-sm font-black">Retour</button><button type="button" onClick={() => setStep(3)} className="rounded-full bg-[#9e001f] px-6 py-3 text-sm font-black text-white">Continuer</button></div></div>}{step === 3 && <div><p className="text-xs font-black uppercase tracking-[0.16em] text-[#a36300]">Étape 3 sur 3</p><h2 className="mt-2 font-display text-2xl font-black">Vérifiez votre boutique</h2><div className="mt-5 rounded-2xl bg-[#fff8f6] p-5"><p className="font-display text-xl font-black">{businessName}</p><p className="mt-2 text-sm text-[#725f4d]">{countryCode} · {city || "Ville à préciser"}</p><p className="mt-3 text-sm leading-6 text-[#725f4d]">{description || "Aucune description ajoutée pour le moment."}</p></div><div className="mt-6 flex gap-3"><button type="button" onClick={() => setStep(2)} className="rounded-full border border-[#eadfce] px-6 py-3 text-sm font-black">Modifier</button><button type="button" onClick={() => void createStore()} disabled={busy} className="rounded-full bg-[#9e001f] px-6 py-3 text-sm font-black text-white disabled:opacity-60">{busy ? "Création…" : "Créer ma boutique"}</button></div></div>}{error && <p className="mt-5 rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-800">{error}</p>}</section></div></main>;
+  // WIZARD CREATION BOUTIQUE (si l'utilisateur n'a pas encore créé de boutique)
+  if (!supplier) {
+    return (
+      <main className="min-h-screen bg-[#fcf9f8] px-5 py-10 text-[#2a211a] md:px-10">
+        <div className="mx-auto max-w-3xl">
+          <Link href="/marketplace" className="inline-flex items-center gap-1.5 text-xs font-bold text-[#9e001f] hover:underline">
+            ← Retour au Marketplace
+          </Link>
 
-  return <main className="min-h-screen bg-[#fcf9f8] px-5 py-10 text-[#2a211a] md:px-10 lg:px-16"><div className="mx-auto max-w-6xl"><div className="flex flex-wrap items-center justify-between gap-4"><Link href="/marketplace" className="text-xs font-bold text-[#9e001f]">← Retour au Marketplace</Link><span className="rounded-full bg-[#e9f7f5] px-4 py-2 text-xs font-black text-[#087e8b]">Boutique active</span></div><div className="mt-7 rounded-[28px] bg-[#2a211a] p-7 text-white md:p-10"><p className="text-xs font-black uppercase tracking-[0.2em] text-[#ffca63]">Tableau de bord vendeur</p><h1 className="mt-3 font-display text-3xl font-black md:text-4xl">{supplier.business_name}</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-white/70">Gérez vos produits, vos commandes et la visibilité de votre boutique depuis cet espace.</p><div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4"><div className="rounded-2xl bg-white/10 p-4"><strong className="block text-2xl font-black">{products.length}</strong><span className="text-xs text-white/65">Produits visibles</span></div><div className="rounded-2xl bg-white/10 p-4"><strong className="block text-2xl font-black">{supplier.rating || "—"}</strong><span className="text-xs text-white/65">Note vendeur</span></div><div className="rounded-2xl bg-white/10 p-4"><strong className="block text-2xl font-black">{supplier.certification_status === "certified" ? "Oui" : "Non"}</strong><span className="text-xs text-white/65">Certifié</span></div><div className="rounded-2xl bg-white/10 p-4"><strong className="block text-2xl font-black">—</strong><span className="text-xs text-white/65">Commandes à suivre</span></div></div></div><div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><button type="button" onClick={() => setSection("dashboard")} className="rounded-2xl border border-[#eadfce] bg-white p-5 text-left shadow-sm"><span className="material-symbols-outlined text-[#9e001f]">inventory_2</span><strong className="mt-3 block text-sm">Mes produits</strong><span className="mt-1 block text-xs text-[#806c58]">Voir et gérer le catalogue</span></button><Link href="/marketplace/boutique#publier" className="rounded-2xl border border-[#eadfce] bg-white p-5 text-left shadow-sm"><span className="material-symbols-outlined text-[#087e8b]">add_box</span><strong className="mt-3 block text-sm">Publier un produit</strong><span className="mt-1 block text-xs text-[#806c58]">Ajouter une nouvelle offre</span></Link><Link href="/marketplace/commandes" className="rounded-2xl border border-[#eadfce] bg-white p-5 text-left shadow-sm"><span className="material-symbols-outlined text-[#a36300]">shopping_bag</span><strong className="mt-3 block text-sm">Mes commandes</strong><span className="mt-1 block text-xs text-[#806c58]">Suivre les ventes</span></Link><button type="button" onClick={() => setSection("video")} className="rounded-2xl border border-[#eadfce] bg-white p-5 text-left shadow-sm"><span className="material-symbols-outlined text-[#9e001f]">movie</span><strong className="mt-3 block text-sm">Administration vidéo</strong><span className="mt-1 block text-xs text-[#806c58]">Option et vidéos produit</span></button></div>{section === "dashboard" ? <section className="mt-6 rounded-[24px] border border-[#eadfce] bg-white p-6"><MarketplaceProductForm onCreated={() => { void loadSupplier(); }} /><div className="mt-8 flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-[0.16em] text-[#a36300]">Catalogue</p><h2 className="mt-1 font-display text-2xl font-black">Vos produits</h2></div><Link href="/marketplace#publier" className="rounded-full bg-[#9e001f] px-5 py-3 text-xs font-black text-white">Créer un produit</Link></div><div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{products.map((product) => {
-  const img = product.image || (Array.isArray(product.media) && typeof product.media[0] === "string" ? product.media[0] : ((product.media as any)?.[0]?.url || ""));
-  const hasAff = Array.isArray(product.product_affiliations) && product.product_affiliations.length > 0 && product.product_affiliations[0]?.is_active;
-  const affRate = hasAff ? Math.round(Number(product.product_affiliations![0].commission_rate) * 100) : 0;
-  return <article key={product.id} className="rounded-2xl border border-[#eadfce] bg-white p-4 shadow-sm">
-    <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[#f5eee5]">
-      {img ? <img src={img} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-3xl">✦</div>}
-      <div className="absolute top-2 left-2 flex flex-wrap gap-1">
-        <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${product.status === "published" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
-          {product.status === "published" ? "En ligne" : "Brouillon"}
-        </span>
-        {hasAff && <span className="rounded-full bg-[#e9f7f5] text-[#087e8b] border border-[#087e8b]/20 px-2 py-0.5 text-[10px] font-black">Affiliation {affRate}%</span>}
+          <div className="mt-8 rounded-[28px] bg-[#2a211a] p-7 text-white md:p-10 shadow-xl">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ffca63]/20 px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-[#ffca63]">
+              ✨ Espace Vendeur Envol Africa
+            </span>
+            <h1 className="mt-3 font-display text-3xl font-black md:text-4xl">
+              Créons votre boutique africaine
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75">
+              Votre compte est identifié. Renseignez les informations de votre enseigne pour commencer à vendre des produits physiques, digitaux et formations à l&apos;échelle du continent.
+            </p>
+            <div className="mt-7 flex gap-2">
+              {[1, 2, 3].map((item) => (
+                <span
+                  key={item}
+                  className={`h-2 flex-1 rounded-full transition-all duration-300 ${
+                    item <= step ? "bg-[#ffca63]" : "bg-white/20"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+
+          <section className="mt-6 rounded-[24px] border border-[#eadfce] bg-white p-6 shadow-sm md:p-8">
+            {step === 1 && (
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-[#a36300]">Étape 1 sur 3</p>
+                <h2 className="mt-2 font-display text-2xl font-black">Nom commercial de votre boutique</h2>
+                <p className="mt-1 text-xs text-[#806c58]">Ce nom sera affiché sur toutes vos fiches produits et dans le répertoire des boutiques officielles.</p>
+                <label className="mt-5 block text-sm font-bold">
+                  Nom commercial
+                  <input
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    placeholder="Ex. Yekpon Digit Store, Wax & Délices, AfroTech..."
+                    className="mt-2 h-12 w-full rounded-xl border border-[#eadfce] px-4 text-sm outline-none focus:border-[#9e001f]"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => (businessName.trim().length >= 2 ? setStep(2) : setError("Saisissez le nom de votre boutique."))}
+                  className="mt-6 rounded-full bg-[#9e001f] px-6 py-3 text-sm font-black text-white hover:bg-[#80001a] transition"
+                >
+                  Continuer vers les coordonnées →
+                </button>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-[#a36300]">Étape 2 sur 3</p>
+                <h2 className="mt-2 font-display text-2xl font-black">Présentation & Localisation</h2>
+                <p className="mt-1 text-xs text-[#806c58]">Présentez votre savoir-faire et indiquez votre pays d&apos;expédition ou d&apos;exercice principal.</p>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Décrivez votre activité, la qualité de vos produits et vos engagements de livraison…"
+                  className="mt-5 min-h-32 w-full rounded-xl border border-[#eadfce] p-4 text-sm outline-none focus:border-[#9e001f]"
+                />
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-bold text-[#2a211a] mb-1">Pays principal</label>
+                    <select
+                      value={countryCode}
+                      onChange={(e) => setCountryCode(e.target.value)}
+                      className="h-12 w-full rounded-xl border border-[#eadfce] px-3 text-sm"
+                    >
+                      {countries.map((item) => (
+                        <option key={item.code} value={item.code}>{item.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-[#2a211a] mb-1">Ville</label>
+                    <input
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      placeholder="Cotonou, Abidjan, Dakar..."
+                      className="h-12 w-full rounded-xl border border-[#eadfce] px-4 text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="mt-6 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="rounded-full border border-[#eadfce] px-6 py-3 text-sm font-black"
+                  >
+                    ← Retour
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStep(3)}
+                    className="rounded-full bg-[#9e001f] px-6 py-3 text-sm font-black text-white hover:bg-[#80001a] transition"
+                  >
+                    Vérifier et créer →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-[#a36300]">Étape 3 sur 3</p>
+                <h2 className="mt-2 font-display text-2xl font-black">Vérification de votre enseigne</h2>
+                <div className="mt-5 rounded-2xl bg-[#fff8f6] border border-[#f5d5d3] p-5">
+                  <div className="flex items-center justify-between">
+                    <p className="font-display text-xl font-black text-[#9e001f]">{businessName}</p>
+                    <span className="rounded-full bg-emerald-100 text-emerald-800 px-3 py-1 text-xs font-bold">
+                      {countryCode} · {city || "Afrique"}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-[#725f4d]">
+                    {description || "Aucune description renseignée pour le moment."}
+                  </p>
+                </div>
+                <div className="mt-6 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setStep(2)}
+                    className="rounded-full border border-[#eadfce] px-6 py-3 text-sm font-black"
+                  >
+                    Modifier
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void createStore()}
+                    disabled={busy}
+                    className="rounded-full bg-[#9e001f] px-6 py-3 text-sm font-black text-white hover:bg-[#80001a] transition disabled:opacity-60"
+                  >
+                    {busy ? "Création en cours…" : "Créer ma boutique & commencer à vendre"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {error && <p className="mt-5 rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-800">{error}</p>}
+          </section>
+        </div>
+      </main>
+    );
+  }
+
+  // BOUTIQUE ACTIVE — TABLEAU DE BORD VENDEUR COMPLET
+  const filteredProducts = products.filter((p) =>
+    searchQuery ? p.title.toLowerCase().includes(searchQuery.toLowerCase()) : true
+  );
+
+  return (
+    <main className="min-h-screen bg-[#fcf9f8] px-4 py-8 text-[#2a211a] sm:px-6 md:px-10 lg:px-16">
+      <div className="mx-auto max-w-6xl">
+        {/* En-tête de navigation boutique */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <Link href="/marketplace" className="inline-flex items-center gap-1.5 text-xs font-bold text-[#9e001f] hover:underline">
+            ← Retour au Catalogue Marketplace
+          </Link>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-[#e9f7f5] px-4 py-1.5 text-xs font-black text-[#087e8b]">
+              Boutique Active
+            </span>
+            <Link
+              href="/marketplace/commandes"
+              className="rounded-full border border-[#eadfce] bg-white px-4 py-1.5 text-xs font-bold text-[#2a211a] hover:bg-zinc-50"
+            >
+              Mes Commandes & Expéditions →
+            </Link>
+          </div>
+        </div>
+
+        {/* Message de succès ou d'erreur */}
+        {message && (
+          <div className="mt-4 flex items-center justify-between rounded-2xl bg-[#e9f7f5] border border-[#a6dfd5] p-4 text-xs font-semibold text-[#087e8b]">
+            <span>{message}</span>
+            <button onClick={() => setMessage("")} className="font-bold hover:underline">✕</button>
+          </div>
+        )}
+        {error && (
+          <div className="mt-4 flex items-center justify-between rounded-2xl bg-red-50 border border-red-200 p-4 text-xs font-semibold text-red-800">
+            <span>{error}</span>
+            <button onClick={() => setError("")} className="font-bold hover:underline">✕</button>
+          </div>
+        )}
+
+        {/* Carte Vitrine Vendeur */}
+        <div className="mt-6 rounded-[28px] bg-[#2a211a] p-6 text-white md:p-8 shadow-xl">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-[#ffca63]">
+                Espace Vendeur Envol Africa
+              </p>
+              <h1 className="mt-2 font-display text-2xl font-black md:text-3xl">
+                {supplier.business_name}
+              </h1>
+              <p className="mt-1 text-xs text-white/70">
+                {supplier.city ? `${supplier.city}, ` : ""}{supplier.country_code || "Afrique"} · Note vendeur : {supplier.rating ? `⭐ ${supplier.rating}` : "Nouveau vendeur"}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => switchSection("product")}
+                className="rounded-full bg-[#ffca63] text-[#2a211a] px-4 py-2 text-xs font-black hover:bg-[#ffe082] transition"
+              >
+                + Publier un produit
+              </button>
+              <button
+                type="button"
+                onClick={() => switchSection("boost")}
+                className="rounded-full bg-white/10 text-white border border-white/20 px-4 py-2 text-xs font-black hover:bg-white/20 transition"
+              >
+                🚀 Booster
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-2xl bg-white/10 p-4">
+              <strong className="block text-2xl font-black">{products.length}</strong>
+              <span className="text-xs text-white/65">Produits au catalogue</span>
+            </div>
+            <div className="rounded-2xl bg-white/10 p-4">
+              <strong className="block text-2xl font-black">
+                {products.filter((p) => p.is_boosted).length}
+              </strong>
+              <span className="text-xs text-white/65">Produits boostés</span>
+            </div>
+            <div className="rounded-2xl bg-white/10 p-4">
+              <strong className="block text-2xl font-black">
+                {analytics?.completedOrdersCount ?? 0}
+              </strong>
+              <span className="text-xs text-white/65">Ventes confirmées</span>
+            </div>
+            <div className="rounded-2xl bg-white/10 p-4">
+              <strong className="block text-2xl font-black">
+                {analytics?.totalRevenueXof ? formatPrice(analytics.totalRevenueXof) : "0 XOF"}
+              </strong>
+              <span className="text-xs text-white/65">Chiffre d&apos;affaires</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Barre d'onglets / Raccourcis navigation */}
+        <div className="mt-6 flex overflow-x-auto gap-2 border-b border-[#eadfce] pb-3 no-scrollbar">
+          {[
+            { id: "dashboard", label: "Tableau de bord", icon: "dashboard" },
+            { id: "products", label: "Gérer mes stocks", icon: "inventory_2" },
+            { id: "product", label: "Publier un produit", icon: "add_box" },
+            { id: "boost", label: "Booster mes produits", icon: "rocket_launch" },
+            { id: "affiliate", label: "Mettre en affiliation", icon: "group_add" },
+            { id: "analytics", label: "Statistiques & CA", icon: "monitoring" },
+            { id: "video", label: "Option Vidéo", icon: "movie" },
+          ].map((tab) => {
+            const active = section === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => switchSection(tab.id as Section)}
+                className={`flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold transition-colors ${
+                  active
+                    ? "bg-[#9e001f] text-white shadow-sm"
+                    : "bg-white text-[#725f4d] border border-[#eadfce] hover:bg-[#fff5f2]"
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">{tab.icon}</span>
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* CONTENU SELON SECTION */}
+
+        {/* 1. TABLEAU DE BORD */}
+        {section === "dashboard" && (
+          <section className="mt-6 space-y-6">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div
+                onClick={() => switchSection("products")}
+                className="cursor-pointer rounded-2xl border border-[#eadfce] bg-white p-5 shadow-sm hover:border-[#9e001f] transition"
+              >
+                <span className="material-symbols-outlined text-[#9e001f] text-3xl">inventory_2</span>
+                <strong className="mt-3 block text-base font-black">Gérer mes produits & stocks</strong>
+                <p className="mt-1 text-xs text-[#806c58]">
+                  Consultez vos {products.length} articles, ajustez les stocks en temps réel et basculez en brouillon.
+                </p>
+                <span className="mt-4 inline-block text-xs font-bold text-[#9e001f]">Ouvrir le catalogue →</span>
+              </div>
+
+              <div
+                onClick={() => switchSection("boost")}
+                className="cursor-pointer rounded-2xl border border-[#eadfce] bg-white p-5 shadow-sm hover:border-[#a36300] transition"
+              >
+                <span className="material-symbols-outlined text-[#a36300] text-3xl">rocket_launch</span>
+                <strong className="mt-3 block text-base font-black">Booster mes produits</strong>
+                <p className="mt-1 text-xs text-[#806c58]">
+                  Mettez vos produits en avant dans les rayons pour démultiplier vos ventes dès 2 500 XOF.
+                </p>
+                <span className="mt-4 inline-block text-xs font-bold text-[#a36300]">Lancer un boost →</span>
+              </div>
+
+              <div
+                onClick={() => switchSection("affiliate")}
+                className="cursor-pointer rounded-2xl border border-[#eadfce] bg-white p-5 shadow-sm hover:border-[#087e8b] transition"
+              >
+                <span className="material-symbols-outlined text-[#087e8b] text-3xl">group_add</span>
+                <strong className="mt-3 block text-base font-black">Mettre en affiliation</strong>
+                <p className="mt-1 text-xs text-[#806c58]">
+                  Mobilisez des ambassadeurs pour recommander vos produits avec commission au résultat.
+                </p>
+                <span className="mt-4 inline-block text-xs font-bold text-[#087e8b]">Configurer l&apos;affiliation →</span>
+              </div>
+            </div>
+
+            {/* Aperçu rapide des produits récents */}
+            <div className="rounded-[24px] border border-[#eadfce] bg-white p-6 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-[#a36300]">Catalogue</p>
+                  <h2 className="mt-1 font-display text-xl font-black">Vos derniers articles</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => switchSection("product")}
+                  className="rounded-full bg-[#9e001f] px-4 py-2 text-xs font-black text-white hover:bg-[#80001a]"
+                >
+                  + Ajouter un produit
+                </button>
+              </div>
+
+              {products.length === 0 ? (
+                <div className="mt-6 rounded-2xl bg-[#fff8f6] p-8 text-center">
+                  <p className="text-sm font-bold text-[#2a211a]">Vous n&apos;avez encore publié aucun produit.</p>
+                  <p className="mt-1 text-xs text-[#806c58]">Ajoutez des articles physiques, digitaux, formations ou services pour démarrer vos ventes.</p>
+                  <button
+                    type="button"
+                    onClick={() => switchSection("product")}
+                    className="mt-4 rounded-full bg-[#9e001f] px-5 py-2.5 text-xs font-black text-white"
+                  >
+                    Publier mon premier produit →
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {products.slice(0, 6).map((product) => {
+                    const img = product.image || (Array.isArray(product.media) && typeof product.media[0] === "string" ? product.media[0] : ((product.media as any)?.[0]?.url || ""));
+                    return (
+                      <article key={product.id} className="rounded-2xl border border-[#eadfce] bg-white p-4 shadow-sm flex flex-col justify-between">
+                        <div>
+                          <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[#f5eee5]">
+                            {img ? <img src={img} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-3xl">✦</div>}
+                            <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+                              <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${product.status === "published" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                                {product.status === "published" ? "En ligne" : "Brouillon"}
+                              </span>
+                              {product.is_boosted && (
+                                <span className="rounded-full bg-amber-400 text-zinc-900 px-2 py-0.5 text-[10px] font-black">
+                                  ⚡ Boosté
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <h3 className="mt-3 line-clamp-2 text-sm font-black">{product.title}</h3>
+                          <p className="mt-1 text-sm font-bold text-[#9e001f]">{product.price_xof ? formatPrice(product.price_xof) : "Prix à définir"}</p>
+                          <p className="text-[11px] text-[#806c58]">Stock : {product.stock_quantity ?? "Non défini"}</p>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between border-t border-[#f2e7d8] pt-2 text-[11px]">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedBoostProductId(product.id);
+                              switchSection("boost");
+                            }}
+                            className="font-bold text-[#a36300] hover:underline"
+                          >
+                            Booster
+                          </button>
+                          <Link href={`/marketplace/produits/${product.id}`} className="font-bold text-[#9e001f] hover:underline">
+                            Voir fiche →
+                          </Link>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* 2. PUBLIER UN PRODUIT */}
+        {section === "product" && (
+          <section className="mt-6">
+            <MarketplaceProductForm
+              onCreated={() => {
+                void loadSupplierData();
+                setMessage("Votre produit a été publié avec succès dans le catalogue !");
+                switchSection("products");
+              }}
+            />
+          </section>
+        )}
+
+        {/* 3. GÉRER MES PRODUITS & STOCKS */}
+        {section === "products" && (
+          <section className="mt-6 rounded-[24px] border border-[#eadfce] bg-white p-6 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-[#a36300]">Inventaire & Stocks</p>
+                <h2 className="mt-1 font-display text-2xl font-black">Gérer mes produits & stocks</h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Rechercher un article..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="h-10 rounded-full border border-[#eadfce] px-4 text-xs outline-none focus:border-[#9e001f]"
+                />
+                <button
+                  type="button"
+                  onClick={() => switchSection("product")}
+                  className="rounded-full bg-[#9e001f] px-4 py-2 text-xs font-black text-white hover:bg-[#80001a]"
+                >
+                  + Ajouter
+                </button>
+              </div>
+            </div>
+
+            {filteredProducts.length === 0 ? (
+              <p className="mt-6 text-sm text-[#806c58]">Aucun produit trouvé dans votre catalogue.</p>
+            ) : (
+              <div className="mt-6 space-y-4">
+                {filteredProducts.map((p) => {
+                  const img = p.image || (Array.isArray(p.media) && typeof p.media[0] === "string" ? p.media[0] : ((p.media as any)?.[0]?.url || ""));
+                  return (
+                    <article
+                      key={p.id}
+                      className="flex flex-col gap-4 rounded-2xl border border-[#eadfce] bg-[#fffdfb] p-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-[#f5eee5]">
+                          {img ? <img src={img} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-xl">✦</div>}
+                        </div>
+                        <div>
+                          <strong className="block text-sm font-black">{p.title}</strong>
+                          <span className="text-xs text-[#9e001f] font-bold">{p.price_xof ? formatPrice(p.price_xof) : "Prix non fixé"}</span>
+                          <span className="text-[11px] text-[#806c58] ml-2">({p.category || "Catalogue"})</span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3">
+                        {/* Contrôle de stock */}
+                        <div className="flex items-center gap-1.5 bg-white border border-[#eadfce] rounded-xl px-2.5 py-1">
+                          <span className="text-[11px] font-bold text-[#725f4d]">Stock :</span>
+                          <input
+                            type="number"
+                            min="0"
+                            defaultValue={p.stock_quantity ?? 0}
+                            onBlur={(e) => {
+                              const val = Number(e.target.value);
+                              if (!isNaN(val) && val >= 0 && val !== p.stock_quantity) {
+                                void updateProductStock(p.id, val);
+                              }
+                            }}
+                            className="w-14 text-xs font-bold text-center border-b border-[#9e001f] focus:outline-none"
+                          />
+                        </div>
+
+                        {/* Statut En ligne / Brouillon */}
+                        <button
+                          type="button"
+                          onClick={() => void toggleProductStatus(p.id, p.status || "draft")}
+                          disabled={busy}
+                          className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                            p.status === "published"
+                              ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
+                              : "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                          }`}
+                        >
+                          {p.status === "published" ? "✓ En ligne" : "⏸ Brouillon"}
+                        </button>
+
+                        {/* Raccourci Booster */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedBoostProductId(p.id);
+                            switchSection("boost");
+                          }}
+                          className="rounded-full border border-[#a36300] bg-amber-50 px-3 py-1.5 text-xs font-bold text-[#a36300] hover:bg-amber-100"
+                        >
+                          🚀 Booster
+                        </button>
+
+                        {/* Raccourci Affiliation */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedAffiliateProductId(p.id);
+                            switchSection("affiliate");
+                          }}
+                          className="rounded-full border border-[#087e8b] bg-[#e9f7f5] px-3 py-1.5 text-xs font-bold text-[#087e8b] hover:bg-[#d8f2ee]"
+                        >
+                          🤝 Affiliation
+                        </button>
+
+                        {/* Supprimer */}
+                        <button
+                          type="button"
+                          onClick={() => void deleteProduct(p.id)}
+                          className="text-xs font-bold text-zinc-400 hover:text-red-700 p-1"
+                          title="Supprimer"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* 4. BOOSTER MES PRODUITS */}
+        {section === "boost" && (
+          <section className="mt-6 rounded-[24px] border border-[#eadfce] bg-white p-6 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#a36300]">Visibilité Prioritaire</p>
+            <h2 className="mt-1 font-display text-2xl font-black">Booster mes produits dans les rayons</h2>
+            <p className="mt-2 text-sm text-[#725f4d]">
+              Le boost positionne votre produit en tête des résultats de recherche, avec le badge officiel &quot;Produit en Vedette&quot;, multipliant son audience et vos commandes.
+            </p>
+
+            <div className="mt-6">
+              <label className="block text-xs font-bold text-[#2a211a] mb-2">Sélectionnez le produit à booster :</label>
+              <select
+                value={selectedBoostProductId}
+                onChange={(e) => setSelectedBoostProductId(e.target.value)}
+                className="h-12 w-full max-w-xl rounded-xl border border-[#eadfce] bg-white px-4 text-sm"
+              >
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.title} — {p.price_xof ? formatPrice(p.price_xof) : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+              {[
+                { days: 7, amount: 2500, label: "Pack Flash 7 Jours", desc: "Idéal pour lancer une offre ou tester un nouveau produit." },
+                { days: 14, amount: 4500, label: "Pack Pro 14 Jours", desc: "Recommandé : 2 semaines en haut du rayon avec visibilité doublée.", popular: true },
+                { days: 30, amount: 8000, label: "Pack Prestige 30 Jours", desc: "Mise en avant mensuelle maximale pour générer des ventes en continu." },
+              ].map((plan) => {
+                const selected = boostPlanDays === plan.days;
+                return (
+                  <div
+                    key={plan.days}
+                    onClick={() => {
+                      setBoostPlanDays(plan.days);
+                      setBoostAmountXof(plan.amount);
+                    }}
+                    className={`cursor-pointer rounded-2xl border p-5 transition relative flex flex-col justify-between ${
+                      selected ? "border-[#9e001f] bg-[#fff5f2] shadow-sm" : "border-[#eadfce] bg-white hover:border-[#a36300]"
+                    }`}
+                  >
+                    {plan.popular && (
+                      <span className="absolute -top-3 right-4 rounded-full bg-[#ffca63] text-[#2a211a] px-3 py-0.5 text-[10px] font-black uppercase tracking-wider">
+                        Recommandé
+                      </span>
+                    )}
+                    <div>
+                      <strong className="block text-base font-black text-[#2a211a]">{plan.label}</strong>
+                      <p className="mt-2 text-2xl font-black text-[#9e001f]">{formatPrice(plan.amount)}</p>
+                      <p className="mt-2 text-xs text-[#806c58] leading-5">{plan.desc}</p>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-[#eadfce]/40 flex items-center gap-2">
+                      <span className={`h-4 w-4 rounded-full border flex items-center justify-center ${selected ? "border-[#9e001f] bg-[#9e001f]" : "border-zinc-300"}`}>
+                        {selected && <span className="h-1.5 w-1.5 rounded-full bg-white"></span>}
+                      </span>
+                      <span className="text-xs font-bold text-[#2a211a]">{selected ? "Sélectionné" : "Choisir"}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-[#fff8f6] p-5 border border-[#eadfce]">
+              <div>
+                <strong className="block text-sm font-black">Total : {formatPrice(boostAmountXof)} pour {boostPlanDays} jours de boost</strong>
+                <span className="text-xs text-[#806c58]">Paiement sécurisé via Moneroo (Mobile Money Bénin, Côte d’Ivoire, Sénégal, Togo, Carte bancaire).</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => void launchBoost()}
+                disabled={busy || !selectedBoostProductId}
+                className="rounded-full bg-[#9e001f] px-6 py-3 text-xs font-black text-white hover:bg-[#80001a] transition disabled:opacity-60"
+              >
+                {busy ? "Initialisation…" : `Activer le boost (${formatPrice(boostAmountXof)}) →`}
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* 5. METTRE EN AFFILIATION */}
+        {section === "affiliate" && (
+          <section className="mt-6 rounded-[24px] border border-[#eadfce] bg-white p-6 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#087e8b]">Réseau d&apos;Ambassadeurs</p>
+            <h2 className="mt-1 font-display text-2xl font-black">Mettre vos produits en affiliation</h2>
+            <p className="mt-2 text-sm text-[#725f4d]">
+              Proposez une commission sur vente aux ambassadeurs Envol Africa. Ils partagent vos produits sur WhatsApp, Facebook, LinkedIn et TikTok, et vous ne payez la commission que lorsqu&apos;une commande est validée.
+            </p>
+
+            <div className="mt-6 grid gap-6 md:grid-cols-2">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-[#2a211a] mb-2">Choisir le produit :</label>
+                  <select
+                    value={selectedAffiliateProductId}
+                    onChange={(e) => {
+                      setSelectedAffiliateProductId(e.target.value);
+                      const prod = products.find((p) => p.id === e.target.value);
+                      const existingAff = prod?.product_affiliations?.[0];
+                      if (existingAff) {
+                        setAffiliateEnabled(existingAff.is_active);
+                        setAffiliateRate(existingAff.commission_rate);
+                      }
+                    }}
+                    className="h-12 w-full rounded-xl border border-[#eadfce] bg-white px-4 text-sm"
+                  >
+                    {products.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.title} — {p.price_xof ? formatPrice(p.price_xof) : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="rounded-2xl border border-[#eadfce] p-4 bg-[#fffdfb]">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={affiliateEnabled}
+                      onChange={(e) => setAffiliateEnabled(e.target.checked)}
+                      className="h-5 w-5 rounded accent-[#087e8b]"
+                    />
+                    <span className="text-sm font-bold text-[#2a211a]">Activer l&apos;affiliation sur ce produit</span>
+                  </label>
+
+                  {affiliateEnabled && (
+                    <div className="mt-4 pt-4 border-t border-[#eadfce]">
+                      <label className="block text-xs font-bold text-[#2a211a] mb-2">Taux de commission offert :</label>
+                      <select
+                        value={affiliateRate}
+                        onChange={(e) => setAffiliateRate(Number(e.target.value))}
+                        className="h-11 w-full rounded-xl border border-[#eadfce] bg-white px-3 text-xs"
+                      >
+                        <option value={0.05}>5 % du prix de vente</option>
+                        <option value={0.10}>10 % (Recommandé)</option>
+                        <option value={0.15}>15 % du prix de vente</option>
+                        <option value={0.20}>20 % du prix de vente</option>
+                        <option value={0.25}>25 % du prix de vente</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => void saveProductAffiliation()}
+                  disabled={busy || !selectedAffiliateProductId}
+                  className="rounded-full bg-[#087e8b] px-6 py-3 text-xs font-black text-white hover:bg-[#066570] transition disabled:opacity-60"
+                >
+                  {busy ? "Enregistrement…" : "Enregistrer les paramètres d'affiliation"}
+                </button>
+              </div>
+
+              {/* Simulation des gains ambassadeur */}
+              <div className="rounded-2xl border border-[#a6dfd5] bg-[#e9f7f5]/40 p-5 flex flex-col justify-between">
+                <div>
+                  <span className="text-xs font-black uppercase tracking-wider text-[#087e8b]">Simulation d&apos;impact</span>
+                  <h3 className="mt-2 font-display text-lg font-black text-[#2a211a]">Comment fonctionne la commission ?</h3>
+                  {(() => {
+                    const currentProd = products.find((p) => p.id === selectedAffiliateProductId);
+                    const price = currentProd?.price_xof || 25000;
+                    const commission = Math.round(price * affiliateRate);
+                    const netAffiliate = Math.round(commission * 0.9);
+                    return (
+                      <div className="mt-4 space-y-2 text-xs text-[#2a211a]">
+                        <div className="flex justify-between py-1 border-b border-[#a6dfd5]/40">
+                          <span>Prix de vente du produit :</span>
+                          <strong>{formatPrice(price)}</strong>
+                        </div>
+                        <div className="flex justify-between py-1 border-b border-[#a6dfd5]/40">
+                          <span>Taux de commission fixé :</span>
+                          <strong>{Math.round(affiliateRate * 100)} %</strong>
+                        </div>
+                        <div className="flex justify-between py-1 border-b border-[#a6dfd5]/40 text-[#087e8b]">
+                          <span>Gain reversé à l&apos;ambassadeur :</span>
+                          <strong className="text-sm">~{formatPrice(netAffiliate)}</strong>
+                        </div>
+                        <div className="flex justify-between py-1 font-bold text-[#9e001f]">
+                          <span>Revenu net perçu par vous :</span>
+                          <strong>{formatPrice(price - commission)}</strong>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                <div className="mt-6 rounded-xl bg-white p-3 text-[11px] text-[#725f4d]">
+                  💡 <strong>Astuce :</strong> Un taux de 10% à 15% est particulièrement attractif pour inciter les influenceurs et ambassadeurs à partager activement vos offres sur leurs réseaux.
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* 6. STATISTIQUES & CHIFFRE D'AFFAIRES */}
+        {section === "analytics" && (
+          <section className="mt-6 rounded-[24px] border border-[#eadfce] bg-white p-6 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#a36300]">Performance commerciale</p>
+            <h2 className="mt-1 font-display text-2xl font-black">Statistiques & Chiffre d&apos;affaires</h2>
+            <p className="mt-2 text-sm text-[#725f4d]">
+              Suivez l&apos;évolution de vos revenus, vos commandes et la dynamique de vos ventes en temps réel.
+            </p>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-2xl border border-[#eadfce] bg-[#fffdfb] p-5">
+                <span className="text-xs font-bold text-[#806c58]">Chiffre d&apos;affaires encaissé</span>
+                <strong className="mt-2 block text-2xl font-black text-[#9e001f]">
+                  {formatPrice(analytics?.totalRevenueXof || 0)}
+                </strong>
+                <span className="mt-1 block text-[11px] text-emerald-700">Fonds libérés après confirmation</span>
+              </div>
+              <div className="rounded-2xl border border-[#eadfce] bg-[#fffdfb] p-5">
+                <span className="text-xs font-bold text-[#806c58]">Revenus en attente / Séquestre</span>
+                <strong className="mt-2 block text-2xl font-black text-[#a36300]">
+                  {formatPrice(analytics?.pendingRevenueXof || 0)}
+                </strong>
+                <span className="mt-1 block text-[11px] text-[#806c58]">En cours d&apos;expédition / paiement</span>
+              </div>
+              <div className="rounded-2xl border border-[#eadfce] bg-[#fffdfb] p-5">
+                <span className="text-xs font-bold text-[#806c58]">Commandes validées</span>
+                <strong className="mt-2 block text-2xl font-black text-[#087e8b]">
+                  {analytics?.completedOrdersCount || 0}
+                </strong>
+                <span className="mt-1 block text-[11px] text-[#806c58]">Sur {analytics?.totalOrders || 0} initiées</span>
+              </div>
+              <div className="rounded-2xl border border-[#eadfce] bg-[#fffdfb] p-5">
+                <span className="text-xs font-bold text-[#806c58]">Panier moyen</span>
+                <strong className="mt-2 block text-2xl font-black text-[#2a211a]">
+                  {formatPrice(analytics?.averageBasketXof || 0)}
+                </strong>
+                <span className="mt-1 block text-[11px] text-[#806c58]">Par commande validée</span>
+              </div>
+            </div>
+
+            {/* Dernières ventes */}
+            <div className="mt-8">
+              <h3 className="text-base font-black text-[#2a211a]">Dernières transactions de la boutique</h3>
+              {(!analytics?.recentSales || analytics.recentSales.length === 0) ? (
+                <p className="mt-3 text-xs text-[#806c58] rounded-xl bg-[#fff8f6] p-4">
+                  Aucune vente enregistrée pour le moment. Dès que vos clients commandent, les transactions apparaissent ici.
+                </p>
+              ) : (
+                <div className="mt-4 space-y-2">
+                  {analytics.recentSales.map((sale) => (
+                    <div
+                      key={sale.id}
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#eadfce] p-3 text-xs"
+                    >
+                      <div>
+                        <strong className="block text-[#2a211a]">{sale.marketplace_products?.title || "Article Marketplace"}</strong>
+                        <span className="text-[#806c58]">
+                          {new Date(sale.created_at).toLocaleDateString("fr-FR")} · {sale.payment_mode === "installment" ? "Échelonné" : "Comptant"}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <strong className="text-[#9e001f]">{formatPrice(sale.total_xof)}</strong>
+                        <span className="block text-[11px] text-emerald-700 font-bold">{sale.status}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* 7. OPTION VIDÉO */}
+        {section === "video" && (
+          <section className="mt-6 rounded-[24px] border border-[#eadfce] bg-white p-6 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#a36300]">Administration Vendeur</p>
+            <h2 className="mt-1 font-display text-2xl font-black">Option vidéo produit</h2>
+            <p className="mt-2 text-sm leading-6 text-[#725f4d]">
+              Cette option permet d&apos;illustrer vos produits avec de courtes vidéos de démonstration (MP4, WebM, 3 Mo max). Elle coûte {formatPrice(5000)} par mois et autorise jusqu&apos;à 10 produits vidéo.
+            </p>
+
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-[#fff8f6] p-4 border border-[#eadfce]">
+              <div>
+                <strong className="block text-sm">
+                  {videoActive ? `Option active · ${remaining} emplacement(s) restant(s)` : "Option inactive"}
+                </strong>
+                <span className="text-xs text-[#806c58]">Fichiers MP4, WebM ou MOV jusqu&apos;à 3 Mo</span>
+              </div>
+              {!videoActive && (
+                <button
+                  type="button"
+                  onClick={() => void activateVideo()}
+                  disabled={busy}
+                  className="rounded-full bg-[#9e001f] px-5 py-3 text-xs font-black text-white hover:bg-[#80001a]"
+                >
+                  Activer l’option · {formatPrice(5000)} / mois
+                </button>
+              )}
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
+              <label className="text-xs font-bold">
+                Produit concerné
+                <select
+                  value={videoProductId}
+                  onChange={(e) => setVideoProductId(e.target.value)}
+                  className="mt-2 h-11 w-full rounded-xl border border-[#eadfce] px-3 text-sm bg-white"
+                >
+                  <option value="">Sélectionnez un produit</option>
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>{p.title}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-xs font-bold">
+                Fichier vidéo (3 Mo max)
+                <input
+                  type="file"
+                  accept="video/mp4,video/webm,video/quicktime"
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  className="mt-2 block w-full text-xs"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => void uploadVideo()}
+                disabled={!videoActive || busy || remaining <= 0}
+                className="h-11 rounded-full bg-[#087e8b] px-5 text-xs font-black text-white disabled:opacity-50 hover:bg-[#066570]"
+              >
+                {busy ? "Envoi…" : "Associer la vidéo"}
+              </button>
+            </div>
+          </section>
+        )}
       </div>
-    </div>
-    <h3 className="mt-3 line-clamp-2 text-sm font-black">{product.title}</h3>
-    <p className="mt-1 text-sm font-bold text-[#9e001f]">{product.price_xof ? formatPrice(product.price_xof) : "Prix à définir"}</p>
-    <div className="mt-3 flex items-center justify-between border-t border-[#f2e7d8] pt-2 text-[11px] text-[#806c58]">
-      <span>{product.product_video_url ? "Vidéo active" : "Sans vidéo"}</span>
-      <Link href={`/marketplace/produits/${product.id}`} className="font-bold text-[#9e001f] hover:underline">Voir l’offre →</Link>
-    </div>
-  </article>;
-})}{products.length === 0 && <p className="text-sm text-[#806c58]">Aucun produit visible pour le moment. Commencez par publier votre première offre.</p>}</div></section> : <section className="mt-6 rounded-[24px] border border-[#eadfce] bg-white p-6"><p className="text-xs font-black uppercase tracking-[0.16em] text-[#a36300]">Administration vendeur</p><h2 className="mt-1 font-display text-2xl font-black">Option vidéo produit</h2><p className="mt-2 text-sm leading-6 text-[#725f4d]">Cette option est gérée uniquement dans l’administration vendeur. Elle coûte {formatPrice(5000)} par mois, autorise 10 produits vidéo et limite chaque fichier à 3 Mo.</p><div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-[#fff8f6] p-4"><div><strong className="block text-sm">{videoActive ? `Option active · ${remaining} emplacement(s)` : "Option inactive"}</strong><span className="text-xs text-[#806c58]">MP4, WebM ou MOV</span></div>{!videoActive && <button type="button" onClick={() => void activateVideo()} disabled={busy} className="rounded-full bg-[#9e001f] px-5 py-3 text-xs font-black text-white">Activer l’option · {formatPrice(5000)}</button>}</div><div className="mt-5 grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end"><label className="text-xs font-bold">ID du produit<input value={productId} onChange={(event) => setProductId(event.target.value)} placeholder="UUID du produit" className="mt-2 h-11 w-full rounded-xl border border-[#eadfce] px-3 text-sm" /></label><label className="text-xs font-bold">Vidéo, 3 Mo maximum<input type="file" accept="video/mp4,video/webm,video/quicktime" onChange={(event) => setFile(event.target.files?.[0] || null)} className="mt-2 block w-full text-xs" /></label><button type="button" onClick={() => void uploadVideo()} disabled={!videoActive || busy || remaining <= 0} className="h-11 rounded-full bg-[#087e8b] px-5 text-xs font-black text-white disabled:opacity-50">{busy ? "Envoi…" : "Associer la vidéo"}</button></div>{message && <p className="mt-4 rounded-xl bg-[#e9f7f5] p-3 text-xs font-semibold text-[#087e8b]">{message}</p>}{error && <p className="mt-4 rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-800">{error}</p>}</section>}</div></main>;
+    </main>
+  );
 }
