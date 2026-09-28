@@ -179,6 +179,16 @@ function MessagesContent() {
     const currentPlatform = sessionStorage.getItem("eam_current_platform");
     const referrer = document.referrer || "";
 
+    const isFromJobs =
+      platform === "jobs" ||
+      currentPlatform === "jobs" ||
+      referrer.includes("/emploi");
+
+    if (isFromJobs && !paramConversationId && !paramUserId && !paramCallId) {
+      window.location.replace("/emploi/messages");
+      return;
+    }
+
     const isFromCrowdfunding =
       platform === "crowdfunding" ||
       currentPlatform === "crowdfunding" ||
@@ -832,7 +842,7 @@ function MessagesContent() {
           </div>
         </div>
 
-        {/* Sélecteur de plateforme Messagerie WAB <-> Marketplace <-> Crowdfunding */}
+        {/* Sélecteur de plateforme Messagerie WAB <-> Marketplace <-> Crowdfunding <-> Jobs */}
         <div className="flex items-center rounded-full bg-black/30 p-1 border border-white/15 text-xs font-bold">
           <span className="flex items-center gap-1.5 rounded-full bg-[#9e001f] px-3 py-1 text-white shadow-sm">
             <span className="material-symbols-outlined text-[15px]">chat</span>
@@ -853,6 +863,14 @@ function MessagesContent() {
           >
             <img src="/crowdfunding-message-icon.png" alt="" className="h-3.5 w-3.5 object-contain" />
             <span className="hidden sm:inline">Crowdfunding</span>
+          </Link>
+          <Link
+            href="/emploi/messages"
+            className="flex items-center gap-1.5 rounded-full px-3 py-1 text-white/80 hover:text-white transition"
+            title="Accéder à la messagerie Jobs & Recrutement"
+          >
+            <img src="/jobs-message-icon.webp" alt="" className="h-3.5 w-3.5 object-contain" />
+            <span className="hidden sm:inline">Jobs</span>
           </Link>
         </div>
 

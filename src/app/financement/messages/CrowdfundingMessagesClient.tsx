@@ -710,6 +710,14 @@ export default function CrowdfundingMessagesClient() {
             <img src="/crowdfunding-message-icon.png" alt="" className="h-3.5 w-3.5 object-contain" />
             <span>Crowdfunding</span>
           </span>
+          <Link
+            href="/emploi/messages"
+            className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-slate-300 hover:text-white transition"
+            title="Messagerie Jobs & Recrutement"
+          >
+            <img src="/jobs-message-icon.webp" alt="" className="h-3.5 w-3.5 object-contain" />
+            <span className="hidden md:inline">Jobs</span>
+          </Link>
         </div>
       </header>
 

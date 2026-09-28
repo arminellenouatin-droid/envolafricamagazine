@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
   const filtered = sourceOffers
     .filter((offer) => !query || normalize(`${offer.title} ${offer.description} ${offer.sector} ${offer.skills.join(" ")}`).includes(query))
     .filter((offer) => !country || offer.country === country)
+    .filter((offer) => !city || normalize(offer.city) === normalize(city))
     .filter((offer) => !sector || offer.sector === sector)
     .sort((a, b) => {
       const score = (offer: typeof a) => {

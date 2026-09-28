@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AFRICA_COUNTRIES } from "@/lib/africa-context";
+import { getCitiesForCountry } from "@/lib/africa-cities";
 import { useLocale } from "@/components/LocaleProvider";
 
 type Offer = {
@@ -57,14 +58,18 @@ export default function JobsClient() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [country, setCountry] = useState("");
+  const [city, setCity] = useState("");
   const [sector, setSector] = useState("");
   const sentinel = useRef<HTMLDivElement | null>(null);
+
+  const availableCities = getCitiesForCountry(country);
 
   const loadOffers = useCallback(async (nextPage: number, reset = false) => {
     setLoading(true);
     const params = new URLSearchParams({ page: String(nextPage), limit: "8" });
     if (search) params.set("q", search);
     if (country) params.set("country", country);
+    if (city) params.set("city", city);
     if (sector) params.set("sector", sector);
     const interests = JSON.parse(localStorage.getItem("ea_jobs_interests") ?? "[]") as string[];
     if (interests.length) params.set("interests", interests.slice(0, 10).join(","));
@@ -77,7 +82,13 @@ export default function JobsClient() {
     } finally {
       setLoading(false);
     }
-  }, [country, search, sector]);
+  }, [country, city, search, sector]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("eam_current_platform", "jobs");
+    }
+  }, []);
 
   useEffect(() => {
     loadOffers(1, true);
@@ -121,7 +132,7 @@ export default function JobsClient() {
     fetch("/api/jobs/events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "search", query: search, visitorId, country }),
+      body: JSON.stringify({ type: "search", query: search, visitorId, country, city }),
     }).catch(() => undefined);
     loadOffers(1, true);
   }
@@ -146,48 +157,22 @@ export default function JobsClient() {
         />
 
         <div className="relative z-10 mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16 lg:py-20">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 backdrop-blur-md">
-            <span className="h-2 w-2 rounded-full bg-[#8ee0c0] animate-pulse" />
-            <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#8ee0c0]">
-              Envol Africa Jobs · Panafricain & Confidentialité Garantie
-            </span>
-          </div>
-
-          <div className="mt-6 grid gap-8 lg:grid-cols-[1.3fr_0.9fr] lg:items-end">
-            <div>
-              <h1 className="font-display text-3xl font-black leading-[1.1] sm:text-5xl lg:text-[54px]">
-                L’emploi africain, <br />
-                <span className="bg-gradient-to-r from-[#8ee0c0] via-[#5be0b5] to-[#f6c453] bg-clip-text text-transparent">
-                  connecté à vos ambitions.
-                </span>
-              </h1>
-              <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-300 sm:text-lg">
-                Accédez aux opportunités professionnelles exclusives à travers 54 pays. Les coordonnées des recruteurs demeurent protégées jusqu’à votre décryptage pour une relation directe et de confiance.
-              </p>
-            </div>
-
-            {/* Chiffres clés */}
-            <div className="grid grid-cols-3 gap-2.5 sm:gap-3 text-center">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-3.5 backdrop-blur-sm transition-all hover:bg-white/10 sm:p-4">
-                <strong className="block text-2xl font-black text-[#8ee0c0] sm:text-3xl">54</strong>
-                <span className="text-[11px] font-medium text-slate-300 sm:text-xs">pays couverts</span>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-3.5 backdrop-blur-sm transition-all hover:bg-white/10 sm:p-4">
-                <strong className="block text-2xl font-black text-[#f6c453] sm:text-3xl">200 F</strong>
-                <span className="text-[11px] font-medium text-slate-300 sm:text-xs">pour décrypter</span>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-3.5 backdrop-blur-sm transition-all hover:bg-white/10 sm:p-4">
-                <strong className="block text-2xl font-black text-white sm:text-3xl">2</strong>
-                <span className="text-[11px] font-medium text-slate-300 sm:text-xs">offres gratuites PME</span>
-              </div>
-            </div>
+          <div className="max-w-3xl">
+            <h1 className="font-display text-3xl font-black leading-[1.1] sm:text-5xl lg:text-[54px]">
+              Postuler, Recruter{" "}
+              <span className="bg-gradient-to-r from-[#8ee0c0] via-[#5be0b5] to-[#f6c453] bg-clip-text text-transparent">
+                partout en Afrique
+              </span>
+            </h1>
+            <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-300 sm:text-lg">
+              Accédez aux opportunités professionnelles exclusives à travers 54 pays.
+            </p>
           </div>
 
           {/* Formulaire de Recherche Unifié */}
           <form
             onSubmit={submitSearch}
-            className="mt-8 rounded-2xl border border-white/20 bg-white/95 p-3 shadow-2xl backdrop-blur-md md:grid md:grid-cols-[1.5fr_1fr_1fr_auto] md:gap-3"
+            className="mt-8 rounded-2xl border border-white/20 bg-white/95 p-3 shadow-2xl backdrop-blur-md md:grid md:grid-cols-[1.4fr_1fr_1fr_1fr_auto] md:gap-3"
           >
             <div className="relative mb-2 md:mb-0">
               <label className="sr-only" htmlFor="job-search">
@@ -210,11 +195,31 @@ export default function JobsClient() {
             <div className="mb-2 md:mb-0">
               <select
                 value={country}
-                onChange={(event) => setCountry(event.target.value)}
+                onChange={(event) => {
+                  const newCountry = event.target.value;
+                  setCountry(newCountry);
+                  setCity("");
+                }}
                 className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-[#087e8b] focus:ring-2 focus:ring-[#087e8b]/20"
               >
                 <option value="">Tous les pays d&apos;Afrique</option>
                 {countries.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mb-2 md:mb-0">
+              <select
+                value={city}
+                onChange={(event) => setCity(event.target.value)}
+                disabled={!country}
+                className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-[#087e8b] focus:ring-2 focus:ring-[#087e8b]/20 disabled:bg-slate-100 disabled:text-slate-400"
+              >
+                <option value="">{country ? "Toutes les villes" : "Ville (sélectionner un pays)"}</option>
+                {availableCities.map((item) => (
                   <option key={item} value={item}>
                     {item}
                   </option>
@@ -244,41 +249,6 @@ export default function JobsClient() {
               Rechercher
             </button>
           </form>
-
-          {/* Filtres Tactiles par Chips Horizontaux (Mobile & Desktop) */}
-          <div className="mt-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-            <span className="shrink-0 text-xs font-bold uppercase tracking-wider text-slate-400">
-              Secteurs rapides :
-            </span>
-            <button
-              type="button"
-              onClick={() => setSector("")}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all ${
-                sector === ""
-                  ? "bg-[#9e001f] text-white shadow-md shadow-[#9e001f]/30"
-                  : "border border-white/20 bg-white/10 text-slate-200 hover:bg-white/20"
-              }`}
-            >
-              Tous
-            </button>
-            {sectors.map((item) => {
-              const isActive = sector === item;
-              return (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => handleSelectSector(item)}
-                  className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all ${
-                    isActive
-                      ? "bg-[#8ee0c0] text-[#071b36] shadow-md shadow-[#8ee0c0]/30"
-                      : "border border-white/20 bg-white/10 text-slate-200 hover:bg-white/20"
-                  }`}
-                >
-                  {item}
-                </button>
-              );
-            })}
-          </div>
         </div>
       </section>
 
@@ -299,6 +269,7 @@ export default function JobsClient() {
             <p className="text-xs text-[#5c403f] sm:text-sm">
               {offers.length} offre{offers.length > 1 ? "s" : ""} disponible{offers.length > 1 ? "s" : ""} en temps réel
               {country ? ` · Filtré sur ${country}` : ""}
+              {city ? ` (${city})` : ""}
               {sector ? ` · Secteur ${sector}` : ""}
             </p>
           </div>

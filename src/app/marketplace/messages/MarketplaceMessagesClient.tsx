@@ -676,6 +676,15 @@ export default function MarketplaceMessagesClient() {
               <span className="hidden sm:inline">Crowdfunding</span>
             </Link>
 
+            <Link
+              href="/emploi/messages"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#eadfce] bg-[#fcf9f8] px-3 py-1.5 text-xs font-bold text-[#725f4d] transition hover:border-[#087e8b] hover:text-[#087e8b]"
+              title="Accéder à la messagerie Jobs & Recrutement"
+            >
+              <img src="/jobs-message-icon.webp" alt="" className="h-3.5 w-3.5 object-contain" />
+              <span className="hidden sm:inline">Jobs</span>
+            </Link>
+
             {/* Perspective Switcher */}
             <div className="flex items-center rounded-full border border-[#eadfce] bg-[#fcf9f8] p-1 text-xs font-bold">
               <button
