@@ -122,10 +122,58 @@ export default function RichTextEditor({ name, value, defaultValue = "", onChang
       <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => format("italic")} aria-label="Mettre en italique" title="Italique" className="grid h-8 w-8 place-items-center rounded-lg font-serif text-lg italic text-[#082843] transition hover:bg-[#dff5f1]">I</button>
       <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => format("underline")} aria-label="Souligner" title="Souligné" className="grid h-8 w-8 place-items-center rounded-lg font-bold underline text-[#082843] transition hover:bg-[#dff5f1]">U</button>
       <button type="button" onMouseDown={(event) => { event.preventDefault(); rememberSelection(); }} onClick={insertImageFromUrl} aria-label="Insérer une image depuis une URL" title="Insérer une image" className="ml-1 inline-flex h-8 items-center gap-1 rounded-lg px-2 text-[11px] font-bold text-[#082843] transition hover:bg-[#dff5f1]">▧ Image</button>
-      <label onMouseDown={(event) => { event.preventDefault(); rememberSelection(); }} title="Téléverser une image dans le contenu" className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg px-2 text-[11px] font-bold text-[#082843] transition hover:bg-[#dff5f1]">↑ Téléverser<input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" disabled={uploadingImage} onChange={(event) => void handleImageUpload(event)} /></label>
-      {uploadingImage ? <span className="ml-1 text-[10px] text-[#687274]">Téléversement…</span> : <span className="ml-1 text-[10px] text-[#687274]">Sélectionnez un passage puis choisissez une option</span>}
+      <button
+        type="button"
+        onMouseDown={(event) => {
+          event.preventDefault();
+          rememberSelection();
+        }}
+        onClick={() => {
+          editorRef.current?.focus();
+          restoreSelection();
+          document.execCommand("insertText", false, "#");
+          emit();
+        }}
+        aria-label="Insérer un hashtag"
+        title="Ajouter un hashtag (#)"
+        className="ml-1 inline-flex h-8 items-center gap-1 rounded-lg bg-[#eefcfa] px-2 text-[11px] font-extrabold text-[#006874] transition hover:bg-[#dff5f1] border border-[#b9ebe6]"
+      >
+        # Hashtag
+      </button>
+      <button
+        type="button"
+        onMouseDown={(event) => {
+          event.preventDefault();
+          rememberSelection();
+        }}
+        onClick={() => {
+          editorRef.current?.focus();
+          restoreSelection();
+          document.execCommand("insertText", false, "@");
+          emit();
+        }}
+        aria-label="Mentionner un profil"
+        title="Mentionner un profil (@)"
+        className="inline-flex h-8 items-center gap-1 rounded-lg bg-[#eefcfa] px-2 text-[11px] font-extrabold text-[#006874] transition hover:bg-[#dff5f1] border border-[#b9ebe6]"
+      >
+        @ Mention
+      </button>
+      {uploadingImage ? <span className="ml-1 text-[10px] text-[#687274]">Téléversement…</span> : null}
     </div>
-    <div ref={editorRef} contentEditable suppressContentEditableWarning role="textbox" aria-multiline="true" data-placeholder={placeholder} onInput={emit} onBlur={emit} onKeyUp={emit} onPaste={handlePaste} className="min-h-[var(--editor-min-height)] w-full whitespace-normal p-4 text-sm leading-7 outline-none empty:before:pointer-events-none empty:before:text-[#7b8588] empty:before:content-[attr(data-placeholder)]" style={{ "--editor-min-height": `${minHeight}px` } as React.CSSProperties} />
+    <div
+      ref={editorRef}
+      contentEditable
+      suppressContentEditableWarning
+      role="textbox"
+      aria-multiline="true"
+      data-placeholder={placeholder}
+      onInput={emit}
+      onBlur={emit}
+      onKeyUp={emit}
+      onPaste={handlePaste}
+      className="min-h-[var(--editor-min-height)] w-full whitespace-normal p-4 text-sm leading-7 outline-none empty:before:pointer-events-none empty:before:text-[#7b8588] empty:before:content-[attr(data-placeholder)] font-['Arial_Black',sans-serif]"
+      style={{ "--editor-min-height": `${minHeight}px`, fontFamily: "'Arial Black', 'Arial Bold', Gadget, sans-serif" } as React.CSSProperties}
+    />
     {name && <input ref={hiddenRef} type="hidden" name={name} defaultValue={initial} />}
   </div>;
 }

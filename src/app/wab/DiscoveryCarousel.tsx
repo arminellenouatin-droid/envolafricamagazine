@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import FollowButton from "./FollowButton";
 import FollowPageButton from "./FollowPageButton";
+import MediaInteractions from "./MediaInteractions";
 
 type DiscoveryType = "people" | "reels" | "pages" | "groups";
 type DiscoveryItem = {
@@ -36,6 +37,46 @@ export default function DiscoveryCarousel({ type }: { type: DiscoveryType }) {
   const [dismissed, setDismissed] = useState<Record<string, boolean>>({});
   const [joined, setJoined] = useState<Record<string, boolean>>({});
   const [message, setMessage] = useState("");
+  const [activeReel, setActiveReel] = useState<DiscoveryItem | null>(null);
+  const [reelMuted, setReelMuted] = useState(false);
+  const [reelPaused, setReelPaused] = useState(false);
+  const reelVideoRef = useRef<HTMLVideoElement>(null);
+
+  function openReel(item: DiscoveryItem) {
+    const nextViews = (item.views || 0) + 1;
+    setItems((prev) => prev.map((r) => (r.id === item.id ? { ...r, views: nextViews } : r)));
+    setActiveReel({ ...item, views: nextViews });
+    setReelPaused(false);
+    fetch(`/api/wab/reels/${encodeURIComponent(item.id)}/view`, { method: "POST" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (typeof data?.views === "number") {
+          setItems((prev) => prev.map((r) => (r.id === item.id ? { ...r, views: data.views } : r)));
+          setActiveReel((cur) => (cur && cur.id === item.id ? { ...cur, views: data.views } : cur));
+        }
+      })
+      .catch(() => undefined);
+  }
+
+  async function likeReel(item: DiscoveryItem, e?: React.MouseEvent) {
+    if (e) e.stopPropagation();
+    try {
+      const res = await fetch("/api/wab/media-interactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mediaType: "reel", mediaId: item.id, reaction: "love" }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (typeof data?.totalLikes === "number") {
+        setItems((prev) => prev.map((r) => (r.id === item.id ? { ...r, likes: data.totalLikes } : r)));
+        setActiveReel((cur) => (cur && cur.id === item.id ? { ...cur, likes: data.totalLikes } : cur));
+      } else {
+        const nextLikes = (item.likes || 0) + 1;
+        setItems((prev) => prev.map((r) => (r.id === item.id ? { ...r, likes: nextLikes } : r)));
+        setActiveReel((cur) => (cur && cur.id === item.id ? { ...cur, likes: nextLikes } : cur));
+      }
+    } catch {}
+  }
 
   useEffect(() => {
     let active = true;
@@ -193,7 +234,12 @@ export default function DiscoveryCarousel({ type }: { type: DiscoveryType }) {
                   className="group relative flex w-[170px] sm:w-[190px] h-[280px] sm:h-[310px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl bg-[#001325] shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl select-none"
                 >
                   {/* Background Video / Media or Gradient Fallback */}
-                  <a href={item.href} className="absolute inset-0 block overflow-hidden" aria-label={`Regarder le Reel : ${item.title}`}>
+                  <button
+                    type="button"
+                    onClick={() => openReel(item)}
+                    className="absolute inset-0 block w-full h-full text-left overflow-hidden cursor-pointer"
+                    aria-label={`Regarder le Reel : ${item.title}`}
+                  >
                     {item.mediaUrl ? (
                       <video
                         src={item.mediaUrl}
@@ -246,22 +292,26 @@ export default function DiscoveryCarousel({ type }: { type: DiscoveryType }) {
 
                       {/* Views & Likes Badges */}
                       <div className="mt-2 flex items-center justify-between text-[10px] font-bold text-white/95">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 pointer-events-auto">
                           <span className="flex items-center gap-1 rounded-full bg-black/50 backdrop-blur-sm px-2 py-0.5" title="Nombre de vues">
                             <span className="material-symbols-outlined text-[13px] text-teal-300">visibility</span>
                             <span>{formatCompact(item.views)}</span>
                           </span>
-                          <span className="flex items-center gap-1 rounded-full bg-black/50 backdrop-blur-sm px-2 py-0.5 text-rose-300" title="Nombre de mentions j'aime">
+                          <span
+                            onClick={(e) => void likeReel(item, e)}
+                            className="flex items-center gap-1 rounded-full bg-black/50 backdrop-blur-sm px-2 py-0.5 text-rose-300 hover:bg-black/70 cursor-pointer transition active:scale-95"
+                            title="Aimer ce Reel"
+                          >
                             <span className="material-symbols-outlined text-[13px] text-rose-400">favorite</span>
                             <span>{formatCompact(item.likes)}</span>
                           </span>
                         </div>
-                        <span className="rounded-full bg-white/20 backdrop-blur-xs px-2 py-0.5 text-[9px] text-white font-bold">
+                        <span className="rounded-full bg-[#006874] px-2 py-0.5 text-[9px] text-white font-bold shadow-sm">
                           Regarder
                         </span>
                       </div>
                     </div>
-                  </a>
+                  </button>
 
                   {/* Top Bar: "Reel" Pill & Dismiss Button */}
                   <div className="absolute inset-x-0 top-0 p-2.5 flex items-center justify-between z-10">
@@ -414,6 +464,119 @@ export default function DiscoveryCarousel({ type }: { type: DiscoveryType }) {
           })
         )}
       </div>
+
+      {/* Reel Viewer Modal */}
+      {activeReel && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[100] grid place-items-center bg-black/90 p-2 sm:p-4 backdrop-blur-md"
+          onClick={() => setActiveReel(null)}
+        >
+          <div
+            className="relative h-[min(88vh,720px)] w-[min(94vw,410px)] overflow-hidden rounded-3xl bg-black shadow-2xl border border-white/10 flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top Bar with Creator & Actions */}
+            <div className="absolute inset-x-0 top-4 z-30 flex items-center justify-between px-4 text-white">
+              <div className="flex items-center gap-2">
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-[#006874] text-xs font-black text-white ring-2 ring-white">
+                  {activeReel.subtitle.slice(0, 1).toUpperCase()}
+                </span>
+                <div>
+                  <p className="text-xs font-bold leading-none">{activeReel.subtitle}</p>
+                  <div className="flex items-center gap-2 text-[10px] text-white/80 mt-1">
+                    <span className="flex items-center gap-0.5">
+                      <span className="material-symbols-outlined text-[12px] text-teal-300">visibility</span>
+                      <span>{formatCompact(activeReel.views)}</span>
+                    </span>
+                    <span>·</span>
+                    <button
+                      type="button"
+                      onClick={() => void likeReel(activeReel)}
+                      className="flex items-center gap-0.5 text-rose-300 hover:text-rose-200 transition active:scale-95"
+                      title="J'aime ce reel"
+                    >
+                      <span className="material-symbols-outlined text-[12px] text-rose-400">favorite</span>
+                      <span>{formatCompact(activeReel.likes)}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setReelMuted((m) => !m)}
+                  className="grid h-8 w-8 place-items-center rounded-full bg-black/50 text-white backdrop-blur hover:bg-black/70"
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    {reelMuted ? "volume_off" : "volume_up"}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveReel(null)}
+                  className="grid h-8 w-8 place-items-center rounded-full bg-black/50 text-white backdrop-blur hover:bg-black/70"
+                  aria-label="Fermer"
+                >
+                  <span className="material-symbols-outlined text-[20px]">close</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Video Player */}
+            <div
+              className="relative flex-1 w-full bg-black flex items-center justify-center cursor-pointer"
+              onClick={() => {
+                if (!reelVideoRef.current) return;
+                if (reelVideoRef.current.paused) {
+                  reelVideoRef.current.play();
+                  setReelPaused(false);
+                } else {
+                  reelVideoRef.current.pause();
+                  setReelPaused(true);
+                }
+              }}
+            >
+              {activeReel.mediaUrl ? (
+                <video
+                  ref={reelVideoRef}
+                  src={activeReel.mediaUrl}
+                  autoPlay
+                  loop
+                  playsInline
+                  muted={reelMuted}
+                  className="h-full w-full object-contain"
+                />
+              ) : activeReel.imageUrl ? (
+                <img src={activeReel.imageUrl} alt="" className="h-full w-full object-contain" />
+              ) : (
+                <div className="h-full w-full bg-gradient-to-br from-[#002b36] to-[#001f27]" />
+              )}
+
+              {reelPaused && (
+                <div className="absolute inset-0 grid place-items-center bg-black/30 pointer-events-none">
+                  <span className="material-symbols-outlined text-6xl text-white/80">play_circle</span>
+                </div>
+              )}
+            </div>
+
+            {/* Interactions Drawer */}
+            <div className="relative z-30">
+              <MediaInteractions
+                mediaType="reel"
+                mediaId={activeReel.id}
+                caption={activeReel.title}
+                onLikesCountChange={(newLikes) => {
+                  setItems((prev) => prev.map((r) => (r.id === activeReel.id ? { ...r, likes: newLikes } : r)));
+                  setActiveReel((cur) => (cur ? { ...cur, likes: newLikes } : null));
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

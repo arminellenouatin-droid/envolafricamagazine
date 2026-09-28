@@ -137,3 +137,29 @@ export function sanitizeRichText(value: string) {
 export function isRichText(value: string) {
   return /<(p|br|div|h[1-6]|ul|ol|li|strong|b|em|i|u|blockquote|a|img)\b[^>]*>/i.test(value);
 }
+
+export function linkifyHashtagsAndMentions(html: string): string {
+  if (!html || typeof html !== "string") return "";
+  let insideAnchor = false;
+  return html.replace(/(<\/?a\b[^>]*>)|(<[^>]+>)|([^<]+)/gi, (match, anchorTag, otherTag, text) => {
+    if (anchorTag) {
+      if (/^<a\b/i.test(anchorTag)) insideAnchor = true;
+      if (/^<\/a\b/i.test(anchorTag)) insideAnchor = false;
+      return anchorTag;
+    }
+    if (otherTag) return otherTag;
+    if (insideAnchor) return text;
+
+    let processed = text;
+    // Remplacer les hashtags (#tag) exactement comme sur Facebook
+    processed = processed.replace(/(^|[\s\(\[\{.,;:!?])#([a-zA-Z0-9_\u00C0-\u017F]+)/g, (_m: string, prefix: string, tagWord: string) => {
+      return `${prefix}<a href="/wab/recherche?q=%23${encodeURIComponent(tagWord)}" class="font-bold text-[#006874] hover:underline cursor-pointer">#${tagWord}</a>`;
+    });
+    // Remplacer les mentions (@user) exactement comme sur Facebook
+    processed = processed.replace(/(^|[\s\(\[\{.,;:!?])@([a-zA-Z0-9_.\-\u00C0-\u017F]+)/g, (_m: string, prefix: string, userWord: string) => {
+      return `${prefix}<a href="/wab/profil?user=${encodeURIComponent(userWord)}" class="font-bold text-[#006874] hover:underline cursor-pointer">@${userWord}</a>`;
+    });
+    return processed;
+  });
+}
+

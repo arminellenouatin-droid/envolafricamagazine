@@ -874,6 +874,21 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                     />
                   </div>
 
+                  {/* Quick Hashtags shortcut bar (style Facebook) */}
+                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-xs">
+                    <span className="text-[11px] font-bold text-[#5f6368]">Hashtags rapides :</span>
+                    {["#Afrique", "#Business", "#Innovation", "#Opportunité", "#Investissement", "#Tech"].map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => setContent((prev) => (prev ? `${prev} ${tag} ` : `${tag} `))}
+                        className="rounded-full bg-[#eefcfa] border border-[#b9ebe6] px-2.5 py-1 text-[11px] font-extrabold text-[#006874] transition hover:bg-[#d0f5ee]"
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+
                   {/* Destination (Profile, Page, Group) */}
                   <div className="mt-4 rounded-xl border border-[#d8e2e6] bg-[#fafcfb] p-3 text-xs">
                     <div className="grid gap-3 sm:grid-cols-[160px_1fr]">
@@ -1185,7 +1200,10 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                     </div>
 
                     {/* Post Content */}
-                    <div className="text-sm leading-relaxed text-[#111e1d]">
+                    <div
+                      className="text-sm leading-relaxed text-[#111e1d] font-['Arial_Black',sans-serif]"
+                      style={{ fontFamily: "'Arial Black', 'Arial Bold', Gadget, sans-serif" }}
+                    >
                       <ExpandablePostText value={post.content} />
 
                       {/* Source URL if magazine republication */}

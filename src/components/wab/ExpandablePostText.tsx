@@ -20,8 +20,16 @@ export default function ExpandablePostText({ value }: { value: string }) {
 
   return (
     <>
-      <div ref={contentRef} className={`${expanded ? "" : "line-clamp-4 overflow-hidden"} leading-7`}>
-        <RichTextContent value={value} />
+      <div
+        ref={contentRef}
+        className={`${expanded ? "" : "line-clamp-4 overflow-hidden"} leading-7 font-['Arial_Black',sans-serif]`}
+        style={{ fontFamily: "'Arial Black', 'Arial Bold', Gadget, sans-serif" }}
+      >
+        <RichTextContent
+          value={value}
+          className="font-['Arial_Black',sans-serif]"
+          style={{ fontFamily: "'Arial Black', 'Arial Bold', Gadget, sans-serif" }}
+        />
       </div>
       {longContent && (
         <button

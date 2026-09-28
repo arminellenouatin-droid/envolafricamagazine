@@ -179,8 +179,15 @@ export default function WabSinglePostView({ post }: { post: SinglePostData }) {
           </div>
 
           {/* Contenu textuel */}
-          <div className="mt-5 text-sm sm:text-[15px] leading-relaxed text-[#111e1d]">
-            <RichTextContent value={post.content} />
+          <div
+            className="mt-5 text-sm sm:text-[15px] leading-relaxed text-[#111e1d] font-['Arial_Black',sans-serif]"
+            style={{ fontFamily: "'Arial Black', 'Arial Bold', Gadget, sans-serif" }}
+          >
+            <RichTextContent
+              value={post.content}
+              className="font-['Arial_Black',sans-serif]"
+              style={{ fontFamily: "'Arial Black', 'Arial Bold', Gadget, sans-serif" }}
+            />
           </div>
 
           {/* Lecteur Vidéo Natif */}

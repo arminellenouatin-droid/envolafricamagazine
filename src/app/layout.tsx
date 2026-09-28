@@ -12,6 +12,7 @@ import { getOrganizationSchema, getWebSiteSchema } from "@/lib/schema-org";
 import GoogleOneTapPrompt from "@/components/GoogleOneTapPrompt";
 import InAppNotificationBanner from "@/components/InAppNotificationBanner";
 import AssistanceChatWidget from "@/components/AssistanceChatWidget";
+import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +71,7 @@ export const metadata: Metadata = {
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
   },
+  manifest: "/manifest.webmanifest",
 };
 
 async function getUserFromCookie() {
@@ -177,6 +179,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <GoogleOneTapPrompt user={user ? { id: user.id } : null} />
           <InAppNotificationBanner />
           <AssistanceChatWidget />
+          <PwaInstallPrompt />
         </LocaleProvider>
         <script dangerouslySetInnerHTML={{__html: `
           (function(){

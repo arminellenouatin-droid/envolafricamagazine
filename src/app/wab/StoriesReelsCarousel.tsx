@@ -141,10 +141,20 @@ export default function StoriesReelsCarousel() {
   }
 
   function openStory(story: Story) {
-    setActiveStory(story);
+    const nextViews = (story.views || 0) + 1;
+    setStories((items) => items.map((item) => (item.id === story.id ? { ...item, views: nextViews } : item)));
+    setActiveStory({ ...story, views: nextViews });
     setVideoProgress(0);
     setVideoPaused(false);
-    fetch(`/api/wab/stories/${story.id}/view`, { method: "POST" }).catch(() => undefined);
+    fetch(`/api/wab/stories/${story.id}/view`, { method: "POST" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (typeof data?.views === "number") {
+          setStories((items) => items.map((item) => (item.id === story.id ? { ...item, views: data.views } : item)));
+          setActiveStory((cur) => (cur && cur.id === story.id ? { ...cur, views: data.views } : cur));
+        }
+      })
+      .catch(() => undefined);
   }
 
   function togglePlayPause() {
@@ -304,10 +314,29 @@ export default function StoriesReelsCarousel() {
                       <span>{formatCompactCount(activeStory.views)}</span>
                     </span>
                     <span>·</span>
-                    <span className="flex items-center gap-0.5">
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          const res = await fetch("/api/wab/media-interactions", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ mediaType: "story", mediaId: activeStory.id, reaction: "love" }),
+                          });
+                          const data = await res.json().catch(() => ({}));
+                          if (typeof data.totalLikes === "number") {
+                            setStories((items) => items.map((item) => (item.id === activeStory.id ? { ...item, likes: data.totalLikes } : item)));
+                            setActiveStory((cur) => (cur ? { ...cur, likes: data.totalLikes } : null));
+                          }
+                        } catch {}
+                      }}
+                      className="flex items-center gap-0.5 rounded-full bg-black/40 px-1.5 py-0.5 text-[10px] text-rose-300 hover:bg-black/60 transition active:scale-95"
+                      title="J'aime"
+                    >
                       <span className="material-symbols-outlined text-[12px] text-rose-400">favorite</span>
                       <span>{formatCompactCount(activeStory.likes)}</span>
-                    </span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -373,7 +402,15 @@ export default function StoriesReelsCarousel() {
 
             {/* Interaction drawer */}
             <div className="absolute bottom-0 inset-x-0 z-30">
-              <MediaInteractions mediaType="story" mediaId={activeStory.id} caption={activeStory.caption} />
+              <MediaInteractions
+                mediaType="story"
+                mediaId={activeStory.id}
+                caption={activeStory.caption}
+                onLikesCountChange={(newLikes) => {
+                  setStories((items) => items.map((item) => (item.id === activeStory.id ? { ...item, likes: newLikes } : item)));
+                  setActiveStory((cur) => (cur ? { ...cur, likes: newLikes } : null));
+                }}
+              />
             </div>
           </div>
         </div>
