@@ -1,0 +1,325 @@
+{
+  "spaces": [
+    {
+      "id": "space-5e9fe3eb-5962-4446-af2b-bf43fe2b0b56",
+      "projetId": "5e9fe3eb-5962-4446-af2b-bf43fe2b0b56",
+      "porteurId": "porteur_0",
+      "title": "Projet AgroBio - Agroalimentaire",
+      "campaignMode": "don",
+      "status": "actif",
+      "createdAt": "2026-08-18T12:11:06.339Z",
+      "updatedAt": "2026-09-28T06:57:51.968Z"
+    },
+    {
+      "id": "space-71f9999e-b985-445d-bbd6-ea83d216dd66",
+      "projetId": "71f9999e-b985-445d-bbd6-ea83d216dd66",
+      "porteurId": "porteur_1",
+      "title": "Projet TechVillage - Tech",
+      "campaignMode": "don",
+      "status": "actif",
+      "createdAt": "2026-08-15T12:11:06.339Z",
+      "updatedAt": "2026-09-28T06:57:51.950Z"
+    },
+    {
+      "id": "space-1276d63b-ef3d-44d6-b418-cd66a513666d",
+      "projetId": "1276d63b-ef3d-44d6-b418-cd66a513666d",
+      "porteurId": "porteur_2",
+      "title": "Projet Solar Power - Énergie",
+      "campaignMode": "don",
+      "status": "actif",
+      "createdAt": "2026-08-12T12:11:06.340Z",
+      "updatedAt": "2026-09-28T06:57:51.950Z"
+    },
+    {
+      "id": "space-8053ec98-6eb7-4642-8f30-fccc287c7fec",
+      "projetId": "8053ec98-6eb7-4642-8f30-fccc287c7fec",
+      "porteurId": "porteur_3",
+      "title": "Projet EduKids - Éducation",
+      "campaignMode": "don",
+      "status": "actif",
+      "createdAt": "2026-08-09T12:11:06.340Z",
+      "updatedAt": "2026-09-28T06:57:51.950Z"
+    },
+    {
+      "id": "space-b02eb0b3-e736-4aba-a7c8-2dd4b88300bd",
+      "projetId": "b02eb0b3-e736-4aba-a7c8-2dd4b88300bd",
+      "porteurId": "porteur_4",
+      "title": "Projet MediCare - Santé",
+      "campaignMode": "don",
+      "status": "actif",
+      "createdAt": "2026-08-06T12:11:06.340Z",
+      "updatedAt": "2026-09-28T06:57:51.950Z"
+    },
+    {
+      "id": "space-17aef3d7-90e1-449f-aad3-6019c9279747",
+      "projetId": "17aef3d7-90e1-449f-aad3-6019c9279747",
+      "porteurId": "porteur_5",
+      "title": "Projet Artisanat d'Art - Artisanat",
+      "campaignMode": "don",
+      "status": "actif",
+      "createdAt": "2026-08-03T12:11:06.340Z",
+      "updatedAt": "2026-09-28T06:57:51.950Z"
+    },
+    {
+      "id": "space-58fd5520-c24c-4947-a25f-340c085d127c",
+      "projetId": "58fd5520-c24c-4947-a25f-340c085d127c",
+      "porteurId": "porteur_6",
+      "title": "Projet Green Future - Environnement",
+      "campaignMode": "don",
+      "status": "actif",
+      "createdAt": "2026-07-31T12:11:06.340Z",
+      "updatedAt": "2026-09-28T06:57:51.950Z"
+    },
+    {
+      "id": "space-0b462c46-c6bd-4545-a775-a98593079ee2",
+      "projetId": "0b462c46-c6bd-4545-a775-a98593079ee2",
+      "porteurId": "porteur_7",
+      "title": "Projet MarketPlace - Commerce",
+      "campaignMode": "don",
+      "status": "actif",
+      "createdAt": "2026-07-28T12:11:06.340Z",
+      "updatedAt": "2026-09-28T06:57:51.950Z"
+    }
+  ],
+  "participants": [
+    {
+      "id": "638c3a35-f3e3-46af-a3c2-94328bdb9339",
+      "spaceId": "space-5e9fe3eb-5962-4446-af2b-bf43fe2b0b56",
+      "userId": "porteur_0",
+      "nom": "Porteur du projet",
+      "role": "porteur",
+      "investmentMode": "don",
+      "investedAmount": 0,
+      "status": "actif",
+      "joinedAt": "2026-08-18T12:11:06.339Z"
+    },
+    {
+      "id": "bec52f06-eb99-49c1-89c7-79d2cf99a554",
+      "spaceId": "space-71f9999e-b985-445d-bbd6-ea83d216dd66",
+      "userId": "porteur_1",
+      "nom": "Porteur du projet",
+      "role": "porteur",
+      "investmentMode": "don",
+      "investedAmount": 0,
+      "status": "actif",
+      "joinedAt": "2026-08-15T12:11:06.339Z"
+    },
+    {
+      "id": "bf52311d-65c4-43b4-b6df-663337637b67",
+      "spaceId": "space-1276d63b-ef3d-44d6-b418-cd66a513666d",
+      "userId": "porteur_2",
+      "nom": "Porteur du projet",
+      "role": "porteur",
+      "investmentMode": "don",
+      "investedAmount": 0,
+      "status": "actif",
+      "joinedAt": "2026-08-12T12:11:06.340Z"
+    },
+    {
+      "id": "ee235b81-8c2a-47be-b04b-83478ab22e89",
+      "spaceId": "space-8053ec98-6eb7-4642-8f30-fccc287c7fec",
+      "userId": "porteur_3",
+      "nom": "Porteur du projet",
+      "role": "porteur",
+      "investmentMode": "don",
+      "investedAmount": 0,
+      "status": "actif",
+      "joinedAt": "2026-08-09T12:11:06.340Z"
+    },
+    {
+      "id": "7e51e7ea-6d81-4e81-9cc3-f53626858712",
+      "spaceId": "space-b02eb0b3-e736-4aba-a7c8-2dd4b88300bd",
+      "userId": "porteur_4",
+      "nom": "Porteur du projet",
+      "role": "porteur",
+      "investmentMode": "don",
+      "investedAmount": 0,
+      "status": "actif",
+      "joinedAt": "2026-08-06T12:11:06.340Z"
+    },
+    {
+      "id": "d1836697-cb5b-41a9-82e8-2ba5c9789767",
+      "spaceId": "space-17aef3d7-90e1-449f-aad3-6019c9279747",
+      "userId": "porteur_5",
+      "nom": "Porteur du projet",
+      "role": "porteur",
+      "investmentMode": "don",
+      "investedAmount": 0,
+      "status": "actif",
+      "joinedAt": "2026-08-03T12:11:06.340Z"
+    },
+    {
+      "id": "4ab86776-1e5c-43e6-822b-bede93ccfdf6",
+      "spaceId": "space-58fd5520-c24c-4947-a25f-340c085d127c",
+      "userId": "porteur_6",
+      "nom": "Porteur du projet",
+      "role": "porteur",
+      "investmentMode": "don",
+      "investedAmount": 0,
+      "status": "actif",
+      "joinedAt": "2026-07-31T12:11:06.340Z"
+    },
+    {
+      "id": "845bfd71-3ef6-4dcc-95ee-d3b54c982ed6",
+      "spaceId": "space-0b462c46-c6bd-4545-a775-a98593079ee2",
+      "userId": "porteur_7",
+      "nom": "Porteur du projet",
+      "role": "porteur",
+      "investmentMode": "don",
+      "investedAmount": 0,
+      "status": "actif",
+      "joinedAt": "2026-07-28T12:11:06.340Z"
+    }
+  ],
+  "messages": [
+    {
+      "id": "bd27158a-6e90-4b7a-8b52-921436182600",
+      "spaceId": "space-5e9fe3eb-5962-4446-af2b-bf43fe2b0b56",
+      "senderId": "porteur_0",
+      "senderRole": "porteur",
+      "senderName": "Porteur Officiel",
+      "content": "Bonjour à tous les investisseurs ! Voici le rapport d'étape et la note vocale explicative.",
+      "isUpdate": false,
+      "isPinned": false,
+      "mentions": [
+        "Investisseur"
+      ],
+      "readBy": [
+        "porteur_0"
+      ],
+      "createdAt": "2026-09-28T06:57:51.963Z",
+      "attachments": [
+        {
+          "id": "832da43c-9127-4043-931e-76651a028a45",
+          "messageId": "bd27158a-6e90-4b7a-8b52-921436182600",
+          "type": "document",
+          "url": "/uploads/crowdfunding/rapport_t3.pdf",
+          "name": "Rapport_Trimestriel_T3.pdf",
+          "size": 1048576,
+          "mimeType": "application/pdf",
+          "createdAt": "2026-09-28T06:57:51.963Z"
+        },
+        {
+          "id": "37941e59-83a5-432a-8c46-f09521754c39",
+          "messageId": "bd27158a-6e90-4b7a-8b52-921436182600",
+          "type": "voice",
+          "url": "/uploads/crowdfunding/audio_note.webm",
+          "name": "audio_note.webm",
+          "size": 245000,
+          "duration": 45,
+          "createdAt": "2026-09-28T06:57:51.963Z"
+        }
+      ]
+    },
+    {
+      "id": "e8e9c115-a2d4-4e3d-82fe-6650147ecbc2",
+      "spaceId": "space-5e9fe3eb-5962-4446-af2b-bf43fe2b0b56",
+      "senderId": "porteur_0",
+      "senderRole": "porteur",
+      "senderName": "Porteur Officiel",
+      "content": "Nous avons atteint 100% de notre premier jalon de production !",
+      "isUpdate": true,
+      "updateTitle": "Lancement officiel de la chaîne d'assemblage",
+      "isPinned": true,
+      "mentions": [],
+      "readBy": [
+        "porteur_0"
+      ],
+      "createdAt": "2026-09-28T06:57:51.968Z",
+      "attachments": [
+        {
+          "id": "8ef0b30d-03f7-4d7d-af09-7834ec1ef1b0",
+          "messageId": "e8e9c115-a2d4-4e3d-82fe-6650147ecbc2",
+          "type": "image",
+          "url": "/uploads/crowdfunding/usine.jpg",
+          "name": "chaine_assemblage.jpg",
+          "size": 512000,
+          "createdAt": "2026-09-28T06:57:51.968Z"
+        }
+      ]
+    },
+    {
+      "id": "daac5755-1662-4c5b-878a-a64b5ff03110",
+      "spaceId": "space-5e9fe3eb-5962-4446-af2b-bf43fe2b0b56",
+      "senderId": "system",
+      "senderRole": "system",
+      "senderName": "Système Envol Africa",
+      "content": "🎥 Réunion d'information investisseurs terminée — Durée : 15 min 20 sec (1 participants)",
+      "isUpdate": false,
+      "isPinned": false,
+      "mentions": [],
+      "readBy": [
+        "porteur_0"
+      ],
+      "createdAt": "2026-09-28T06:57:51.980Z",
+      "attachments": []
+    }
+  ],
+  "attachments": [
+    {
+      "id": "832da43c-9127-4043-931e-76651a028a45",
+      "messageId": "bd27158a-6e90-4b7a-8b52-921436182600",
+      "type": "document",
+      "url": "/uploads/crowdfunding/rapport_t3.pdf",
+      "name": "Rapport_Trimestriel_T3.pdf",
+      "size": 1048576,
+      "mimeType": "application/pdf",
+      "createdAt": "2026-09-28T06:57:51.963Z"
+    },
+    {
+      "id": "37941e59-83a5-432a-8c46-f09521754c39",
+      "messageId": "bd27158a-6e90-4b7a-8b52-921436182600",
+      "type": "voice",
+      "url": "/uploads/crowdfunding/audio_note.webm",
+      "name": "audio_note.webm",
+      "size": 245000,
+      "duration": 45,
+      "createdAt": "2026-09-28T06:57:51.963Z"
+    },
+    {
+      "id": "8ef0b30d-03f7-4d7d-af09-7834ec1ef1b0",
+      "messageId": "e8e9c115-a2d4-4e3d-82fe-6650147ecbc2",
+      "type": "image",
+      "url": "/uploads/crowdfunding/usine.jpg",
+      "name": "chaine_assemblage.jpg",
+      "size": 512000,
+      "createdAt": "2026-09-28T06:57:51.968Z"
+    }
+  ],
+  "calls": [
+    {
+      "id": "74b519ea-43a0-4007-b215-fc1e1aeb8480",
+      "spaceId": "space-5e9fe3eb-5962-4446-af2b-bf43fe2b0b56",
+      "initiatorId": "porteur_0",
+      "initiatorName": "Porteur Officiel",
+      "callType": "video",
+      "isGroup": true,
+      "status": "ended",
+      "participants": [
+        "porteur_0"
+      ],
+      "durationSeconds": 920,
+      "createdAt": "2026-09-28T06:57:51.978Z",
+      "endedAt": "2026-09-28T06:57:51.980Z"
+    }
+  ],
+  "settings": {
+    "5e9fe3eb-5962-4446-af2b-bf43fe2b0b56": {
+      "projetId": "5e9fe3eb-5962-4446-af2b-bf43fe2b0b56",
+      "showAmountsToInvestors": false,
+      "allowInvestorCalls": true
+    }
+  },
+  "reports": [
+    {
+      "id": "f04b6fc5-29c1-4c97-b069-037ba8e6cebc",
+      "spaceId": "space-5e9fe3eb-5962-4446-af2b-bf43fe2b0b56",
+      "reporterId": "porteur_0",
+      "targetType": "message",
+      "targetId": "bd27158a-6e90-4b7a-8b52-921436182600",
+      "reason": "Test de signalement de conformité",
+      "status": "en_attente",
+      "createdAt": "2026-09-28T06:57:51.993Z"
+    }
+  ]
+}

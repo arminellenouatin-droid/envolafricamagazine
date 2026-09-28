@@ -19,6 +19,9 @@ export default function ProjetDetail({ id: propId, initialProjet }: { id?: strin
   });
 
   useEffect(()=>{
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("eam_current_platform", "crowdfunding");
+    }
     if (initialProjet && initialProjet.id === id) {
       setProjet(initialProjet);
       setDaysRemaining(Math.max(0, Math.ceil((new Date(initialProjet.dateFin).getTime() - Date.now()) / 86400000)));
@@ -123,9 +126,12 @@ export default function ProjetDetail({ id: propId, initialProjet }: { id?: strin
               </div>
 
               <div className="mt-6 p-4 rounded-xl bg-[#f6f3f2] border">
-                <h4 className="font-bold text-[12px]">Messagerie directe avec investisseurs</h4>
-                <p className="text-[11px] text-[#5c403f] mt-1">Discutez avec porteur projet - Suivi demandes retrait - Rapports mensuels/trimestriels + docs justificatifs</p>
-                <Link href={`/financement/dashboard/investisseur?projetId=${encodeURIComponent(id)}#messages`} className="mt-3 flex h-9 w-full items-center justify-center rounded-full border bg-white text-[11px] font-bold">­ƒÆ¼ Contacter porteur</Link>
+                <h4 className="font-bold text-[12px]">Messagerie officielle investisseurs</h4>
+                <p className="text-[11px] text-[#5c403f] mt-1">Discutez en direct avec le porteur du projet et les investisseurs confirmés · Mises à jour officielles & conventions</p>
+                <Link href={`/financement/messages?projetId=${encodeURIComponent(id)}`} className="mt-3 flex h-9 w-full items-center justify-center gap-1.5 rounded-full bg-[#0B2545] text-white text-[11px] font-bold hover:bg-[#134074] transition">
+                  <img src="/crowdfunding-message-icon.png" alt="" className="h-4 w-4 object-contain" />
+                  <span>Accéder à la salle investisseurs</span>
+                </Link>
               </div>
             </div>
           </div>

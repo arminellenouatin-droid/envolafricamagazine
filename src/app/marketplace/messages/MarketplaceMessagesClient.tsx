@@ -657,7 +657,7 @@ export default function MarketplaceMessagesClient() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Bascule vers Réseau WAB */}
+            {/* Bascule vers Réseau WAB & Crowdfunding */}
             <Link
               href="/messages"
               className="inline-flex items-center gap-1.5 rounded-full border border-[#eadfce] bg-[#fcf9f8] px-3 py-1.5 text-xs font-bold text-[#725f4d] transition hover:border-[#9e001f] hover:text-[#9e001f]"
@@ -665,6 +665,15 @@ export default function MarketplaceMessagesClient() {
             >
               <span className="material-symbols-outlined text-[15px]">chat</span>
               <span className="hidden sm:inline">Réseau WAB</span>
+            </Link>
+
+            <Link
+              href="/financement/messages"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#eadfce] bg-[#fcf9f8] px-3 py-1.5 text-xs font-bold text-[#725f4d] transition hover:border-amber-600 hover:text-amber-700"
+              title="Accéder à l'espace investisseurs Crowdfunding"
+            >
+              <img src="/crowdfunding-message-icon.png" alt="" className="h-3.5 w-3.5 object-contain" />
+              <span className="hidden sm:inline">Crowdfunding</span>
             </Link>
 
             {/* Perspective Switcher */}

@@ -25,6 +25,10 @@ export default function InvestisseurDashboardClient({ user }: { user: UserProp }
   );
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("eam_current_platform", "crowdfunding");
+    }
+
     fetch("/api/crowdfunding/contributions")
       .then((r) => (r.ok ? r.json() : { contributions: [] }))
       .then((d) => setContribs(d.contributions || []))
@@ -90,12 +94,23 @@ export default function InvestisseurDashboardClient({ user }: { user: UserProp }
     <div className="bg-[#fcf9f8] min-h-screen pb-20">
       <div className="max-w-[1280px] mx-auto px-5 md:px-[64px] py-10">
         <p className="text-xs font-bold uppercase tracking-widest text-[#9e001f]">Espace Investisseur</p>
-        <h1 className="text-[28px] font-black mt-1" style={{ fontFamily: "Montserrat" }}>
-          Bonjour {user.prenom || "Investisseur"}
-        </h1>
-        <p className="text-[#5c403f] text-[13px] mt-2">
-          Suivi complet de vos investissements : historique des contributions, contrats d'investissement, échéanciers de remboursement et rapports d'activité.
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-1">
+          <div>
+            <h1 className="text-[28px] font-black" style={{ fontFamily: "Montserrat" }}>
+              Bonjour {user.prenom || "Investisseur"}
+            </h1>
+            <p className="text-[#5c403f] text-[13px] mt-1">
+              Suivi complet de vos investissements : historique des contributions, contrats d'investissement, échéanciers de remboursement et rapports d'activité.
+            </p>
+          </div>
+          <Link
+            href="/financement/messages"
+            className="inline-flex items-center gap-2 rounded-2xl bg-[#0B2545] px-5 py-3 text-xs font-bold text-white shadow-md hover:bg-[#134074] transition shrink-0 self-start sm:self-auto"
+          >
+            <img src="/crowdfunding-message-icon.png" alt="" className="h-4 w-4 object-contain" />
+            <span>Salle des Investisseurs</span>
+          </Link>
+        </div>
 
         <div className="mt-8 grid md:grid-cols-3 gap-4">
           <div className="bg-white border rounded-xl p-5 shadow-sm">

@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any -- module legacy en cours de typage progressif */
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import ProjectWizard from "@/components/crowdfunding/ProjectWizard";
 import { useLocale } from "@/components/LocaleProvider";
 
@@ -36,6 +37,12 @@ export default function PorteurDashboardClient({ user }: { user: UserProp }) {
       jalonsAtteints: ""
     }
   });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("eam_current_platform", "crowdfunding");
+    }
+  }, []);
 
   const loadProjects = () => {
     fetch(`/api/crowdfunding/projects?porteurId=${encodeURIComponent(user.id)}&statut=all`)
@@ -392,6 +399,13 @@ export default function PorteurDashboardClient({ user }: { user: UserProp }) {
                   Envoyer
                 </button>
               </div>
+              <Link
+                href={`/financement/messages?projetId=${encodeURIComponent(selectedProjet?.id || "")}`}
+                className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-[#0B2545] p-2.5 text-xs font-bold text-white hover:bg-[#134074] transition"
+              >
+                <img src="/crowdfunding-message-icon.png" alt="" className="h-4 w-4 object-contain" />
+                <span>Ouvrir la salle investisseurs complète (Appels, Mises à jour, Pièces jointes) →</span>
+              </Link>
             </div>
 
             {/* Rapports d'activité */}

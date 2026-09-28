@@ -39,6 +39,12 @@ export default function FinancementClient() {
   const [hasMore, setHasMore] = useState(true);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("eam_current_platform", "crowdfunding");
+    }
+  }, []);
+
   const loadProjects = useCallback(
     async (reset = false) => {
       if (loading || (!reset && !hasMore)) return;
@@ -152,6 +158,13 @@ export default function FinancementClient() {
                 <span>Explorer les campagnes</span>
                 <span>↓</span>
               </button>
+              <Link
+                href="/financement/messages"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-amber-400/40 bg-amber-500/20 px-6 py-3.5 text-sm font-bold text-amber-300 backdrop-blur-sm transition hover:bg-amber-500/30"
+              >
+                <img src="/crowdfunding-message-icon.png" alt="" className="h-4 w-4 object-contain" />
+                <span>Espace Investisseurs</span>
+              </Link>
             </div>
           </div>
 

@@ -172,12 +172,23 @@ function MessagesContent() {
     return () => clearInterval(interval);
   }, []);
 
-  // Redirection automatique vers la messagerie Marketplace si l'utilisateur y naviguait
+  // Redirection automatique vers la messagerie Marketplace ou Crowdfunding si l'utilisateur y naviguait
   useEffect(() => {
     if (typeof window === "undefined") return;
     const platform = searchParams.get("platform");
     const currentPlatform = sessionStorage.getItem("eam_current_platform");
     const referrer = document.referrer || "";
+
+    const isFromCrowdfunding =
+      platform === "crowdfunding" ||
+      currentPlatform === "crowdfunding" ||
+      referrer.includes("/financement");
+
+    if (isFromCrowdfunding && !paramConversationId && !paramUserId && !paramCallId) {
+      window.location.replace("/financement/messages");
+      return;
+    }
+
     const isFromMarketplace =
       platform === "marketplace" ||
       currentPlatform === "marketplace" ||
@@ -821,7 +832,7 @@ function MessagesContent() {
           </div>
         </div>
 
-        {/* Sélecteur de plateforme Messagerie WAB <-> Marketplace */}
+        {/* Sélecteur de plateforme Messagerie WAB <-> Marketplace <-> Crowdfunding */}
         <div className="flex items-center rounded-full bg-black/30 p-1 border border-white/15 text-xs font-bold">
           <span className="flex items-center gap-1.5 rounded-full bg-[#9e001f] px-3 py-1 text-white shadow-sm">
             <span className="material-symbols-outlined text-[15px]">chat</span>
@@ -834,6 +845,14 @@ function MessagesContent() {
           >
             <span className="material-symbols-outlined text-[15px]">storefront</span>
             <span className="hidden sm:inline">Marketplace</span>
+          </Link>
+          <Link
+            href="/financement/messages"
+            className="flex items-center gap-1.5 rounded-full px-3 py-1 text-white/80 hover:text-white transition"
+            title="Accéder à l'espace investisseurs Crowdfunding"
+          >
+            <img src="/crowdfunding-message-icon.png" alt="" className="h-3.5 w-3.5 object-contain" />
+            <span className="hidden sm:inline">Crowdfunding</span>
           </Link>
         </div>
 

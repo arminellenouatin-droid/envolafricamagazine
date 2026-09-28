@@ -96,6 +96,12 @@ export async function settleCrowdfundingContributionSupabase(metadata: Record<st
 
   const { error: paymentError } = await client.from("crowdfunding_payment_transactions").upsert({ id: existingPayment?.id || crypto.randomUUID(), provider_ref: paymentId, user_id: investorId, project_id: projectId, contribution_id: contributionId, amount, currency: String(metadata.currency || "XOF"), status: "succeeded", metadata }, { onConflict: "provider_ref" });
   if (paymentError) throw paymentError;
+
+  try {
+    const { syncSpacesAndContributions } = await import("@/lib/crowdfunding-messages-db");
+    await syncSpacesAndContributions();
+  } catch {}
+
   return { configured: true as const, settled: true };
 }
 
