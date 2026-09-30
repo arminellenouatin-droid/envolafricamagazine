@@ -96,44 +96,44 @@ export default function ProductDetailClient({
           <h1 className="mt-4 font-display text-4xl font-black tracking-tight md:text-5xl">{product.title}</h1>
           <p className="mt-5 text-base leading-7 text-[#725f4d]">{product.description}</p>
           <div className="mt-6 flex flex-wrap gap-3 text-xs font-bold text-[#806c58]"><span>{labels[product.country_code || product.country || ""] || product.country_code || product.country}</span><span>·</span><span>{product.city}</span><span>·</span><span>{product.category}</span></div>
-          <div className="mt-8 rounded-[22px] bg-white p-6 shadow-sm ring-1 ring-[#eadfce]"><p className="text-xs font-bold uppercase tracking-widest text-[#806c58]">Prix fournisseur</p><p className="mt-1 text-4xl font-black text-[#9e001f]">{formatPrice(price)}</p>{installment && <div className="mt-5"><p className="text-sm font-bold">Mode d’achat</p><div className="mt-2 grid gap-2 sm:grid-cols-2"><button onClick={() => setMode("full")} className={`rounded-xl border p-3 text-left text-xs font-bold ${mode === "full" ? "border-[#9e001f] bg-[#fff3f2]" : "border-[#eadfce]"}`}>Paiement comptant<br /><span className="font-normal text-[#806c58]">Livraison selon accord</span></button><button onClick={() => setMode("installment")} className={`rounded-xl border p-3 text-left text-xs font-bold ${mode === "installment" ? "border-[#9e001f] bg-[#fff3f2]" : "border-[#eadfce]"}`}>Paiement échelonné<br /><span className="font-normal text-[#806c58]">Jusqu’à {months} mois · produit réservé</span></button></div>{mode === "installment" && <p className="mt-3 rounded-lg bg-[#fff8ed] p-3 text-xs leading-5 text-[#725f4d]">Les échéances sont suivies sur le compte acheteur et fournisseur. La remise du produit et la libération des frais suivent les règles de réception et de paiement.</p>}</div>}
-            <div className="mt-5 grid gap-3 sm:grid-cols-2"><Link href={`/marketplace/messages?product=${encodeURIComponent(product.id)}`} className="rounded-full border border-[#cdbb9f] px-5 py-3 text-center text-xs font-black text-[#5c3d19]">Contacter le fournisseur</Link><button type="button" onClick={() => void startOrder()} disabled={orderLoading || (mode === "installment" && !installment)} className="rounded-full bg-[#9e001f] px-5 py-3 text-center text-xs font-black text-white disabled:opacity-60">{orderLoading ? "Préparation…" : mode === "installment" ? "Choisir l’échelonnement" : "Acheter en sécurité"}</button></div>{orderError && <p className="mt-3 rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-800">{orderError}</p>}</div>
+          <div className="mt-8 rounded-[22px] bg-white dark:bg-slate-900 p-6 shadow-sm ring-1 ring-[#eadfce] dark:ring-slate-800 text-[#2a211a] dark:text-slate-100"><p className="text-xs font-bold uppercase tracking-widest text-[#806c58] dark:text-slate-400">Prix fournisseur</p><p className="mt-1 text-4xl font-black text-[#9e001f] dark:text-red-400">{formatPrice(price)}</p>{installment && <div className="mt-5"><p className="text-sm font-bold">Mode d’achat</p><div className="mt-2 grid gap-2 sm:grid-cols-2"><button onClick={() => setMode("full")} className={`rounded-xl border p-3 text-left text-xs font-bold ${mode === "full" ? "border-[#9e001f] bg-[#fff3f2] dark:bg-[#9e001f]/20 text-[#9e001f] dark:text-red-300" : "border-[#eadfce] dark:border-slate-700 text-[#2a211a] dark:text-slate-300"}`}>Paiement comptant<br /><span className="font-normal text-[#806c58] dark:text-slate-400">Livraison selon accord</span></button><button onClick={() => setMode("installment")} className={`rounded-xl border p-3 text-left text-xs font-bold ${mode === "installment" ? "border-[#9e001f] bg-[#fff3f2] dark:bg-[#9e001f]/20 text-[#9e001f] dark:text-red-300" : "border-[#eadfce] dark:border-slate-700 text-[#2a211a] dark:text-slate-300"}`}>Paiement échelonné<br /><span className="font-normal text-[#806c58] dark:text-slate-400">Jusqu’à {months} mois · produit réservé</span></button></div>{mode === "installment" && <p className="mt-3 rounded-lg bg-[#fff8ed] dark:bg-amber-950/30 p-3 text-xs leading-5 text-[#725f4d] dark:text-amber-200">Les échéances sont suivies sur le compte acheteur et fournisseur. La remise du produit et la libération des frais suivent les règles de réception et de paiement.</p>}</div>}
+            <div className="mt-5 grid gap-3 sm:grid-cols-2"><Link href={`/marketplace/messages?product=${encodeURIComponent(product.id)}`} className="rounded-full border border-[#cdbb9f] dark:border-slate-700 px-5 py-3 text-center text-xs font-black text-[#5c3d19] dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Contacter le fournisseur</Link><button type="button" onClick={() => void startOrder()} disabled={orderLoading || (mode === "installment" && !installment)} className="rounded-full bg-[#9e001f] hover:bg-[#b00023] px-5 py-3 text-center text-xs font-black text-white disabled:opacity-60 transition shadow">{orderLoading ? "Préparation…" : mode === "installment" ? "Choisir l’échelonnement" : "Acheter en sécurité"}</button></div>{orderError && <p className="mt-3 rounded-xl bg-red-50 dark:bg-red-950/40 p-3 text-xs font-semibold text-red-800 dark:text-red-300">{orderError}</p>}</div>
 
           {/* Encadré Programme Ambassadeur & Affiliation */}
           {activeAffiliation && (
-            <div className="mt-6 rounded-[22px] border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent p-6 shadow-sm">
+            <div className="mt-6 rounded-[22px] border border-amber-500/40 bg-gradient-to-br from-amber-500/15 via-amber-500/10 to-amber-500/5 dark:from-amber-950/40 dark:via-slate-900/60 dark:to-slate-900/40 p-6 shadow-md">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 px-3 py-1 text-xs font-bold text-amber-900 border border-amber-500/30">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/25 px-3 py-1 text-xs font-bold text-amber-950 dark:text-amber-300 border border-amber-500/40">
                   🤝 Programme Ambassadeur & Affiliation
                 </span>
-                <span className="text-xs font-bold text-amber-800">
+                <span className="text-xs font-bold text-amber-900 dark:text-amber-400">
                   Commission : {Math.round(affiliateRate * 100)}%
                 </span>
               </div>
 
-              <h3 className="mt-3 text-lg font-black text-[#2a211a]">
+              <h3 className="mt-3 text-lg font-black text-[#1a130f] dark:text-white">
                 Gagnez jusqu&apos;à {formatPrice(affiliateCommission)} sur chaque vente !
               </h3>
-              <p className="mt-1 text-xs leading-5 text-[#725f4d]">
+              <p className="mt-1 text-xs leading-5 text-[#5c493a] dark:text-slate-300">
                 Recommandez ce produit à vos proches ou sur vos réseaux sociaux (WhatsApp, Facebook, TikTok). Chaque commande validée vous rapporte {Math.round(affiliateRate * 100)}% de commission immédiatement créditée sur votre portefeuille.
               </p>
 
               <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <div className="flex-1 rounded-xl bg-white border border-[#eadfce] px-3.5 py-2.5 font-mono text-xs text-[#5c3d19] truncate select-all">
+                <div className="flex-1 rounded-xl bg-white dark:bg-slate-950 border border-[#eadfce] dark:border-slate-700 px-3.5 py-2.5 font-mono text-xs text-[#5c3d19] dark:text-amber-300 truncate select-all">
                   {affiliateShareUrl}
                 </div>
                 <button
                   type="button"
                   onClick={copyAffiliateLink}
-                  className="shrink-0 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-4 py-2.5 transition flex items-center justify-center gap-1.5 shadow-sm"
+                  className="shrink-0 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-5 py-2.5 transition flex items-center justify-center gap-1.5 shadow-sm"
                 >
                   {affiliateCopied ? "✓ Lien affilié copié !" : "📋 Copier mon lien affilié"}
                 </button>
               </div>
 
               {!currentUser && (
-                <p className="mt-2 text-[11px] text-[#806c58]">
-                  💡 Conseil : <Link href={`/auth/login?next=${encodeURIComponent(`/marketplace/produits/${product.id}`)}`} className="underline font-semibold text-[#9e001f]">Connectez-vous</Link> pour associer vos gains à votre portefeuille personnel.
+                <p className="mt-2 text-[11px] text-[#806c58] dark:text-slate-400">
+                  💡 Conseil : <Link href={`/auth/login?next=${encodeURIComponent(`/marketplace/produits/${product.id}`)}`} className="underline font-semibold text-[#9e001f] dark:text-amber-400">Connectez-vous</Link> pour associer vos gains à votre portefeuille personnel.
                 </p>
               )}
             </div>
