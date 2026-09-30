@@ -241,6 +241,19 @@ export default function BoutiqueDetailClient({
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
+      const requestedSection = params.get("section") || params.get("tab");
+      if (requestedSection === "product" || requestedSection === "publish" || window.location.hash === "#publier") {
+        setTab("publish");
+      } else if (requestedSection === "affiliate" || requestedSection === "affiliation") {
+        setTab("affiliation");
+      } else if (requestedSection === "boost") {
+        setTab("boost");
+      } else if (requestedSection === "analytics") {
+        setTab("analytics");
+      } else if (requestedSection === "settings") {
+        setTab("settings");
+      }
+
       if (params.get("certification") === "success") {
         setMessage("Félicitations ! Votre paiement de 50 000 XOF pour la certification a été reçu avec succès. Votre dossier est en cours de validation finale par l'équipe administrative.");
         setSupplier((prev) => ({ ...prev, certification_status: "pending" }));
@@ -520,7 +533,7 @@ export default function BoutiqueDetailClient({
             )}
 
             <Link
-              href="/marketplace/boutique"
+              href={`/marketplace/boutique/${vendorSlug}`}
               className="text-xs text-amber-400 hover:text-amber-300 font-semibold underline ml-2"
             >
               ← Toutes mes boutiques

@@ -178,3 +178,125 @@ export async function findSupplierBySlugOrId(identifier: string): Promise<Suppli
     vendor_name: u ? `${u.prenom || ""} ${u.nom || ""}`.trim() : "Vendeur",
   };
 }
+
+/**
+ * Recherche toutes les boutiques appartenant à un vendeur via son slug (ex: "arminelle") ou son UUID
+ */
+export async function findVendorStoresBySlug(
+  vendorSlugOrId: string
+): Promise<{
+  vendor: { id: string; name: string; slug: string; email?: string } | null;
+  stores: SupplierRecord[];
+}> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase || !vendorSlugOrId) return { vendor: null, stores: [] };
+
+  const raw = decodeURIComponent(vendorSlugOrId).trim();
+  const targetNorm = normalizeStoreSlug(raw);
+
+  // 1. Charger toutes les boutiques avec les profils utilisateurs
+  const { data: allSuppliers } = await supabase
+    .from("marketplace_suppliers")
+    .select("*, users(id, email, nom, prenom)")
+    .order("created_at", { ascending: false });
+
+  let matchedUser: any = null;
+  const vendorStores: SupplierRecord[] = [];
+
+  if (allSuppliers) {
+    for (const s of allSuppliers) {
+      const u = (s as any).users;
+      if (!u) continue;
+      const vPre = normalizeStoreSlug(u.prenom || "");
+      const vNom = normalizeStoreSlug(u.nom || "");
+      const vFull = normalizeStoreSlug(`${u.prenom || ""} ${u.nom || ""}`);
+      const vEmail = normalizeStoreSlug(u.email ? u.email.split("@")[0] : "");
+      const vSlug = generateVendorSlug(u);
+
+      const isMatch =
+        vSlug === targetNorm ||
+        normalizeStoreSlug(vSlug) === targetNorm ||
+        vPre === targetNorm ||
+        vNom === targetNorm ||
+        vFull === targetNorm ||
+        vEmail === targetNorm ||
+        u.id === raw;
+
+      if (isMatch) {
+        if (!matchedUser) matchedUser = u;
+        vendorStores.push({
+          ...s,
+          slug: generateStoreSlug(s.business_name),
+          vendor_slug: vSlug,
+          vendor_name: `${u.prenom || ""} ${u.nom || ""}`.trim() || u.email || "Vendeur",
+        });
+      }
+    }
+  }
+
+  // Si pas de boutique trouvée avec cet utilisateur, vérifier si l'utilisateur existe dans public.users
+  if (!matchedUser) {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw);
+    if (isUuid) {
+      const { data: uData } = await supabase.from("users").select("id, email, nom, prenom").eq("id", raw).maybeSingle();
+      if (uData) matchedUser = uData;
+    } else {
+      const { data: allUsers } = await supabase.from("users").select("id, email, nom, prenom");
+      if (allUsers) {
+        matchedUser =
+          allUsers.find((u: any) => {
+            const vSlug = generateVendorSlug(u);
+            const vPre = normalizeStoreSlug(u.prenom || "");
+            const vNom = normalizeStoreSlug(u.nom || "");
+            const vFull = normalizeStoreSlug(`${u.prenom || ""} ${u.nom || ""}`);
+            const vEmail = normalizeStoreSlug(u.email ? u.email.split("@")[0] : "");
+            return (
+              vSlug === targetNorm ||
+              normalizeStoreSlug(vSlug) === targetNorm ||
+              vPre === targetNorm ||
+              vNom === targetNorm ||
+              vFull === targetNorm ||
+              vEmail === targetNorm
+            );
+          }) || null;
+      }
+    }
+  }
+
+  if (!matchedUser) {
+    return { vendor: null, stores: [] };
+  }
+
+  // Récupérer le nombre de produits pour chaque boutique
+  if (vendorStores.length > 0) {
+    const storeIds = vendorStores.map((s) => s.id);
+    const { data: products } = await supabase
+      .from("marketplace_products")
+      .select("supplier_id")
+      .in("supplier_id", storeIds);
+
+    const countsMap: Record<string, number> = {};
+    if (products) {
+      for (const p of products) {
+        countsMap[p.supplier_id] = (countsMap[p.supplier_id] || 0) + 1;
+      }
+    }
+    for (const s of vendorStores) {
+      s.products_count = countsMap[s.id] || 0;
+    }
+  }
+
+  const vName = `${matchedUser.prenom || ""} ${matchedUser.nom || ""}`.trim() || matchedUser.email?.split("@")[0] || "Vendeur";
+  const vSlug = generateVendorSlug(matchedUser);
+
+  return {
+    vendor: {
+      id: matchedUser.id,
+      name: vName,
+      slug: vSlug,
+      email: matchedUser.email,
+    },
+    stores: vendorStores,
+  };
+}
+
