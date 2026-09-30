@@ -107,6 +107,17 @@ export default function BoutiqueDetailClient({
   const [affiliateRate, setAffiliateRate] = useState(0.10);
   const [affiliateEnabled, setAffiliateEnabled] = useState(true);
   const [affiliateCopied, setAffiliateCopied] = useState<string | null>(null);
+  const [showAffiliateModal, setShowAffiliateModal] = useState(false);
+  const [modalProductId, setModalProductId] = useState(products[0]?.id || "");
+  const [modalRate, setModalRate] = useState(0.10);
+  const [publicAffCopied, setPublicAffCopied] = useState<string | null>(null);
+
+  const openAddAffiliateModal = (productId?: string, initialRate?: number) => {
+    const targetId = productId || products.find((p) => !p.product_affiliations?.[0]?.is_active)?.id || products[0]?.id || "";
+    setModalProductId(targetId);
+    setModalRate(initialRate ?? 0.10);
+    setShowAffiliateModal(true);
+  };
 
   // Analytics tab state
   const [analyticsData, setAnalyticsData] = useState<{
@@ -945,10 +956,7 @@ export default function BoutiqueDetailClient({
                               {isAffActive ? (
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setSelectedAffiliateProductId(product.id);
-                                    setTab("affiliation");
-                                  }}
+                                  onClick={() => openAddAffiliateModal(product.id, aff?.commission_rate || 0.10)}
                                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25"
                                 >
                                   🤝 {Math.round((aff?.commission_rate || 0.1) * 100)}%
@@ -956,10 +964,7 @@ export default function BoutiqueDetailClient({
                               ) : (
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setSelectedAffiliateProductId(product.id);
-                                    setTab("affiliation");
-                                  }}
+                                  onClick={() => openAddAffiliateModal(product.id, 0.10)}
                                   className="text-slate-500 hover:text-amber-400 text-xs underline"
                                 >
                                   + Activer
@@ -1038,266 +1043,181 @@ export default function BoutiqueDetailClient({
             <div className="space-y-8">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    🤝 Programme d&apos;Affiliation de votre Boutique
+                  <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+                    🤝 Produits en Affiliation de votre Boutique
                   </h2>
                   <p className="text-xs text-slate-400 max-w-2xl mt-1">
-                    Rémunérez les ambassadeurs, influenceurs et apporteurs d&apos;affaires pour propulser vos ventes. Définissez librement votre taux de commission produit par produit.
+                    Activez vos articles en affiliation pour permettre aux ambassadeurs, acheteurs et partenaires de les promouvoir et de toucher une commission sur chaque vente confirmée.
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 shrink-0">
                   <div className="px-3.5 py-2 rounded-xl bg-slate-850 border border-slate-800 text-xs">
-                    <span className="text-slate-400">Articles en affiliation : </span>
+                    <span className="text-slate-400">Articles affiliés : </span>
                     <strong className="text-amber-400">{activeAffiliatedProducts.length} / {products.length}</strong>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => openAddAffiliateModal()}
+                    disabled={products.length === 0}
+                    className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition shadow-lg flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <span>➕</span>
+                    <span>Ajouter un produit en affiliation</span>
+                  </button>
                 </div>
               </div>
 
-              {products.length === 0 ? (
-                <div className="p-8 rounded-2xl bg-slate-850 border border-slate-800 text-center">
-                  <p className="text-sm text-slate-400 mb-3">
-                    Vous devez avoir au moins un produit publié dans votre catalogue pour le proposer en affiliation.
+              {/* Message d'état */}
+              {message && (
+                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
+                  {message}
+                </div>
+              )}
+              {error && (
+                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold">
+                  {error}
+                </div>
+              )}
+
+              {/* LISTE DES PRODUITS MIS EN AFFILIATION */}
+              {activeAffiliatedProducts.length === 0 ? (
+                <div className="p-10 sm:p-14 rounded-3xl bg-slate-850 border border-slate-800 text-center max-w-2xl mx-auto space-y-4">
+                  <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-400 text-3xl mx-auto flex items-center justify-center border border-amber-500/20">
+                    🤝
+                  </div>
+                  <h3 className="text-lg font-bold text-white">
+                    Aucun produit n&apos;est actuellement mis en affiliation
+                  </h3>
+                  <p className="text-xs text-slate-400 leading-relaxed max-w-md mx-auto">
+                    Définissez un taux de commission sur vos articles pour mobiliser la communauté Envol Africa, stimuler vos ventes sans risque et ne payer que sur résultat validé.
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => setTab("publish")}
-                    className="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs"
-                  >
-                    + Ajouter un premier produit
-                  </button>
+                  <div className="pt-2">
+                    {products.length === 0 ? (
+                      <div className="space-y-3">
+                        <p className="text-xs text-amber-400">
+                          Vous n&apos;avez pas encore de produit dans le catalogue de cette boutique.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setTab("publish")}
+                          className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition shadow"
+                        >
+                          + Créer votre premier produit
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => openAddAffiliateModal()}
+                        className="px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition shadow-lg inline-flex items-center gap-2"
+                      >
+                        <span>➕</span>
+                        <span>Choisir un produit à mettre en affiliation</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                  {/* Formulaire de configuration du produit sélectionné */}
-                  <div className="lg:col-span-7 p-6 rounded-2xl bg-slate-850 border border-slate-800 space-y-6">
-                    <h3 className="font-bold text-white text-base border-b border-slate-800 pb-3">
-                      Configurer l&apos;affiliation d&apos;un article
-                    </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {activeAffiliatedProducts.map((p) => {
+                    const rate = p.product_affiliations?.[0]?.commission_rate || 0.10;
+                    const priceVal = p.price_xof || 0;
+                    const commAmt = Math.round(priceVal * rate);
+                    const platformFee = Math.round(commAmt * 0.05);
+                    const netVendor = Math.max(0, priceVal - commAmt);
+                    const itemShortLink = `${shortUrl}?p=${p.id}&ref=${supplier.user_id || currentUser?.id || "vendeur"}`;
+                    const isCopied = affiliateCopied === p.id;
+                    const img = Array.isArray(p.media) && typeof p.media[0] === "string" ? p.media[0] : null;
 
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                        1. Sélectionner le produit de la boutique
-                      </label>
-                      <select
-                        value={selectedAffiliateProductId}
-                        onChange={(e) => setSelectedAffiliateProductId(e.target.value)}
-                        className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400"
+                    return (
+                      <div
+                        key={p.id}
+                        className="rounded-2xl bg-slate-850 border border-slate-800 hover:border-amber-500/40 transition flex flex-col justify-between p-5 space-y-4 shadow-lg"
                       >
-                        {products.map((p) => {
-                          const isAff = Boolean(p.product_affiliations?.[0]?.is_active);
-                          return (
-                            <option key={p.id} value={p.id}>
-                              {isAff ? "✓ [En affiliation] " : ""}
-                              {p.title} • {formatPrice(p.price_xof || 0)}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </div>
-
-                    {/* Fiche récapitulative du produit */}
-                    {activeAffiliateProduct && (
-                      <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-lg bg-slate-800 overflow-hidden shrink-0 flex items-center justify-center">
-                          {Array.isArray(activeAffiliateProduct.media) && typeof activeAffiliateProduct.media[0] === "string" ? (
-                            <img
-                              src={activeAffiliateProduct.media[0]}
-                              alt={activeAffiliateProduct.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-xl">📦</span>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-bold text-white truncate">
-                            {activeAffiliateProduct.title}
-                          </h4>
-                          <div className="flex items-center gap-3 text-xs text-slate-400 mt-1">
-                            <span>Prix : <strong className="text-amber-400">{formatPrice(activeAffiliateProduct.price_xof || 0)}</strong></span>
-                            <span>•</span>
-                            <span>Stock : {activeAffiliateProduct.stock_quantity ?? 0}</span>
+                        {/* Entête du produit */}
+                        <div className="flex gap-4 items-start">
+                          <div className="w-16 h-16 rounded-xl bg-slate-800 overflow-hidden shrink-0 border border-slate-700/60 flex items-center justify-center">
+                            {img ? (
+                              <img src={img} alt={p.title} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-2xl">📦</span>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+                              {p.category || "Article"}
+                            </span>
+                            <h4 className="text-sm font-bold text-white truncate mt-0.5">
+                              {p.title}
+                            </h4>
+                            <div className="text-amber-400 font-extrabold text-base mt-1">
+                              {formatPrice(priceVal)}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
 
-                    {/* Toggle Activer / Désactiver */}
-                    <div className="flex items-center justify-between p-4 rounded-xl bg-slate-800/60 border border-slate-700/60">
-                      <div>
-                        <strong className="block text-sm text-white">Autoriser l&apos;affiliation sur ce produit</strong>
-                        <span className="text-xs text-slate-400">
-                          Les ambassadeurs pourront recommander cet article et toucher leur commission.
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setAffiliateEnabled(!affiliateEnabled)}
-                        className={`w-12 h-6 flex items-center rounded-full p-1 transition duration-300 ${
-                          affiliateEnabled ? "bg-amber-500 justify-end" : "bg-slate-700 justify-start"
-                        }`}
-                      >
-                        <span className="bg-slate-950 w-4 h-4 rounded-full shadow-md" />
-                      </button>
-                    </div>
-
-                    {/* Taux de commission */}
-                    {affiliateEnabled && (
-                      <div className="space-y-4">
-                        <div>
-                          <div className="flex justify-between items-center mb-1.5">
-                            <label className="text-xs font-semibold text-slate-300">
-                              2. Taux de commission ambassadeur
-                            </label>
-                            <span className="text-sm font-black text-amber-400">
-                              {Math.round(affiliateRate * 100)}% du prix de vente
+                        {/* Badges Commissions & Gains */}
+                        <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-400">Commission ambassadeur :</span>
+                            <span className="font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                              {Math.round(rate * 100)}% ({formatPrice(commAmt)})
                             </span>
                           </div>
-
-                          {/* Boutons rapides */}
-                          <div className="grid grid-cols-5 gap-2 mb-3">
-                            {[0.05, 0.10, 0.15, 0.20, 0.25].map((rate) => (
-                              <button
-                                key={rate}
-                                type="button"
-                                onClick={() => setAffiliateRate(rate)}
-                                className={`py-1.5 text-xs font-bold rounded-lg border transition ${
-                                  Math.abs(affiliateRate - rate) < 0.001
-                                    ? "bg-amber-500 text-slate-950 border-amber-400 shadow"
-                                    : "bg-slate-800 text-slate-300 border-slate-700 hover:border-slate-600"
-                                }`}
-                              >
-                                {Math.round(rate * 100)}%
-                              </button>
-                            ))}
+                          <div className="flex items-center justify-between text-slate-400 text-[11px]">
+                            <span>Frais de service (5%) :</span>
+                            <span>- {formatPrice(platformFee)}</span>
                           </div>
-
-                          {/* Slider */}
-                          <input
-                            type="range"
-                            min="0.05"
-                            max="0.50"
-                            step="0.01"
-                            value={affiliateRate}
-                            onChange={(e) => setAffiliateRate(parseFloat(e.target.value))}
-                            className="w-full accent-amber-400 cursor-pointer"
-                          />
+                          <div className="flex items-center justify-between border-t border-slate-800 pt-1.5 font-bold text-emerald-400">
+                            <span>Revenu net vendeur :</span>
+                            <span>{formatPrice(netVendor)}</span>
+                          </div>
                         </div>
 
-                        {/* Simulation financière en direct */}
-                        <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-xs space-y-2">
-                          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                            Simulation par vente effectuée
+                        {/* Boîte Lien Court Partage */}
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-semibold text-slate-400 block">
+                            Lien affilié court à partager :
+                          </label>
+                          <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 font-mono text-[11px] text-amber-300 truncate select-all">
+                            {itemShortLink}
                           </div>
-                          <div className="flex justify-between text-slate-300">
-                            <span>Prix client :</span>
-                            <span>{formatPrice(activeProductPrice)}</span>
-                          </div>
-                          <div className="flex justify-between text-amber-400 font-semibold">
-                            <span>Commission ambassadeur ({Math.round(affiliateRate * 100)}%) :</span>
-                            <span>- {formatPrice(simCommission)}</span>
-                          </div>
-                          <div className="flex justify-between text-slate-400">
-                            <span>Frais de service plateforme (5%) :</span>
-                            <span>- {formatPrice(simPlatformFee)}</span>
-                          </div>
-                          <div className="border-t border-slate-800 pt-2 flex justify-between font-bold text-emerald-400 text-sm">
-                            <span>Revenu net perçu par vous :</span>
-                            <span>{formatPrice(simNet)}</span>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              await navigator.clipboard.writeText(itemShortLink);
+                              setAffiliateCopied(p.id);
+                              setTimeout(() => setAffiliateCopied(null), 2500);
+                            }}
+                            className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs border border-slate-700 transition flex items-center justify-center gap-1.5"
+                          >
+                            {isCopied ? "✓ Lien affilié copié !" : "📋 Copier le lien affilié"}
+                          </button>
+                        </div>
+
+                        {/* Actions Gestion */}
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => openAddAffiliateModal(p.id, rate)}
+                            className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold text-center transition"
+                          >
+                            ⚙️ Modifier le taux
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => saveProductAffiliation(p.id, false, rate)}
+                            className="py-2 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-semibold text-center transition disabled:opacity-50"
+                          >
+                            Retirer
+                          </button>
                         </div>
                       </div>
-                    )}
-
-                    {/* Bouton d'enregistrement */}
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => {
-                        if (activeAffiliateProduct) {
-                          saveProductAffiliation(activeAffiliateProduct.id, affiliateEnabled, affiliateRate);
-                        }
-                      }}
-                      className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm transition shadow disabled:opacity-50"
-                    >
-                      {busy ? "Enregistrement en cours..." : "Valider la configuration d'affiliation"}
-                    </button>
-                  </div>
-
-                  {/* Panneau latéral : Lien court affilié & Partage */}
-                  <div className="lg:col-span-5 space-y-6">
-                    <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-850 to-slate-900 border border-slate-800 shadow-xl space-y-4">
-                      <h3 className="font-bold text-white text-base flex items-center gap-2">
-                        ⚡ Lien court d&apos;affiliation généré
-                      </h3>
-                      <p className="text-xs text-slate-400 leading-relaxed">
-                        Ce lien court intègre le code de votre boutique et l&apos;identifiant de ce produit. Partagez-le directement avec vos partenaires.
-                      </p>
-
-                      <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-amber-300 break-all select-all">
-                        {shortAffiliateLink}
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          await navigator.clipboard.writeText(shortAffiliateLink);
-                          setAffiliateCopied("selected");
-                          setTimeout(() => setAffiliateCopied(null), 2500);
-                        }}
-                        className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xs transition flex items-center justify-center gap-2"
-                      >
-                        {affiliateCopied === "selected" ? "✓ Lien affilié copié !" : "📋 Copier le lien court affilié"}
-                      </button>
-                    </div>
-
-                    {/* Liste des produits déjà en affiliation */}
-                    <div className="p-6 rounded-2xl bg-slate-850 border border-slate-800 space-y-3">
-                      <h3 className="font-bold text-white text-sm">
-                        Articles actifs en affiliation ({activeAffiliatedProducts.length})
-                      </h3>
-
-                      {activeAffiliatedProducts.length === 0 ? (
-                        <p className="text-xs text-slate-400 italic">
-                          Aucun produit n&apos;a encore été activé en affiliation. Activez-en un avec le formulaire ci-contre.
-                        </p>
-                      ) : (
-                        <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-                          {activeAffiliatedProducts.map((p) => {
-                            const rate = p.product_affiliations?.[0]?.commission_rate || 0.10;
-                            const itemShortLink = `${shortUrl}?p=${p.id}&ref=${supplier.user_id || currentUser?.id || "vendeur"}`;
-
-                            return (
-                              <div
-                                key={p.id}
-                                className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-3 text-xs"
-                              >
-                                <div className="min-w-0">
-                                  <div className="font-bold text-white truncate">{p.title}</div>
-                                  <div className="text-slate-400 text-[11px] mt-0.5">
-                                    Taux : <strong className="text-amber-400">{Math.round(rate * 100)}%</strong> • {formatPrice(p.price_xof || 0)}
-                                  </div>
-                                </div>
-
-                                <button
-                                  type="button"
-                                  onClick={async () => {
-                                    await navigator.clipboard.writeText(itemShortLink);
-                                    setAffiliateCopied(p.id);
-                                    setTimeout(() => setAffiliateCopied(null), 2500);
-                                  }}
-                                  className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold text-[11px] shrink-0 border border-slate-700"
-                                >
-                                  {affiliateCopied === p.id ? "✓ Copié" : "Copier lien"}
-                                </button>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1734,19 +1654,224 @@ export default function BoutiqueDetailClient({
                     </div>
 
                     {/* CTA */}
-                    <div className="p-4 pt-0">
+                    <div className="p-4 pt-0 space-y-2">
                       <Link
                         href={`/marketplace/produits/${p.id}`}
                         className="block w-full py-2.5 rounded-xl bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-white font-bold text-xs text-center transition"
                       >
                         Voir le produit →
                       </Link>
+
+                      {isAff && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const affLink = `${origin}/b/${canonicalSlug}?p=${p.id}&ref=${currentUser?.id || "ambassadeur"}`;
+                            await navigator.clipboard.writeText(affLink);
+                            setPublicAffCopied(p.id);
+                            setTimeout(() => setPublicAffCopied(null), 2500);
+                          }}
+                          className="w-full py-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+                        >
+                          {publicAffCopied === p.id ? "✓ Lien affilié copié !" : `🔗 Copier le lien affilié (${Math.round((p.product_affiliations?.[0]?.commission_rate || 0.10) * 100)}%)`}
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* MODAL : METTRE UN PRODUIT EN AFFILIATION */}
+      {showAffiliateModal && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-6 text-white max-h-[92vh] overflow-y-auto">
+            {/* Header Modal */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  🤝 Mettre un produit en affiliation
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Choisissez un produit et fixez la commission accordée aux ambassadeurs.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAffiliateModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {products.length === 0 ? (
+              <div className="py-8 text-center text-slate-400 text-xs space-y-3">
+                <p>Aucun produit n&apos;est disponible dans cette boutique.</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAffiliateModal(false);
+                    setTab("publish");
+                  }}
+                  className="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs"
+                >
+                  + Créer un produit d&apos;abord
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {/* Étape 1 : Sélectionner le produit */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    1. Choisir le produit à proposer en affiliation
+                  </label>
+                  <select
+                    value={modalProductId}
+                    onChange={(e) => {
+                      const newId = e.target.value;
+                      setModalProductId(newId);
+                      const chosen = products.find((p) => p.id === newId);
+                      const existingRate = chosen?.product_affiliations?.[0]?.commission_rate;
+                      if (existingRate) setModalRate(existingRate);
+                    }}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400"
+                  >
+                    {products.map((p) => {
+                      const isAff = Boolean(p.product_affiliations?.[0]?.is_active);
+                      return (
+                        <option key={p.id} value={p.id}>
+                          {isAff ? "✓ [En affiliation] " : ""}
+                          {p.title} • {formatPrice(p.price_xof || 0)}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                {/* Aperçu du produit sélectionné */}
+                {(() => {
+                  const modalProduct = products.find((p) => p.id === modalProductId) || products[0];
+                  if (!modalProduct) return null;
+                  const priceVal = modalProduct.price_xof || 0;
+                  const commAmt = Math.round(priceVal * modalRate);
+                  const feeAmt = Math.round(commAmt * 0.05);
+                  const netVal = Math.max(0, priceVal - commAmt);
+                  const img = Array.isArray(modalProduct.media) && typeof modalProduct.media[0] === "string" ? modalProduct.media[0] : null;
+
+                  return (
+                    <div className="space-y-5">
+                      <div className="p-3.5 rounded-2xl bg-slate-850 border border-slate-800 flex items-center gap-3.5">
+                        <div className="w-14 h-14 rounded-xl bg-slate-800 overflow-hidden shrink-0 border border-slate-700 flex items-center justify-center">
+                          {img ? (
+                            <img src={img} alt={modalProduct.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-xl">📦</span>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-sm font-bold text-white truncate">
+                            {modalProduct.title}
+                          </h4>
+                          <div className="text-xs text-slate-400 mt-0.5">
+                            Prix : <strong className="text-amber-400">{formatPrice(priceVal)}</strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Étape 2 : Taux de commission */}
+                      <div>
+                        <div className="flex justify-between items-center mb-1.5">
+                          <label className="text-xs font-semibold text-slate-300">
+                            2. Taux de commission de l&apos;ambassadeur
+                          </label>
+                          <span className="text-sm font-black text-amber-400">
+                            {Math.round(modalRate * 100)}% du prix
+                          </span>
+                        </div>
+
+                        {/* Boutons rapides */}
+                        <div className="grid grid-cols-6 gap-2 mb-3">
+                          {[0.05, 0.10, 0.15, 0.20, 0.25, 0.30].map((rate) => (
+                            <button
+                              key={rate}
+                              type="button"
+                              onClick={() => setModalRate(rate)}
+                              className={`py-1.5 text-xs font-bold rounded-lg border transition ${
+                                Math.abs(modalRate - rate) < 0.001
+                                  ? "bg-amber-500 text-slate-950 border-amber-400 shadow"
+                                  : "bg-slate-800 text-slate-300 border-slate-700 hover:border-slate-600"
+                              }`}
+                            >
+                              {Math.round(rate * 100)}%
+                            </button>
+                          ))}
+                        </div>
+
+                        <input
+                          type="range"
+                          min="0.05"
+                          max="0.50"
+                          step="0.01"
+                          value={modalRate}
+                          onChange={(e) => setModalRate(parseFloat(e.target.value))}
+                          className="w-full accent-amber-400 cursor-pointer"
+                        />
+                      </div>
+
+                      {/* Simulation financière */}
+                      <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-2">
+                        <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                          Simulation par vente réalisée
+                        </div>
+                        <div className="flex justify-between text-slate-300">
+                          <span>Prix de vente client :</span>
+                          <span>{formatPrice(priceVal)}</span>
+                        </div>
+                        <div className="flex justify-between text-amber-400 font-semibold">
+                          <span>Commission ambassadeur ({Math.round(modalRate * 100)}%) :</span>
+                          <span>- {formatPrice(commAmt)}</span>
+                        </div>
+                        <div className="flex justify-between text-slate-400 text-[11px]">
+                          <span>Frais de plateforme (5%) :</span>
+                          <span>- {formatPrice(feeAmt)}</span>
+                        </div>
+                        <div className="border-t border-slate-800 pt-2 flex justify-between font-bold text-emerald-400 text-sm">
+                          <span>Votre gain net vendeur :</span>
+                          <span>{formatPrice(netVal)}</span>
+                        </div>
+                      </div>
+
+                      {/* Boutons d'action du modal */}
+                      <div className="flex items-center justify-end gap-3 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowAffiliateModal(false)}
+                          className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition"
+                        >
+                          Annuler
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={async () => {
+                            await saveProductAffiliation(modalProduct.id, true, modalRate);
+                            setShowAffiliateModal(false);
+                          }}
+                          className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition shadow-lg disabled:opacity-50"
+                        >
+                          {busy ? "Enregistrement..." : "✓ Confirmer et mettre en affiliation"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

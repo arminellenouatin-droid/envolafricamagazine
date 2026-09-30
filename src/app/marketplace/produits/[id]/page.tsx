@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { marketplaceSeed } from "@/lib/marketplace-seed";
 import { getMarketplaceProductSchema, getBreadcrumbSchema } from "@/lib/schema-org";
+import { getCurrentUserFromCookie } from "@/lib/auth";
 import ProductDetailClient from "./ProductDetailClient";
 
 async function getProduct(id: string) {
@@ -15,6 +16,18 @@ async function getProduct(id: string) {
       .eq("id", id)
       .maybeSingle();
     product = data;
+
+    if (product) {
+      try {
+        const { data: affData } = await supabase
+          .from("product_affiliations")
+          .select("id, product_id, commission_rate, is_active")
+          .eq("product_id", id);
+        product.product_affiliations = affData || [];
+      } catch {
+        product.product_affiliations = [];
+      }
+    }
   }
 
   if (!product) {
@@ -85,7 +98,10 @@ export default async function ProductDetailPage({
 }) {
   const { id } = await params;
   const { ref } = (await searchParams) || {};
-  const product = await getProduct(id);
+  const [product, currentUser] = await Promise.all([
+    getProduct(id),
+    getCurrentUserFromCookie(),
+  ]);
 
   const productSchema = product ? getMarketplaceProductSchema(product) : null;
   const breadcrumbSchema = getBreadcrumbSchema([
@@ -106,7 +122,20 @@ export default async function ProductDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
-      <ProductDetailClient id={id} initialProduct={product} refToken={ref} />
+      <ProductDetailClient
+        id={id}
+        initialProduct={product}
+        refToken={ref}
+        currentUser={
+          currentUser
+            ? {
+                id: currentUser.id,
+                name: `${(currentUser as any).prenom || ""} ${(currentUser as any).nom || ""}`.trim() || currentUser.email,
+                email: currentUser.email,
+              }
+            : null
+        }
+      />
     </>
   );
 }
