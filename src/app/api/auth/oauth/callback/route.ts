@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { createUser, findUserByEmail, findUserById } from "@/lib/core-db";
 import { COOKIE_NAME, COOKIE_OPTIONS, generateToken } from "@/lib/auth";
-import { generateAffiliateCode } from "@/lib/db";
+import { getOrCreateSocialUser } from "@/lib/auth-social";
 
 function getSupabaseConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -55,28 +54,16 @@ export async function GET(request: NextRequest) {
         ? metadata.picture
         : undefined;
 
-    const existing = (await findUserByEmail(email)) || (await findUserById(socialUser.id));
-    const user =
-      existing ||
-      (await createUser({
-        id: socialUser.id,
-        nom,
-        prenom,
-        email,
-        passwordHash: `oauth:${socialUser.id}`,
-        role: "user",
-        avatar,
-        lang: "fr",
-        currency: "XOF",
-        isVerified: true,
-        twoFactorEnabled: false,
-        country: "BJ",
-        affiliateCode: generateAffiliateCode(prenom, nom),
-        favorites: [],
-        downloads: [],
-      }));
+    const user = await getOrCreateSocialUser({
+      provider: "google",
+      email,
+      prenom,
+      nom,
+      avatar,
+      providerId: socialUser.id,
+    });
 
-    response.cookies.set(COOKIE_NAME, generateToken(user), COOKIE_OPTIONS as any);
+    response.cookies.set(COOKIE_NAME, generateToken(user), COOKIE_OPTIONS);
     return response;
   } catch (error) {
     console.error("[oauth/callback] Unhandled OAuth callback error:", error);

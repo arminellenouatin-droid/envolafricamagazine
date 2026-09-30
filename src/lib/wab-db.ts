@@ -73,7 +73,7 @@ export type WabSalonMessage = { id: string; salonId: string; userId: string; aut
 export type WabBoost = { id: string; postId: string; userId: string; budgetXof: number; durationDays: number; audienceType?: "community" | "public"; targetCountries: string[]; targetIndustries: string[]; paymentId?: string; status: "pending" | "active" | "ended" | "cancelled" | "failed"; startsAt?: string; endsAt?: string; createdAt: string };
 export type WabConnection = { followerUserId: string; profileId: string; createdAt: string };
 export type WabNotification = { id: string; userId: string; type: string; title: string; body: string; href?: string; readAt?: string; createdAt: string };
-export type WabStory = { id: string; author: string; authorUserId?: string; avatarUrl?: string; mediaUrl: string; mimeType: string; caption?: string; createdAt: string; expiresAt: string; views: number; likes: number; moderationStatus: "published" | "pending_review" | "hidden" };
+export type WabStory = { id: string; author: string; authorUserId?: string; avatarUrl?: string; mediaUrl: string; mimeType: string; caption?: string; createdAt: string; expiresAt: string; views: number; likes: number; moderationStatus: "published" | "pending_review" | "hidden"; storyType?: "media" | "text"; textContent?: string; background?: string };
 export type WabReel = { id: string; author: string; authorUserId?: string; avatarUrl?: string; mediaUrl: string; mimeType: string; caption: string; createdAt: string; views: number; likes: number; moderationStatus: "published" | "pending_review" | "hidden" };
 
 export type WabCoinTransaction = {

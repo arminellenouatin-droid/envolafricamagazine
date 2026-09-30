@@ -30,6 +30,19 @@ export default function LoginPage() {
       const r = sp.get("redirect") || sp.get("next");
       if (r) setRedirectParam(r);
 
+      const oauthErr = sp.get("oauthError");
+      if (oauthErr) {
+        const errorMessages: Record<string, string> = {
+          access_denied: "Vous avez annulé ou refusé la connexion avec votre compte Google.",
+          email_missing: "Votre compte Google ne partage pas d'adresse e-mail vérifiée.",
+          configuration: "Le service d'authentification Google est momentanément indisponible sur cet environnement.",
+          missing_code: "Le code de sécurité Google a expiré ou est manquant. Veuillez réessayer.",
+          internal_error: "Une erreur est survenue lors de la création ou liaison de votre compte. Veuillez réessayer.",
+          oauth_failure: "La connexion Google a rencontré une interruption. Veuillez réessayer.",
+        };
+        setError(errorMessages[oauthErr] || decodeURIComponent(oauthErr));
+      }
+
       fetch("/api/auth/me", { cache: "no-store" })
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {

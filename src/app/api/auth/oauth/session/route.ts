@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { createUser, findUserByEmail, findUserById } from "@/lib/core-db";
 import { COOKIE_NAME, COOKIE_OPTIONS, generateToken } from "@/lib/auth";
-import { generateAffiliateCode } from "@/lib/db";
+import { getOrCreateSocialUser } from "@/lib/auth-social";
 
 function getSupabaseClient() {
   const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -30,27 +29,17 @@ export async function POST(request: NextRequest) {
     const nom = String(metadata.family_name || nameParts.slice(1).join(" ") || "Utilisateur").trim();
     const avatar = typeof metadata.avatar_url === "string" ? metadata.avatar_url : (typeof metadata.picture === "string" ? metadata.picture : undefined);
 
-    const existing = (await findUserByEmail(email)) || (await findUserById(socialUser.id));
-    const user = existing || await createUser({
-      id: socialUser.id,
-      nom,
-      prenom,
+    const user = await getOrCreateSocialUser({
+      provider: "google",
       email,
-      passwordHash: `oauth:${socialUser.id}`,
-      role: "user",
+      prenom,
+      nom,
       avatar,
-      lang: "fr",
-      currency: "XOF",
-      isVerified: true,
-      twoFactorEnabled: false,
-      country: "BJ",
-      affiliateCode: generateAffiliateCode(prenom, nom),
-      favorites: [],
-      downloads: [],
+      providerId: socialUser.id,
     });
 
     const response = NextResponse.json({ success: true, user: { id: user.id, email: user.email, nom: user.nom, prenom: user.prenom, role: user.role } });
-    response.cookies.set(COOKIE_NAME, generateToken(user), COOKIE_OPTIONS as any);
+    response.cookies.set(COOKIE_NAME, generateToken(user), COOKIE_OPTIONS);
     return response;
   } catch (error) {
     console.error("OAuth session error", error);

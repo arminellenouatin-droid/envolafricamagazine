@@ -25,7 +25,11 @@ const RLS_SQL = [
   "REVOKE ALL ON public.marketplace_commissions FROM anon, authenticated;",
   "REVOKE ALL ON public.marketplace_download_tokens FROM anon, authenticated;",
   "ALTER TABLE IF EXISTS public.marketplace_suppliers DROP CONSTRAINT IF EXISTS marketplace_suppliers_user_id_key;",
-  "CREATE INDEX IF NOT EXISTS idx_marketplace_suppliers_user_id ON public.marketplace_suppliers(user_id);"
+  "CREATE INDEX IF NOT EXISTS idx_marketplace_suppliers_user_id ON public.marketplace_suppliers(user_id);",
+  "ALTER TABLE IF EXISTS public.wab_stories ALTER COLUMN media_url DROP NOT NULL;",
+  "ALTER TABLE IF EXISTS public.wab_stories ADD COLUMN IF NOT EXISTS story_type text DEFAULT 'media';",
+  "ALTER TABLE IF EXISTS public.wab_stories ADD COLUMN IF NOT EXISTS text_content text;",
+  "ALTER TABLE IF EXISTS public.wab_stories ADD COLUMN IF NOT EXISTS background text;"
 ];
 
 export async function POST(req: NextRequest) {

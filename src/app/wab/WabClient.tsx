@@ -8,7 +8,8 @@ import PostMedia from "./PostMedia";
 import PostViewTracker from "./PostViewTracker";
 import StoriesReelsCarousel from "./StoriesReelsCarousel";
 import FollowButton from "./FollowButton";
-import DiscoveryCarousel from "./DiscoveryCarousel";
+import DiscoveryCarousel, { DiscoveryType } from "./DiscoveryCarousel";
+import WabTikTokVideoViewer, { VideoPostItem } from "./WabTikTokVideoViewer";
 import { hasWabUnlimitedRole, WAB_BUSINESS_MONTHLY_PRICE } from "@/lib/wab-access";
 import { optimizeSelectedImages } from "@/lib/client-image-optimizer";
 import RichTextEditor from "@/components/RichTextEditor";
@@ -22,16 +23,31 @@ import { WAB_BACKGROUND_PRESETS, getWabBackground } from "@/lib/wab-backgrounds"
 type PublishPage = { id: string; name: string; logoUrl?: string; logo_url?: string };
 type PublishGroup = { id: string; name: string; privacy: "community" | "private" };
 
-type DiscoveryType = "people" | "reels" | "pages" | "groups";
+const DISCOVERY_SEQUENCE: DiscoveryType[] = [
+  "people",
+  "reels",
+  "boosted_products",
+  "certified_sellers",
+  "boosted_jobs",
+  "pages",
+  "boosted_crowdfunding",
+  "awards_competitions",
+  "groups",
+];
 
 function discoveryTypeForInsertion(publicationCount: number): DiscoveryType | null {
   if (publicationCount === 3) return "people";
   if (publicationCount === 6) return "reels";
-  if (publicationCount === 9) return "pages";
-  if (publicationCount === 13) return "groups";
-  if (publicationCount > 13 && (publicationCount - 13) % 8 === 0) {
-    const slot = Math.floor((publicationCount - 13) / 8);
-    return (["people", "reels", "pages", "groups"] as DiscoveryType[])[slot % 4];
+  if (publicationCount === 10) return "boosted_products";
+  if (publicationCount === 14) return "certified_sellers";
+  if (publicationCount === 18) return "boosted_jobs";
+  if (publicationCount === 22) return "pages";
+  if (publicationCount === 26) return "boosted_crowdfunding";
+  if (publicationCount === 30) return "awards_competitions";
+  if (publicationCount === 34) return "groups";
+  if (publicationCount > 34 && (publicationCount - 34) % 4 === 0) {
+    const slot = Math.floor((publicationCount - 34) / 4);
+    return DISCOVERY_SEQUENCE[slot % DISCOVERY_SEQUENCE.length];
   }
   return null;
 }
@@ -159,12 +175,48 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("default");
   const [liveSalons, setLiveSalons] = useState<any[]>([]);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [tiktokViewerPostId, setTiktokViewerPostId] = useState<string | null>(null);
   const marker = useRef<HTMLDivElement>(null);
   const feedTopRef = useRef<HTMLDivElement>(null);
   const postsRef = useRef<Post[]>([]);
   const pendingNewPostsRef = useRef<Post[]>([]);
   const sharedPostRef = useRef<Post | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const onOpenTikTok = (e: Event) => {
+      const custom = e as CustomEvent<{ postId: string; videoUrl?: string }>;
+      if (custom.detail?.postId) {
+        setTiktokViewerPostId(custom.detail.postId);
+      }
+    };
+    window.addEventListener("wab_open_tiktok_feed", onOpenTikTok);
+    return () => window.removeEventListener("wab_open_tiktok_feed", onOpenTikTok);
+  }, []);
+
+  const videoPosts: VideoPostItem[] = posts
+    .filter((p) => p.media && p.media.some((m) => m.mimeType?.startsWith("video/") || /\.(mp4|webm|mov|m4v)$/i.test(m.path)))
+    .map((p) => {
+      const vMedia = p.media?.find((m) => m.mimeType?.startsWith("video/") || /\.(mp4|webm|mov|m4v)$/i.test(m.path));
+      return {
+        id: p.id,
+        author: p.author,
+        authorAvatarUrl: p.authorAvatarUrl,
+        authorUserId: p.authorUserId,
+        pageId: p.pageId,
+        pageName: p.pageName,
+        headline: p.headline,
+        content: p.content,
+        videoUrl: vMedia ? vMedia.path : "",
+        videoName: vMedia?.name,
+        views: p.views || 0,
+        likes: p.likes || 0,
+        comments: p.comments || 0,
+        shares: p.shares || 0,
+        createdAt: p.createdAt,
+      };
+    })
+    .filter((p) => Boolean(p.videoUrl));
 
   useEffect(() => {
     const checkMessages = () => {
@@ -1615,6 +1667,21 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
           </span>
         </div>
       </Link>
+
+      {/* Lecteur Vidéo Plein Écran Style TikTok WAB */}
+      {tiktokViewerPostId && videoPosts.length > 0 && (
+        <WabTikTokVideoViewer
+          initialPostId={tiktokViewerPostId}
+          posts={videoPosts}
+          onClose={() => setTiktokViewerPostId(null)}
+          onLoadMore={() => {
+            if (hasMore && !loadingFeed) {
+              loadFeed(page + 1);
+            }
+          }}
+          hasMore={hasMore}
+        />
+      )}
     </main>
   );
 }

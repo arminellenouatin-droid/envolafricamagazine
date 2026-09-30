@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createUser, findUserByEmail } from "@/lib/core-db";
 import { COOKIE_NAME, COOKIE_OPTIONS, generateToken } from "@/lib/auth";
-import { generateAffiliateCode } from "@/lib/db";
+import { getOrCreateSocialUser } from "@/lib/auth-social";
+import { v4 as uuidv4 } from "uuid";
+import { writeDB, readDB } from "@/lib/db";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,47 +13,68 @@ export async function POST(request: NextRequest) {
     const safeNext = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
 
     if (!credential) {
-      return NextResponse.json({ error: "Jeton Google manquant." }, { status: 400 });
+      return NextResponse.json({ error: "Jeton d'authentification Google manquant." }, { status: 400 });
     }
 
     // Validation du token auprès du endpoint officiel de Google
     const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
     if (!googleRes.ok) {
-      return NextResponse.json({ error: "Validation du jeton Google échouée." }, { status: 401 });
+      return NextResponse.json({ error: "Le jeton Google n'a pas pu être validé par les serveurs Google." }, { status: 401 });
     }
 
     const payload = await googleRes.json();
     const expectedClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     if (expectedClientId && payload.aud !== expectedClientId) {
-      return NextResponse.json({ error: "Client ID Google non correspondant." }, { status: 401 });
+      return NextResponse.json({ error: "L'identifiant client Google ne correspond pas à cette application." }, { status: 401 });
     }
 
     const email = String(payload.email || "").trim().toLowerCase();
-    if (!email || payload.email_verified !== "true" && payload.email_verified !== true) {
-      return NextResponse.json({ error: "Adresse email Google non vérifiée." }, { status: 400 });
+    if (!email || (payload.email_verified !== "true" && payload.email_verified !== true)) {
+      return NextResponse.json({ error: "Cette adresse email Google n'est pas vérifiée." }, { status: 400 });
     }
 
     const prenom = String(payload.given_name || payload.name?.split(" ")[0] || "Envol").trim();
     const nom = String(payload.family_name || payload.name?.split(" ").slice(1).join(" ") || "Utilisateur").trim();
     const avatar = typeof payload.picture === "string" ? payload.picture : undefined;
 
-    const existing = await findUserByEmail(email);
-    const user = existing || (await createUser({
-      nom,
-      prenom,
+    // Récupérer ou créer l'utilisateur avec la fonction unifiée
+    const user = await getOrCreateSocialUser({
+      provider: "google",
       email,
-      passwordHash: `google:${payload.sub}`,
-      role: "user",
+      prenom,
+      nom,
       avatar,
-      lang: "fr",
-      currency: "XOF",
-      isVerified: true,
-      twoFactorEnabled: false,
-      country: "BJ",
-      affiliateCode: generateAffiliateCode(prenom, nom),
-      favorites: [],
-      downloads: [],
-    }));
+      providerId: payload.sub ? `google_${payload.sub}` : undefined,
+    });
+
+    // Vérification 2FA si activée sur le compte
+    if (user.twoFactorEnabled) {
+      const challenge = uuidv4();
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+      const supabase = getSupabaseAdmin();
+      if (supabase) {
+        await supabase.from("login_challenges").insert({
+          challenge,
+          user_id: user.id,
+          expires_at: expiresAt,
+        });
+      } else {
+        const db = readDB() as unknown as Record<string, unknown>;
+        if (!Array.isArray(db.loginChallenges)) db.loginChallenges = [];
+        (db.loginChallenges as Array<{ challenge: string; userId: string; expiresAt: string }>).push({
+          challenge,
+          userId: user.id,
+          expiresAt,
+        });
+        writeDB(db as unknown as Parameters<typeof writeDB>[0]);
+      }
+      return NextResponse.json({
+        success: true,
+        twoFactorRequired: true,
+        challenge,
+        userId: user.id,
+      });
+    }
 
     const response = NextResponse.json({
       success: true,
@@ -60,14 +83,16 @@ export async function POST(request: NextRequest) {
         email: user.email,
         prenom: user.prenom,
         nom: user.nom,
+        role: user.role,
       },
       redirectUrl: safeNext,
     });
 
-    response.cookies.set(COOKIE_NAME, generateToken(user), COOKIE_OPTIONS as any);
+    response.cookies.set(COOKIE_NAME, generateToken(user), COOKIE_OPTIONS);
     return response;
   } catch (error) {
     console.error("Erreur Google One Tap:", error);
-    return NextResponse.json({ error: "Erreur serveur lors de la connexion Google." }, { status: 500 });
+    const msg = error instanceof Error ? error.message : "Erreur serveur lors de la connexion Google.";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

@@ -16,8 +16,15 @@ export default function TrackedVideo({
   const started = useRef<number | null>(null);
   const sent = useRef(false);
 
-  const [isMuted, setIsMuted] = useState(true);
-  const [isPlaying, setIsPlaying] = useState(false);
+  // Par défaut : son activé (selon la demande de l'utilisateur), mémorisé par session
+  const [isMuted, setIsMuted] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("wab_video_muted");
+      return saved === "true"; // true seulement si l'utilisateur a explicitement coupé le son
+    }
+    return false;
+  });
+
   const [showSoundToast, setShowSoundToast] = useState(false);
 
   function send(seconds: number) {
@@ -32,7 +39,34 @@ export default function TrackedVideo({
     }).catch(() => undefined);
   }
 
-  // IntersectionObserver pour lecture automatique (autoplay) au défilement
+  // Écouter si une autre vidéo commence à jouer pour mettre celle-ci en pause
+  useEffect(() => {
+    const handleOtherVideoPlaying = (e: Event) => {
+      const customEvent = e as CustomEvent<{ postId: string }>;
+      if (customEvent.detail?.postId !== postId && videoRef.current && !videoRef.current.paused) {
+        videoRef.current.pause();
+      }
+    };
+    window.addEventListener("wab_video_playing", handleOtherVideoPlaying);
+    return () => window.removeEventListener("wab_video_playing", handleOtherVideoPlaying);
+  }, [postId]);
+
+  // Écouter le déblocage audio global au premier geste utilisateur
+  useEffect(() => {
+    const unlockAudio = () => {
+      if (videoRef.current && !isMuted && videoRef.current.muted) {
+        videoRef.current.muted = false;
+      }
+    };
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    window.addEventListener("touchstart", unlockAudio, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlockAudio);
+      window.removeEventListener("touchstart", unlockAudio);
+    };
+  }, [isMuted]);
+
+  // IntersectionObserver pour lecture automatique (autoplay) au défilement avec son
   useEffect(() => {
     const video = videoRef.current;
     const container = containerRef.current;
@@ -42,10 +76,23 @@ export default function TrackedVideo({
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
-            // Visible à 50% ou plus : lecture automatique fluide
-            video.play().catch(() => {
-              // Autoplay bloqué par le navigateur si non muet
-            });
+            // Visible à 50% ou plus : lecture automatique avec son
+            video.muted = isMuted;
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+              playPromise
+                .then(() => {
+                  window.dispatchEvent(new CustomEvent("wab_video_playing", { detail: { postId } }));
+                })
+                .catch(() => {
+                  // Si le navigateur bloque l'autoplay avec son (avant le 1er clic utilisateur),
+                  // on démarre en muet temporairement pour que la vidéo tourne
+                  video.muted = true;
+                  video.play().then(() => {
+                    window.dispatchEvent(new CustomEvent("wab_video_playing", { detail: { postId } }));
+                  }).catch(() => {});
+                });
+            }
           } else if (entry.intersectionRatio < 0.25) {
             // Sorti du champ de vision : pause automatique
             if (!video.paused) {
@@ -64,16 +111,22 @@ export default function TrackedVideo({
     return () => {
       observer.disconnect();
     };
-  }, []);
+  }, [isMuted, postId]);
 
   const toggleSound = (e: React.MouseEvent) => {
     e.stopPropagation();
     const nextMuted = !isMuted;
     setIsMuted(nextMuted);
+    try {
+      sessionStorage.setItem("wab_video_muted", String(nextMuted));
+    } catch {}
+
     if (videoRef.current) {
       videoRef.current.muted = nextMuted;
       if (videoRef.current.paused) {
-        videoRef.current.play().catch(() => {});
+        videoRef.current.play().then(() => {
+          window.dispatchEvent(new CustomEvent("wab_video_playing", { detail: { postId } }));
+        }).catch(() => {});
       }
     }
     setShowSoundToast(true);
@@ -91,18 +144,15 @@ export default function TrackedVideo({
         aria-label={name}
         className="w-full max-h-[560px] object-contain mx-auto"
         onPlay={() => {
-          setIsPlaying(true);
           started.current = Date.now();
         }}
         onPause={() => {
-          setIsPlaying(false);
           if (started.current) {
             send((Date.now() - started.current) / 1000);
             started.current = null;
           }
         }}
         onEnded={() => {
-          setIsPlaying(false);
           if (started.current) {
             send((Date.now() - started.current) / 1000);
           }
@@ -122,6 +172,23 @@ export default function TrackedVideo({
         <span className="text-[11px] hidden sm:inline">
           {isMuted ? "Activer le son" : "Son actif"}
         </span>
+      </button>
+
+      {/* Bouton plein écran style TikTok */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (videoRef.current && !videoRef.current.paused) {
+            videoRef.current.pause();
+          }
+          window.dispatchEvent(new CustomEvent("wab_open_tiktok_feed", { detail: { postId, videoUrl: src } }));
+        }}
+        aria-label="Ouvrir en plein écran style TikTok"
+        className="absolute top-3.5 right-3.5 z-20 flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-xs font-bold text-white shadow-lg backdrop-blur-md transition-all hover:bg-black/80 hover:scale-105 active:scale-95"
+      >
+        <span className="material-symbols-outlined text-base">fullscreen</span>
+        <span className="text-[11px] hidden sm:inline">Plein écran</span>
       </button>
 
       {/* Petit indicateur toast lors du basculement audio */}

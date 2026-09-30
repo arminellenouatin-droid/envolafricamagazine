@@ -33,6 +33,7 @@ interface GoogleOneTapPromptProps {
 export default function GoogleOneTapPrompt({ user }: GoogleOneTapPromptProps) {
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [promptError, setPromptError] = useState("");
 
   useEffect(() => {
     // Si l'utilisateur est déjà connecté, ne rien afficher
@@ -78,11 +79,8 @@ export default function GoogleOneTapPrompt({ user }: GoogleOneTapPromptProps) {
     // Initialiser également Google Identity Services pour le One Tap natif Google si disponible
     const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     if (googleClientId) {
-      const script = document.createElement("script");
-      script.src = "https://accounts.google.com/gsi/client";
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
+      const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+      const initGsi = () => {
         const google = (window as unknown as {
           google?: {
             accounts?: {
@@ -100,6 +98,7 @@ export default function GoogleOneTapPrompt({ user }: GoogleOneTapPromptProps) {
             callback: async (response: { credential?: string }) => {
               if (response.credential) {
                 setLoading(true);
+                setPromptError("");
                 try {
                   const currentPath = window.location.pathname + window.location.search;
                   const res = await fetch("/api/auth/google-one-tap", {
@@ -112,8 +111,11 @@ export default function GoogleOneTapPrompt({ user }: GoogleOneTapPromptProps) {
                     window.location.assign(data.redirectUrl || window.location.href);
                     return;
                   }
-                } catch {
-                  // Fallback OAuth standard
+                  if (data.error) {
+                    setPromptError(data.error);
+                  }
+                } catch (err) {
+                  setPromptError(err instanceof Error ? err.message : "Erreur de validation Google One Tap.");
                 } finally {
                   setLoading(false);
                 }
@@ -125,7 +127,17 @@ export default function GoogleOneTapPrompt({ user }: GoogleOneTapPromptProps) {
           google.accounts.id.prompt();
         }
       };
-      document.head.appendChild(script);
+
+      if (!existingScript) {
+        const script = document.createElement("script");
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+        script.onload = initGsi;
+        document.head.appendChild(script);
+      } else {
+        initGsi();
+      }
     }
 
     return () => {
@@ -203,6 +215,13 @@ export default function GoogleOneTapPrompt({ user }: GoogleOneTapPromptProps) {
             ✕
           </button>
         </div>
+
+        {/* Affichage d'erreur en cas d'échec Google One Tap */}
+        {promptError && (
+          <div className="mt-2.5 rounded-xl border border-red-500/30 bg-red-950/60 p-2.5 text-xs text-red-200">
+            {promptError}
+          </div>
+        )}
 
         {/* Bouton de connexion Google 1-clic direct */}
         <div className="mt-3.5 flex flex-col gap-2.5">
