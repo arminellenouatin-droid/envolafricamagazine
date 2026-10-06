@@ -30,6 +30,16 @@ interface LiveCandidateStudioProps {
   live?: AgoraLive;
 }
 
+function AgoraCandidateLocalView({ live, className }: { live: AgoraLive; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (ref.current && live.status === "live") {
+      live.attachLocal(ref.current);
+    }
+  }, [live, live.status, live.camOn]);
+  return <div ref={ref} className={className} />;
+}
+
 export default function LiveCandidateStudio({
   candidate,
   isOnStage,
@@ -47,8 +57,10 @@ export default function LiveCandidateStudio({
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Initialisation de la caméra locale selfie
+  // Initialisation de la caméra locale selfie (uniquement si Agora n'est pas actif)
   useEffect(() => {
+    if (live) return; // Agora gère nativement les pistes vidéo et audio sans conflit matériel
+
     let active = true;
 
     async function setupCamera() {
@@ -83,7 +95,7 @@ export default function LiveCandidateStudio({
         streamRef.current.getTracks().forEach((t) => t.stop());
       }
     };
-  }, [cameraOff]);
+  }, [cameraOff, live]);
 
   // Chronomètre de temps de parole quand le candidat est sur scène
   useEffect(() => {
@@ -98,7 +110,7 @@ export default function LiveCandidateStudio({
 
   const toggleMic = () => {
     if (live) {
-      live.toggleMic();
+      void live.toggleMic();
     } else if (streamRef.current) {
       streamRef.current.getAudioTracks().forEach((t) => (t.enabled = micMuted));
     }
@@ -107,7 +119,7 @@ export default function LiveCandidateStudio({
 
   const toggleCam = () => {
     if (live) {
-      live.toggleCam();
+      void live.toggleCam();
     } else if (streamRef.current) {
       streamRef.current.getVideoTracks().forEach((t) => (t.enabled = cameraOff));
     }
@@ -124,7 +136,9 @@ export default function LiveCandidateStudio({
     <div className="relative h-[100dvh] w-full max-w-[480px] mx-auto overflow-hidden bg-black text-white selection:bg-[#D4AF37] selection:text-black">
       {/* 1. FLUX VIDÉO RETOUR SELFIE DU CANDIDAT */}
       <div className="absolute inset-0">
-        {!cameraOff && !cameraError ? (
+        {isOnStage && live && live.status === "live" && !cameraOff ? (
+          <AgoraCandidateLocalView live={live} className="h-full w-full object-cover -scale-x-100" />
+        ) : !cameraOff && !cameraError && !live ? (
           <video
             ref={videoRef}
             autoPlay

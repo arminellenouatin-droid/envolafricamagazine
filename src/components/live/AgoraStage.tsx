@@ -73,9 +73,31 @@ export function AgoraStage({ live, mainUid, className, children }: Props) {
         </div>
       )}
       {live.status === "error" && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black/80 px-6 text-center text-sm text-white">
-          <span>Impossible de rejoindre le direct.</span>
-          <button onClick={() => void live.join()} className="rounded-full bg-white px-4 py-2 font-medium text-black">
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/85 px-6 text-center text-sm text-white backdrop-blur-sm">
+          <span className="text-3xl">⚠️</span>
+          <span className="font-bold text-base">
+            {live.error === "permission_denied"
+              ? "Accès caméra ou micro refusé"
+              : live.error === "device_in_use"
+              ? "Caméra ou micro déjà utilisé"
+              : live.error === "camera_not_found"
+              ? "Caméra introuvable"
+              : "Impossible de rejoindre le direct"}
+          </span>
+          <p className="text-xs text-white/70 max-w-xs">
+            {live.error === "permission_denied"
+              ? "Veuillez autoriser l'accès à la caméra et au microphone dans les paramètres de votre navigateur pour participer."
+              : live.error === "device_in_use"
+              ? "Une autre application utilise votre caméra. Veuillez la fermer puis réessayer."
+              : live.error === "camera_not_found"
+              ? "Aucun périphérique vidéo détecté sur cet appareil."
+              : "Une erreur réseau ou de session est survenue. Veuillez réessayer."}
+          </p>
+          <button
+            type="button"
+            onClick={() => void live.join()}
+            className="mt-2 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F4D976] px-6 py-2.5 text-xs font-bold text-black shadow-lg hover:scale-105 active:scale-95 transition-all"
+          >
             Réessayer
           </button>
         </div>

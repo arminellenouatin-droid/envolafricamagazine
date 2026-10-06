@@ -1,0 +1,280 @@
+/* Envol Africa Live UX — mobile first */
+.ea-live {
+  --ea-glass: rgba(10, 10, 14, .58);
+  --ea-glass-strong: rgba(10, 10, 14, .82);
+  --ea-border: rgba(255,255,255,.16);
+  --ea-text: #fff;
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  min-height: 560px;
+  overflow: hidden;
+  background: #050505;
+  color: var(--ea-text);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.ea-live__video-layer,
+.ea-live__overlay {
+  position: absolute;
+  inset: 0;
+}
+
+.ea-live__overlay {
+  z-index: 5;
+  pointer-events: none;
+}
+
+.ea-live__overlay button,
+.ea-live__overlay nav,
+.ea-live__overlay header {
+  pointer-events: auto;
+}
+
+.ea-participant-grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  background: #000;
+}
+
+.ea-participant-grid--1 { grid-template-columns: 1fr; }
+.ea-participant-grid--2 { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+.ea-participant-grid--3,
+.ea-participant-grid--4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+
+.ea-participant {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #111;
+  border: 1px solid rgba(255,255,255,.05);
+}
+
+.ea-participant__video {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.ea-participant__video video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ea-participant__avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 32px;
+  background: rgba(255,255,255,.12);
+}
+
+.ea-participant__avatar img,
+.ea-avatar {
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.ea-participant__label {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(10px);
+  font-size: 12px;
+  display: flex;
+  gap: 6px;
+}
+
+.ea-live-header {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.ea-live-identity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 9px 5px 5px;
+  border: 1px solid var(--ea-border);
+  border-radius: 999px;
+  background: var(--ea-glass);
+  backdrop-filter: blur(14px);
+}
+
+.ea-avatar { width: 34px; height: 34px; }
+.ea-live-identity__text { display: grid; min-width: 0; }
+.ea-live-identity__text strong,
+.ea-live-identity__text span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
+.ea-live-identity__text span { font-size: 11px; opacity: .76; }
+
+.ea-live-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: rgba(255,60,60,.9);
+}
+
+.ea-viewer-count { font-size: 11px; opacity: .82; }
+.ea-icon-button {
+  border: 0;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  font-size: 24px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+}
+.ea-icon-button--glass { background: var(--ea-glass); backdrop-filter: blur(14px); }
+
+.ea-end-mini {
+  margin-left: auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(180,20,20,.72);
+  color: #fff;
+}
+
+.ea-action-rail {
+  position: absolute;
+  right: 10px;
+  bottom: 150px;
+  display: grid;
+  gap: 10px;
+}
+
+.ea-action {
+  width: 48px;
+  min-height: 48px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ea-glass);
+  color: #fff;
+  backdrop-filter: blur(14px);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.ea-action__icon { font-size: 21px; line-height: 1; }
+.ea-action small { font-size: 8px; opacity: .86; margin-top: -5px; }
+
+.ea-comments {
+  position: absolute;
+  left: 12px;
+  right: 70px;
+  bottom: 92px;
+  max-height: 120px;
+  overflow: hidden;
+  border: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,.48));
+  color: #fff;
+  text-align: left;
+  padding: 34px 0 5px;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.ea-comments div { text-shadow: 0 1px 3px #000; }
+
+.ea-bottom-bar {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: max(10px, env(safe-area-inset-bottom));
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 6px;
+  border: 1px solid var(--ea-border);
+  border-radius: 18px;
+  background: var(--ea-glass-strong);
+  backdrop-filter: blur(18px);
+}
+
+.ea-control {
+  border: 0;
+  background: transparent;
+  color: #fff;
+  min-width: 48px;
+  min-height: 48px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  cursor: pointer;
+}
+.ea-control span { font-size: 8px; opacity: .78; margin-top: -3px; }
+.ea-control:hover { background: rgba(255,255,255,.10); }
+.ea-control--end { color: #ffb0b0; }
+.ea-control--leave { color: #fff; }
+
+.ea-stage-cta {
+  border: 0;
+  border-radius: 999px;
+  min-height: 46px;
+  padding: 0 16px;
+  background: rgba(255,255,255,.94);
+  color: #111;
+  font-weight: 800;
+  cursor: pointer;
+}
+.ea-stage-cta--pending { opacity: .7; }
+.ea-stage-cta--accepted { background: #fff; }
+
+.ea-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0,0,0,.45);
+  display: flex;
+  align-items: flex-end;
+}
+.ea-sheet {
+  width: 100%;
+  max-height: 82dvh;
+  padding: 18px;
+  border-radius: 22px 22px 0 0;
+  background: #151519;
+  color: #fff;
+  box-shadow: 0 -10px 40px rgba(0,0,0,.35);
+}
+.ea-sheet header { display: flex; align-items: center; justify-content: space-between; }
+.ea-sheet > button {
+  width: 100%;
+  margin-top: 10px;
+  min-height: 50px;
+  border: 1px solid var(--ea-border);
+  border-radius: 14px;
+  background: rgba(255,255,255,.06);
+  color: #fff;
+  text-align: left;
+  padding: 0 14px;
+}
+.ea-center-stats { display: flex; gap: 14px; overflow-x: auto; margin: 16px 0; font-size: 12px; opacity: .82; }
+.ea-sheet-danger { color: #ffb4b4 !important; border-color: rgba(255,70,70,.3) !important; }
+
+@media (min-width: 900px) {
+  .ea-live { max-width: 1500px; margin: 0 auto; }
+  .ea-action-rail { right: 20px; bottom: 180px; }
+  .ea-bottom-bar { left: 50%; right: auto; transform: translateX(-50%); min-width: 520px; }
+  .ea-comments { max-width: 500px; }
+}

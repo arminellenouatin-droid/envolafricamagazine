@@ -34,6 +34,18 @@ function LocalHostVideo({ live }: { live: AgoraLive }) {
   return <div ref={ref} className="h-full w-full object-cover aspect-[4/3] sm:aspect-video overflow-hidden bg-black" />;
 }
 
+function RemoteParticipantVideo({ live, uid }: { live: AgoraLive; uid: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const part = live.participants.find((p) => p.uid === uid);
+  const hasVideo = part?.hasVideo ?? false;
+  useEffect(() => {
+    if (ref.current && hasVideo) {
+      live.attachRemote(uid, ref.current);
+    }
+  }, [live, uid, hasVideo]);
+  return <div ref={ref} className="h-full w-full object-cover aspect-[4/3] sm:aspect-video overflow-hidden bg-black" />;
+}
+
 export default function LiveHostGrid({
   participants,
   activeSpeakerId,
@@ -44,6 +56,7 @@ export default function LiveHostGrid({
   live,
 }: LiveHostGridProps) {
   const onStageParticipants = participants.filter((p) => p.state === "on_stage");
+  const remotePublishers = live?.participants.filter((part) => part.hasVideo) || [];
 
   return (
     <section aria-label="Scène Battle Multi-Participants" className="w-full">
@@ -59,8 +72,13 @@ export default function LiveHostGrid({
             : "grid-cols-3"
         }`}
       >
-        {onStageParticipants.map((p) => {
+        {onStageParticipants.map((p, idx) => {
           const isSpeaker = p.id === activeSpeakerId || p.isSpeaker;
+          const candidateStageIndex = onStageParticipants.filter((x) => x.role !== "host").findIndex((x) => x.id === p.id);
+          const matchedUid =
+            p.uid ??
+            live?.roster.find((r) => r.userId === p.id)?.uid ??
+            (candidateStageIndex >= 0 && remotePublishers[candidateStageIndex] ? remotePublishers[candidateStageIndex].uid : undefined);
 
           return (
             <div
@@ -75,6 +93,8 @@ export default function LiveHostGrid({
               {/* Fond visuel / Vidéo du participant */}
               {p.role === "host" && live && live.isPublisher && live.status === "live" && !p.camMuted ? (
                 <LocalHostVideo live={live} />
+              ) : matchedUid !== undefined && live && live.participants.some((part) => part.uid === matchedUid && part.hasVideo) && !p.camMuted ? (
+                <RemoteParticipantVideo live={live} uid={matchedUid} />
               ) : p.avatar && !p.camMuted ? (
                 <img
                   src={p.avatar}

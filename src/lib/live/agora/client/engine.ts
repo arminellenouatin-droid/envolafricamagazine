@@ -127,8 +127,28 @@ export class AgoraLiveEngine {
       await client.publish([mic, cam]);
     } catch (e) {
       const name = (e as { code?: string; name?: string })?.code ?? (e as Error)?.name ?? "";
-      this.cb.onError(/PERMISSION|NotAllowed/i.test(name) ? "permission_denied" : "publish_failed");
+      const code = /PERMISSION|NotAllowed/i.test(name)
+        ? "permission_denied"
+        : /NotFound|DevicesNotFound/i.test(name)
+        ? "camera_not_found"
+        : /NotReadable|TrackStart/i.test(name)
+        ? "device_in_use"
+        : "publish_failed";
+      this.cb.onError(code);
+      throw new Error(code);
     }
+  }
+
+  get isPublished(): boolean {
+    return !!(this.cam && this.mic);
+  }
+
+  get localCamTrack(): ICameraVideoTrack | null {
+    return this.cam;
+  }
+
+  get localMicTrack(): IMicrophoneAudioTrack | null {
+    return this.mic;
   }
 
   private emitRemote() {
@@ -168,6 +188,12 @@ export class AgoraLiveEngine {
   async leave() {
     this.leaving = true;
     try {
+      if (this.client && (this.mic || this.cam)) {
+        const toUnpublish = [this.mic, this.cam].filter(Boolean) as (IMicrophoneAudioTrack | ICameraVideoTrack)[];
+        if (toUnpublish.length > 0) {
+          await this.client.unpublish(toUnpublish).catch(() => undefined);
+        }
+      }
       this.mic?.stop();
       this.mic?.close();
       this.cam?.stop();
@@ -176,7 +202,7 @@ export class AgoraLiveEngine {
       this.cam = null;
       this.remote.clear();
       this.client?.removeAllListeners();
-      await this.client?.leave();
+      await this.client?.leave().catch(() => undefined);
     } finally {
       this.client = null;
     }

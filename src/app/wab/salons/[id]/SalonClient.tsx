@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useAgoraLive, type AgoraLive } from "@/lib/live/agora/client/useAgoraLive";
+import "@/components/live/kit/live.css";
 
 interface PinnedProduct {
   id: string;
@@ -153,22 +154,13 @@ export default function SalonClient({ id }: { id: string }) {
   const [showGiftDrawer, setShowGiftDrawer] = useState(false);
   const [activeGiftAnimation, setActiveGiftAnimation] = useState<{ emoji: string; name: string } | null>(null);
 
-  // Camera & Mic state (Creator & Co-host)
-  const [cameraActive, setCameraActive] = useState(true);
-  const [micActive, setMicActive] = useState(true);
-  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
-  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
-  const [cameraError, setCameraError] = useState<string | null>(null);
-  const [startingCamera, setStartingCamera] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  // Camera & Mic state (Creator & Co-host) - Pilotés par Agora SD-RTN
+  const cameraActive = agora.camOn;
+  const micActive = agora.micOn;
 
-  // Remote Stream for viewers (Host and Co-Host video streams)
-  const [remoteHostStream, setRemoteHostStream] = useState<MediaStream | null>(null);
-  const [remoteCoHostStream, setRemoteCoHostStream] = useState<MediaStream | null>(null);
-  const [hostLatestFrame, setHostLatestFrame] = useState<string | null>(null);
-  const remoteHostVideoRef = useRef<HTMLVideoElement | null>(null);
-  const remoteCoHostVideoRef = useRef<HTMLVideoElement | null>(null);
+  // Sas d'invitation sur scène (Spectateur invité par l'hôte) & Fin de direct
+  const [showStageInviteModal, setShowStageInviteModal] = useState(false);
+  const [isLiveEnded, setIsLiveEnded] = useState(false);
 
   // Stage Requests (Co-Hosting / TikTok Dual Live)
   const [myStageRequestStatus, setMyStageRequestStatus] = useState<"none" | "pending" | "accepted">("none");
@@ -202,15 +194,12 @@ export default function SalonClient({ id }: { id: string }) {
   const [publishReplay, setPublishReplay] = useState(true);
   const [liveDurationSeconds, setLiveDurationSeconds] = useState(0);
 
-  // WebRTC Peer Connections & Supabase Channel
+  // Identifiant Spectateur & Canal Supabase Realtime
   const viewerIdRef = useRef<string>("");
   if (!viewerIdRef.current) {
     viewerIdRef.current = `v-${Math.random().toString(36).slice(2, 9)}`;
   }
-  const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
-  const viewerPcRef = useRef<RTCPeerConnection | null>(null);
   const channelRef = useRef<any>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Modals
   const [showEndModal, setShowEndModal] = useState(false);
@@ -292,188 +281,16 @@ export default function SalonClient({ id }: { id: string }) {
       .catch(() => {});
   }, [salon, id]);
 
-  // 3. Camera Stream (Creator & Co-host)
-  const startCamera = async (mode: "user" | "environment" = facingMode) => {
-    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
-      setCameraError("La caméra n'est pas disponible sur ce navigateur.");
-      return;
-    }
-    setStartingCamera(true);
-    setCameraError(null);
-
-    // Arrêter le flux actif s'il existe
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-
-    try {
-      let stream: MediaStream | null = null;
-      let audioEnabled = true;
-
-      // Tentative 1 : mode spécifié (user/environment) + audio
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: mode, width: { ideal: 720 }, height: { ideal: 1280 } },
-          audio: true,
-        });
-      } catch {
-        // Tentative 2 : vidéo générique + audio
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true,
-          });
-        } catch {
-          // Tentative 3 : vidéo sans audio
-          audioEnabled = false;
-          try {
-            stream = await navigator.mediaDevices.getUserMedia({
-              video: { facingMode: mode },
-              audio: false,
-            });
-          } catch {
-            // Tentative 4 : vidéo minimale
-            try {
-              stream = await navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: false,
-              });
-            } catch (finalErr: any) {
-              console.error("Échec définitif accès caméra :", finalErr);
-              const errName = finalErr?.name || "";
-              if (errName === "NotAllowedError" || errName === "PermissionDeniedError") {
-                setCameraError("permission_denied");
-              } else if (errName === "NotFoundError" || errName === "DevicesNotFoundError") {
-                setCameraError("not_found");
-              } else if (errName === "NotReadableError" || errName === "TrackStartError") {
-                setCameraError("in_use");
-              } else {
-                setCameraError(finalErr?.message || "Accès à la caméra indisponible.");
-              }
-              return;
-            }
-          }
-        }
-      }
-
-      if (stream) {
-        streamRef.current = stream;
-        setMediaStream(stream);
-        setCameraActive(true);
-        setMicActive(audioEnabled);
-        setCameraError(null);
-
-        // Mettre à jour les pistes dans les peer connections existantes
-        peerConnectionsRef.current.forEach((pc) => {
-          stream!.getTracks().forEach((track) => {
-            const senders = pc.getSenders();
-            const sender = senders.find((s) => s.track?.kind === track.kind);
-            if (sender) {
-              sender.replaceTrack(track).catch(() => {});
-            } else {
-              pc.addTrack(track, stream!);
-            }
-          });
-        });
-      }
-    } finally {
-      setStartingCamera(false);
-    }
-  };
-
+  // 3. Commandes Média Agora (Retournement caméra mobile / desktop)
   const flipCamera = async () => {
-    const nextMode = facingMode === "user" ? "environment" : "user";
-    setFacingMode(nextMode);
-    await startCamera(nextMode);
+    try {
+      await agora.switchCamera();
+    } catch (err) {
+      console.warn("Échec retournement caméra Agora:", err);
+    }
   };
 
-  // Démarrage automatique de la caméra pour l'hôte
-  useEffect(() => {
-    if (isHost || isCoHost) {
-      startCamera(facingMode);
-    }
-
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
-      }
-    };
-  }, [isHost, isCoHost]);
-
-  // Attacher le flux vidéo local à l'élément <video>
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !mediaStream) return;
-    video.srcObject = mediaStream;
-    video.muted = true;
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.catch((err) => {
-        console.warn("Auto-play caméra en attente d'interaction :", err);
-      });
-    }
-  }, [mediaStream, isHost, isCoHost, cameraActive]);
-
-  // Attacher le flux vidéo distant hôte pour les spectateurs
-  useEffect(() => {
-    const video = remoteHostVideoRef.current;
-    if (!video || !remoteHostStream) return;
-    video.srcObject = remoteHostStream;
-    video.muted = false;
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.catch((err) => {
-        console.warn("Auto-play vidéo hôte en attente :", err);
-      });
-    }
-  }, [remoteHostStream]);
-
-  // Attacher le flux vidéo distant co-hôte
-  useEffect(() => {
-    const video = remoteCoHostVideoRef.current;
-    if (!video || !remoteCoHostStream) return;
-    video.srcObject = remoteCoHostStream;
-    video.muted = false;
-    video.play().catch(() => {});
-  }, [remoteCoHostStream]);
-
-  // 4. Capture périodique et diffusion de trame vidéo (Fallback instantané & anti-écran noir)
-  useEffect(() => {
-    if ((!isHost && !isCoHost) || !cameraActive || !mediaStream) return;
-
-    const interval = setInterval(() => {
-      const video = videoRef.current;
-      if (!video || video.videoWidth === 0 || video.videoHeight === 0) return;
-
-      if (!canvasRef.current) {
-        canvasRef.current = document.createElement("canvas");
-      }
-      const canvas = canvasRef.current;
-      const targetWidth = 360;
-      canvas.width = targetWidth;
-      canvas.height = Math.round((targetWidth * video.videoHeight) / video.videoWidth) || 480;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      try {
-        const frameData = canvas.toDataURL("image/jpeg", 0.55);
-        if (channelRef.current) {
-          channelRef.current.send({
-            type: "broadcast",
-            event: isHost ? "host_frame" : "cohost_frame",
-            payload: { frameData, from: currentUserId },
-          });
-        }
-      } catch {}
-    }, 1200);
-
-    return () => clearInterval(interval);
-  }, [isHost, isCoHost, cameraActive, mediaStream, currentUserId]);
-
-  // 5. Connexion Supabase Realtime (Signalisation WebRTC, Chat, Cadeaux, Cœurs, Scène)
+  // 4. Connexion Supabase Realtime (Chat, Cadeaux, Cœurs, Scène, Fin de direct)
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
@@ -485,139 +302,7 @@ export default function SalonClient({ id }: { id: string }) {
       },
     });
 
-    // 5.1 Spectateur rejoint le direct -> L'hôte crée l'offre WebRTC
-    ch.on("broadcast", { event: "viewer_join" }, async ({ payload }: { payload: any }) => {
-      const targetViewer = payload?.viewerId;
-      if ((isHost || isCoHost) && streamRef.current && targetViewer) {
-        try {
-          const pc = new RTCPeerConnection({
-            iceServers: [
-              { urls: "stun:stun.l.google.com:19302" },
-              { urls: "stun:stun1.l.google.com:19302" },
-            ],
-          });
-          peerConnectionsRef.current.set(targetViewer, pc);
-
-          streamRef.current.getTracks().forEach((track) => {
-            pc.addTrack(track, streamRef.current!);
-          });
-
-          pc.onicecandidate = (event) => {
-            if (event.candidate) {
-              ch.send({
-                type: "broadcast",
-                event: "live_ice",
-                payload: { to: targetViewer, candidate: event.candidate.toJSON(), role: isHost ? "host" : "cohost" },
-              });
-            }
-          };
-
-          const offer = await pc.createOffer();
-          await pc.setLocalDescription(offer);
-
-          ch.send({
-            type: "broadcast",
-            event: "live_offer",
-            payload: {
-              to: targetViewer,
-              fromRole: isHost ? "host" : "cohost",
-              offer: { type: offer.type, sdp: offer.sdp },
-            },
-          });
-        } catch (err) {
-          console.warn("[Live Host] Erreur création offre viewer :", err);
-        }
-      }
-    });
-
-    // 5.2 Le spectateur reçoit l'offre WebRTC de l'hôte
-    ch.on("broadcast", { event: "live_offer" }, async ({ payload }: { payload: any }) => {
-      if (!isHost && payload?.to === viewerIdRef.current && payload.offer) {
-        try {
-          const pc = new RTCPeerConnection({
-            iceServers: [
-              { urls: "stun:stun.l.google.com:19302" },
-              { urls: "stun:stun1.l.google.com:19302" },
-            ],
-          });
-          viewerPcRef.current = pc;
-
-          pc.ontrack = (event) => {
-            if (event.streams[0]) {
-              if (payload.fromRole === "cohost") {
-                setRemoteCoHostStream(event.streams[0]);
-              } else {
-                setRemoteHostStream(event.streams[0]);
-              }
-            }
-          };
-
-          pc.onicecandidate = (event) => {
-            if (event.candidate) {
-              ch.send({
-                type: "broadcast",
-                event: "live_ice",
-                payload: { from: viewerIdRef.current, candidate: event.candidate.toJSON() },
-              });
-            }
-          };
-
-          await pc.setRemoteDescription(new RTCSessionDescription(payload.offer));
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-
-          ch.send({
-            type: "broadcast",
-            event: "live_answer",
-            payload: {
-              from: viewerIdRef.current,
-              answer: { type: answer.type, sdp: answer.sdp },
-            },
-          });
-        } catch (err) {
-          console.warn("[Live Viewer] Erreur négociation réponse :", err);
-        }
-      }
-    });
-
-    // 5.3 L'hôte reçoit la réponse WebRTC du spectateur
-    ch.on("broadcast", { event: "live_answer" }, async ({ payload }: { payload: any }) => {
-      if ((isHost || isCoHost) && payload?.from && payload.answer) {
-        const pc = peerConnectionsRef.current.get(payload.from);
-        if (pc && !pc.currentRemoteDescription) {
-          try {
-            await pc.setRemoteDescription(new RTCSessionDescription(payload.answer));
-          } catch (err) {
-            console.warn("[Live Host] Erreur remote description réponse :", err);
-          }
-        }
-      }
-    });
-
-    // 5.4 ICE Candidates
-    ch.on("broadcast", { event: "live_ice" }, async ({ payload }: { payload: any }) => {
-      if ((isHost || isCoHost) && payload?.from && payload.candidate) {
-        const pc = peerConnectionsRef.current.get(payload.from);
-        if (pc) {
-          try {
-            await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
-          } catch {}
-        }
-      } else if (!isHost && payload?.to === viewerIdRef.current && payload.candidate && viewerPcRef.current) {
-        try {
-          await viewerPcRef.current.addIceCandidate(new RTCIceCandidate(payload.candidate));
-        } catch {}
-      }
-    });
-
-    // 5.5 Réception des trames visuelles instantanées de l'hôte
-    ch.on("broadcast", { event: "host_frame" }, ({ payload }: { payload: any }) => {
-      if (!isHost && payload?.frameData) {
-        setHostLatestFrame(payload.frameData);
-      }
-    });
-
-    // 5.6 Chat en direct instantané
+    // 4.1 Chat en direct instantané
     ch.on("broadcast", { event: "live_chat_message" }, ({ payload }: { payload: any }) => {
       if (payload?.message) {
         setMessages((prev) => {
@@ -627,7 +312,7 @@ export default function SalonClient({ id }: { id: string }) {
       }
     });
 
-    // 5.7 Cadeaux virtuels reçus
+    // 4.2 Cadeaux virtuels reçus
     ch.on("broadcast", { event: "live_gift" }, ({ payload }: { payload: any }) => {
       if (payload) {
         setActiveGiftAnimation({ emoji: payload.emoji, name: payload.name });
@@ -636,7 +321,7 @@ export default function SalonClient({ id }: { id: string }) {
       }
     });
 
-    // 5.8 Cœurs flottants TikTok reçus
+    // 4.3 Cœurs flottants TikTok reçus
     ch.on("broadcast", { event: "live_heart" }, () => {
       setLikeCount((prev) => prev + 1);
       const newHeart: HeartParticle = {
@@ -652,7 +337,7 @@ export default function SalonClient({ id }: { id: string }) {
       }, 1800);
     });
 
-    // 5.9 Demande de montée sur scène reçue par l'hôte
+    // 4.4 Demande de montée sur scène reçue par l'hôte
     ch.on("broadcast", { event: "guest_stage_request" }, ({ payload }: { payload: any }) => {
       if (isHost && payload?.userId) {
         setPendingGuestRequests((prev) => {
@@ -662,36 +347,43 @@ export default function SalonClient({ id }: { id: string }) {
       }
     });
 
-    // 5.10 Demande de montée sur scène acceptée
-    ch.on("broadcast", { event: "guest_stage_accepted" }, async ({ payload }: { payload: any }) => {
+    // 4.5 Demande de montée sur scène acceptée (Sas de confirmation spectateur)
+    ch.on("broadcast", { event: "guest_stage_accepted" }, ({ payload }: { payload: any }) => {
       if (payload?.targetUserId === currentUserId) {
         setMyStageRequestStatus("accepted");
-        setIsCoHost(true);
-        await startCamera(facingMode);
+        setShowStageInviteModal(true);
       }
       loadSalonData();
     });
 
-    // 5.11 Fin de la session de scène pour l'invité
+    // 4.6 Fin de la session de scène pour l'invité
     ch.on("broadcast", { event: "guest_stage_left" }, () => {
       setIsCoHost(false);
       setMyStageRequestStatus("none");
+      setShowStageInviteModal(false);
       loadSalonData();
     });
 
-    // 5.12 Produit épinglé en direct (Live Shopping PRD Lot 4)
+    // 4.7 Fin du direct diffusée par l'hôte (Signalisation Agora & Supabase unifiée)
+    ch.on("broadcast", { event: "live_ended" }, () => {
+      void agora.leave();
+      setIsLiveEnded(true);
+      setSalon((prev) => (prev ? { ...prev, status: "ended" } : null));
+    });
+
+    // 4.8 Produit épinglé en direct (Live Shopping PRD Lot 4)
     ch.on("broadcast", { event: "product_pinned" }, ({ payload }: { payload: any }) => {
       if (payload) {
         setPinnedProduct(payload);
       }
     });
 
-    // 5.13 Produit désépinglé
+    // 4.9 Produit désépinglé
     ch.on("broadcast", { event: "product_unpinned" }, () => {
       setPinnedProduct(null);
     });
 
-    // 5.14 Sanction modération reçue
+    // 4.10 Sanction modération reçue
     ch.on("broadcast", { event: "participant_sanction" }, ({ payload }: { payload: any }) => {
       if (payload?.targetUserId === currentUserId) {
         if (payload.action === "mute") {
@@ -699,12 +391,12 @@ export default function SalonClient({ id }: { id: string }) {
           alert("Vous avez été mis en sourdine par un modérateur pour ce direct.");
         } else if (payload.action === "kick" || payload.action === "ban") {
           alert("Vous avez été exclu de ce salon par l'hôte ou la modération.");
-          window.location.assign("/salons");
+          window.location.assign("/wab/salons");
         }
       }
     });
 
-    // Presence update pour le compteur de spectateurs
+    // Présence en direct pour le compteur de spectateurs
     ch.on("presence", { event: "sync" }, () => {
       const state = ch.presenceState();
       const count = Object.keys(state).length;
@@ -714,13 +406,6 @@ export default function SalonClient({ id }: { id: string }) {
     ch.subscribe(async (status: string) => {
       if (status === "SUBSCRIBED") {
         await ch.track({ joinedAt: new Date().toISOString() });
-        if (!isHost) {
-          ch.send({
-            type: "broadcast",
-            event: "viewer_join",
-            payload: { viewerId: viewerIdRef.current },
-          });
-        }
       }
     });
 
@@ -731,7 +416,7 @@ export default function SalonClient({ id }: { id: string }) {
         supabase.removeChannel(ch);
       }
     };
-  }, [id, isHost, isCoHost, currentUserId, facingMode, loadSalonData]);
+  }, [id, isHost, currentUserId, loadSalonData]);
 
   // Scroll chat on new message
   useEffect(() => {
@@ -1240,9 +925,23 @@ export default function SalonClient({ id }: { id: string }) {
         }),
       });
 
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
+      // Synchroniser la clôture de session Agora en base
+      await fetch("/api/live/agora/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ liveId: `wab_${id}`, action: "end" }),
+      }).catch(() => {});
+
+      // Diffuser la fin du direct aux spectateurs
+      if (channelRef.current) {
+        channelRef.current.send({
+          type: "broadcast",
+          event: "live_ended",
+          payload: { salonId: id },
+        });
       }
+
+      await agora.leave();
 
       setShowEndModal(false);
       setLiveSummary({
@@ -1250,35 +949,19 @@ export default function SalonClient({ id }: { id: string }) {
         viewers: viewerCount,
         likes: likeCount,
       });
-    } catch {}
+    } catch (err) {
+      console.warn("Erreur fin de direct:", err);
+    }
   };
 
   // Toggle Camera
   const toggleCamera = () => {
-    if (agora.isPublisher) {
-      agora.toggleCam();
-      setCameraActive((prev) => !prev);
-    } else if (streamRef.current) {
-      const videoTrack = streamRef.current.getVideoTracks()[0];
-      if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled;
-        setCameraActive(videoTrack.enabled);
-      }
-    }
+    void agora.toggleCam();
   };
 
   // Toggle Mic
   const toggleMic = () => {
-    if (agora.isPublisher) {
-      agora.toggleMic();
-      setMicActive((prev) => !prev);
-    } else if (streamRef.current) {
-      const audioTrack = streamRef.current.getAudioTracks()[0];
-      if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled;
-        setMicActive(audioTrack.enabled);
-      }
-    }
+    void agora.toggleMic();
   };
 
   if (!salon) {
@@ -1287,6 +970,35 @@ export default function SalonClient({ id }: { id: string }) {
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="font-bold text-sm">Connexion au Salon Live WAB...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Écran de fin de direct pour les spectateurs
+  if (salon.status === "ended" || isLiveEnded) {
+    return (
+      <div className="min-h-screen bg-[#050508] text-white flex flex-col items-center justify-center p-6 text-center select-none">
+        <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-slate-700 mb-4 shadow-2xl">
+          <img
+            src={salon.hostAvatarUrl || "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=300&auto=format&fit=crop"}
+            alt={salon.host}
+            className="w-full h-full object-cover"
+          />
+        </div>
+        <h2 className="text-xl font-black text-white">{salon.host}</h2>
+        <p className="text-sm text-slate-400 mt-1 max-w-sm">{salon.title}</p>
+        <div className="mt-6 inline-flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full text-xs font-bold text-slate-200">
+          <span className="w-2 h-2 rounded-full bg-red-500" />
+          <span>Ce direct est terminé</span>
+        </div>
+        <div className="mt-8 flex gap-3">
+          <Link
+            href="/wab/salons"
+            className="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 text-black text-xs font-black shadow-lg transition active:scale-95"
+          >
+            Retour aux Salons WAB
+          </Link>
         </div>
       </div>
     );
@@ -1330,34 +1042,15 @@ export default function SalonClient({ id }: { id: string }) {
       {/* 1. FLUX VIDÉO EN ARRIÈRE-PLAN (Style TikTok Live)        */}
       {/* ======================================================== */}
       <div className="absolute inset-0 z-0">
-        {salon.coHostUserId ? (
+        {salon.coHostUserId || isCoHost || cohostUid !== undefined ? (
           /* Mode Dual Live / Écran partagé TikTok (Hôte + Co-hôte) */
           <div className="grid grid-rows-2 md:grid-rows-1 md:grid-cols-2 w-full h-full bg-slate-950">
             {/* Slot 1 : Flux Hôte */}
             <div className="relative w-full h-full overflow-hidden border-b md:border-b-0 md:border-r border-white/20 bg-black flex items-center justify-center">
               {isHost ? (
-                agora.status === "live" ? (
-                  <AgoraLocalView agora={agora} className="w-full h-full object-cover" />
-                ) : (
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-full object-cover"
-                  />
-                )
+                <AgoraLocalView agora={agora} className="w-full h-full object-cover" />
               ) : hostUid !== undefined && agora.participants.some((p) => p.uid === hostUid && p.hasVideo) ? (
                 <AgoraRemoteView agora={agora} uid={hostUid} className="w-full h-full object-cover" />
-              ) : remoteHostStream ? (
-                <video
-                  ref={remoteHostVideoRef}
-                  autoPlay
-                  playsInline
-                  className="w-full h-full object-cover"
-                />
-              ) : hostLatestFrame ? (
-                <img src={hostLatestFrame} alt={salon.host} className="w-full h-full object-cover" />
               ) : (
                 <div className="flex flex-col items-center justify-center p-4">
                   <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-emerald-400 mb-2">
@@ -1377,26 +1070,9 @@ export default function SalonClient({ id }: { id: string }) {
             {/* Slot 2 : Flux Co-Hôte / Invité */}
             <div className="relative w-full h-full overflow-hidden bg-black flex items-center justify-center">
               {isCoHost ? (
-                agora.status === "live" ? (
-                  <AgoraLocalView agora={agora} className="w-full h-full object-cover" />
-                ) : (
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-full object-cover"
-                  />
-                )
+                <AgoraLocalView agora={agora} className="w-full h-full object-cover" />
               ) : cohostUid !== undefined && agora.participants.some((p) => p.uid === cohostUid && p.hasVideo) ? (
                 <AgoraRemoteView agora={agora} uid={cohostUid} className="w-full h-full object-cover" />
-              ) : remoteCoHostStream ? (
-                <video
-                  ref={remoteCoHostVideoRef}
-                  autoPlay
-                  playsInline
-                  className="w-full h-full object-cover"
-                />
               ) : (
                 <div className="flex flex-col items-center justify-center p-4">
                   <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-amber-400 mb-2 bg-amber-900/40 flex items-center justify-center text-xl font-bold text-amber-300">
@@ -1415,7 +1091,7 @@ export default function SalonClient({ id }: { id: string }) {
               <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-amber-400/40 flex items-center gap-1.5 z-10">
                 <span className="material-symbols-outlined text-amber-400 text-xs">podium</span>
                 <span className="text-[10px] font-black text-amber-300 uppercase tracking-wider">
-                  {salon.coHostName || "Invité"}
+                  {salon.coHostName || (isCoHost ? currentUserName : "Invité")}
                 </span>
               </div>
 
@@ -1448,53 +1124,44 @@ export default function SalonClient({ id }: { id: string }) {
           <div className="relative w-full h-full">
             {agora.status === "live" ? (
               <AgoraLocalView agora={agora} className="w-full h-full object-cover" />
-            ) : (
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className={`w-full h-full object-cover ${cameraActive ? "" : "hidden"}`}
-              />
-            )}
-            {(!mediaStream || cameraError) && agora.status !== "live" && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-md p-6 text-center z-10">
-                <span className="material-symbols-outlined text-5xl text-emerald-400 mb-3 animate-pulse">videocam</span>
-                <p className="text-base font-black text-white mb-2">Activer votre flux caméra</p>
+            ) : null}
 
-                {cameraError === "permission_denied" ? (
-                  <div className="mb-5 max-w-xs rounded-2xl border border-amber-400/30 bg-amber-950/40 p-3.5 text-left text-xs leading-relaxed text-amber-200">
-                    <p className="font-bold flex items-center gap-1.5 text-amber-300 mb-1.5">
-                      <span className="material-symbols-outlined text-sm">lock</span>
-                      Autorisation caméra requise
-                    </p>
-                    <p className="text-[11px] text-slate-300">
-                      Votre navigateur a bloqué l'accès caméra. Pour autoriser :
-                    </p>
-                    <ol className="mt-1.5 list-decimal pl-4 space-y-1 text-[11px] text-slate-200">
-                      <li>Touchez l'icône <strong>🔒</strong> ou <strong>réglages</strong> à gauche de l'adresse web</li>
-                      <li>Activez <strong>Appareil photo</strong> et <strong>Microphone</strong></li>
-                      <li>Touchez ensuite le bouton ci-dessous</li>
-                    </ol>
-                  </div>
-                ) : cameraError === "in_use" ? (
-                  <p className="text-xs text-amber-300 max-w-xs mb-4">
-                    La caméra semble déjà utilisée par une autre application. Fermez les autres applications et réessayez.
-                  </p>
-                ) : (
-                  <p className="text-xs text-slate-300 max-w-xs mb-4">
-                    {cameraError || "Appuyez sur le bouton ci-dessous pour autoriser et démarrer la vidéo en direct."}
-                  </p>
-                )}
+            {agora.status === "connecting" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-md p-6 text-center z-10">
+                <div className="w-12 h-12 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin mb-4" />
+                <p className="text-base font-black text-white">Connexion au direct Agora…</p>
+                <p className="text-xs text-slate-400 mt-1">Initialisation de la vidéo haute définition</p>
+              </div>
+            )}
+
+            {agora.status === "error" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-md p-6 text-center z-10">
+                <span className="material-symbols-outlined text-5xl text-amber-400 mb-3 animate-pulse">warning</span>
+                <p className="text-base font-black text-white mb-2">
+                  {agora.error === "permission_denied"
+                    ? "Autorisation caméra / micro refusée"
+                    : agora.error === "device_in_use"
+                    ? "Caméra ou micro déjà utilisé"
+                    : agora.error === "camera_not_found"
+                    ? "Caméra introuvable"
+                    : "Impossible d'activer la vidéo"}
+                </p>
+
+                <p className="text-xs text-slate-300 max-w-xs mb-5">
+                  {agora.error === "permission_denied"
+                    ? "Activez l'accès à la caméra et au microphone dans votre navigateur puis réessayez."
+                    : agora.error === "device_in_use"
+                    ? "Une autre application utilise votre caméra. Fermez-la puis réessayez."
+                    : "Vérifiez vos périphériques ou rechargez la page."}
+                </p>
 
                 <button
                   type="button"
-                  onClick={() => startCamera(facingMode)}
-                  disabled={startingCamera}
+                  onClick={agora.retryJoin}
                   className="rounded-full bg-emerald-500 hover:bg-emerald-600 px-6 py-2.5 text-xs font-black text-white shadow-xl transition-transform active:scale-95 flex items-center gap-2"
                 >
-                  <span className="material-symbols-outlined text-base">photo_camera</span>
-                  <span>{startingCamera ? "Connexion caméra…" : cameraError ? "Réessayer l'activation" : "Démarrer la caméra"}</span>
+                  <span className="material-symbols-outlined text-base">refresh</span>
+                  <span>Réessayer l'activation</span>
                 </button>
               </div>
             )}
@@ -1504,21 +1171,8 @@ export default function SalonClient({ id }: { id: string }) {
           <div className="relative w-full h-full bg-slate-950 flex items-center justify-center">
             {hostUid !== undefined && agora.participants.some((p) => p.uid === hostUid && p.hasVideo) ? (
               <AgoraRemoteView agora={agora} uid={hostUid} className="w-full h-full object-cover" />
-            ) : remoteHostStream ? (
-              <video
-                ref={remoteHostVideoRef}
-                autoPlay
-                playsInline
-                className="w-full h-full object-cover"
-              />
-            ) : hostLatestFrame ? (
-              <div className="relative w-full h-full">
-                <img src={hostLatestFrame} alt={salon.host} className="w-full h-full object-cover" />
-                <div className="absolute top-4 left-4 bg-emerald-600/80 backdrop-blur text-white text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                  Flux Caméra Direct
-                </div>
-              </div>
+            ) : agora.participants.some((p) => p.hasVideo) ? (
+              <AgoraRemoteView agora={agora} uid={agora.participants.find((p) => p.hasVideo)!.uid} className="w-full h-full object-cover" />
             ) : (
               <div className="relative flex flex-col items-center text-center p-6">
                 <div className="relative">
@@ -1541,7 +1195,7 @@ export default function SalonClient({ id }: { id: string }) {
                 </p>
                 <p className="text-[11px] text-gray-400 mt-2 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                  Connexion au flux vidéo de l'hôte...
+                  {agora.status === "connecting" ? "Connexion au flux vidéo..." : "En attente du direct de l'hôte..."}
                 </p>
               </div>
             )}
@@ -1948,24 +1602,36 @@ export default function SalonClient({ id }: { id: string }) {
 
         {/* Bouton Monter sur scène / Live (Spectateur) */}
         {!isHost && !isCoHost && (
-          <button
-            type="button"
-            onClick={handleRequestStage}
-            disabled={myStageRequestStatus === "pending"}
-            className={`h-11 px-3 rounded-full flex items-center gap-1.5 shadow-lg active:scale-95 transition-all shrink-0 font-bold text-xs ${
-              myStageRequestStatus === "pending"
-                ? "bg-amber-600/80 text-white cursor-wait"
-                : "bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white ring-2 ring-emerald-400/40"
-            }`}
-            title="Demander à monter sur le live pour partager son écran / caméra"
-          >
-            <span className="material-symbols-outlined text-lg">
-              {myStageRequestStatus === "pending" ? "hourglass_top" : "podium"}
-            </span>
-            <span className="hidden sm:inline">
-              {myStageRequestStatus === "pending" ? "En attente…" : "Monter"}
-            </span>
-          </button>
+          myStageRequestStatus === "accepted" ? (
+            <button
+              type="button"
+              onClick={() => setShowStageInviteModal(true)}
+              className="h-11 px-3.5 rounded-full flex items-center gap-1.5 shadow-xl active:scale-95 transition-all shrink-0 font-black text-xs bg-gradient-to-r from-emerald-500 to-teal-400 text-black ring-2 ring-emerald-300 animate-bounce"
+              title="L'hôte a accepté votre demande ! Touchez pour monter en direct"
+            >
+              <span className="material-symbols-outlined text-lg">check_circle</span>
+              <span className="hidden sm:inline">Rejoindre la scène</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleRequestStage}
+              disabled={myStageRequestStatus === "pending"}
+              className={`h-11 px-3 rounded-full flex items-center gap-1.5 shadow-lg active:scale-95 transition-all shrink-0 font-bold text-xs ${
+                myStageRequestStatus === "pending"
+                  ? "bg-amber-600/80 text-white cursor-wait"
+                  : "bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white ring-2 ring-emerald-400/40"
+              }`}
+              title="Demander à monter sur le live pour partager son écran / caméra"
+            >
+              <span className="material-symbols-outlined text-lg">
+                {myStageRequestStatus === "pending" ? "hourglass_top" : "podium"}
+              </span>
+              <span className="hidden sm:inline">
+                {myStageRequestStatus === "pending" ? "En attente…" : "Monter"}
+              </span>
+            </button>
+          )
         )}
 
         {/* Bouton Quitter la scène (Co-Hôte) */}
@@ -2653,6 +2319,74 @@ export default function SalonClient({ id }: { id: string }) {
               >
                 Retour aux Salons
               </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* SAS D'INVITATION SUR SCÈNE (Sas de prévisualisation)     */}
+      {/* ======================================================== */}
+      {showStageInviteModal && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-sm rounded-3xl bg-[#14141e] border border-emerald-500/40 p-6 shadow-2xl text-center">
+            <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-400 mx-auto flex items-center justify-center text-3xl mb-4">
+              🎤
+            </div>
+            <h3 className="text-lg font-black text-white">Vous êtes invité sur scène !</h3>
+            <p className="text-xs text-slate-300 mt-2 mb-4 leading-relaxed">
+              L'hôte a accepté votre demande. Vous allez rejoindre le direct aux côtés de <strong>{salon.host}</strong>.
+            </p>
+
+            <div className="flex items-center justify-center gap-3 mb-6 bg-white/5 p-3 rounded-2xl border border-white/10">
+              <button
+                type="button"
+                onClick={() => agora.toggleMic()}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition ${
+                  agora.micOn
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                    : "bg-red-500/20 text-red-300 border border-red-500/40"
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm">{agora.micOn ? "mic" : "mic_off"}</span>
+                <span>{agora.micOn ? "Micro actif" : "Micro coupé"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => agora.toggleCam()}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition ${
+                  agora.camOn
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                    : "bg-red-500/20 text-red-300 border border-red-500/40"
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm">{agora.camOn ? "videocam" : "videocam_off"}</span>
+                <span>{agora.camOn ? "Caméra active" : "Caméra coupée"}</span>
+              </button>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowStageInviteModal(false);
+                  handleLeaveStage();
+                }}
+                className="flex-1 py-3 rounded-2xl bg-white/10 hover:bg-white/15 text-xs font-bold text-white transition active:scale-95"
+              >
+                Décliner
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowStageInviteModal(false);
+                  setMyStageRequestStatus("accepted");
+                  setIsCoHost(true);
+                }}
+                className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-xs font-black text-black shadow-lg shadow-emerald-500/20 transition active:scale-95"
+              >
+                Rejoindre en direct
+              </button>
             </div>
           </div>
         </div>

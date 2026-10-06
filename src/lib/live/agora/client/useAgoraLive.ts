@@ -141,16 +141,22 @@ export function useAgoraLive({ liveId, wantRole = "audience", autoJoin = true }:
     setAutoplayBlocked(false);
   }, []);
 
+  const retryJoin = useCallback(() => {
+    void join();
+  }, [join]);
+
   return useMemo(
     () => ({
-      status, error, role, localUid, isPublisher: canPublish(role),
+      status, error, role, localUid,
+      isPublisher: canPublish(role),
+      isPublished: Boolean(engineRef.current?.isPublished),
       participants, roster, network, autoplayBlocked,
       micOn, camOn,
-      join, leave, toggleMic, toggleCam, switchCamera,
+      join, leave, retryJoin, toggleMic, toggleCam, switchCamera,
       attachLocal, attachRemote, resumeAudio,
     }),
     [status, error, role, localUid, participants, roster, network, autoplayBlocked, micOn, camOn,
-      join, leave, toggleMic, toggleCam, switchCamera, attachLocal, attachRemote, resumeAudio],
+      join, leave, retryJoin, toggleMic, toggleCam, switchCamera, attachLocal, attachRemote, resumeAudio],
   );
 }
 
