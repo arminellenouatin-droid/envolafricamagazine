@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { canViewLive, getAuthUser } from "@/lib/live/agora/auth-adapter";
+import { canViewLive, extractWabSalonId, getAuthUser } from "@/lib/live/agora/auth-adapter";
 import { getServiceClient } from "@/lib/live/agora/db";
 import { rateLimit } from "@/lib/live/agora/rate-limit";
 import { LIVE_ROLES, type LiveRole, type TokenPayload } from "@/lib/live/agora/roles";
 import { buildRtcToken, randomAudienceUid } from "@/lib/live/agora/token";
+import { ensureAgoraChannel } from "@/lib/live/agora/session";
+import { readWabDB } from "@/lib/wab-db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,23 +34,70 @@ export async function POST(req: Request) {
   const { liveId, asRole } = parsed.data;
 
   const db = getServiceClient();
-  const { data: channel } = await db
+  let { data: channel } = await db
     .from("agora_live_channels")
     .select("channel_name,status")
     .eq("live_id", liveId)
     .maybeSingle();
+
+  // Détection & auto-provisioning des Salons Live WAB
+  const wabId = extractWabSalonId(liveId);
+  const wabDb = readWabDB();
+  const wabSalon = wabDb.salons?.find((s) => s.id === wabId || s.id === liveId);
+
+  if (!channel && wabSalon) {
+    await ensureAgoraChannel(liveId);
+    if (wabSalon.status === "live") {
+      await db
+        .from("agora_live_channels")
+        .update({ status: "live", started_at: new Date().toISOString() })
+        .eq("live_id", liveId);
+    }
+    const { data: created } = await db
+      .from("agora_live_channels")
+      .select("channel_name,status")
+      .eq("live_id", liveId)
+      .maybeSingle();
+    channel = created;
+  }
+
   if (!channel) return NextResponse.json({ error: "live_not_found" }, { status: 404, headers: noStore });
   if (channel.status === "ended") return NextResponse.json({ error: "live_ended" }, { status: 410, headers: noStore });
 
   // Le rôle est TOUJOURS décidé par le serveur à partir de la base — jamais par le client.
-  const { data: participant } = await db
+  let { data: participant } = await db
     .from("agora_live_participants")
     .select("role,uid")
     .eq("live_id", liveId)
     .eq("user_id", user.id)
     .maybeSingle();
 
-  const granted: LiveRole = (participant?.role as LiveRole | undefined) ?? "audience";
+  let granted: LiveRole = (participant?.role as LiveRole | undefined) ?? "audience";
+
+  // Si c'est un salon WAB, déduire le rôle privilégié depuis le modèle WAB si pas encore en table participants
+  if (wabSalon) {
+    let wabRole: LiveRole = "audience";
+    if (wabSalon.hostUserId === user.id) {
+      wabRole = "host";
+    } else if (wabSalon.coHostUserId === user.id) {
+      wabRole = "cohost";
+    } else if (Array.isArray(wabSalon.moderatorUserIds) && wabSalon.moderatorUserIds.includes(user.id)) {
+      wabRole = "moderator";
+    }
+
+    if (wabRole !== "audience" && (!participant || participant.role !== wabRole)) {
+      const { data: upserted } = await db
+        .from("agora_live_participants")
+        .upsert({ live_id: liveId, user_id: user.id, role: wabRole }, { onConflict: "live_id,user_id" })
+        .select("role,uid")
+        .single();
+      if (upserted) {
+        participant = upserted;
+        granted = wabRole;
+      }
+    }
+  }
+
   if (asRole !== "audience" && asRole !== granted) {
     return NextResponse.json({ error: "forbidden_role" }, { status: 403, headers: noStore });
   }
@@ -65,3 +114,4 @@ export async function POST(req: Request) {
   const payload: TokenPayload = { appId, channel: channel.channel_name, token, uid, role: effective, expiresAt };
   return NextResponse.json(payload, { headers: noStore });
 }
+

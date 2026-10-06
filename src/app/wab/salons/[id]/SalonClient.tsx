@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { useAgoraLive, type AgoraLive } from "@/lib/live/agora/client/useAgoraLive";
 
 interface PinnedProduct {
   id: string;
@@ -90,6 +91,28 @@ const VIRTUAL_GIFTS = [
 const HEART_COLORS = ["#ff2a6d", "#05d9e8", "#ffc837", "#00ff87", "#9e001f", "#ff6b6b"];
 const HEART_EMOJIS = ["❤️", "💖", "🔥", "👏", "✨", "💎"];
 
+function AgoraLocalView({ agora, className }: { agora: AgoraLive; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (ref.current && agora.status === "live") {
+      agora.attachLocal(ref.current);
+    }
+  }, [agora, agora.status]);
+  return <div ref={ref} className={className} />;
+}
+
+function AgoraRemoteView({ agora, uid, className }: { agora: AgoraLive; uid: number; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const user = agora.participants.find((p) => p.uid === uid);
+  const hasVideo = user?.hasVideo ?? false;
+  useEffect(() => {
+    if (ref.current && hasVideo) {
+      agora.attachRemote(uid, ref.current);
+    }
+  }, [agora, uid, hasVideo]);
+  return <div ref={ref} className={className} data-uid={uid} />;
+}
+
 export default function SalonClient({ id }: { id: string }) {
   const [salon, setSalon] = useState<Salon | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -106,6 +129,17 @@ export default function SalonClient({ id }: { id: string }) {
   const [currentUserAvatar, setCurrentUserAvatar] = useState<string | undefined>(undefined);
   const [isCoHost, setIsCoHost] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
+
+  // Agora SD-RTN Live Engine
+  const wantAgoraRole = isHost ? "host" : isCoHost ? "cohost" : "audience";
+  const agora = useAgoraLive({
+    liveId: `wab_${id}`,
+    wantRole: wantAgoraRole,
+    autoJoin: true,
+  });
+
+  const hostUid = agora.roster.find((r) => r.role === "host")?.uid ?? agora.participants[0]?.uid;
+  const cohostUid = agora.roster.find((r) => r.role === "cohost")?.uid ?? agora.participants.find((p) => p.uid !== hostUid)?.uid;
 
   // Live Stats
   const [likeCount, setLikeCount] = useState(1280);
@@ -1221,7 +1255,10 @@ export default function SalonClient({ id }: { id: string }) {
 
   // Toggle Camera
   const toggleCamera = () => {
-    if (streamRef.current) {
+    if (agora.isPublisher) {
+      agora.toggleCam();
+      setCameraActive((prev) => !prev);
+    } else if (streamRef.current) {
       const videoTrack = streamRef.current.getVideoTracks()[0];
       if (videoTrack) {
         videoTrack.enabled = !videoTrack.enabled;
@@ -1232,7 +1269,10 @@ export default function SalonClient({ id }: { id: string }) {
 
   // Toggle Mic
   const toggleMic = () => {
-    if (streamRef.current) {
+    if (agora.isPublisher) {
+      agora.toggleMic();
+      setMicActive((prev) => !prev);
+    } else if (streamRef.current) {
       const audioTrack = streamRef.current.getAudioTracks()[0];
       if (audioTrack) {
         audioTrack.enabled = !audioTrack.enabled;
@@ -1269,6 +1309,23 @@ export default function SalonClient({ id }: { id: string }) {
         }
       }}
     >
+      {/* Notifications Agora : Déblocage Audio & Reconnexion */}
+      {agora.autoplayBlocked && (
+        <button
+          type="button"
+          onClick={agora.resumeAudio}
+          className="absolute bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-emerald-500 hover:bg-emerald-600 px-5 py-2 text-xs font-black text-white shadow-2xl flex items-center gap-2 animate-bounce ring-4 ring-emerald-500/30"
+        >
+          <span className="material-symbols-outlined text-base">volume_up</span>
+          <span>Activer le son du direct</span>
+        </button>
+      )}
+      {agora.status === "reconnecting" && (
+        <div className="absolute top-14 left-1/2 z-50 -translate-x-1/2 rounded-full bg-amber-500/90 backdrop-blur px-4 py-1 text-[11px] font-bold text-black shadow-lg">
+          Connexion instable — reconnexion en cours…
+        </div>
+      )}
+
       {/* ======================================================== */}
       {/* 1. FLUX VIDÉO EN ARRIÈRE-PLAN (Style TikTok Live)        */}
       {/* ======================================================== */}
@@ -1279,13 +1336,19 @@ export default function SalonClient({ id }: { id: string }) {
             {/* Slot 1 : Flux Hôte */}
             <div className="relative w-full h-full overflow-hidden border-b md:border-b-0 md:border-r border-white/20 bg-black flex items-center justify-center">
               {isHost ? (
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover"
-                />
+                agora.status === "live" ? (
+                  <AgoraLocalView agora={agora} className="w-full h-full object-cover" />
+                ) : (
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover"
+                  />
+                )
+              ) : hostUid !== undefined && agora.participants.some((p) => p.uid === hostUid && p.hasVideo) ? (
+                <AgoraRemoteView agora={agora} uid={hostUid} className="w-full h-full object-cover" />
               ) : remoteHostStream ? (
                 <video
                   ref={remoteHostVideoRef}
@@ -1314,13 +1377,19 @@ export default function SalonClient({ id }: { id: string }) {
             {/* Slot 2 : Flux Co-Hôte / Invité */}
             <div className="relative w-full h-full overflow-hidden bg-black flex items-center justify-center">
               {isCoHost ? (
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover"
-                />
+                agora.status === "live" ? (
+                  <AgoraLocalView agora={agora} className="w-full h-full object-cover" />
+                ) : (
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover"
+                  />
+                )
+              ) : cohostUid !== undefined && agora.participants.some((p) => p.uid === cohostUid && p.hasVideo) ? (
+                <AgoraRemoteView agora={agora} uid={cohostUid} className="w-full h-full object-cover" />
               ) : remoteCoHostStream ? (
                 <video
                   ref={remoteCoHostVideoRef}
@@ -1377,14 +1446,18 @@ export default function SalonClient({ id }: { id: string }) {
         ) : isHost ? (
           /* Mode Plein Écran Hôte */
           <div className="relative w-full h-full">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className={`w-full h-full object-cover ${cameraActive ? "" : "hidden"}`}
-            />
-            {(!mediaStream || cameraError) && (
+            {agora.status === "live" ? (
+              <AgoraLocalView agora={agora} className="w-full h-full object-cover" />
+            ) : (
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className={`w-full h-full object-cover ${cameraActive ? "" : "hidden"}`}
+              />
+            )}
+            {(!mediaStream || cameraError) && agora.status !== "live" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-md p-6 text-center z-10">
                 <span className="material-symbols-outlined text-5xl text-emerald-400 mb-3 animate-pulse">videocam</span>
                 <p className="text-base font-black text-white mb-2">Activer votre flux caméra</p>
@@ -1429,7 +1502,9 @@ export default function SalonClient({ id }: { id: string }) {
         ) : (
           /* Mode Plein Écran Spectateur */
           <div className="relative w-full h-full bg-slate-950 flex items-center justify-center">
-            {remoteHostStream ? (
+            {hostUid !== undefined && agora.participants.some((p) => p.uid === hostUid && p.hasVideo) ? (
+              <AgoraRemoteView agora={agora} uid={hostUid} className="w-full h-full object-cover" />
+            ) : remoteHostStream ? (
               <video
                 ref={remoteHostVideoRef}
                 autoPlay

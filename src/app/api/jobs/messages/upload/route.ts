@@ -3,6 +3,13 @@ import { getCurrentUserFromCookie } from "@/lib/auth";
 import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { getR2Client } from "@/lib/storage/client";
+import { getR2Config, isR2Configured } from "@/lib/storage/config";
+import { publicUrl } from "@/lib/storage/resolve-url";
+
+export const dynamic = "force-dynamic";
 
 const ALLOWED_MIME_TYPES = new Set([
   // Documents (CV, Contrat, Fiche de poste, Devis)
@@ -71,26 +78,63 @@ export async function POST(req: NextRequest) {
       detectedType = "video";
     }
 
-    // Répertoire de destination
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "jobs");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    // Nom de fichier sécurisé avec UUID
     const origName = file.name || "fichier";
     const ext = path.extname(origName) || (detectedType === "voice" ? ".webm" : "");
-    const safeName = `${uuidv4()}${ext}`;
-    const filePath = path.join(uploadDir, safeName);
-
+    const safeName = `${Date.now()}_${uuidv4()}${ext}`;
+    const storagePath = `messages/${user.id}/${safeName}`;
     const buffer = Buffer.from(await file.arrayBuffer());
-    fs.writeFileSync(filePath, buffer);
 
-    const publicUrl = `/uploads/jobs/${safeName}`;
+    let fileUrl = "";
+
+    // 1. Stockage Cloudflare R2
+    if (isR2Configured()) {
+      const r2 = getR2Client();
+      const config = getR2Config();
+      const r2Key = `${config.R2_KEY_PREFIX}jobs/${storagePath}`;
+      await r2.send(
+        new PutObjectCommand({
+          Bucket: config.R2_BUCKET_PUBLIC,
+          Key: r2Key,
+          Body: buffer,
+          ContentType: mimeType,
+          CacheControl: "public, max-age=31536000, immutable",
+        })
+      );
+      fileUrl = publicUrl(r2Key);
+    }
+
+    // 2. Fallback Supabase Storage
+    if (!fileUrl) {
+      const supabase = getSupabaseAdmin();
+      if (supabase) {
+        const uploadRes = await supabase.storage.from("jobs-cvs").upload(storagePath, buffer, {
+          contentType: mimeType,
+          upsert: false,
+        });
+        if (!uploadRes.error) {
+          const { data } = supabase.storage.from("jobs-cvs").getPublicUrl(storagePath);
+          fileUrl = data.publicUrl;
+        }
+      }
+    }
+
+    // 3. Fallback développement local uniquement
+    if (!fileUrl) {
+      if (process.env.NODE_ENV === "production") {
+        return NextResponse.json({ error: "Service de stockage indisponible." }, { status: 503 });
+      }
+      const uploadDir = path.join(process.cwd(), "public", "uploads", "jobs");
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      const filePath = path.join(uploadDir, safeName);
+      fs.writeFileSync(filePath, buffer);
+      fileUrl = `/uploads/jobs/${safeName}`;
+    }
 
     return NextResponse.json({
       success: true,
-      url: publicUrl,
+      url: fileUrl,
       name: origName,
       size: file.size,
       type: detectedType,

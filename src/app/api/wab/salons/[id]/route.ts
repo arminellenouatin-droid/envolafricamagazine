@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { readWabDB, writeWabDB } from "@/lib/wab-db";
+import { endAgoraSession, startAgoraSession } from "@/lib/live/agora/session";
 
 const demoSalons = [
   {
@@ -104,6 +105,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
       salon.status = body.status;
       if (body.status === "ended") salon.endsAt = new Date().toISOString();
+      if (body.status === "live") {
+        startAgoraSession(`wab_${id}`).catch(() => undefined);
+      } else if (body.status === "ended" || body.status === "cancelled") {
+        endAgoraSession(`wab_${id}`).catch(() => undefined);
+      }
     }
 
     if (typeof body.replayUrl === "string") {

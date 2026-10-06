@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { readWabDB, writeWabDB } from "@/lib/wab-db";
+import { getServiceClient } from "@/lib/live/agora/db";
+import { ensureAgoraChannel } from "@/lib/live/agora/session";
 
 export async function POST(
   request: NextRequest,
@@ -75,6 +77,15 @@ export async function POST(
     salon.coHostAvatarUrl = targetReq.avatarUrl;
 
     writeWabDB(db);
+
+    // Synchronisation Agora pour le co-hôte
+    try {
+      await ensureAgoraChannel(`wab_${id}`);
+      await getServiceClient()
+        .from("agora_live_participants")
+        .upsert({ live_id: `wab_${id}`, user_id: targetReq.userId, role: "cohost" }, { onConflict: "live_id,user_id" });
+    } catch {}
+
     return NextResponse.json({ success: true, salon });
   }
 
@@ -100,6 +111,7 @@ export async function POST(
       return NextResponse.json({ error: "Action non autorisée." }, { status: 403 });
     }
 
+    const removedCoHostId = salon.coHostUserId;
     salon.coHostUserId = undefined;
     salon.coHostName = undefined;
     salon.coHostAvatarUrl = undefined;
@@ -108,8 +120,21 @@ export async function POST(
     }
 
     writeWabDB(db);
+
+    // Retrait synchronisé Agora
+    if (removedCoHostId) {
+      try {
+        await getServiceClient()
+          .from("agora_live_participants")
+          .delete()
+          .eq("live_id", `wab_${id}`)
+          .eq("user_id", removedCoHostId);
+      } catch {}
+    }
+
     return NextResponse.json({ success: true, salon });
   }
 
   return NextResponse.json({ error: "Action de scène inconnue." }, { status: 400 });
 }
+

@@ -36,11 +36,12 @@ const upsertSchema = z
 export async function POST(req: Request) {
   const user = await getAuthUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  if (!canManageLives(user)) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   const parsed = upsertSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   const { liveId, userId, role } = parsed.data;
+
+  if (!canManageLives(user, liveId)) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   try {
     await ensureAgoraChannel(liveId);
@@ -62,10 +63,11 @@ const deleteSchema = z.object({ liveId: liveIdSchema, userId: z.string().uuid() 
 export async function DELETE(req: Request) {
   const user = await getAuthUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  if (!canManageLives(user)) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   const parsed = deleteSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+
+  if (!canManageLives(user, parsed.data.liveId)) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   const { error } = await getServiceClient()
     .from("agora_live_participants")

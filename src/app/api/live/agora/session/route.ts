@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   const { liveId, action } = parsed.data;
 
   // Autorisation : organisateur, ou animateur (host) de CE live pour start/end.
-  let allowed = canManageLives(user);
+  let allowed = canManageLives(user, liveId);
   if (!allowed && action !== "create") {
     const { data: p } = await getServiceClient()
       .from("agora_live_participants")

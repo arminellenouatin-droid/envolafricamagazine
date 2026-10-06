@@ -14,6 +14,7 @@ vi.mock("@/lib/live/agora/auth-adapter", () => ({
   getAuthUser: () => mockAuthUser(),
   canViewLive: (...args: any[]) => mockCanViewLive(...args),
   canManageLives: (...args: any[]) => mockCanManageLives(...args),
+  extractWabSalonId: (liveId: string) => (liveId.startsWith("wab_") ? liveId.slice(4) : liveId),
 }));
 
 // In-memory mock store for Supabase DB
@@ -539,4 +540,53 @@ describe("5.2 & 5.3 — Tests d'Intégration des Routes Agora API & Webhook", ()
       expect(peakViewers).toBeGreaterThanOrEqual(100);
     });
   });
+
+  describe("5.4 — Extension Agora aux Salons Live WAB (SD-RTN & Co-Host)", () => {
+    it("auto-provisionne le canal Agora et accorde le rôle host au créateur du salon WAB", async () => {
+      mockAuthUser.mockResolvedValue({ id: "demo-wab-moussa", isAdmin: false, role: "user" });
+      mockCanViewLive.mockResolvedValue(true);
+
+      const req = new Request("http://localhost/api/live/agora/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ liveId: "wab_salon-demo-finance-africa", asRole: "host" }),
+      });
+      const res = await tokenPOST(req);
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.role).toBe("host");
+      expect(json.channel).toBe("aa_wab_salon-demo-finance-africa");
+      expect(json.token).toBeTruthy();
+    });
+
+    it("accorde le rôle audience et token subscriber à un spectateur du salon WAB", async () => {
+      mockAuthUser.mockResolvedValue({ id: "viewer-123", isAdmin: false, role: "user" });
+      mockCanViewLive.mockResolvedValue(true);
+
+      const req = new Request("http://localhost/api/live/agora/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ liveId: "wab_salon-demo-finance-africa", asRole: "audience" }),
+      });
+      const res = await tokenPOST(req);
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.role).toBe("audience");
+      expect(json.uid).toBeGreaterThanOrEqual(1_000_000_000);
+    });
+
+    it("refuse 403 à un spectateur WAB qui demande indûment le rôle host", async () => {
+      mockAuthUser.mockResolvedValue({ id: "viewer-fraud", isAdmin: false, role: "user" });
+      mockCanViewLive.mockResolvedValue(true);
+
+      const req = new Request("http://localhost/api/live/agora/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ liveId: "wab_salon-demo-finance-africa", asRole: "host" }),
+      });
+      const res = await tokenPOST(req);
+      expect(res.status).toBe(403);
+    });
+  });
 });
+

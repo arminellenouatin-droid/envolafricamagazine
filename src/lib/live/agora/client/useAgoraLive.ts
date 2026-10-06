@@ -48,10 +48,6 @@ export function useAgoraLive({ liveId, wantRole = "audience", autoJoin = true }:
   const joiningRef = useRef(false);
   const wantRoleRef = useRef(wantRole);
 
-  useEffect(() => {
-    wantRoleRef.current = wantRole;
-  }, [wantRole]);
-
   const join = useCallback(async () => {
     if (joiningRef.current || engineRef.current) return;
     joiningRef.current = true;
@@ -102,6 +98,21 @@ export function useAgoraLive({ liveId, wantRole = "audience", autoJoin = true }:
     setParticipants([]);
     setStatus("idle");
   }, []);
+
+  useEffect(() => {
+    const prev = wantRoleRef.current;
+    wantRoleRef.current = wantRole;
+    if (prev !== wantRole && engineRef.current) {
+      void (async () => {
+        const eng = engineRef.current;
+        engineRef.current = null;
+        await eng?.leave().catch(() => undefined);
+        setParticipants([]);
+        setStatus("idle");
+        await join();
+      })();
+    }
+  }, [wantRole, join]);
 
   useEffect(() => {
     if (autoJoin) void join();
