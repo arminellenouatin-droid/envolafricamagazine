@@ -7,6 +7,8 @@ import LiveTikTokActions from "@/components/africa-awards/live/LiveTikTokActions
 import LiveGiftDrawer, { VirtualGift } from "@/components/africa-awards/live/LiveGiftDrawer";
 import LiveGiftAnimationOverlay, { GiftAnimationItem } from "@/components/africa-awards/live/LiveGiftAnimationOverlay";
 import LiveChatOverlay from "@/components/africa-awards/live/LiveChatOverlay";
+import { useAgoraLive } from "@/lib/live/agora/client/useAgoraLive";
+import { AgoraStage } from "@/components/live/AgoraStage";
 import {
   LiveRealtimeSession,
   LiveMessageItem,
@@ -21,6 +23,8 @@ export default function SpectatorLivePage() {
   const [competition, setCompetition] = useState<any>(null);
   const [candidates, setCandidates] = useState<any[]>([]);
   const [session, setSession] = useState<any>(null);
+  const liveId = session?.id || competition?.id || slug;
+  const live = useAgoraLive({ liveId });
   const [spectators, setSpectators] = useState(142);
   const [potAmount, setPotAmount] = useState(250000);
   const [reactionsCount, setReactionsCount] = useState(1850);
@@ -321,31 +325,23 @@ export default function SpectatorLivePage() {
       {/* Cadre de présentation centré : format portrait mobile natif */}
       <div className="relative h-full w-full max-w-[440px] max-h-[920px] bg-black overflow-hidden shadow-[0_0_80px_rgba(0,0,0,0.9)] sm:rounded-[36px] sm:border sm:border-white/15">
         {/* ===================================================================
-            1. FOND VIDÉO DU DIRECT (TikTok Portrait Plein Écran)
+            1. SCÈNE VIDÉO AGORA LIVE & REPLI GALA IMMERSIF
             =================================================================== */}
         <div className="absolute inset-0 z-0">
-          {session?.mux_playback_id ? (
-            <video
-              className="h-full w-full object-cover"
-              controls={false}
-              autoPlay
-              playsInline
-              muted
-              loop
-              src={`https://stream.mux.com/${session.mux_playback_id}.m3u8`}
-            />
-          ) : (
-            <div className="relative h-full w-full overflow-hidden">
-              <img
-                src={activeSpeaker?.photoUrl || STAGE_VIDEOS[videoSrcIndex]}
-                alt=""
-                className="h-full w-full object-cover filter brightness-90 contrast-105 scale-105 transition-all duration-700"
-              />
-              {/* Filtre de grain et de lumière dorée façon gala */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/25 to-black/60" />
-              <div className="absolute top-1/3 left-1/2 -translate-x-1/2 h-64 w-64 rounded-full bg-[#D4AF37]/10 blur-[100px] pointer-events-none" />
-            </div>
-          )}
+          <AgoraStage live={live} className="h-full w-full">
+            {/* Si aucun flux vidéo WebRTC n'est encore diffusé, repli sur l'ambiance gala */}
+            {!live.participants.some((p) => p.hasVideo) && !live.isPublisher && (
+              <div className="absolute inset-0 z-0 pointer-events-none">
+                <img
+                  src={activeSpeaker?.photoUrl || STAGE_VIDEOS[videoSrcIndex]}
+                  alt=""
+                  className="h-full w-full object-cover filter brightness-90 contrast-105 scale-105 transition-all duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/25 to-black/60" />
+                <div className="absolute top-1/3 left-1/2 -translate-x-1/2 h-64 w-64 rounded-full bg-[#D4AF37]/10 blur-[100px]" />
+              </div>
+            )}
+          </AgoraStage>
         </div>
 
         {/* ===================================================================

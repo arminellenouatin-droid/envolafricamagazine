@@ -9,6 +9,7 @@ import {
   LiveRealtimeSession,
   LiveMessageItem,
 } from "@/components/africa-awards/live/LiveRealtimeEngine";
+import { useAgoraLive } from "@/lib/live/agora/client/useAgoraLive";
 
 export default function CandidateLivePage() {
   const params = useParams();
@@ -31,6 +32,8 @@ export default function CandidateLivePage() {
   });
 
   const [isOnStage, setIsOnStage] = useState(false);
+  const liveId = candidate.competitionSlug || id;
+  const live = useAgoraLive({ liveId, wantRole: "cohost", autoJoin: false });
   const [spectatorCount, setSpectatorCount] = useState(142);
   const [hostDirective, setHostDirective] = useState<string | null>(
     "Soyez prête : la régie vous donne la parole pour votre pitch de 60 secondes !"
@@ -177,6 +180,7 @@ export default function CandidateLivePage() {
     setIsOnStage(nextState);
 
     if (nextState) {
+      live.join().catch(() => {});
       setToastMessage("Demande envoyée à la régie — Vous montez sur scène !");
       if (realtimeRef.current) {
         realtimeRef.current.sendCandidateStageRequest({
@@ -186,6 +190,7 @@ export default function CandidateLivePage() {
         });
       }
     } else {
+      live.leave().catch(() => {});
       setToastMessage("Vous êtes retourné dans votre loge virtuelle.");
       if (realtimeRef.current) {
         realtimeRef.current.sendCandidateStageRequest({
@@ -268,6 +273,7 @@ export default function CandidateLivePage() {
             messages={messages}
             hostDirective={hostDirective}
             onSendReaction={handleSendReaction}
+            live={live}
           />
         </div>
       </div>

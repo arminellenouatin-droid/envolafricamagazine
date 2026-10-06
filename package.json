@@ -9,7 +9,8 @@
     "lint": "eslint",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "supabase:migrate": "node scripts/migrate-to-supabase.js"
+    "supabase:migrate": "node scripts/migrate-to-supabase.js",
+    "test": "vitest run"
   },
   "dependencies": {
     "@napi-rs/canvas": "^1.0.7",
@@ -17,6 +18,8 @@
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.2",
     "@types/web-push": "^3.6.4",
+    "agora-rtc-sdk-ng": "^4.24.8",
+    "agora-token": "^2.0.6",
     "bcryptjs": "^3.0.3",
     "firebase": "^12.19.0",
     "firebase-admin": "^14.4.0",
@@ -30,6 +33,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "recharts": "^3.10.1",
+    "server-only": "^0.0.1",
     "sharp": "^0.35.3",
     "uuid": "^14.0.1",
     "web-push": "^3.6.7",
@@ -47,7 +51,8 @@
     "eslint-config-next": "16.3.0",
     "puppeteer-core": "^25.11.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2.1.9"
   },
   "overrides": {
     "nanoid": "^3.3.18"

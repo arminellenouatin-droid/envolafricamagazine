@@ -1,0 +1,22 @@
+=== BASELINE REPORT (PHASE 1) ===
+Date: 2026-10-06
+Branch: main
+Node version: v24.11.1
+npm version: 11.6.2
+
+1. TYPESCRIPT CHECK (`npx tsc --noEmit`):
+Status: SUCCESS (exit code 0)
+Output: 0 error
+
+2. LINT CHECK (`npm run lint`):
+Status: COMPLETED WITH PRE-EXISTING WARNINGS/ERRORS (exit code 1)
+Total problems: 2696 problems (714 errors, 1982 warnings)
+Primary causes: pre-existing @typescript-eslint/no-explicit-any and @typescript-eslint/no-unused-vars across marketplace, jobs, wab, push, etc.
+Target for Phase 4: 0 NEW lint errors compared to this baseline.
+
+3. BUILD CHECK (`npm run build` / `next build`):
+Status: SUCCESS (exit code 0)
+Prisma client generated successfully.
+All static and dynamic routes compiled and optimized without errors.
+Middleware proxy active.
+Output: Exit Code 0.

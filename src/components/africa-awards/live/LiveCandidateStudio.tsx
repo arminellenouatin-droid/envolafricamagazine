@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { LiveMessageItem } from "./LiveRealtimeEngine";
+import type { AgoraLive } from "@/lib/live/agora/client/useAgoraLive";
 
 export interface CandidateLiveProfile {
   id: string;
@@ -26,6 +27,7 @@ interface LiveCandidateStudioProps {
   messages: LiveMessageItem[];
   hostDirective?: string | null;
   onSendReaction?: (emoji: string) => void;
+  live?: AgoraLive;
 }
 
 export default function LiveCandidateStudio({
@@ -36,6 +38,7 @@ export default function LiveCandidateStudio({
   messages,
   hostDirective,
   onSendReaction,
+  live,
 }: LiveCandidateStudioProps) {
   const [micMuted, setMicMuted] = useState(false);
   const [cameraOff, setCameraOff] = useState(false);
@@ -94,14 +97,18 @@ export default function LiveCandidateStudio({
   }, [isOnStage]);
 
   const toggleMic = () => {
-    if (streamRef.current) {
+    if (live) {
+      live.toggleMic();
+    } else if (streamRef.current) {
       streamRef.current.getAudioTracks().forEach((t) => (t.enabled = micMuted));
     }
     setMicMuted(!micMuted);
   };
 
   const toggleCam = () => {
-    if (streamRef.current) {
+    if (live) {
+      live.toggleCam();
+    } else if (streamRef.current) {
       streamRef.current.getVideoTracks().forEach((t) => (t.enabled = cameraOff));
     }
     setCameraOff(!cameraOff);

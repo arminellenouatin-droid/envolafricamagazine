@@ -1,5 +1,5 @@
-"use client";
-import React from "react";
+import React, { useEffect, useRef } from "react";
+import type { AgoraLive } from "@/lib/live/agora/client/useAgoraLive";
 
 export interface HostParticipant {
   id: string;
@@ -11,6 +11,7 @@ export interface HostParticipant {
   camMuted?: boolean;
   state: "on_stage" | "waiting" | "removed";
   votes?: number;
+  uid?: number;
 }
 
 interface LiveHostGridProps {
@@ -20,6 +21,17 @@ interface LiveHostGridProps {
   onToggleMic: (id: string) => void;
   onToggleCam: (id: string) => void;
   onRemoveParticipant: (id: string) => void;
+  live?: AgoraLive;
+}
+
+function LocalHostVideo({ live }: { live: AgoraLive }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (ref.current && live.status === "live") {
+      live.attachLocal(ref.current);
+    }
+  }, [live, live.status, live.camOn]);
+  return <div ref={ref} className="h-full w-full object-cover aspect-[4/3] sm:aspect-video overflow-hidden bg-black" />;
 }
 
 export default function LiveHostGrid({
@@ -29,6 +41,7 @@ export default function LiveHostGrid({
   onToggleMic,
   onToggleCam,
   onRemoveParticipant,
+  live,
 }: LiveHostGridProps) {
   const onStageParticipants = participants.filter((p) => p.state === "on_stage");
 
@@ -60,7 +73,9 @@ export default function LiveHostGrid({
               style={{ minHeight: onStageParticipants.length <= 2 ? "200px" : "140px" }}
             >
               {/* Fond visuel / Vidéo du participant */}
-              {p.avatar && !p.camMuted ? (
+              {p.role === "host" && live && live.isPublisher && live.status === "live" && !p.camMuted ? (
+                <LocalHostVideo live={live} />
+              ) : p.avatar && !p.camMuted ? (
                 <img
                   src={p.avatar}
                   alt=""

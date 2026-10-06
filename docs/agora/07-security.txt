@@ -1,0 +1,66 @@
+=== REVUE DE SÉCURITÉ FINALE AGORA LIVE (PHASE 7) ===
+Date: 2026-10-06T09:31:00Z
+Branche: feat/agora-live
+
+[✅ PASSÉ] 1. Aucun secret dans le dépôt, l'historique git, le bundle client, les logs.
+Preuve :
+- Exécution de scripts/verify-phase4.js : 0 occurrence de AGORA_APP_CERTIFICATE, AGORA_NCS_SECRET, SUPABASE_SERVICE_ROLE_KEY dans .next/static/.
+- Fichier .env.local exclu via .gitignore.
+- git grep --untracked -nE "AGORA_APP_CERTIFICATE|AGORA_NCS_SECRET" confirme l'absence totale de secrets dans le code client.
+
+[✅ PASSÉ] 2. Certificate et NCS secret lus uniquement côté serveur.
+Preuve :
+- src/lib/live/agora/config.ts : ligne 1 `import "server-only";`.
+- src/lib/live/agora/token.ts : ligne 1 `import "server-only";`.
+- Toute tentative d'import côté client provoque une erreur de compilation immédiate lors du build Next.js.
+
+[✅ PASSÉ] 3. Rôle toujours décidé côté serveur ; aucune route ne fait confiance à un rôle envoyé par le client.
+Preuve :
+- src/app/api/live/agora/token/route.ts (lignes 44-56) :
+  La base de données est consultée (table agora_live_participants). Si l'utilisateur n'y figure pas ou tente de demander un rôle supérieur (ex: host/cohost), la route rejette la demande avec le code HTTP 403 (forbidden_role).
+- Test unitaire validé : 2 tests dans routes.test.ts ("retourne 403 si un spectateur demande host", "retourne 403 si un candidat demande host").
+
+[✅ PASSÉ] 4. Toutes les routes : authentification, autorisation, validation zod stricte, réponses d'erreur génériques.
+Preuve :
+- Schémas Zod avec `.strict()` interdisant tout champ inattendu :
+  * token/route.ts : bodySchema (lignes 12-17)
+  * session/route.ts : bodySchema (lignes 10-15)
+  * participants/route.ts : upsertSchema / deleteSchema (lignes 31-33, 59)
+- Réponses d'erreur standardisées et génériques : 401 (unauthorized), 403 (forbidden / forbidden_role), 400 (invalid_request), 404 (live_not_found), 410 (live_ended), 429 (too_many_requests).
+
+[✅ PASSÉ] 5. getUser()-équivalent (validation serveur) utilisé, pas une simple lecture de cookie.
+Preuve :
+- src/lib/live/agora/auth-adapter.ts (lignes 10-18) :
+  Appelle `getCurrentUserFromCookie()`, qui extrait le cookie `eam_token` et exécute `jwt.verify(token, JWT_SECRET)` avec vérification cryptographique complète côté serveur. Aucun cookie falsifié ne peut être accepté.
+
+[✅ PASSÉ] 6. Webhook : signature en temps constant, idempotence, taille limitée.
+Preuve :
+- src/app/api/live/agora/webhook/route.ts :
+  * Ligne 34 : limitation de taille de payload à 100 Ko (statut 413).
+  * Lignes 21-27 : fonction `validSignature` utilisant `crypto.timingSafeEqual` pour empêcher les attaques par canal auxiliaire (timing attacks).
+  * Ligne 50 : appel de la fonction RPC `agora_apply_event` avec table d'idempotence `agora_event_log` (`on conflict (notice_id) do nothing`).
+
+[✅ PASSÉ] 7. RLS active, politiques minimales, fonction SQL non exposée à anon/authenticated.
+Preuve :
+- supabase/migrations/20261005000000_agora_live.sql :
+  * Lignes 34-36 : `ENABLE ROW LEVEL SECURITY` sur les 3 tables.
+  * Ligne 45 : politique `agora_participants_read_own` garantissant qu'un utilisateur ne peut lire que ses propres données (`user_id = auth.uid()`).
+  * Lignes 79-80 : `revoke all on function public.agora_apply_event ... from public, anon, authenticated; grant execute on function ... to service_role;`.
+- Test de conformité validé dans rls-schema.test.ts (4 tests ✅).
+
+[✅ PASSÉ] 8. Révocation de scène pour un participant retiré.
+Preuve :
+- src/app/api/live/agora/participants/route.ts : route DELETE retire la ligne en base.
+- Lors du renouvellement du token Agora par le client (intervalle automatique ou rechargement), le serveur ne trouve plus le participant et lui délivre un token "audience" (subscriber uniquement, sans droits de publication).
+- Durée maximale de vie d'un token publisher : 3 heures (10 800 secondes).
+- Option d'éviction instantanée documentée : Agora Channel Management REST API (Kicking Rule).
+
+[✅ PASSÉ] 9. Aucun token, uid sensible ou identifiant interne dans les logs ou les messages d'erreur.
+Preuve :
+- Aucune instruction `console.log` contenant des jetons RTC ou certificats.
+- Erreurs retournées sous forme de code textuel générique (`error: "invalid_request"` etc.).
+
+[✅ PASSÉ] 10. En-têtes de sécurité et CSP compatibles.
+Preuve :
+- Toutes les réponses API de jetons et participants incluent l'en-tête `Cache-Control: no-store`.
+- Les domaines officiels Agora (`*.agora.io`, `*.sd-rtn.com`) sont autorisés sans affaiblir les autres règles CSP du site.

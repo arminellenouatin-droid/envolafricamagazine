@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { startAgoraSession, endAgoraSession } from "@/lib/live/agora/session";
 
 export async function GET(req: NextRequest) {
   const competitionId = new URL(req.url).searchParams.get("competition_id");
@@ -77,6 +78,11 @@ export async function POST(req: NextRequest) {
     const { data: session, error } = await supabase.from("awards_live_sessions").insert({ competition_id: competitionId, status: "live", started_at: new Date().toISOString() }).select("id,competition_id,status,started_at,ended_at,replay_url").single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     await supabase.from("awards_competitions").update({ status: "live_running" }).eq("id", competitionId);
+    try {
+      await startAgoraSession(session.id);
+    } catch (e) {
+      console.warn("Agora session start notice:", e);
+    }
     return NextResponse.json({ session }, { status: 201 });
   }
   if (action === "end") {
@@ -86,6 +92,11 @@ export async function POST(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     if (!session) return NextResponse.json({ error: "Session live active introuvable" }, { status: 404 });
     await supabase.from("awards_competitions").update({ status: "voting_open" }).eq("id", session.competition_id).eq("status", "live_running");
+    try {
+      await endAgoraSession(sessionId);
+    } catch (e) {
+      console.warn("Agora session end notice:", e);
+    }
     return NextResponse.json({ session });
   }
   if (action === "event") {

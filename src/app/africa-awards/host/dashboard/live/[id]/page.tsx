@@ -10,6 +10,7 @@ import {
   LiveMessageItem,
   RankingCandidate,
 } from "@/components/africa-awards/live/LiveRealtimeEngine";
+import { useAgoraLive } from "@/lib/live/agora/client/useAgoraLive";
 
 export default function HostLiveStudioPage() {
   const params = useParams();
@@ -18,6 +19,8 @@ export default function HostLiveStudioPage() {
   const [isLive, setIsLive] = useState(false);
   const [session, setSession] = useState<any>(null);
   const [competition, setCompetition] = useState<any>(null);
+  const liveId = session?.id || competition?.id || id;
+  const live = useAgoraLive({ liveId, wantRole: "host", autoJoin: false });
   const [candidates, setCandidates] = useState<any[]>([]);
   const [participants, setParticipants] = useState<HostParticipant[]>([]);
   const [activeSpeakerId, setActiveSpeakerId] = useState<string | null>(null);
@@ -153,6 +156,21 @@ export default function HostLiveStudioPage() {
       }),
     }).then((r) => r.json()).catch(() => ({}));
 
+    try {
+      await fetch("/api/live/agora/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ liveId, action: nextAction }),
+      });
+      if (nextAction === "start") {
+        await live.join();
+      } else {
+        await live.leave();
+      }
+    } catch (e) {
+      console.warn("Agora session sync:", e);
+    }
+
     if (res.session) {
       setSession(res.session);
       setIsLive(res.session.status === "live");
@@ -172,12 +190,18 @@ export default function HostLiveStudioPage() {
   };
 
   const handleToggleMic = (participantId: string) => {
+    if (participantId === "host_01") {
+      live.toggleMic();
+    }
     setParticipants((prev) =>
       prev.map((p) => (p.id === participantId ? { ...p, micMuted: !p.micMuted } : p))
     );
   };
 
   const handleToggleCam = (participantId: string) => {
+    if (participantId === "host_01") {
+      live.toggleCam();
+    }
     setParticipants((prev) =>
       prev.map((p) => (p.id === participantId ? { ...p, camMuted: !p.camMuted } : p))
     );
@@ -359,6 +383,7 @@ export default function HostLiveStudioPage() {
               onToggleMic={handleToggleMic}
               onToggleCam={handleToggleCam}
               onRemoveParticipant={handleRemoveParticipant}
+              live={live}
             />
           </div>
 
