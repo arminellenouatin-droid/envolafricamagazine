@@ -1,0 +1,15 @@
+=== BASELINE CLOUDFLARE R2 (PHASE 1) ===
+Date: 2026-10-06T10:31:00Z
+Branche: feat/r2-storage
+
+1. TypeScript (npx tsc --noEmit) :
+0 erreur de compilation.
+
+2. Build Next.js :
+Build fonctionnel (exit code 0).
+
+3. Cloudflare R2 Config Check :
+- R2_ACCOUNT_ID : présent (030b86fd7d278b2604a93afe53594272)
+- Buckets validés : envol-public, envol-private
+- URL publique activée : https://pub-df336181dd964534a4866a10762a3327.r2.dev
+- CORS activé pour uploads directs du navigateur.

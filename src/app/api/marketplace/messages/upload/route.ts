@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { getR2Client } from "@/lib/storage/client";
+import { getR2Config, isR2Configured } from "@/lib/storage/config";
+import { publicUrl } from "@/lib/storage/resolve-url";
 import { v4 as uuidv4 } from "uuid";
 
 export const dynamic = "force-dynamic";
@@ -69,32 +73,49 @@ export async function POST(req: NextRequest) {
     const fileName = `${Date.now()}_${cleanBaseName}${ext}`;
     const storagePath = `messages/${user.id}/${fileName}`;
 
-    const supabase = getSupabaseAdmin();
     let fileUrl = "";
 
-    if (supabase) {
-      // Tenter d'abord dans le bucket 'marketplace', puis fallback sur 'article-media'
-      let uploadRes = await supabase.storage.from("marketplace").upload(storagePath, buffer, {
-        contentType: file.type,
-        upsert: false,
-      });
+    if (isR2Configured()) {
+      const r2 = getR2Client();
+      const config = getR2Config();
+      const r2Key = `${config.R2_KEY_PREFIX}marketplace/${storagePath}`;
+      await r2.send(
+        new PutObjectCommand({
+          Bucket: config.R2_BUCKET_PUBLIC,
+          Key: r2Key,
+          Body: buffer,
+          ContentType: file.type,
+          CacheControl: "public, max-age=31536000, immutable",
+        })
+      );
+      fileUrl = publicUrl(r2Key);
+    }
 
-      if (uploadRes.error) {
-        uploadRes = await supabase.storage.from("article-media").upload(storagePath, buffer, {
+    if (!fileUrl) {
+      const supabase = getSupabaseAdmin();
+      if (supabase) {
+        let uploadRes = await supabase.storage.from("marketplace").upload(storagePath, buffer, {
           contentType: file.type,
           upsert: false,
         });
-      }
 
-      if (!uploadRes.error) {
-        const { data } = supabase.storage.from("marketplace").getPublicUrl(storagePath);
-        fileUrl = data.publicUrl;
+        if (uploadRes.error) {
+          uploadRes = await supabase.storage.from("article-media").upload(storagePath, buffer, {
+            contentType: file.type,
+            upsert: false,
+          });
+        }
+
+        if (!uploadRes.error) {
+          const { data } = supabase.storage.from("marketplace").getPublicUrl(storagePath);
+          fileUrl = data.publicUrl;
+        }
       }
     }
 
     // Fallback local pour développement ou si storage indisponible
     if (!fileUrl) {
-      if (process.env.NODE_ENV === "production" && !supabase) {
+      if (process.env.NODE_ENV === "production") {
         return NextResponse.json({ error: "Service de stockage indisponible." }, { status: 503 });
       }
       const uploadDir = path.join(process.cwd(), "public", "uploads", "marketplace", "messages");

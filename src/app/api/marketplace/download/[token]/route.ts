@@ -1,8 +1,12 @@
 import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { hashToken } from "@/lib/marketplace-digital";
+import { getR2Client } from "@/lib/storage/client";
+import { getR2Config, isR2Configured } from "@/lib/storage/config";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const user = await getCurrentUserFromCookie();
@@ -22,9 +26,30 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.redirect(product.digital_external_url);
   }
   if (!product.digital_file_url) return NextResponse.json({ error: "Aucun fichier numérique n’est disponible." }, { status: 404 });
-  const { data: signed, error: signedError } = await supabase.storage.from("marketplace-digital").createSignedUrl(product.digital_file_url, 300);
-  if (signedError || !signed?.signedUrl) return NextResponse.json({ error: "Le fichier numérique ne peut pas être préparé." }, { status: 502 });
+
+  let downloadUrl = "";
+
+  if (isR2Configured() && (product.digital_file_url.startsWith("dev/") || product.digital_file_url.startsWith("marketplace-digital/"))) {
+    try {
+      const r2 = getR2Client();
+      const config = getR2Config();
+      const getCmd = new GetObjectCommand({
+        Bucket: config.R2_BUCKET_PRIVATE,
+        Key: product.digital_file_url,
+      });
+      downloadUrl = await getSignedUrl(r2, getCmd, { expiresIn: 300 });
+    } catch {
+      // fallback
+    }
+  }
+
+  if (!downloadUrl) {
+    const { data: signed, error: signedError } = await supabase.storage.from("marketplace-digital").createSignedUrl(product.digital_file_url, 300);
+    if (signedError || !signed?.signedUrl) return NextResponse.json({ error: "Le fichier numérique ne peut pas être préparé." }, { status: 502 });
+    downloadUrl = signed.signedUrl;
+  }
+
   const { error: updateError } = await supabase.from("marketplace_download_tokens").update({ download_count: entitlement.download_count + 1, last_downloaded_at: new Date().toISOString() }).eq("id", entitlement.id).eq("buyer_id", user.id);
   if (updateError) return NextResponse.json({ error: "Impossible d’enregistrer le téléchargement." }, { status: 502 });
-  return NextResponse.redirect(signed.signedUrl);
+  return NextResponse.redirect(downloadUrl);
 }

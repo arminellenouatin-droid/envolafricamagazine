@@ -3,6 +3,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { readWabDB } from "@/lib/wab-db";
+import { resolveFileUrl } from "@/lib/storage/resolve-url";
 import WabClient from "../../WabClient";
 import type { SinglePostData } from "./WabSinglePostView";
 
@@ -30,7 +31,8 @@ type Props = {
 
 async function resolveMediaUrl(supabase: any, pathOrUrl?: string): Promise<string> {
   if (!pathOrUrl) return "";
-  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  const resolved = resolveFileUrl(pathOrUrl);
+  if (resolved && (resolved.startsWith("http://") || resolved.startsWith("https://"))) return resolved;
   if (!supabase) return pathOrUrl;
 
   try {

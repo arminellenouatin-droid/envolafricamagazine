@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "rtfjwpytiuvoekomevpu.supabase.co" },
       { protocol: "https", hostname: "*.supabase.co" },
+      { protocol: "https", hostname: "*.r2.dev" },
+      { protocol: "https", hostname: "pub-df336181dd964534a4866a10762a3327.r2.dev" },
+      { protocol: "https", hostname: "*.cloudflarestorage.com" },
     ],
   },
   async headers() {

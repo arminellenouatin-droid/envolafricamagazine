@@ -1,0 +1,28 @@
+1. Présence des variables d'environnement :
+✅ R2_ACCOUNT_ID : présent (longueur 32)
+✅ R2_ACCESS_KEY_ID : présent (longueur 32)
+✅ R2_SECRET_ACCESS_KEY : présent (longueur 64)
+✅ R2_BUCKET_PUBLIC : envol-public
+✅ R2_BUCKET_PRIVATE : envol-private
+✅ R2_PUBLIC_BASE_URL : https://pub-df336181dd964534a4866a10762a3327.r2.dev
+✅ R2_KEY_PREFIX : dev/
+
+2. Test opérationnel HeadBucket et cycle I/O sur chaque bucket :
+✅ Bucket [envol-public] : accessible (HeadBucket OK)
+  - Écriture objet : dev/healthcheck/test-1791282440570.txt ✅
+  - Relecture objet : conforme ✅
+  - Suppression objet : supprimé ✅
+✅ Bucket [envol-private] : accessible (HeadBucket OK)
+  - Écriture objet : dev/healthcheck/test-1791282443511.txt ✅
+  - Relecture objet : conforme ✅
+  - Suppression objet : supprimé ✅
+
+3. Test PUT présigné et différenciation Public / Privé :
+✅ Upload PUT présigné vers [envol-public] réussi
+✅ Upload PUT présigné vers [envol-private] réussi
+✅ Bucket Public [envol-public] : lisible publiquement (200 OK) sur https://pub-df336181dd964534a4866a10762a3327.r2.dev/dev/healthcheck/pub-presign-test-1791282445500.txt
+✅ Bucket Privé [envol-private] : accès anonyme direct REFUSÉ (400 Rejeté)
+
+4. Test des règles CORS Cloudflare R2 :
+✅ CORS Origine autorisée (https://envolafricamag.com) : acceptée (https://envolafricamag.com)
+✅ CORS Origine non autorisée (https://hacker-unauthorized.example) : REFUSÉE

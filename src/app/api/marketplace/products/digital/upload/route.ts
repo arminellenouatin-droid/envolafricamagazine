@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { getR2Client } from "@/lib/storage/client";
+import { getR2Config, isR2Configured } from "@/lib/storage/config";
 
 const MAX_SIZE = 100 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(["application/pdf", "application/zip", "application/epub+zip", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation", "video/mp4", "audio/mpeg"]);
@@ -23,10 +26,30 @@ export async function POST(request: NextRequest) {
   if (!productId) return NextResponse.json({ error: "Produit requis." }, { status: 400 });
   const { data: product } = await supabase.from("marketplace_products").select("id,supplier_id").eq("id", productId).eq("supplier_id", supplier.id).maybeSingle();
   if (!product) return NextResponse.json({ error: "Produit introuvable ou non autorisé." }, { status: 403 });
-  const storagePath = `${supplier.id}/${product.id}/${crypto.randomUUID()}-${safeName(file.name)}`;
-  const { error } = await supabase.storage.from("marketplace-digital").upload(storagePath, Buffer.from(await file.arrayBuffer()), { contentType: file.type, upsert: false });
-  if (error) return NextResponse.json({ error: "Impossible de stocker le fichier numérique." }, { status: 502 });
-  const { error: updateError } = await supabase.from("marketplace_products").update({ digital_file_url: storagePath, updated_at: new Date().toISOString() }).eq("id", product.id).eq("supplier_id", supplier.id);
+
+  let storedPath = "";
+
+  if (isR2Configured()) {
+    const r2 = getR2Client();
+    const config = getR2Config();
+    const r2Key = `${config.R2_KEY_PREFIX}marketplace-digital/${supplier.id}/${product.id}/${crypto.randomUUID()}-${safeName(file.name)}`;
+    await r2.send(
+      new PutObjectCommand({
+        Bucket: config.R2_BUCKET_PRIVATE,
+        Key: r2Key,
+        Body: Buffer.from(await file.arrayBuffer()),
+        ContentType: file.type,
+      })
+    );
+    storedPath = r2Key;
+  } else {
+    const storagePath = `${supplier.id}/${product.id}/${crypto.randomUUID()}-${safeName(file.name)}`;
+    const { error } = await supabase.storage.from("marketplace-digital").upload(storagePath, Buffer.from(await file.arrayBuffer()), { contentType: file.type, upsert: false });
+    if (error) return NextResponse.json({ error: "Impossible de stocker le fichier numérique." }, { status: 502 });
+    storedPath = storagePath;
+  }
+
+  const { error: updateError } = await supabase.from("marketplace_products").update({ digital_file_url: storedPath, updated_at: new Date().toISOString() }).eq("id", product.id).eq("supplier_id", supplier.id);
   if (updateError) return NextResponse.json({ error: "Fichier chargé mais produit non mis à jour." }, { status: 502 });
-  return NextResponse.json({ success: true, storagePath, size: file.size, mimeType: file.type });
+  return NextResponse.json({ success: true, storagePath: storedPath, size: file.size, mimeType: file.type });
 }

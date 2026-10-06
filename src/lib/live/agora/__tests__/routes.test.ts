@@ -76,14 +76,14 @@ const mockDb = {
         upsert: (payload: any) => ({
           select: () => ({
             single: async () => {
-              let existing = participantsStore.find((x) => x.live_id === payload.live_id && x.user_id === payload.user_id);
-              if (existing) {
-                existing.role = payload.role;
-              } else {
-                existing = { ...payload, uid: 4242 };
-                participantsStore.push(existing);
+              const found = participantsStore.find((x) => x.live_id === payload.live_id && x.user_id === payload.user_id);
+              if (found) {
+                found.role = payload.role;
+                return { data: { uid: found.uid, role: found.role }, error: null };
               }
-              return { data: { uid: existing.uid, role: existing.role }, error: null };
+              const created = { ...payload, uid: 4242 };
+              participantsStore.push(created);
+              return { data: { uid: created.uid, role: created.role }, error: null };
             },
           }),
         }),

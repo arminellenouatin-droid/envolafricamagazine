@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getCurrentUserForAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { optimizeImageBuffer } from "@/lib/server-media-optimizer";
+import { getR2Client } from "@/lib/storage/client";
+import { getR2Config, isR2Configured } from "@/lib/storage/config";
+import { publicUrl } from "@/lib/storage/resolve-url";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +48,34 @@ export async function POST(req: NextRequest) {
     const optimized = await optimizeImageBuffer(originalBuffer, file.name, file.type);
     const fileName = `${Date.now()}_${safeFileName(file.name).replace(/\.[^.]+$/, "")}.${optimized.extension}`;
     const storagePath = `${type}/${lang ? `${entityId}_${lang}` : entityId}/${fileName}`;
+    if (isR2Configured()) {
+      const r2 = getR2Client();
+      const config = getR2Config();
+      const r2Key = `${config.R2_KEY_PREFIX}articles/${storagePath}`;
+      await r2.send(
+        new PutObjectCommand({
+          Bucket: config.R2_BUCKET_PUBLIC,
+          Key: r2Key,
+          Body: optimized.buffer,
+          ContentType: optimized.contentType,
+          CacheControl: "public, max-age=31536000, immutable",
+        })
+      );
+      return NextResponse.json({
+        success: true,
+        url: publicUrl(r2Key),
+        key: r2Key,
+        fileName,
+        type,
+        lang,
+        size: optimized.finalSize,
+        originalSize: optimized.originalSize,
+        optimized: optimized.optimized,
+        mimeType: optimized.contentType,
+        storage: "r2",
+      });
+    }
+
     const supabase = getSupabaseAdmin();
 
     if (supabase) {
