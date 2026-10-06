@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuid } from "uuid";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { readWabDB, writeWabDB } from "@/lib/wab-db";
+import { getServiceClient } from "@/lib/live/agora/db";
 
 const demoSalons = [
   {
@@ -10,9 +11,9 @@ const demoSalons = [
     host: "Aïcha Bamba",
     hostAvatarUrl: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=300&auto=format&fit=crop",
     title: "Opportunités Logistiques & Financement en Afrique de l'Ouest",
-    description: "Session interactive en direct : retour d'expérience sur la levée de fonds et la structuration logistique à Abidjan et Dakar.",
+    description: "Session interactive : retour d'expérience sur la levée de fonds et la structuration logistique à Abidjan et Dakar.",
     startsAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-    status: "live" as const,
+    status: "ended" as const,
     participants: 142,
     createdAt: new Date().toISOString(),
   },
@@ -22,9 +23,9 @@ const demoSalons = [
     host: "Moussa Diallo",
     hostAvatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop",
     title: "Masterclass B2B : Vendre et exporter ses services depuis l'Afrique",
-    description: "Débat live avec questions-réponses en direct pour les dirigeants de PME et consultants.",
+    description: "Débat avec questions-réponses pour les dirigeants de PME et consultants.",
     startsAt: new Date(Date.now() - 40 * 60 * 1000).toISOString(),
-    status: "live" as const,
+    status: "ended" as const,
     participants: 89,
     createdAt: new Date().toISOString(),
   },
@@ -48,6 +49,38 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const themeParam = searchParams.get("theme");
   const statusParam = searchParams.get("status");
+
+  // Réconciliation temps réel avec agora_live_channels (source de vérité officielle)
+  try {
+    const agoraDb = getServiceClient();
+    const { data: channels } = await agoraDb
+      .from("agora_live_channels")
+      .select("live_id, status");
+
+    if (channels && channels.length > 0) {
+      const channelStatusMap = new Map(channels.map((c) => [c.live_id, c.status]));
+      let modified = false;
+      if (Array.isArray(db.salons)) {
+        db.salons.forEach((salon) => {
+          const keyWithPrefix = `wab_${salon.id}`;
+          const keyWithoutPrefix = salon.id.startsWith("wab_") ? salon.id.slice(4) : salon.id;
+          const agoraStatus =
+            channelStatusMap.get(keyWithPrefix) ||
+            channelStatusMap.get(salon.id) ||
+            channelStatusMap.get(keyWithoutPrefix);
+
+          if (agoraStatus === "ended" && salon.status === "live") {
+            salon.status = "ended";
+            salon.endsAt = salon.endsAt || new Date().toISOString();
+            modified = true;
+          }
+        });
+      }
+      if (modified) {
+        writeWabDB(db);
+      }
+    }
+  } catch {}
 
   // Si aucun salon, initialiser avec les démos live
   if (!db.salons || db.salons.length === 0) {

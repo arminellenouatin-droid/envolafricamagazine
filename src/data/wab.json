@@ -258,6 +258,33 @@
   ],
   "salons": [
     {
+      "id": "1beb7571-3e15-4693-908b-a5651fbc8d4d",
+      "hostUserId": "4fecde1b-bfc5-4e46-a3b3-c4281e6c3024",
+      "host": "Quentin DAVAKAN",
+      "hostAvatarUrl": "https://rtfjwpytiuvoekomevpu.supabase.co/storage/v1/object/public/avatars/4fecde1b-bfc5-4e46-a3b3-c4281e6c3024/avatar-1787065127329.jpg",
+      "title": "Commerce",
+      "description": "Formation",
+      "theme": "Networking",
+      "visibility": "public",
+      "salesModeEnabled": true,
+      "allowStageRequests": true,
+      "startsAt": "2026-10-06T13:46:19.831Z",
+      "endsAt": "2026-10-06T14:02:32.528Z",
+      "status": "ended",
+      "participants": 1,
+      "guestRequests": [],
+      "moderatorUserIds": [],
+      "mutedUserIds": [],
+      "bannedUserIds": [],
+      "stats": {
+        "peakViewers": 1,
+        "totalViews": 1,
+        "totalCoinsReceived": 0,
+        "totalSalesXof": 0
+      },
+      "createdAt": "2026-10-06T13:46:19.831Z"
+    },
+    {
       "id": "salon-demo-finance-africa",
       "hostUserId": "demo-wab-moussa",
       "host": "Moussa Diallo",

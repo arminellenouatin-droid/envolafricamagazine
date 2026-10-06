@@ -43,6 +43,7 @@ interface Salon {
 export default function SalonsClient() {
   const router = useRouter();
   const [salons, setSalons] = useState<Salon[]>([]);
+  const [currentUser, setCurrentUser] = useState<{ id: string; role?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [followedLiveCount, setFollowedLiveCount] = useState(0);
   const [activeTab, setActiveTab] = useState<"all" | "live" | "scheduled" | "replays">("all");
@@ -75,6 +76,13 @@ export default function SalonsClient() {
   };
 
   useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.user) setCurrentUser(data.user);
+      })
+      .catch(() => {});
+
     loadSalons();
     const timer = setInterval(loadSalons, 8000);
     return () => clearInterval(timer);
@@ -379,9 +387,35 @@ export default function SalonsClient() {
                         {salon.description}
                       </p>
 
-                      <div className="inline-flex items-center gap-1.5 text-xs font-black text-amber-300 group-hover:translate-x-1 transition-transform">
-                        <span>Rejoindre le direct</span>
-                        <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="inline-flex items-center gap-1.5 text-xs font-black text-amber-300 group-hover:translate-x-1 transition-transform">
+                          <span>Rejoindre le direct</span>
+                          <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                        </div>
+
+                        {currentUser && (currentUser.role === "admin" || currentUser.id === salon.hostUserId) && (
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (!confirm("Voulez-vous vraiment arrêter ce live en direct ?")) return;
+                              try {
+                                await fetch(`/api/wab/salons/${salon.id}`, {
+                                  method: "PATCH",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ status: "ended" }),
+                                });
+                                loadSalons();
+                              } catch {}
+                            }}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-600 hover:bg-red-700 text-white font-black text-[11px] shadow-lg backdrop-blur-md transition-all active:scale-95"
+                            title="Arrêter ce direct immédiatement"
+                          >
+                            <span className="material-symbols-outlined text-sm">stop_circle</span>
+                            <span>Arrêter le direct</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </Link>

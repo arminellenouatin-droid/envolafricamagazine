@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { readWabDB, writeWabDB } from "@/lib/wab-db";
 import { endAgoraSession, startAgoraSession } from "@/lib/live/agora/session";
+import { getServiceClient } from "@/lib/live/agora/db";
 
 const demoSalons = [
   {
@@ -61,6 +62,22 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Salon introuvable." }, { status: 404 });
     }
   }
+
+  // Réconciliation temps réel avec agora_live_channels
+  try {
+    const agoraDb = getServiceClient();
+    const { data: channel } = await agoraDb
+      .from("agora_live_channels")
+      .select("status")
+      .or(`live_id.eq.wab_${id},live_id.eq.${id}`)
+      .maybeSingle();
+
+    if (channel && channel.status === "ended" && salon.status === "live") {
+      salon.status = "ended";
+      salon.endsAt = salon.endsAt || new Date().toISOString();
+      writeWabDB(db);
+    }
+  } catch {}
 
   // Si l'hôte n'a pas d'avatar mais existe dans les profils
   if (!salon.hostAvatarUrl) {
