@@ -8,6 +8,7 @@ import { getMonerooMethodCodes } from "@/lib/payment-methods";
 import { validateMinimumPaymentAmount } from "@/lib/payment-policy";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { resolveCountry } from "@/lib/country-resolver";
 
 const SUBSCRIPTION_PRICES: Record<string, { monthly: number; annual: number }> = {
   mensuel: { monthly: 5000, annual: 42000 },
@@ -56,9 +57,15 @@ export async function POST(req: NextRequest) {
     const { items, shippingCountry, affiliateCode, donAmount, phone, metadata } = body;
     // Les montants métier restent en XOF. La devise visiteur ne sert qu’à l’affichage ; Moneroo gère son propre parcours local.
     const paymentCurrency = "XOF";
-    const paymentCountry = String(shippingCountry || body.country || "BJ").toUpperCase();
-    const paymentMethods = getMonerooMethodCodes(paymentCountry, paymentCurrency);
     const user = await getCurrentUserFromCookie();
+    const paymentCountry = resolveCountry({
+      userProfileCountry: user?.country,
+      explicitCountry: shippingCountry || body.country,
+      headers: req.headers,
+      fallback: "BJ",
+    });
+    // Omission de 'methods' par défaut : Moneroo affiche dynamiquement toutes ses méthodes actives (Celtiis, MTN, Moov, Cartes)
+    const requestedMethods = body.method ? [String(body.method)] : undefined;
     const magazines = await listMagazines();
 
     let total = 0;
@@ -134,7 +141,7 @@ export async function POST(req: NextRequest) {
         country: paymentCountry,
       },
       return_url: `${baseUrl}/panier?order_id=${orderId}&verify=1`,
-      ...(paymentMethods.length > 0 ? { methods: paymentMethods } : {}),
+      ...(requestedMethods && requestedMethods.length > 0 ? { methods: requestedMethods } : {}),
       metadata: { ...(metadata && typeof metadata === "object" ? metadata : {}), order_id: orderId, user_id: user?.id || "guest", affiliate: order.affiliateCode },
     });
 

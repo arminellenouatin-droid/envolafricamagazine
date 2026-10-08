@@ -1,7 +1,16 @@
 export type WalletTransactionType =
   | 'DEPOSIT'
-  | 'WITHDRAWAL'
+  | 'PAYMENT'
   | 'REFUND'
+  | 'PAYOUT'
+  | 'WITHDRAWAL'
+  | 'ESCROW_HOLD'
+  | 'ESCROW_RELEASE'
+  | 'COMMISSION'
+  | 'FEE'
+  | 'PENALTY'
+  | 'ADJUSTMENT'
+  | 'TRANSFER'
   | 'AWARD_VOTE'
   | 'AWARD_GIFT'
   | 'AWARD_DONATION'
@@ -15,10 +24,8 @@ export type WalletTransactionType =
   | 'MARKETPLACE_ESCROW_RELEASE'
   | 'MARKETPLACE_REFUND'
   | 'AFFILIATE_COMMISSION'
-  | 'PLATFORM_FEE'
-  | 'PENALTY'
-  | 'ADJUSTMENT'
-  | 'TRANSFER';
+  | 'PLATFORM_FEE';
+
 
 export type TransactionDirection = 'CREDIT' | 'DEBIT';
 

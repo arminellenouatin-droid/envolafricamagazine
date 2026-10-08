@@ -106,9 +106,45 @@ export async function POST(req: NextRequest) {
     const eventType = event.event || event.type;
     const data = event.data;
     if (!eventType || !data?.id) return NextResponse.json({ error: "Payload invalide, event ou id manquant" }, { status: 400 });
-    if (eventType === "payment.initiated" || eventType.startsWith("payout.")) return NextResponse.json({ ok: true }, { status: 200 });
+    if (eventType === "payment.initiated" || eventType === "payout.initiated") {
+      return NextResponse.json({ ok: true, received: true }, { status: 200 });
+    }
 
     const metadata = (data.metadata || {}) as Record<string, unknown>;
+
+    // Traitement centralisé des événements de décaissement (Payout / Refund externe)
+    if (eventType.startsWith("payout.")) {
+      const payoutId = data.id;
+      const { verifyMonerooPayout } = await import("@/lib/moneroo-payout");
+      const payoutVerification = await verifyMonerooPayout(payoutId);
+      const isSuccess = payoutVerification.status === "success" || eventType === "payout.success";
+      const isFailed = ["failed", "cancelled"].includes(payoutVerification.status) || eventType === "payout.failed";
+
+      if (isSuccess || isFailed) {
+        // 1. Traitement des remboursements externes
+        const { settlePayoutRefundWebhook } = await import("@/lib/refunds/refund-service");
+        const settledRefund = await settlePayoutRefundWebhook(payoutId, isSuccess ? "success" : "failed");
+        if (settledRefund) {
+          return NextResponse.json({ ok: true, payout_refund: settledRefund }, { status: 200 });
+        }
+
+        // 2. Traitement des retraits portefeuille
+        const withdrawalId = (metadata?.withdrawal_id || metadata?.withdrawalId) as string | undefined;
+        if (withdrawalId) {
+          const { completeWithdrawal, rejectWithdrawal } = await import("@/lib/wallet/financial-core");
+          if (isSuccess) {
+            await completeWithdrawal(withdrawalId, payoutId, "moneroo_webhook", "Confirmé par Moneroo payout webhook");
+            return NextResponse.json({ ok: true, withdrawal_completed: true }, { status: 200 });
+          } else {
+            await rejectWithdrawal(withdrawalId, "Échec du décaissement Moneroo Payout", "moneroo_webhook");
+            return NextResponse.json({ ok: true, withdrawal_rejected: true }, { status: 200 });
+          }
+        }
+      }
+
+      return NextResponse.json({ ok: true, processed: true }, { status: 200 });
+    }
+
     if (eventType === "payment.success" && (metadata.product === "marketplace_boost" || metadata.product === "crowdfunding_boost" || metadata.product === "jobs_boost")) {
       const verification = await verifyMonerooPayment(data.id);
       if (!validPaymentStatus(verification.status)) return NextResponse.json({ error: "Paiement non confirmé" }, { status: 409 });

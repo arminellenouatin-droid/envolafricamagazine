@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUserFromCookie } from '@/lib/auth';
 import { initMonerooPayment } from '@/lib/moneroo';
-import { getMonerooMethodCodes } from '@/lib/payment-methods';
 import { getClientIp, rateLimit } from '@/lib/rate-limit';
+import { resolveCountry } from '@/lib/country-resolver';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,8 +31,14 @@ export async function POST(req: NextRequest) {
     }
 
     const amount = Math.round(rawAmount);
-    const country = String(user.country || body.country || 'BJ').toUpperCase();
-    const paymentMethods = getMonerooMethodCodes(country, 'XOF');
+    const country = resolveCountry({
+      userProfileCountry: user.country,
+      explicitCountry: body.country,
+      headers: req.headers,
+      fallback: 'BJ',
+    });
+    // Omettre methods par défaut pour laisser Moneroo présenter toutes ses passerelles actives
+    const requestedMethods = body.method ? [String(body.method)] : undefined;
     const baseUrl = req.nextUrl.origin;
     const returnUrl = body.returnUrl || `${baseUrl}/compte/wallet?deposit_success=1`;
 
@@ -48,7 +54,7 @@ export async function POST(req: NextRequest) {
         country,
       },
       return_url: returnUrl,
-      ...(paymentMethods.length > 0 ? { methods: paymentMethods } : {}),
+      ...(requestedMethods && requestedMethods.length > 0 ? { methods: requestedMethods } : {}),
       metadata: {
         product: 'wallet_deposit',
         purpose: 'wallet_deposit',

@@ -38,6 +38,20 @@ function generateRef(prefix: string): string {
   return `${prefix}-${dateStr}-${rand}`;
 }
 
+export class ProductionDatabaseNotConfiguredError extends Error {
+  constructor() {
+    super('Base de données financière Supabase indisponible en production');
+    this.name = 'ProductionDatabaseNotConfiguredError';
+  }
+}
+
+function ensureDatabaseAvailable(supabase: unknown) {
+  if (!supabase && isProductionRuntime()) {
+    throw new ProductionDatabaseNotConfiguredError();
+  }
+}
+
+
 function mapWalletRow(row: Record<string, unknown>): Wallet {
   return {
     id: String(row.id),
@@ -166,6 +180,7 @@ export async function getOrCreateWallet(userId: string): Promise<Wallet> {
   }
 
   // Fallback local
+  ensureDatabaseAvailable(supabase);
   if (!localStore.wallets.has(userId)) {
     const newWallet: Wallet = {
       id: crypto.randomUUID(),
@@ -225,6 +240,7 @@ export async function creditWallet(params: CreditWalletParams): Promise<{
   }
 
   // Fallback local
+  ensureDatabaseAvailable(supabase);
   if (idempotencyKey) {
     const existingTx = localStore.transactions.find((tx) => tx.idempotencyKey === idempotencyKey);
     if (existingTx) {
@@ -304,6 +320,7 @@ export async function debitWallet(params: DebitWalletParams): Promise<{
   }
 
   // Fallback local
+  ensureDatabaseAvailable(supabase);
   if (idempotencyKey) {
     const existingTx = localStore.transactions.find((tx) => tx.idempotencyKey === idempotencyKey);
     if (existingTx) {
@@ -383,6 +400,7 @@ export async function holdWalletEscrow(params: HoldEscrowParams): Promise<{
   }
 
   // Fallback local
+  ensureDatabaseAvailable(supabase);
   const wallet = await getOrCreateWallet(userId);
   if (wallet.availableBalance < amount) {
     throw new Error(`Solde insuffisant pour séquestre (Disponible: ${wallet.availableBalance} XOF, Requis: ${amount} XOF)`);
@@ -432,6 +450,8 @@ export async function holdWalletEscrow(params: HoldEscrowParams): Promise<{
   return { success: true, holdId: hold.id, reference, wallet };
 }
 
+export const holdEscrow = holdWalletEscrow;
+
 /**
  * Libération atomique du séquestre vers le destinataire (vendeur).
  */
@@ -463,6 +483,7 @@ export async function releaseHeldEscrow(params: ReleaseEscrowParams): Promise<{
   }
 
   // Fallback local
+  ensureDatabaseAvailable(supabase);
   const hold = localStore.holds.find((h) => h.id === holdId);
   if (!hold) throw new Error('Séquestre introuvable');
   if (hold.status !== 'held') throw new Error(`Séquestre non actif (statut: ${hold.status})`);
@@ -528,6 +549,8 @@ export async function releaseHeldEscrow(params: ReleaseEscrowParams): Promise<{
   return { success: true, holdId, sellerAmount, platformFee };
 }
 
+export const releaseEscrow = releaseHeldEscrow;
+
 /**
  * Remboursement atomique du séquestre vers l'acheteur.
  */
@@ -555,6 +578,7 @@ export async function refundHeldEscrow(params: RefundEscrowParams): Promise<{
   }
 
   // Fallback local
+  ensureDatabaseAvailable(supabase);
   const hold = localStore.holds.find((h) => h.id === holdId);
   if (!hold) throw new Error('Séquestre introuvable');
   if (hold.status !== 'held') throw new Error(`Séquestre non actif (statut: ${hold.status})`);
@@ -639,6 +663,7 @@ export async function requestWithdrawal(params: RequestWithdrawalParams): Promis
   }
 
   // Fallback local
+  ensureDatabaseAvailable(supabase);
   const wallet = await getOrCreateWallet(userId);
   if (wallet.availableBalance < amount) {
     throw new Error(`Solde disponible insuffisant (Disponible: ${wallet.availableBalance} XOF, Requis: ${amount} XOF)`);
@@ -708,6 +733,8 @@ export async function completeWithdrawal(
     return { success: true, status: 'completed' };
   }
 
+  // Fallback local
+  ensureDatabaseAvailable(supabase);
   const wdr = localStore.withdrawals.find((w) => w.id === withdrawalId);
   if (!wdr) throw new Error('Demande de retrait introuvable');
   if (wdr.status !== 'pending' && wdr.status !== 'processing') {
@@ -752,6 +779,10 @@ export async function rejectWithdrawal(
     if (error) throw error;
     return { success: true, status: 'rejected' };
   }
+
+  // Fallback local
+  ensureDatabaseAvailable(supabase);
+
 
   const wdr = localStore.withdrawals.find((w) => w.id === withdrawalId);
   if (!wdr) throw new Error('Demande de retrait introuvable');

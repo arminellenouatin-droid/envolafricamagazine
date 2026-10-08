@@ -178,11 +178,14 @@ export async function POST(request: NextRequest) {
 
   // --- OPTION B : Paiement externe Moneroo ---
   const origin = process.env.NEXT_PUBLIC_BASE_URL || request.nextUrl.origin;
+  const initialAmount = body.paymentMode === "installment" ? principal : product.price_xof;
   try {
     const payment = await initMonerooPayment({
-      amount: product.price_xof,
+      amount: initialAmount,
       currency: "XOF",
-      description: `Marketplace Envol Africa — ${product.title || "Commande"}`,
+      description: body.paymentMode === "installment"
+        ? `Échéance 1/${months} Marketplace — ${product.title || "Commande"}`
+        : `Marketplace Envol Africa — ${product.title || "Commande"}`,
       customer: { email: user.email, first_name: user.prenom, last_name: user.nom, phone: user.phone },
       return_url: `${origin}/marketplace?order=${order.id}`,
       metadata: {
@@ -192,6 +195,7 @@ export async function POST(request: NextRequest) {
         buyer_id: user.id,
         payment_mode: body.paymentMode,
         months,
+        installment_index: 1,
         referral_token: typeof body?.referralToken === "string" && body.referralToken.trim() ? body.referralToken.trim() : undefined,
       },
     });

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { initMonerooPayment } from "@/lib/moneroo";
-import { getMonerooMethodCodes } from "@/lib/payment-methods";
+import { resolveCountry } from "@/lib/country-resolver";
 
 const MIN_XOF = 100;
 
@@ -44,7 +44,37 @@ export async function POST(req: NextRequest) {
   if (!["award_registration_fee", "award_gift"].includes(product) && amountXof < MIN_XOF) return NextResponse.json({ error: "Le montant minimum est de 100 XOF" }, { status: 400 });
   if (!Number.isInteger(amountXof) || amountXof < MIN_XOF) return NextResponse.json({ error: "Montant invalide" }, { status: 400 });
 
-  const country = String(body.country || "BJ").toUpperCase();
-  const payment = await initMonerooPayment({ amount: amountXof, currency: "XOF", description: product === "award_registration_fee" ? `Frais d’inscription — ${competition.title}` : product === "award_gift" ? `Cadeau Africa Awards — ${String(body.gift_name || "Cadeau")}` : product === "award_pot_increase" ? "Augmentation de la cagnotte Africa Awards" : "Don Africa Awards", customer: { email: user?.email || String(body.email || "client@envolafrica.com"), first_name: user?.prenom || "Client", last_name: user?.nom || "Envol", phone: user?.phone || String(body.phone || ""), country }, return_url: `${req.nextUrl.origin}/africa-awards?payment_id=pending`, methods: getMonerooMethodCodes(country, "XOF"), metadata: { product, user_id: user?.id || "guest", competition_id: competitionId, candidate_id: candidateId || null, application_id: typeof body.application_id === "string" ? body.application_id : null, gift_id: typeof body.gift_id === "string" ? body.gift_id : null, amount_xof: amountXof, currency: "XOF", is_anonymous: Boolean(body.is_anonymous) } });
+  const country = resolveCountry({
+    userProfileCountry: user?.country,
+    explicitCountry: typeof body.country === "string" ? body.country : undefined,
+    headers: req.headers,
+    fallback: "BJ",
+  });
+  const requestedMethods = body.method ? [String(body.method)] : undefined;
+  const payment = await initMonerooPayment({
+    amount: amountXof,
+    currency: "XOF",
+    description: product === "award_registration_fee" ? `Frais d’inscription — ${competition.title}` : product === "award_gift" ? `Cadeau Africa Awards — ${String(body.gift_name || "Cadeau")}` : product === "award_pot_increase" ? "Augmentation de la cagnotte Africa Awards" : "Don Africa Awards",
+    customer: {
+      email: user?.email || String(body.email || "client@envolafrica.com"),
+      first_name: user?.prenom || "Client",
+      last_name: user?.nom || "Envol",
+      phone: user?.phone || String(body.phone || ""),
+      country,
+    },
+    return_url: `${req.nextUrl.origin}/africa-awards?payment_id=pending`,
+    ...(requestedMethods && requestedMethods.length > 0 ? { methods: requestedMethods } : {}),
+    metadata: {
+      product,
+      user_id: user?.id || "guest",
+      competition_id: competitionId,
+      candidate_id: candidateId || null,
+      application_id: typeof body.application_id === "string" ? body.application_id : null,
+      gift_id: typeof body.gift_id === "string" ? body.gift_id : null,
+      amount_xof: amountXof,
+      currency: "XOF",
+      is_anonymous: Boolean(body.is_anonymous),
+    },
+  });
   return NextResponse.json({ paymentId: payment.id, checkout_url: payment.checkout_url, amount_xof: amountXof, mock: payment.mock === true });
 }
