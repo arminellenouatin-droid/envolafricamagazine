@@ -291,8 +291,8 @@ export default function WalletPage() {
               </button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+            <div className="overflow-x-auto -mx-5 px-5 sm:mx-0 sm:px-0">
+              <table className="w-full text-left text-xs min-w-[580px]">
                 <thead>
                   <tr className="border-b border-zinc-100 text-zinc-400 font-bold uppercase tracking-wider">
                     <th className="pb-3">Date</th>
@@ -362,8 +362,8 @@ export default function WalletPage() {
               Aucun fonds sous séquestre pour le moment.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+            <div className="overflow-x-auto -mx-5 px-5 sm:mx-0 sm:px-0">
+              <table className="w-full text-left text-xs min-w-[580px]">
                 <thead>
                   <tr className="border-b border-zinc-100 text-zinc-400 font-bold uppercase tracking-wider">
                     <th className="pb-3">Date</th>
@@ -423,8 +423,8 @@ export default function WalletPage() {
               Aucune demande de retrait effectuée.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+            <div className="overflow-x-auto -mx-5 px-5 sm:mx-0 sm:px-0">
+              <table className="w-full text-left text-xs min-w-[580px]">
                 <thead>
                   <tr className="border-b border-zinc-100 text-zinc-400 font-bold uppercase tracking-wider">
                     <th className="pb-3">Date</th>
