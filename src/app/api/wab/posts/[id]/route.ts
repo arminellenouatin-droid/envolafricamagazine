@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { readWabDB, writeWabDB } from "@/lib/wab-db";
 import { sanitizeRichText } from "@/lib/rich-text";
 import { getWabProfileByUserId } from "@/lib/wab-supabase";
+import { resolveFileUrl } from "@/lib/storage/resolve-url";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -37,7 +38,16 @@ function toPublicPost(row: PublicPostRow) {
     ? row.media.find((m) => m && m.mimeType === "wab/background")?.name
     : undefined;
   const backgroundColor = (row as unknown as { background_color?: string | null }).background_color || bgFromMedia || undefined;
-  const cleanMedia = (row.media ?? []).filter((m) => m.mimeType !== "wab/background");
+  const cleanMedia = (row.media ?? [])
+    .filter((m) => m && m.mimeType !== "wab/background")
+    .map((m) => {
+      const directUrl = m.path ? resolveFileUrl(m.path) : "";
+      return {
+        ...m,
+        mediaUrl: directUrl || (m as any).mediaUrl,
+        path: directUrl || m.path,
+      };
+    });
 
   return { id: row.id, author: user?.full_name || [user?.prenom, user?.nom].filter(Boolean).join(" ") || "Membre WAB", authorAvatarUrl: row.wab_profiles?.avatar_url || user?.avatar || undefined, authorUserId: row.wab_profiles?.user_id, pageId: row.page_id || undefined, pageName: row.wab_pages?.name || undefined, pageLogoUrl: row.wab_pages?.logo_url || undefined, groupId: row.group_id || undefined, groupName: row.wab_groups?.name || undefined, visibility: row.visibility, publisherName: user?.full_name || [user?.prenom, user?.nom].filter(Boolean).join(" ") || undefined, headline: row.wab_profiles?.headline || "Professionnel Envol Africa", location: [row.wab_profiles?.city, row.wab_profiles?.country_code].filter(Boolean).join(", ") || "Afrique", content: row.content, type: row.content_type, media: cleanMedia, backgroundColor, tags: [], views: row.views_count ?? 0, watchSeconds: 0, likes: row.likes_count ?? 0, comments: row.comments_count ?? 0, shares: row.shares_count ?? 0, isBoosted: row.is_boosted ?? false, sourceType: row.source_type ?? undefined, sourceTitle: row.source_title ?? undefined, sourceUrl: row.source_url ?? undefined, createdAt: row.created_at, moderationStatus: row.moderation_status };
 }

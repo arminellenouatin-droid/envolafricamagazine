@@ -49,10 +49,56 @@ export default function MarketplaceOrdersPage() {
   const [downloads, setDownloads] = useState<Download[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string>("");
   const [isSupplier, setIsSupplier] = useState(false);
   const [activeTab, setActiveTab] = useState<"buyer" | "seller">("buyer");
   const [filterMode, setFilterMode] = useState<"all" | "installments" | "full">("all");
   const { formatPrice } = useLocale();
+
+  const handleConfirmDelivery = async (orderId: string) => {
+    if (!window.confirm("Confirmez-vous avoir reçu la commande conforme ? Cette action libérera immédiatement les fonds sécurisés sous séquestre au profit du vendeur.")) return;
+    setActionLoading(orderId);
+    setError("");
+    try {
+      const res = await fetch("/api/marketplace/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId, action: "confirm_delivery" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Échec de la confirmation.");
+      setActionSuccess("✓ Réception validée et fonds libérés vers le vendeur !");
+      setTimeout(() => setActionSuccess(""), 5000);
+      void loadOrders(activeTab, filterMode);
+    } catch (err: any) {
+      setError(err?.message || "Erreur lors de la confirmation.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handlePayInstallment = async (installmentId: string) => {
+    if (!window.confirm("Voulez-vous régler cette échéance maintenant avec le solde de votre Portefeuille Central ?")) return;
+    setActionLoading(installmentId);
+    setError("");
+    try {
+      const res = await fetch("/api/marketplace/installments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ installmentId, use_wallet: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Échec du paiement.");
+      setActionSuccess("✓ Mensualité réglée avec succès via votre Portefeuille Central !");
+      setTimeout(() => setActionSuccess(""), 5000);
+      void loadOrders(activeTab, filterMode);
+    } catch (err: any) {
+      setError(err?.message || "Erreur lors du paiement de l'échéance.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const loadOrders = useCallback(async (tab: "buyer" | "seller", filter: string) => {
     setLoading(true);
@@ -198,6 +244,13 @@ export default function MarketplaceOrdersPage() {
           </div>
         </div>
 
+        {actionSuccess && (
+          <div className="mt-6 rounded-2xl bg-emerald-50 border border-emerald-200 p-4 text-sm font-bold text-emerald-800 flex items-center justify-between">
+            <span>{actionSuccess}</span>
+            <button onClick={() => setActionSuccess("")} className="text-emerald-600 hover:text-emerald-900 text-xs">✕</button>
+          </div>
+        )}
+
         {loading && (
           <div className="mt-8 rounded-2xl bg-white p-8 text-center text-sm text-[#806c58]">
             <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-[#9e001f] border-t-transparent mb-3"></div>
@@ -293,7 +346,7 @@ export default function MarketplaceOrdersPage() {
                             </strong>
                             <span
                               className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-black mt-1 ${
-                                ["completed", "paid", "confirmed"].includes(order.status)
+                                ["completed", "paid", "received", "confirmed"].includes(order.status)
                                   ? "bg-emerald-100 text-emerald-800"
                                   : "bg-amber-100 text-amber-800"
                               }`}
@@ -302,6 +355,23 @@ export default function MarketplaceOrdersPage() {
                             </span>
                           </div>
                         </div>
+
+                        {/* Action Acheteur : Confirmer la livraison pour libérer le séquestre */}
+                        {activeTab === "buyer" && ["paid", "shipped", "delivered_pending_validation"].includes(order.status) && (
+                          <div className="mt-3 pt-3 border-t border-[#eadfce] flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-xs text-[#725f4d]">
+                              🔒 Fonds protégés en séquestre central. Confirmez après vérification du produit.
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleConfirmDelivery(order.id)}
+                              disabled={actionLoading === order.id}
+                              className="rounded-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-black px-4 py-1.5 shadow transition"
+                            >
+                              {actionLoading === order.id ? "Validation..." : "✓ Confirmer réception (Libérer les fonds)"}
+                            </button>
+                          </div>
+                        )}
 
                         {/* Échéancier de paiement détaillé si mode installment */}
                         {hasInstallments && (
@@ -329,6 +399,16 @@ export default function MarketplaceOrdersPage() {
                                       {inst.status === "paid" ? "Payée" : "À régler"}
                                     </span>
                                   </div>
+                                  {activeTab === "buyer" && inst.status !== "paid" && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handlePayInstallment(inst.id)}
+                                      disabled={actionLoading === inst.id}
+                                      className="mt-2 w-full rounded-lg bg-[#9e001f] hover:bg-[#b00023] disabled:opacity-50 text-white text-[11px] font-black py-1 transition shadow-sm"
+                                    >
+                                      {actionLoading === inst.id ? "Paiement..." : "⚡ Régler via Portefeuille"}
+                                    </button>
+                                  )}
                                 </div>
                               ))}
                             </div>

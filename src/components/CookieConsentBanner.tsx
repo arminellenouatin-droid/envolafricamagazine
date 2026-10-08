@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
+import { usePromptOrchestrator } from "@/lib/prompt-orchestrator";
 
 export default function CookieConsentBanner() {
-  const [mounted, setMounted] = useState(false);
-  const [visible, setVisible] = useState(false);
+  const { isPromptActive, completePrompt, dismissPrompt } = usePromptOrchestrator();
+  const visible = isPromptActive("cookie");
 
   useEffect(() => {
-    setMounted(true);
     try {
       const consent = localStorage.getItem("eam_cookie_consent");
       if (consent === "granted") {
@@ -18,8 +18,6 @@ export default function CookieConsentBanner() {
             ad_storage: "granted",
           });
         }
-      } else if (!consent) {
-        setVisible(true);
       }
     } catch {
       // Ignore si le stockage local est inaccessible
@@ -39,7 +37,7 @@ export default function CookieConsentBanner() {
         window.dispatchEvent(new Event("eam_cookie_consent_updated"));
       }
     } catch {}
-    setVisible(false);
+    completePrompt("cookie");
   };
 
   const handleRefuse = () => {
@@ -55,10 +53,10 @@ export default function CookieConsentBanner() {
         window.dispatchEvent(new Event("eam_cookie_consent_updated"));
       }
     } catch {}
-    setVisible(false);
+    dismissPrompt("cookie");
   };
 
-  if (!mounted || !visible) return null;
+  if (!visible) return null;
 
   return (
     <div

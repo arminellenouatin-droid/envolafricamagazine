@@ -33,6 +33,19 @@ export default function ProductDetailClient({
   const [orderLoading, setOrderLoading] = useState(false);
   const [orderError, setOrderError] = useState("");
   const [affiliateCopied, setAffiliateCopied] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [payMethod, setPayMethod] = useState<"wallet" | "moneroo">("wallet");
+
+  useEffect(() => {
+    if (currentUser?.id) {
+      fetch("/api/wallet", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((d) => {
+          if (typeof d.balance === "number") setWalletBalance(d.balance);
+        })
+        .catch(() => {});
+    }
+  }, [currentUser?.id]);
 
   useEffect(() => {
     if (initialProduct && initialProduct.id === id) {
@@ -75,12 +88,37 @@ export default function ProductDetailClient({
     setOrderError("");
     try {
       const activeRef = refToken || (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("ref") || undefined : undefined);
-      const response = await fetch("/api/marketplace/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId: product.id, paymentMode: mode, months: mode === "installment" ? months : 1, referralToken: activeRef }) });
+      const isWallet = payMethod === "wallet";
+      const response = await fetch("/api/marketplace/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: product.id,
+          paymentMode: mode,
+          months: mode === "installment" ? months : 1,
+          referralToken: activeRef,
+          use_wallet: isWallet,
+        }),
+      });
       const data = await response.json().catch(() => ({}));
-      if (response.status === 401) { window.location.assign(`/auth/login?next=${encodeURIComponent(`/marketplace/produits/${product.id}${activeRef ? `?ref=${activeRef}` : ""}`)}`); return; }
-      if (!response.ok || !data.checkoutUrl) throw new Error(data.error || "Impossible de préparer la commande.");
+      if (response.status === 401) {
+        window.location.assign(`/auth/login?next=${encodeURIComponent(`/marketplace/produits/${product.id}${activeRef ? `?ref=${activeRef}` : ""}`)}`);
+        return;
+      }
+      if (!response.ok) {
+        throw new Error(data.error || "Impossible de préparer la commande.");
+      }
+      if (isWallet) {
+        window.location.assign(`/marketplace/commandes?order=${data.order?.id || ""}`);
+        return;
+      }
+      if (!data.checkoutUrl) throw new Error(data.error || "Lien de paiement non reçu.");
       window.location.assign(data.checkoutUrl);
-    } catch (error) { setOrderError(error instanceof Error ? error.message : "Impossible de préparer la commande."); } finally { setOrderLoading(false); }
+    } catch (error) {
+      setOrderError(error instanceof Error ? error.message : "Impossible de préparer la commande.");
+    } finally {
+      setOrderLoading(false);
+    }
   };
 
   return <main className="min-h-screen bg-[#fcf9f8] px-5 py-10 text-[#2a211a] md:px-10 lg:px-16">
@@ -97,7 +135,49 @@ export default function ProductDetailClient({
           <p className="mt-5 text-base leading-7 text-[#725f4d]">{product.description}</p>
           <div className="mt-6 flex flex-wrap gap-3 text-xs font-bold text-[#806c58]"><span>{labels[product.country_code || product.country || ""] || product.country_code || product.country}</span><span>·</span><span>{product.city}</span><span>·</span><span>{product.category}</span></div>
           <div className="mt-8 rounded-[22px] bg-white dark:bg-slate-900 p-6 shadow-sm ring-1 ring-[#eadfce] dark:ring-slate-800 text-[#2a211a] dark:text-slate-100"><p className="text-xs font-bold uppercase tracking-widest text-[#806c58] dark:text-slate-400">Prix fournisseur</p><p className="mt-1 text-4xl font-black text-[#9e001f] dark:text-red-400">{formatPrice(price)}</p>{installment && <div className="mt-5"><p className="text-sm font-bold">Mode d’achat</p><div className="mt-2 grid gap-2 sm:grid-cols-2"><button onClick={() => setMode("full")} className={`rounded-xl border p-3 text-left text-xs font-bold ${mode === "full" ? "border-[#9e001f] bg-[#fff3f2] dark:bg-[#9e001f]/20 text-[#9e001f] dark:text-red-300" : "border-[#eadfce] dark:border-slate-700 text-[#2a211a] dark:text-slate-300"}`}>Paiement comptant<br /><span className="font-normal text-[#806c58] dark:text-slate-400">Livraison selon accord</span></button><button onClick={() => setMode("installment")} className={`rounded-xl border p-3 text-left text-xs font-bold ${mode === "installment" ? "border-[#9e001f] bg-[#fff3f2] dark:bg-[#9e001f]/20 text-[#9e001f] dark:text-red-300" : "border-[#eadfce] dark:border-slate-700 text-[#2a211a] dark:text-slate-300"}`}>Paiement échelonné<br /><span className="font-normal text-[#806c58] dark:text-slate-400">Jusqu’à {months} mois · produit réservé</span></button></div>{mode === "installment" && <p className="mt-3 rounded-lg bg-[#fff8ed] dark:bg-amber-950/30 p-3 text-xs leading-5 text-[#725f4d] dark:text-amber-200">Les échéances sont suivies sur le compte acheteur et fournisseur. La remise du produit et la libération des frais suivent les règles de réception et de paiement.</p>}</div>}
-            <div className="mt-5 grid gap-3 sm:grid-cols-2"><Link href={`/marketplace/messages?product=${encodeURIComponent(product.id)}`} className="rounded-full border border-[#cdbb9f] dark:border-slate-700 px-5 py-3 text-center text-xs font-black text-[#5c3d19] dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Contacter le fournisseur</Link><button type="button" onClick={() => void startOrder()} disabled={orderLoading || (mode === "installment" && !installment)} className="rounded-full bg-[#9e001f] hover:bg-[#b00023] px-5 py-3 text-center text-xs font-black text-white disabled:opacity-60 transition shadow">{orderLoading ? "Préparation…" : mode === "installment" ? "Choisir l’échelonnement" : "Acheter en sécurité"}</button></div>{orderError && <p className="mt-3 rounded-xl bg-red-50 dark:bg-red-950/40 p-3 text-xs font-semibold text-red-800 dark:text-red-300">{orderError}</p>}</div>
+            {/* Choix du moyen de paiement */}
+            <div className="mt-5 border-t border-[#eadfce] dark:border-slate-800 pt-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#806c58] dark:text-slate-400 mb-2">
+                Moyen de règlement
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => setPayMethod("wallet")}
+                  className={`rounded-xl border p-3 text-left transition ${
+                    payMethod === "wallet"
+                      ? "border-[#9e001f] bg-[#fff3f2] dark:bg-[#9e001f]/20 text-[#9e001f] dark:text-red-300 ring-1 ring-[#9e001f]"
+                      : "border-[#eadfce] dark:border-slate-700 text-[#2a211a] dark:text-slate-300"
+                  }`}
+                >
+                  <div className="font-bold text-xs flex items-center justify-between">
+                    <span>⚡ Portefeuille Central</span>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-black">Séquestre auto</span>
+                  </div>
+                  <p className="text-[11px] text-[#806c58] dark:text-slate-400 mt-1">
+                    {walletBalance !== null ? `Solde : ${formatPrice(walletBalance)}` : "Séquestre protégé"}
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPayMethod("moneroo")}
+                  className={`rounded-xl border p-3 text-left transition ${
+                    payMethod === "moneroo"
+                      ? "border-[#9e001f] bg-[#fff3f2] dark:bg-[#9e001f]/20 text-[#9e001f] dark:text-red-300 ring-1 ring-[#9e001f]"
+                      : "border-[#eadfce] dark:border-slate-700 text-[#2a211a] dark:text-slate-300"
+                  }`}
+                >
+                  <div className="font-bold text-xs flex items-center justify-between">
+                    <span>💳 Mobile Money / Carte</span>
+                    <span className="text-[10px] bg-[#f5eee4] text-[#806c58] px-1.5 py-0.5 rounded font-bold">Moneroo</span>
+                  </div>
+                  <p className="text-[11px] text-[#806c58] dark:text-slate-400 mt-1">
+                    MTN, Moov, Orange, Visa
+                  </p>
+                </button>
+              </div>
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2"><Link href={`/marketplace/messages?product=${encodeURIComponent(product.id)}`} className="rounded-full border border-[#cdbb9f] dark:border-slate-700 px-5 py-3 text-center text-xs font-black text-[#5c3d19] dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Contacter le fournisseur</Link><button type="button" onClick={() => void startOrder()} disabled={orderLoading || (mode === "installment" && !installment)} className="rounded-full bg-[#9e001f] hover:bg-[#b00023] px-5 py-3 text-center text-xs font-black text-white disabled:opacity-60 transition shadow">{orderLoading ? "Traitement…" : payMethod === "wallet" ? "Payer via Portefeuille (Séquestre)" : "Payer via Moneroo"}</button></div>{orderError && <p className="mt-3 rounded-xl bg-red-50 dark:bg-red-950/40 p-3 text-xs font-semibold text-red-800 dark:text-red-300">{orderError}</p>}</div>
 
           {/* Encadré Programme Ambassadeur & Affiliation */}
           {activeAffiliation && (

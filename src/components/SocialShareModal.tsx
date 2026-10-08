@@ -61,35 +61,47 @@ export function CopyLinkIcon({ className = "w-5 h-5" }: { className?: string }) 
   );
 }
 
+import { buildSocialShareLinks, resolveAbsoluteImageUrl } from "@/lib/share-metadata-service";
+
 export default function SocialShareModal({ url, title, summary, isOpen, onClose }: SocialShareModalProps) {
   const [copied, setCopied] = useState(false);
 
   if (!isOpen) return null;
 
-  const fullUrl = typeof window !== "undefined" && !url.startsWith("http") ? `${window.location.origin}${url}` : url;
-  const shareText = `${title} — ${summary || "À lire sur Envol Africa Magazine"}`;
+  const fullUrl = resolveAbsoluteImageUrl(
+    typeof window !== "undefined" && !url.startsWith("http") ? `${window.location.origin}${url}` : url
+  );
+  const shareLinks = buildSocialShareLinks({
+    url: fullUrl,
+    title,
+    summary,
+  });
 
   const handleShare = async (network: SocialNetwork) => {
     switch (network) {
       case "whatsapp":
-        window.open(`https://wa.me/?text=${encodeURIComponent(`${shareText}\n\n${fullUrl}`)}`, "_blank", "noopener,noreferrer");
+        window.open(shareLinks.whatsapp, "_blank", "noopener,noreferrer");
         break;
       case "facebook":
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fullUrl)}`, "_blank", "noopener,noreferrer");
+        window.open(shareLinks.facebook, "_blank", "noopener,noreferrer");
         break;
       case "linkedin":
-        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(fullUrl)}`, "_blank", "noopener,noreferrer");
+        window.open(shareLinks.linkedin, "_blank", "noopener,noreferrer");
         break;
       case "x":
-        window.open(`https://x.com/intent/post?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(fullUrl)}`, "_blank", "noopener,noreferrer");
+        window.open(shareLinks.twitter, "_blank", "noopener,noreferrer");
         break;
       case "telegram":
-        window.open(`https://t.me/share/url?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(shareText)}`, "_blank", "noopener,noreferrer");
+        window.open(shareLinks.telegram, "_blank", "noopener,noreferrer");
         break;
       case "native":
         if (typeof navigator !== "undefined" && "share" in navigator) {
           try {
-            await navigator.share({ title, text: shareText, url: fullUrl });
+            await navigator.share({
+              title,
+              text: `${title}${summary ? ` — ${summary}` : ""}`,
+              url: fullUrl,
+            });
           } catch {
             // User cancelled share
           }

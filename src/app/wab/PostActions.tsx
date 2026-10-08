@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { buildSocialShareLinks, buildShareUrl } from "@/lib/share-metadata-service";
 
 async function readJson(response: Response): Promise<Record<string, unknown>> {
   const raw = await response.text();
@@ -33,24 +34,24 @@ export default function PostActions({ postId, initialLikes, initialComments, ini
     if (response.ok) { setLiked(Boolean(data.liked)); setLikes(Number(data.likes ?? likes)); }
   }
 
-  async function shareTo(destination: "story" | "feed" | "friend" | "whatsapp" | "facebook" | "linkedin" | "twitter" | "telegram" | "copy") {
-    const canonicalBase =
-      typeof window !== "undefined"
-        ? window.location.origin
-        : process.env.NEXT_PUBLIC_SITE_URL || "https://envolafrica.vercel.app";
-    const url = `${canonicalBase}/wab/posts/${postId}`;
+  async function shareTo(destination: string) {
+    const url = buildShareUrl({ type: "post", id: postId });
     const shareText = "Découvrez cette publication sur World Africa Business (WAB)";
+    const links = buildSocialShareLinks({
+      url,
+      title: shareText,
+    });
 
     if (destination === "whatsapp") {
-      window.open(`https://wa.me/?text=${encodeURIComponent(`${shareText} : ${url}`)}`, "_blank", "noopener,noreferrer");
+      window.open(links.whatsapp, "_blank", "noopener,noreferrer");
     } else if (destination === "facebook") {
-      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, "_blank", "noopener,noreferrer");
+      window.open(links.facebook, "_blank", "noopener,noreferrer");
     } else if (destination === "linkedin") {
-      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, "_blank", "noopener,noreferrer");
+      window.open(links.linkedin, "_blank", "noopener,noreferrer");
     } else if (destination === "twitter") {
-      window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}`, "_blank", "noopener,noreferrer");
+      window.open(links.twitter, "_blank", "noopener,noreferrer");
     } else if (destination === "telegram") {
-      window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}`, "_blank", "noopener,noreferrer");
+      window.open(links.telegram, "_blank", "noopener,noreferrer");
     } else if (destination === "copy") {
       try {
         await navigator.clipboard.writeText(url);

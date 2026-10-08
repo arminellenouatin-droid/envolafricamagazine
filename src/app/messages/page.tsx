@@ -8,6 +8,14 @@ import VoiceNotePlayer from "@/components/messages/VoiceNotePlayer";
 import ImageLightboxModal from "@/components/messages/ImageLightboxModal";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { ActiveAudioCall } from "@/app/api/messages/call/route";
+import {
+  subscribeToChatChannel,
+  broadcastNewMessage,
+  broadcastTypingState,
+  broadcastMessageRead,
+  subscribeToUserChannel,
+  getChatChannelName,
+} from "@/lib/realtime-chat";
 
 interface Participant {
   id: string;
@@ -23,6 +31,9 @@ interface MessageItem {
   body: string;
   read_at?: string | null;
   created_at: string;
+  client_msg_id?: string;
+  status?: "sending" | "sent" | "delivered" | "read" | "failed";
+  error?: string;
 }
 
 interface Conversation {
@@ -261,7 +272,7 @@ function MessagesContent() {
       } catch {}
     };
 
-    const callInterval = setInterval(checkIncomingCalls, 2500);
+    const callInterval = setInterval(checkIncomingCalls, 4000);
     checkIncomingCalls();
 
     return () => {
@@ -270,27 +281,120 @@ function MessagesContent() {
     };
   }, [currentUserId]);
 
-  // Écoute temps réel des indicateurs de frappe (typing)
+  // Écoute temps réel instantanée des appels entrants sur le canal personnel de l'utilisateur
+  useEffect(() => {
+    if (!currentUserId) return;
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+
+    const userChannel = subscribeToUserChannel(supabase, currentUserId, {
+      onIncomingCall: (incomingCall: any) => {
+        if (incomingCall && (incomingCall.status === "ringing" || incomingCall.status === "connected")) {
+          setActiveCall(incomingCall);
+        }
+      },
+    });
+
+    return () => {
+      if (userChannel) supabase.removeChannel(userChannel);
+    };
+  }, [currentUserId]);
+
+  // Écoute temps réel complète de la discussion active (Messages, Frappe, Accusés de lecture)
   useEffect(() => {
     if (!activeConversation || activeConversation.id.startsWith("temp-")) return;
 
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
 
-    const channel = supabase.channel(`wab_chat_${activeConversation.id}`, {
-      config: { broadcast: { self: false } },
-    });
+    const channelName = getChatChannelName("wab", activeConversation.id);
 
-    channel.on("broadcast", { event: "typing" }, ({ payload }: { payload: any }) => {
-      if (payload?.senderId !== currentUserId) {
-        setIsOtherTyping(Boolean(payload?.isTyping));
-      }
-    });
+    const channel = subscribeToChatChannel(
+      supabase,
+      channelName,
+      {
+        onMessageNew: (payload) => {
+          if (!payload?.message) return;
+          const incoming = payload.message as MessageItem;
 
-    channel.subscribe();
+          setActiveConversation((prev) => {
+            if (!prev || prev.id !== payload.conversationId) return prev;
+            const alreadyExists = prev.messages.some(
+              (m) => m.id === incoming.id || (payload.clientId && m.client_msg_id === payload.clientId)
+            );
+            if (alreadyExists) {
+              return {
+                ...prev,
+                messages: prev.messages.map((m) =>
+                  m.id === incoming.id || (payload.clientId && m.client_msg_id === payload.clientId)
+                    ? { ...incoming, status: "sent" }
+                    : m
+                ),
+              };
+            }
+            return {
+              ...prev,
+              messages: [...prev.messages, { ...incoming, status: incoming.read_at ? "read" : "delivered" }],
+              updated_at: incoming.created_at,
+            };
+          });
+
+          // Mettre à jour l'aperçu dans la liste des conversations
+          setConversations((prev) =>
+            prev.map((c) =>
+              c.id === payload.conversationId
+                ? {
+                    ...c,
+                    messages: [...c.messages.filter((m) => m.id !== incoming.id), incoming],
+                    updated_at: incoming.created_at,
+                  }
+                : c
+            )
+          );
+
+          // Si le message vient du correspondant, marquer comme lu
+          if (incoming.sender_id !== currentUserId) {
+            fetch("/api/wab/messages", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ conversationId: payload.conversationId }),
+            }).catch(() => {});
+
+            broadcastMessageRead(supabase, channelName, {
+              conversationId: payload.conversationId,
+              readerId: currentUserId,
+              readAt: new Date().toISOString(),
+            });
+          }
+        },
+
+        onTyping: (payload) => {
+          if (payload?.senderId !== currentUserId) {
+            setIsOtherTyping(Boolean(payload?.isTyping));
+          }
+        },
+
+        onMessageRead: (payload) => {
+          if (payload?.conversationId === activeConversation.id) {
+            setActiveConversation((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                messages: prev.messages.map((m) =>
+                  m.sender_id === currentUserId && !m.read_at
+                    ? { ...m, read_at: payload.readAt, status: "read" }
+                    : m
+                ),
+              };
+            });
+          }
+        },
+      },
+      currentUserId
+    );
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) supabase.removeChannel(channel);
     };
   }, [activeConversation?.id, currentUserId]);
 
@@ -534,12 +638,29 @@ function MessagesContent() {
     } catch {}
   };
 
-  // Send Text Message
+  // Send Text Message avec UI Optimiste, Idempotence (client_msg_id) et Réessayer
   const handleSendTextMessage = async () => {
     if (!textInput.trim() || !activeConversation || sending) return;
     const textToSend = textInput.trim();
     setTextInput("");
     setSending(true);
+
+    const clientMsgId = `cmsg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const optimisticMsg: MessageItem = {
+      id: clientMsgId,
+      client_msg_id: clientMsgId,
+      conversation_id: activeConversation.id,
+      sender_id: currentUserId,
+      body: textToSend,
+      read_at: null,
+      created_at: new Date().toISOString(),
+      status: "sending",
+    };
+
+    // Affichage immédiat dans la conversation (UI Optimiste instantanée)
+    setActiveConversation((prev) =>
+      prev ? { ...prev, messages: [...prev.messages, optimisticMsg] } : null
+    );
 
     try {
       const isTemp = activeConversation.id.startsWith("temp-");
@@ -556,33 +677,161 @@ function MessagesContent() {
 
       const data = await res.json();
       if (res.ok && data.message) {
-        const updatedConversation: Conversation = {
-          ...activeConversation,
-          id: data.message.conversation_id,
-          messages: [...activeConversation.messages, data.message],
-          updated_at: data.message.created_at,
+        const realMsg: MessageItem = {
+          ...data.message,
+          client_msg_id: clientMsgId,
+          status: "sent",
         };
 
-        setActiveConversation(updatedConversation);
+        setActiveConversation((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            id: data.message.conversation_id,
+            messages: prev.messages.map((m) =>
+              m.id === clientMsgId || m.client_msg_id === clientMsgId ? realMsg : m
+            ),
+            updated_at: realMsg.created_at,
+          };
+        });
 
-        // Mettre à jour immédiatement la liste des discussions
+        // Diffusion temps réel instantanée au correspondant (< 50ms)
+        const supabase = getSupabaseBrowserClient();
+        if (supabase) {
+          const channelName = getChatChannelName("wab", data.message.conversation_id);
+          broadcastNewMessage(supabase, channelName, {
+            message: realMsg,
+            clientId: clientMsgId,
+            conversationId: data.message.conversation_id,
+            senderId: currentUserId,
+          });
+        }
+
+        // Mettre à jour l'aperçu dans la liste des discussions
         setConversations((prev) => {
           const filtered = prev.filter(
             (c) => c.id !== activeConversation.id && c.id !== data.message.conversation_id
           );
-          return [updatedConversation, ...filtered];
+          const updatedConv: Conversation = {
+            ...activeConversation,
+            id: data.message.conversation_id,
+            messages: [...activeConversation.messages.filter((m) => m.id !== clientMsgId), realMsg],
+            updated_at: realMsg.created_at,
+          };
+          return [updatedConv, ...filtered];
         });
-
-        loadConversations();
       } else {
-        setTextInput(textToSend);
-        alert(data.error || "Impossible d'envoyer le message. Veuillez réessayer.");
+        // En cas d'échec serveur : marquer le message avec l'état 'failed'
+        setActiveConversation((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            messages: prev.messages.map((m) =>
+              m.id === clientMsgId
+                ? { ...m, status: "failed", error: data.error || "Échec d'envoi." }
+                : m
+            ),
+          };
+        });
       }
     } catch {
-      setTextInput(textToSend);
-      alert("Erreur réseau lors de l'envoi du message.");
+      // En cas d'échec réseau : marquer avec le statut 'failed' pour permettre de réessayer
+      setActiveConversation((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          messages: prev.messages.map((m) =>
+            m.id === clientMsgId
+              ? { ...m, status: "failed", error: "Problème de connexion réseau." }
+              : m
+          ),
+        };
+      });
     } finally {
       setSending(false);
+    }
+  };
+
+  // Réessayer l'envoi d'un message ayant échoué
+  const handleRetryMessage = async (failedMsg: MessageItem) => {
+    if (!activeConversation) return;
+
+    setActiveConversation((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        messages: prev.messages.map((m) =>
+          m.id === failedMsg.id ? { ...m, status: "sending", error: undefined } : m
+        ),
+      };
+    });
+
+    try {
+      const isTemp = activeConversation.id.startsWith("temp-");
+      const res = await fetch("/api/wab/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId: isTemp ? undefined : activeConversation.id,
+          recipientId: activeConversation.otherParticipant.id,
+          body: failedMsg.body,
+          type: "text",
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.message) {
+        const realMsg: MessageItem = {
+          ...data.message,
+          client_msg_id: failedMsg.client_msg_id || failedMsg.id,
+          status: "sent",
+        };
+
+        setActiveConversation((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            messages: prev.messages.map((m) =>
+              m.id === failedMsg.id ? realMsg : m
+            ),
+          };
+        });
+
+        const supabase = getSupabaseBrowserClient();
+        if (supabase) {
+          const channelName = getChatChannelName("wab", data.message.conversation_id);
+          broadcastNewMessage(supabase, channelName, {
+            message: realMsg,
+            clientId: failedMsg.client_msg_id || failedMsg.id,
+            conversationId: data.message.conversation_id,
+            senderId: currentUserId,
+          });
+        }
+      } else {
+        setActiveConversation((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            messages: prev.messages.map((m) =>
+              m.id === failedMsg.id
+                ? { ...m, status: "failed", error: data.error || "Échec d'envoi." }
+                : m
+            ),
+          };
+        });
+      }
+    } catch {
+      setActiveConversation((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          messages: prev.messages.map((m) =>
+            m.id === failedMsg.id
+              ? { ...m, status: "failed", error: "Problème de connexion réseau." }
+              : m
+          ),
+        };
+      });
     }
   };
 
@@ -674,6 +923,17 @@ function MessagesContent() {
               updated,
               ...prev.filter((c) => c.id !== activeConversation.id && c.id !== msgData.message.conversation_id),
             ]);
+
+            const supabase = getSupabaseBrowserClient();
+            if (supabase) {
+              const channelName = getChatChannelName("wab", msgData.message.conversation_id);
+              broadcastNewMessage(supabase, channelName, {
+                message: msgData.message,
+                conversationId: msgData.message.conversation_id,
+                senderId: currentUserId,
+              });
+            }
+
             loadConversations();
           } else {
             alert(msgData.error || "Impossible d'envoyer la note vocale.");
@@ -737,6 +997,17 @@ function MessagesContent() {
             updated,
             ...prev.filter((c) => c.id !== activeConversation.id && c.id !== msgData.message.conversation_id),
           ]);
+
+          const supabase = getSupabaseBrowserClient();
+          if (supabase) {
+            const channelName = getChatChannelName("wab", msgData.message.conversation_id);
+            broadcastNewMessage(supabase, channelName, {
+              message: msgData.message,
+              conversationId: msgData.message.conversation_id,
+              senderId: currentUserId,
+            });
+          }
+
           loadConversations();
         } else {
           alert(msgData.error || "Impossible d'envoyer le fichier.");
@@ -802,6 +1073,17 @@ function MessagesContent() {
             updated,
             ...prev.filter((c) => c.id !== activeConversation.id && c.id !== msgData.message.conversation_id),
           ]);
+
+          const supabase = getSupabaseBrowserClient();
+          if (supabase) {
+            const channelName = getChatChannelName("wab", msgData.message.conversation_id);
+            broadcastNewMessage(supabase, channelName, {
+              message: msgData.message,
+              conversationId: msgData.message.conversation_id,
+              senderId: currentUserId,
+            });
+          }
+
           loadConversations();
         } else {
           alert(msgData.error || "Impossible d'envoyer la vidéo.");
@@ -1354,13 +1636,34 @@ function MessagesContent() {
                           <div className="flex items-center justify-end gap-1 mt-1 text-[9px] text-gray-400">
                             <span>{formatTime(m.created_at)}</span>
                             {isMe && (
-                              <span
-                                className={`material-symbols-outlined text-xs ${
-                                  m.read_at ? "text-blue-500" : "text-gray-400"
-                                }`}
-                              >
-                                done_all
-                              </span>
+                              m.status === "sending" ? (
+                                <span className="material-symbols-outlined text-xs text-amber-500 animate-spin" title="Envoi en cours...">
+                                  progress_activity
+                                </span>
+                              ) : m.status === "failed" ? (
+                                <div className="flex items-center gap-1 text-rose-500">
+                                  <span className="material-symbols-outlined text-xs">error</span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRetryMessage(m);
+                                    }}
+                                    className="underline font-bold text-[9px] hover:text-rose-700 cursor-pointer"
+                                  >
+                                    Réessayer
+                                  </button>
+                                </div>
+                              ) : (
+                                <span
+                                  className={`material-symbols-outlined text-xs ${
+                                    m.read_at ? "text-sky-500 font-bold" : "text-gray-400"
+                                  }`}
+                                  title={m.read_at ? "Lu" : "Distribué"}
+                                >
+                                  done_all
+                                </span>
+                              )
                             )}
                           </div>
                         </div>

@@ -5,6 +5,8 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { findSupplierByVendorAndSlug, generateStoreSlug, generateVendorSlug } from "@/lib/marketplace-slug";
 import BoutiqueDetailClient from "../../[slug]/BoutiqueDetailClient";
 
+import { buildShareMetadata } from "@/lib/share-metadata-service";
+
 export async function generateMetadata({
   params,
 }: {
@@ -14,10 +16,14 @@ export async function generateMetadata({
   const supplier = await findSupplierByVendorAndSlug(vendor, slug);
 
   if (!supplier) {
-    return {
+    return buildShareMetadata({
+      type: "boutique",
+      vendor,
+      slug,
       title: "Boutique introuvable • Marketplace Envol Africa",
       description: "Cette boutique n'existe pas ou a été déplacée sur la Marketplace Envol Africa.",
-    };
+      badge: "BOUTIQUE",
+    });
   }
 
   const vendorDisplay = supplier.vendor_name || vendor;
@@ -26,19 +32,15 @@ export async function generateMetadata({
     .slice(0, 180)
     .trim();
 
-  return {
+  return buildShareMetadata({
+    type: "boutique",
+    vendor: supplier.vendor_slug || vendor,
+    slug: supplier.slug || slug,
     title,
     description,
-    alternates: {
-      canonical: `/marketplace/boutique/${encodeURIComponent(supplier.vendor_slug || vendor)}/${encodeURIComponent(supplier.slug || slug)}`,
-    },
-    openGraph: {
-      title,
-      description,
-      type: "website",
-      images: supplier.logo_url ? [supplier.logo_url] : [],
-    },
-  };
+    imageUrl: supplier.logo_url || supplier.banner_url,
+    badge: "BOUTIQUE OFFICIELLE",
+  });
 }
 
 export default async function VendorStorePage({

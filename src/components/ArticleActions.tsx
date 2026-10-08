@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import SocialShareModal from "@/components/SocialShareModal";
+import { buildSocialShareLinks, resolveAbsoluteImageUrl } from "@/lib/share-metadata-service";
 
 type CommentItem = { id: string; userId?: string; content: string; createdAt: string };
 
@@ -63,17 +64,27 @@ export default function ArticleActions({ articleId, slug, initialLikes, initialV
   };
 
   const share = async (target: "whatsapp" | "native" | "copy" | "x" | "facebook" | "linkedin") => {
-    const text = `À lire sur Envol Africa : ${document.title}`;
+    const title = typeof document !== "undefined" ? document.title : "Envol Africa";
+    const fullUrl = resolveAbsoluteImageUrl(articleUrl);
+    const links = buildSocialShareLinks({
+      url: fullUrl,
+      title,
+      summary: "À lire sur Envol Africa Magazine",
+    });
+
     if (target === "copy") {
-      await navigator.clipboard?.writeText(articleUrl);
+      await navigator.clipboard?.writeText(fullUrl);
       setMessage("Lien de l’article copié.");
     } else if (target === "native" && navigator.share) {
-      await navigator.share({ title: document.title, text, url: articleUrl }).catch(() => undefined);
+      await navigator.share({ title, text: `${title}\n\n${fullUrl}`, url: fullUrl }).catch(() => undefined);
     } else if (target === "whatsapp") {
-      window.open(`https://wa.me/?text=${encodeURIComponent(`${text} ${articleUrl}`)}`, "_blank", "noopener,noreferrer");
-    } else {
-      const urls: Record<"x" | "facebook" | "linkedin", string> = { x: `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(articleUrl)}`, facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(articleUrl)}`, linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(articleUrl)}` };
-      if (target !== "native") window.open(urls[target], "_blank", "noopener,noreferrer");
+      window.open(links.whatsapp, "_blank", "noopener,noreferrer");
+    } else if (target === "facebook") {
+      window.open(links.facebook, "_blank", "noopener,noreferrer");
+    } else if (target === "linkedin") {
+      window.open(links.linkedin, "_blank", "noopener,noreferrer");
+    } else if (target === "x") {
+      window.open(links.twitter, "_blank", "noopener,noreferrer");
     }
   };
 

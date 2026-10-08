@@ -1,264 +1,209 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
-
-export function GoogleGLogo({ className = "w-5 h-5" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24">
-      <path
-        fill="#4285F4"
-        d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
-      />
-      <path
-        fill="#34A853"
-        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
-      />
-      <path
-        fill="#EA4335"
-        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
-      />
-    </svg>
-  );
-}
+import { useEffect, useCallback, useRef } from "react";
+import { usePromptOrchestrator } from "@/lib/prompt-orchestrator";
 
 interface GoogleOneTapPromptProps {
   user?: { id: string } | null;
 }
 
-export default function GoogleOneTapPrompt({ user }: GoogleOneTapPromptProps) {
-  const [visible, setVisible] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [promptError, setPromptError] = useState("");
+export default function GoogleOneTapPrompt({ user: propUser }: GoogleOneTapPromptProps) {
+  const {
+    isPromptActive,
+    completePrompt,
+    dismissPrompt,
+    markOneTapUnavailable,
+    setAuthenticatedUser,
+    isAuthenticated,
+    user: contextUser,
+  } = usePromptOrchestrator();
+
+  const isConnected = Boolean(propUser || contextUser || isAuthenticated);
+  const isActive = isPromptActive("google-one-tap");
+  const gisInitializedRef = useRef(false);
+
+  const handleCredentialResponse = useCallback(
+    async (response: { credential?: string }) => {
+      if (!response.credential) return;
+
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[AUTH][ONE_TAP] credential received");
+        console.log("[AUTH][ONE_TAP] API request started");
+      }
+
+      try {
+        const currentPath =
+          typeof window !== "undefined"
+            ? window.location.pathname + window.location.search
+            : "/";
+
+        const res = await fetch("/api/auth/google-one-tap", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ credential: response.credential, next: currentPath }),
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok && data.success) {
+          // Cas de vérification 2FA requise
+          if (data.twoFactorRequired && data.redirectUrl) {
+            window.location.assign(data.redirectUrl);
+            return;
+          }
+
+          if (process.env.NODE_ENV !== "production") {
+            console.log("[AUTH][ONE_TAP] user authenticated");
+            console.log("[AUTH][ONE_TAP] authentication finalized");
+          }
+
+          // Inscription locale immédiate pour éviter tout réaffichage
+          setAuthenticatedUser(data.user);
+          completePrompt("google-one-tap");
+
+          // Nettoyage Google Identity Services
+          try {
+            const google = (window as unknown as {
+              google?: {
+                accounts?: {
+                  id?: {
+                    cancel: () => void;
+                    disableAutoSelect: () => void;
+                  };
+                };
+              };
+            }).google;
+            google?.accounts?.id?.cancel();
+            google?.accounts?.id?.disableAutoSelect();
+          } catch {}
+
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("eam_google_prompt_dismissed", "true");
+            window.dispatchEvent(new Event("eam_auth_changed"));
+            // Navigation fluide vers la destination
+            window.location.assign(data.redirectUrl || window.location.href);
+          }
+          return;
+        }
+
+        if (data.error) {
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("[AUTH][ONE_TAP] Erreur serveur:", data.error);
+          }
+          dismissPrompt("google-one-tap");
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV !== "production") {
+          console.error("[AUTH][ONE_TAP] Exception:", err);
+        }
+        dismissPrompt("google-one-tap");
+      }
+    },
+    [completePrompt, dismissPrompt, setAuthenticatedUser]
+  );
 
   useEffect(() => {
-    // Si l'utilisateur est déjà connecté, ne rien afficher
-    if (user) return;
+    // Si l'utilisateur est connecté ou que le prompt n'est pas actif selon l'orchestrateur
+    if (isConnected || !isActive) {
+      // Nettoyage préventif
+      try {
+        const google = (window as unknown as {
+          google?: { accounts?: { id?: { cancel: () => void } } };
+        }).google;
+        google?.accounts?.id?.cancel();
+      } catch {}
+      return;
+    }
 
     if (typeof window === "undefined") return;
 
-    // Ne pas afficher si l'utilisateur a déjà fermé l'invitation durant cette session
-    const dismissed = sessionStorage.getItem("eam_google_prompt_dismissed");
-    if (dismissed) return;
-
-    let timer: NodeJS.Timeout | null = null;
-
-    const triggerPrompt = (delayMs: number) => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        // Double vérification si l'utilisateur ne l'a pas fermé entre-temps
-        if (!sessionStorage.getItem("eam_google_prompt_dismissed")) {
-          setVisible(true);
-        }
-      }, delayMs);
-    };
-
-    // Vérifier si le bandeau de cookies est en attente
-    const consent = localStorage.getItem("eam_cookie_consent");
-    if (consent) {
-      // Les cookies sont déjà gérés : déclencher après un délai ergonomique de 1.8s
-      triggerPrompt(1800);
-    } else {
-      // Les cookies ne sont pas encore acceptés/refusés : attendre l'interaction de l'utilisateur
-      // pour éviter la superposition de deux tiroirs en bas d'écran
-      const onCookieAnswered = () => {
-        triggerPrompt(1500);
-      };
-      window.addEventListener("eam_cookie_consent_updated", onCookieAnswered, { once: true });
-      window.addEventListener("storage", (e) => {
-        if (e.key === "eam_cookie_consent" && e.newValue) {
-          triggerPrompt(1500);
-        }
-      }, { once: true });
+    const googleClientId = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "").trim();
+    if (!googleClientId) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[AUTH][ONE_TAP] NEXT_PUBLIC_GOOGLE_CLIENT_ID non configuré");
+      }
+      markOneTapUnavailable();
+      return;
     }
 
-    // Initialiser également Google Identity Services pour le One Tap natif Google si disponible
-    const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    if (googleClientId) {
-      const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
-      const initGsi = () => {
-        const google = (window as unknown as {
-          google?: {
-            accounts?: {
-              id?: {
-                initialize: (config: unknown) => void;
-                prompt: (cb?: unknown) => void;
-              };
+    // Initialiser Google Identity Services
+    const initGsi = () => {
+      if (gisInitializedRef.current) return;
+
+      const google = (window as unknown as {
+        google?: {
+          accounts?: {
+            id?: {
+              initialize: (config: unknown) => void;
+              prompt: (cb?: (notification: {
+                isNotDisplayed: () => boolean;
+                isSkipped: () => boolean;
+                isDismissed: () => boolean;
+                getNotDisplayedReason?: () => string;
+              }) => void) => void;
+              cancel: () => void;
             };
           };
-        }).google;
+        };
+      }).google;
 
-        if (google?.accounts?.id) {
-          google.accounts.id.initialize({
-            client_id: googleClientId,
-            callback: async (response: { credential?: string }) => {
-              if (response.credential) {
-                setLoading(true);
-                setPromptError("");
-                try {
-                  const currentPath = window.location.pathname + window.location.search;
-                  const res = await fetch("/api/auth/google-one-tap", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ credential: response.credential, next: currentPath }),
-                  });
-                  const data = await res.json().catch(() => ({}));
-                  if (res.ok && data.success) {
-                    window.location.assign(data.redirectUrl || window.location.href);
-                    return;
-                  }
-                  if (data.error) {
-                    setPromptError(data.error);
-                  }
-                } catch (err) {
-                  setPromptError(err instanceof Error ? err.message : "Erreur de validation Google One Tap.");
-                } finally {
-                  setLoading(false);
-                }
-              }
-            },
-            auto_select: false,
-            cancel_on_tap_outside: true,
-          });
-          google.accounts.id.prompt();
-        }
-      };
+      if (google?.accounts?.id) {
+        gisInitializedRef.current = true;
+        google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: handleCredentialResponse,
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
 
-      if (!existingScript) {
-        const script = document.createElement("script");
-        script.src = "https://accounts.google.com/gsi/client";
-        script.async = true;
-        script.defer = true;
-        script.onload = initGsi;
-        document.head.appendChild(script);
-      } else {
-        initGsi();
+        google.accounts.id.prompt((notification) => {
+          if (notification.isNotDisplayed()) {
+            if (process.env.NODE_ENV !== "production") {
+              console.log(
+                "[AUTH][ONE_TAP] Prompt GIS non affiché nativement:",
+                notification.getNotDisplayedReason?.()
+              );
+            }
+            // GIS ne peut pas être affiché nativement : passer proprement à l'étape suivante (PWA)
+            markOneTapUnavailable();
+          } else if (notification.isSkipped() || notification.isDismissed()) {
+            if (process.env.NODE_ENV !== "production") {
+              console.log("[AUTH][ONE_TAP] Prompt GIS fermé ou ignoré");
+            }
+            dismissPrompt("google-one-tap");
+          }
+        });
       }
+    };
+
+    const existingScript = document.querySelector(
+      'script[src="https://accounts.google.com/gsi/client"]'
+    );
+
+    if (!existingScript) {
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      script.onload = initGsi;
+      script.onerror = () => {
+        markOneTapUnavailable();
+      };
+      document.head.appendChild(script);
+    } else {
+      initGsi();
     }
 
     return () => {
-      if (timer) clearTimeout(timer);
+      try {
+        const google = (window as unknown as {
+          google?: { accounts?: { id?: { cancel: () => void } } };
+        }).google;
+        google?.accounts?.id?.cancel();
+      } catch {}
     };
-  }, [user]);
+  }, [isConnected, isActive, handleCredentialResponse, dismissPrompt, markOneTapUnavailable]);
 
-  if (!visible || user) return null;
-
-  const handleDismiss = () => {
-    setVisible(false);
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem("eam_google_prompt_dismissed", "true");
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    if (loading) return;
-    setLoading(true);
-    try {
-      const currentUrl = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/";
-      const supabase = getSupabaseBrowserClient();
-
-      if (!supabase) {
-        window.location.assign(`/auth/login?provider=google&next=${encodeURIComponent(currentUrl)}`);
-        return;
-      }
-
-      const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(currentUrl)}`;
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: callbackUrl,
-          queryParams: { prompt: "select_account" },
-        },
-      });
-
-      if (error) {
-        window.location.assign(`/auth/login?provider=google&next=${encodeURIComponent(currentUrl)}`);
-      }
-    } catch {
-      window.location.assign("/auth/login?provider=google");
-    }
-  };
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="false"
-      aria-label="Connexion rapide avec Google"
-      className="fixed inset-x-3 bottom-3 z-[9990] mx-auto max-w-sm rounded-2xl border border-white/20 bg-[#091522]/95 p-4 text-white shadow-[0_12px_45px_rgba(0,0,0,0.65)] backdrop-blur-md animate-in slide-in-from-bottom duration-300 ease-out md:bottom-6 md:right-6 md:left-auto md:mx-0 md:w-96 md:p-5"
-    >
-      <div className="overflow-hidden">
-        {/* En-tête du tiroir avec logo et bouton fermer */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10 p-2 border border-white/10 shadow-inner">
-              <GoogleGLogo className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="font-display text-sm font-black text-white">
-                Connexion à Envol Africa
-              </p>
-              <p className="text-[12px] text-slate-300 line-clamp-1">
-                Accédez à vos articles, kiosque et services
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={handleDismiss}
-            aria-label="Fermer l'invitation"
-            className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-slate-400 transition hover:bg-white/10 hover:text-white"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Affichage d'erreur en cas d'échec Google One Tap */}
-        {promptError && (
-          <div className="mt-2.5 rounded-xl border border-red-500/30 bg-red-950/60 p-2.5 text-xs text-red-200">
-            {promptError}
-          </div>
-        )}
-
-        {/* Bouton de connexion Google 1-clic direct */}
-        <div className="mt-3.5 flex flex-col gap-2.5">
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className="flex h-11 w-full items-center justify-center gap-3 rounded-full bg-white px-5 text-xs font-black text-[#1f1f1f] shadow-lg transition-all hover:bg-slate-100 hover:shadow-xl active:scale-[0.98] disabled:opacity-70"
-          >
-            {loading ? (
-              <div className="flex items-center gap-2">
-                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-700 border-t-transparent" />
-                <span>Connexion à Google en cours…</span>
-              </div>
-            ) : (
-              <>
-                <GoogleGLogo className="h-5 w-5" />
-                <span className="text-[13px] tracking-wide font-bold">Continuer avec Google</span>
-              </>
-            )}
-          </button>
-
-          <div className="flex items-center justify-between px-1 pt-0.5 text-[11px] text-slate-400">
-            <span className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              1 clic • Sans mot de passe
-            </span>
-            <button
-              type="button"
-              onClick={handleDismiss}
-              className="font-medium text-emerald-400 hover:text-emerald-300 hover:underline"
-            >
-              Plus tard
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  // Google Identity Services affiche son propre composant One Tap natif via son iframe.
+  return null;
 }

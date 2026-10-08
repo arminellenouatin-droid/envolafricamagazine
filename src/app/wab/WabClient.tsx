@@ -19,6 +19,7 @@ import WabSidebarCards from "@/components/wab/WabSidebarCards";
 import { useLocale } from "@/components/LocaleProvider";
 import { uploadWabMedia, readJsonResponse } from "@/lib/wab-upload-client";
 import { WAB_BACKGROUND_PRESETS, getWabBackground } from "@/lib/wab-backgrounds";
+import { resolveFileUrl } from "@/lib/storage/resolve-url";
 
 type PublishPage = { id: string; name: string; logoUrl?: string; logo_url?: string };
 type PublishGroup = { id: string; name: string; privacy: "community" | "private" };
@@ -207,7 +208,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
         pageName: p.pageName,
         headline: p.headline,
         content: p.content,
-        videoUrl: vMedia ? vMedia.path : "",
+        videoUrl: vMedia ? resolveFileUrl(vMedia.path) : "",
         videoName: vMedia?.name,
         views: p.views || 0,
         likes: p.likes || 0,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { readWabDB } from "@/lib/wab-db";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { resolveFileUrl } from "@/lib/storage/resolve-url";
 
 type Media = { path: string; mimeType: string; name: string; size?: number };
 
@@ -36,6 +37,14 @@ export async function GET(request: NextRequest) {
   }
   if (/^https?:\/\//i.test(mediaPath)) {
     return NextResponse.json({ url: mediaPath, mimeType: media.mimeType || "application/octet-stream", name: media.name });
+  }
+
+  // Si c'est un fichier stocké sur Cloudflare R2
+  if (mediaPath.startsWith("prod/") || mediaPath.startsWith("dev/") || mediaPath.startsWith("wab/")) {
+    const r2Url = resolveFileUrl(mediaPath);
+    if (r2Url) {
+      return NextResponse.json({ url: r2Url, mimeType: media.mimeType || "application/octet-stream", name: media.name });
+    }
   }
 
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;

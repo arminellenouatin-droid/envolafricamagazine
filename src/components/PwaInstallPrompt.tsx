@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePromptOrchestrator } from "@/lib/prompt-orchestrator";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -8,59 +9,39 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export default function PwaInstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showPrompt, setShowPrompt] = useState(false);
+  const {
+    isPromptActive,
+    dismissPrompt,
+    completePrompt,
+    deferredPwaPrompt,
+    setDeferredPwaPrompt,
+  } = usePromptOrchestrator();
+
+  const showPrompt = isPromptActive("pwa");
   const [isIos, setIsIos] = useState(false);
   const [showIosGuide, setShowIosGuide] = useState(false);
 
   useEffect(() => {
-    // Ne s'exécute que côté client
     if (typeof window === "undefined" || typeof navigator === "undefined") return;
 
-    // Vérifier si l'application est déjà installée en mode standalone
-    const isStandalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (navigator as unknown as { standalone?: boolean }).standalone === true ||
-      document.referrer.includes("android-app://");
-
-    if (isStandalone) return;
-
-    // Vérifier si l'utilisateur a déjà vu ou refusé l'installation (première visite)
-    const storedChoice = localStorage.getItem("eam_pwa_installed_or_dismissed");
-    if (storedChoice) return;
-
-    // Détection téléphone ou tablette
+    // Détection iOS
     const ua = navigator.userAgent || "";
-    const isMobileDevice =
-      /android|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(ua) ||
-      (navigator.maxTouchPoints > 1 && window.innerWidth <= 1024);
-
-    if (!isMobileDevice) return;
-
-    const isAppleDevice = /iphone|ipad|ipod/i.test(ua) && !(window as unknown as { MSStream?: unknown }).MSStream;
+    const isAppleDevice =
+      /iphone|ipad|ipod/i.test(ua) && !(window as unknown as { MSStream?: unknown }).MSStream;
     setIsIos(isAppleDevice);
 
-    // Écouter l'événement standard Chrome/Android/Edge
+    // Écouter l'événement standard Chrome/Android/Edge dès que possible pour le stocker
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
-      setDeferredPrompt(event as BeforeInstallPromptEvent);
-      setShowPrompt(true);
+      setDeferredPwaPrompt(event as BeforeInstallPromptEvent);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
-    // Pour iOS Safari ou navigateurs sans beforeinstallprompt automatique : afficher après un court délai pour première visite
-    const timer = setTimeout(() => {
-      if (isMobileDevice && !storedChoice) {
-        setShowPrompt(true);
-      }
-    }, 2500);
-
     // Écouter l'événement d'installation confirmée
     const handleAppInstalled = () => {
-      localStorage.setItem("eam_pwa_installed_or_dismissed", "installed");
-      setShowPrompt(false);
-      setDeferredPrompt(null);
+      completePrompt("pwa");
+      setDeferredPwaPrompt(null);
     };
 
     window.addEventListener("appinstalled", handleAppInstalled);
@@ -68,37 +49,34 @@ export default function PwaInstallPrompt() {
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
       window.removeEventListener("appinstalled", handleAppInstalled);
-      clearTimeout(timer);
     };
-  }, []);
+  }, [completePrompt, setDeferredPwaPrompt]);
 
   const dismiss = () => {
-    localStorage.setItem("eam_pwa_installed_or_dismissed", "dismissed");
-    setShowPrompt(false);
+    dismissPrompt("pwa");
   };
 
   const handleInstallClick = async () => {
-    if (deferredPrompt) {
+    if (deferredPwaPrompt) {
       try {
-        await deferredPrompt.prompt();
-        const choice = await deferredPrompt.userChoice;
+        await deferredPwaPrompt.prompt();
+        const choice = await deferredPwaPrompt.userChoice;
         if (choice.outcome === "accepted") {
-          localStorage.setItem("eam_pwa_installed_or_dismissed", "installed");
-          setShowPrompt(false);
+          completePrompt("pwa");
         } else {
-          localStorage.setItem("eam_pwa_installed_or_dismissed", "dismissed");
-          setShowPrompt(false);
+          dismissPrompt("pwa");
         }
       } catch {
-        // En cas d'erreur de prompt, fermer
-        setShowPrompt(false);
+        dismissPrompt("pwa");
       }
-      setDeferredPrompt(null);
+      setDeferredPwaPrompt(null);
     } else if (isIos) {
       setShowIosGuide(true);
     } else {
       // Fallback
-      alert("Pour installer Envol Africa, ouvrez le menu de votre navigateur et sélectionnez 'Ajouter à l'écran d'accueil'.");
+      alert(
+        "Pour installer Envol Africa, ouvrez le menu de votre navigateur et sélectionnez 'Ajouter à l'écran d'accueil'."
+      );
       dismiss();
     }
   };

@@ -53,19 +53,72 @@ export async function POST(req: NextRequest) {
     const supabase = getSupabaseAdmin();
     if (!supabase) return NextResponse.json({ error: "Base live Awards temporairement indisponible" }, { status: 503 });
     const sessionId = String(body.session_id || "");
-    const participantAction = String(body.participant_action || "");
-    if (!sessionId || !["join", "leave", "request_stage", "remove"].includes(participantAction)) return NextResponse.json({ error: "session_id et action participant valides requis" }, { status: 400 });
+    const participantAction = String(body.participant_action || body.participantAction || "");
+    const validParticipantActions = ["join", "leave", "request_stage", "accept_stage", "reject_stage", "kick_stage", "remove"];
+    if (!sessionId || !validParticipantActions.includes(participantAction)) {
+      return NextResponse.json({ error: "session_id et action participant valides requis" }, { status: 400 });
+    }
     const { data: session } = await supabase.from("awards_live_sessions").select("id,competition_id,status").eq("id", sessionId).limit(1).maybeSingle();
     if (!session || session.status !== "live") return NextResponse.json({ error: "Live non actif" }, { status: 409 });
+
+    // Actions réservées à l'animateur (host) ou administrateur
+    const isHostAction = ["accept_stage", "reject_stage", "kick_stage", "remove"].includes(participantAction);
+    if (isHostAction && !["admin", "host"].includes(user.role)) {
+      return NextResponse.json({ error: "Seul l'animateur ou l'administrateur peut modérer la scène" }, { status: 403 });
+    }
+
+    const targetUserId = typeof body.target_user_id === "string" ? body.target_user_id : user.id;
     const candidateId = typeof body.candidate_id === "string" ? body.candidate_id : null;
+
     if (candidateId) {
-      const { data: candidate } = await supabase.from("awards_candidates").select("id,profile_id,status,competition_id").eq("id", candidateId).eq("competition_id", session.competition_id).eq("status", "accepted").limit(1).maybeSingle();
-      if (!candidate || (candidate.profile_id !== user.id && !["admin", "host"].includes(user.role))) return NextResponse.json({ error: "Candidat non autorisé pour ce live" }, { status: 403 });
-    } else if (!["admin", "host"].includes(user.role)) return NextResponse.json({ error: "Un candidat accepté est requis" }, { status: 400 });
-    const state = participantAction === "join" ? "waiting" : participantAction === "request_stage" ? "on_stage" : participantAction === "remove" ? "removed" : "left";
-    const { data: participant, error } = await supabase.from("awards_live_participants").upsert({ live_session_id: sessionId, competition_id: session.competition_id, candidate_id: candidateId, user_id: user.id, role: candidateId ? "candidate" : user.role === "host" ? "host" : "viewer", state, left_at: state === "left" || state === "removed" ? new Date().toISOString() : null, updated_at: new Date().toISOString() }, { onConflict: "live_session_id,user_id" }).select("id,live_session_id,competition_id,candidate_id,user_id,role,state,joined_at,left_at,updated_at").single();
+      const { data: candidate } = await supabase.from("awards_candidates").select("id,profile_id,status,competition_id").eq("id", candidateId).eq("competition_id", session.competition_id).in("status", ["accepted", "approved", "qualified", "live_eligible"]).limit(1).maybeSingle();
+      if (!candidate || (candidate.profile_id !== targetUserId && !["admin", "host"].includes(user.role))) {
+        return NextResponse.json({ error: "Candidat non autorisé pour ce live" }, { status: 403 });
+      }
+    } else if (!["admin", "host"].includes(user.role)) {
+      return NextResponse.json({ error: "Un candidat accepté est requis pour monter sur scène" }, { status: 400 });
+    }
+
+    // Machine d'état scène : request_stage -> stage_requested (JAMAIS directement on_stage)
+    let state = "waiting";
+    if (participantAction === "join") state = "waiting";
+    else if (participantAction === "request_stage") state = "stage_requested";
+    else if (participantAction === "accept_stage") state = "on_stage";
+    else if (participantAction === "reject_stage" || participantAction === "kick_stage") state = "waiting";
+    else if (participantAction === "remove") state = "removed";
+    else if (participantAction === "leave") state = "left";
+
+    const { data: participant, error } = await supabase.from("awards_live_participants").upsert({
+      live_session_id: sessionId,
+      competition_id: session.competition_id,
+      candidate_id: candidateId,
+      user_id: targetUserId,
+      role: candidateId ? "candidate" : user.role === "host" ? "host" : "viewer",
+      state,
+      left_at: state === "left" || state === "removed" ? new Date().toISOString() : null,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "live_session_id,user_id" }).select("id,live_session_id,competition_id,candidate_id,user_id,role,state,joined_at,left_at,updated_at").single();
+
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ participant }, { status: 201 });
+
+    // Journalisation de l'événement scène
+    try {
+      await supabase.from("awards_live_events").insert({
+        live_session_id: sessionId,
+        competition_id: session.competition_id,
+        event_type: `stage_${participantAction}`,
+        payload: {
+          action: participantAction,
+          state,
+          target_user_id: targetUserId,
+          candidate_id: candidateId,
+          moderator_id: isHostAction ? user.id : null,
+          created_at: new Date().toISOString(),
+        },
+      });
+    } catch {}
+
+    return NextResponse.json({ participant, stage_state: state }, { status: 201 });
   }
   if (!["admin", "host"].includes(user.role)) return NextResponse.json({ error: "Seul un administrateur ou un animateur autorisé peut gérer un live" }, { status: 403 });
   const competitionId = String(body.competition_id || "");

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import TrackedVideo from "./TrackedVideo";
 import { internalDocumentHref } from "@/lib/internal-browser";
+import { resolveFileUrl } from "@/lib/storage/resolve-url";
 
 type Media = { path: string; mimeType: string; name: string; size?: number };
 type ResolvedMedia = { url: string; mimeType: string; name: string; size?: number };
@@ -129,10 +130,20 @@ export default function PostMedia({ postId, media }: { postId: string; media: Me
           };
         }
 
-        // If direct HTTP URL (not pointing to old 404 domain)
+        // Si URL directe complète
         if (/^https?:\/\//i.test(directUrl) && !directUrl.includes("envolafricamagazinegildas.vercel.app")) {
           return {
             url: directUrl,
+            mimeType: item.mimeType,
+            name: item.name,
+            size: item.size,
+          };
+        }
+
+        // Si fichier stocké sur Cloudflare R2
+        if (directUrl.startsWith("prod/") || directUrl.startsWith("dev/") || directUrl.startsWith("wab/")) {
+          return {
+            url: resolveFileUrl(directUrl),
             mimeType: item.mimeType,
             name: item.name,
             size: item.size,

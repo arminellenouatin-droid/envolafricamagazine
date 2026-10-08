@@ -5,8 +5,8 @@ export function middleware(request: NextRequest) {
   const host = request.headers.get("host") || "";
   const { pathname, search } = request.nextUrl;
 
-  // 1. Redirection 308 permanente de l'ancien domaine obsolète envolafricamagazinealokpe.vercel.app
-  if (host.includes("alokpe") || host.includes("envolafricamagazinealokpe")) {
+  // 1. Redirection 308 permanente des anciens domaines ou domaine apex vers le domaine canonique
+  if (host.includes("alokpe") || host.includes("envolafricamagazinealokpe") || host === "envolafrica.site") {
     const canonicalUrl = new URL(`${pathname}${search}`, "https://www.envolafrica.site");
     return NextResponse.redirect(canonicalUrl, 308);
   }

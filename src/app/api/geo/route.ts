@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCountryInfo } from "@/lib/country-data";
-import { languageFromHeader } from "@/lib/africa-context";
+import { getCountryInfo, getSupportedLanguageForCountry } from "@/lib/country-data";
+import { normalizeCurrency } from "@/lib/currency";
 
 export function GET(request: NextRequest) {
   const testCountry =
@@ -18,19 +18,10 @@ export function GET(request: NextRequest) {
   const country = getCountryInfo(countryCode);
   const city = request.headers.get("x-vercel-ip-city") || request.cookies.get("ea_city")?.value || "";
 
-  // Détermination de la langue selon le pays :
-  // Si le pays a une langue attitrée (ex: US -> en, NG -> en, ES -> es, FR -> fr, BJ -> fr), on l'applique.
-  // Si le pays a plusieurs langues officielles (ex: Canada en/fr, Cameroun fr/en), on vérifie l'affinité du navigateur.
+  // Détermination déterministe de la langue supportée (fr, en, es, pt, ar, sw)
   const acceptLangHeader = request.headers.get("accept-language");
-  const browserLangs = (acceptLangHeader || "")
-    .split(",")
-    .map((item) => item.split(";")[0].trim().split("-")[0].toLowerCase());
-
-  let language = country.languages[0] || "fr";
-  if (country.languages.length > 1) {
-    const matched = country.languages.find((l) => browserLangs.includes(l));
-    if (matched) language = matched;
-  }
+  const language = getSupportedLanguageForCountry(country, acceptLangHeader);
+  const currency = normalizeCurrency(country.currency, "XOF");
 
   return NextResponse.json(
     {
@@ -38,7 +29,7 @@ export function GET(request: NextRequest) {
       countryCode: country.code,
       city: city ? decodeURIComponent(city) : null,
       language,
-      currency: country.currency,
+      currency,
       source: testCountry ? "simulation" : request.headers.get("x-vercel-ip-country") ? "vercel" : "fallback",
     },
     {

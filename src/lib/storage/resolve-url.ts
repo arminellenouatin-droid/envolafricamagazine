@@ -19,5 +19,16 @@ export function resolveFileUrl(value: string | null | undefined): string {
   if (value.startsWith("http://") || value.startsWith("https://") || value.startsWith("data:")) {
     return value;
   }
+  // Chemins locaux statiques servis directement par le dossier public/ de Next.js
+  if (
+    value.startsWith("/covers/") ||
+    value.startsWith("/images/") ||
+    value.startsWith("/icons/") ||
+    value.startsWith("/logo") ||
+    value.startsWith("/favicon") ||
+    value.startsWith("/assets/")
+  ) {
+    return value;
+  }
   return publicUrl(value);
 }

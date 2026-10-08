@@ -34,10 +34,13 @@ export async function getOrCreateSocialUser(input: SocialProfileInput): Promise<
     : undefined;
   const providerId = input.providerId || `social_${email}`;
 
-  // 1. Rechercher si un compte existe déjà (par email en priorité, puis par ID fournisseur)
+  // 1. Rechercher si un compte existe déjà (par email en priorité, puis par ID fournisseur si c'est un UUID valide)
   let existingUser = await findUserByEmail(email);
   if (!existingUser && input.providerId) {
-    existingUser = await findUserById(input.providerId);
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input.providerId);
+    if (isUuid) {
+      existingUser = await findUserById(input.providerId);
+    }
   }
 
   if (existingUser) {

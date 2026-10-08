@@ -152,6 +152,24 @@ export async function POST(req: NextRequest) {
       else await settleAwardProduct(metadata, data.id);
       return NextResponse.json({ ok: true }, { status: 200 });
     }
+    if (eventType === "payment.success" && (metadata.product === "wallet_deposit" || metadata.purpose === "wallet_deposit")) {
+      const verification = await verifyMonerooPayment(data.id);
+      if (!validPaymentStatus(verification.status)) return NextResponse.json({ error: "Paiement non confirmé" }, { status: 409 });
+      const amount = Number(verification.amount ?? data.amount);
+      const currency = String(verification.currency ?? data.currency ?? "XOF");
+      const userId = String(metadata.user_id || "");
+      if (!userId) return NextResponse.json({ error: "user_id manquant pour le dépôt de portefeuille" }, { status: 400 });
+      const { settleWalletDeposit } = await import("@/lib/wallet/financial-core");
+      const depositResult = await settleWalletDeposit({
+        userId,
+        paymentId: data.id,
+        amount,
+        currency,
+        metadata: { ...metadata, verified: true },
+      });
+      return NextResponse.json({ ok: true, wallet_deposit: depositResult }, { status: 200 });
+    }
+
     if (eventType === "payment.success" && metadata.product === "crowdfunding_contribution") {
       const verification = await verifyMonerooPayment(data.id);
       if (!validPaymentStatus(verification.status)) return NextResponse.json({ error: "Paiement non confirmé" }, { status: 409 });

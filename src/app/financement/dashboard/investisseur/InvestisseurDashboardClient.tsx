@@ -221,9 +221,9 @@ export default function InvestisseurDashboardClient({ user }: { user: UserProp }
                 repayments.map((r: any) => (
                   <div key={r.id} className="text-xs border rounded-lg p-3 bg-slate-50/50">
                     <div className="flex justify-between font-bold">
-                      <span>Échéance {r.date_prevue}</span>
+                      <span>Échéance {r.date_prevue || r.datePrevue}</span>
                       <span className={r.statut === "paye" ? "text-green-600" : "text-amber-700"}>
-                        {r.statut}
+                        {r.statut === "paye" ? "✓ Remboursé sur Wallet" : r.statut}
                       </span>
                     </div>
                     <div className="mt-1 text-slate-600 notranslate" translate="no">
@@ -234,6 +234,12 @@ export default function InvestisseurDashboardClient({ user }: { user: UserProp }
               ) : (
                 <p className="text-xs text-slate-400 py-6 text-center">Aucune échéance de prêt en cours.</p>
               )}
+            </div>
+            <div className="mt-4 pt-3 border-t text-[11px] text-[#5c403f] flex items-center justify-between">
+              <span>Remboursements crédités sur votre portefeuille.</span>
+              <Link href="/compte/wallet" className="text-[#9e001f] font-bold underline">
+                Voir mon portefeuille →
+              </Link>
             </div>
           </div>
         </div>

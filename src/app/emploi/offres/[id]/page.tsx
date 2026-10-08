@@ -8,44 +8,32 @@ import OfferViewTracker from "./OfferViewTracker";
 import { getJobPostingSchema, getBreadcrumbSchema } from "@/lib/schema-org";
 import VisitorPrice from "@/components/VisitorPrice";
 
+import { buildShareMetadata } from "@/lib/share-metadata-service";
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const offer = readJobsDB().offers.find((item) => item.id === id && item.status === "published");
   if (!offer) {
-    return {
-      title: "Offre d'emploi | Envol Africa Jobs",
+    return buildShareMetadata({
+      type: "job",
+      id,
+      title: "Offre d'emploi • Envol Africa Jobs",
       description: "Découvrez les opportunités professionnelles sur Envol Africa Jobs.",
-    };
+      badge: "EMPLOI & RECRUTEMENT",
+    });
   }
 
-  const title = `${offer.title} • Envol Africa Jobs`;
-  const description = `${offer.sector} · ${offer.contractType} · ${offer.city}, ${offer.country}. ${offer.description.slice(0, 140)}...`;
+  const title = `${offer.title} • Recrutement | Envol Africa Jobs`;
+  const location = [offer.city, offer.country].filter(Boolean).join(", ");
+  const description = `${offer.sector} · ${offer.contractType}${location ? ` · ${location}` : ""}. ${offer.description.slice(0, 140)}...`;
 
-  return {
+  return buildShareMetadata({
+    type: "job",
+    id: offer.id,
     title,
     description,
-    alternates: {
-      canonical: `/emploi/offres/${encodeURIComponent(id)}`,
-    },
-    openGraph: {
-      title,
-      description,
-      url: `/emploi/offres/${encodeURIComponent(id)}`,
-      type: "website",
-      images: [
-        {
-          url: "/mobile-header-logo.png",
-          alt: offer.title,
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: ["/mobile-header-logo.png"],
-    },
-  };
+    badge: `OFFRE • ${offer.contractType || "RECRUTEMENT"}`,
+  });
 }
 
 export default async function JobOfferPage({ params }: { params: Promise<{ id: string }> }) {

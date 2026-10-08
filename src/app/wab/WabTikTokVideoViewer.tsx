@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import CommentsPanel from "./CommentsPanel";
 import RichTextContent from "@/components/RichTextContent";
+import { buildSocialShareLinks, buildShareUrl } from "@/lib/share-metadata-service";
+import { resolveFileUrl } from "@/lib/storage/resolve-url";
 
 export type VideoPostItem = {
   id: string;
@@ -303,23 +305,23 @@ export default function WabTikTokVideoViewer({
 
   // Partage
   const handleShareTo = async (destination: string, postId: string) => {
-    const canonicalBase =
-      typeof window !== "undefined"
-        ? window.location.origin
-        : process.env.NEXT_PUBLIC_SITE_URL || "https://envolafrica.vercel.app";
-    const url = `${canonicalBase}/wab/posts/${postId}`;
+    const url = buildShareUrl({ type: "video", id: postId });
     const shareText = "Découvrez cette vidéo sur World Africa Business (WAB)";
+    const links = buildSocialShareLinks({
+      url,
+      title: shareText,
+    });
 
     if (destination === "whatsapp") {
-      window.open(`https://wa.me/?text=${encodeURIComponent(`${shareText} : ${url}`)}`, "_blank");
+      window.open(links.whatsapp, "_blank", "noopener,noreferrer");
     } else if (destination === "facebook") {
-      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, "_blank");
+      window.open(links.facebook, "_blank", "noopener,noreferrer");
     } else if (destination === "linkedin") {
-      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, "_blank");
+      window.open(links.linkedin, "_blank", "noopener,noreferrer");
     } else if (destination === "twitter") {
-      window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}`, "_blank");
+      window.open(links.twitter, "_blank", "noopener,noreferrer");
     } else if (destination === "telegram") {
-      window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}`, "_blank");
+      window.open(links.telegram, "_blank", "noopener,noreferrer");
     } else if (destination === "copy") {
       try {
         await navigator.clipboard.writeText(url);
@@ -419,7 +421,7 @@ export default function WabTikTokVideoViewer({
                     if (el) videoRefs.current.set(post.id, el);
                     else videoRefs.current.delete(post.id);
                   }}
-                  src={post.videoUrl}
+                  src={resolveFileUrl(post.videoUrl)}
                   loop={false}
                   playsInline
                   preload={isCurrent || isNext ? "auto" : "metadata"}

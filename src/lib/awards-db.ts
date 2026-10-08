@@ -37,7 +37,7 @@ export interface AwardsCandidate {
   photo_url?: string;
   video_url?: string;
   project_description?: string;
-  status: 'pending'|'accepted'|'rejected';
+  status: 'pending' | 'accepted' | 'rejected' | 'draft' | 'submitted' | 'under_review' | 'approved' | 'qualified' | 'live_eligible' | 'next_round' | 'final' | 'winner' | 'eliminated' | string;
   votes: number;
   gifts: number;
   donations: number;

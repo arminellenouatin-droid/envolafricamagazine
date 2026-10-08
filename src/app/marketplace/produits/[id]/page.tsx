@@ -37,56 +37,44 @@ async function getProduct(id: string) {
   return product;
 }
 
+import { buildShareMetadata } from "@/lib/share-metadata-service";
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const product = await getProduct(id);
 
   if (!product) {
-    return {
-      title: "Produit non trouvé",
-      description: "Découvrez nos produits vérifiés sur la Marketplace Envol Africa.",
-    };
+    return buildShareMetadata({
+      type: "product",
+      id,
+      title: "Produit vérifié • Marketplace Envol Africa",
+      description: "Découvrez nos produits et services vérifiés sur la Marketplace Envol Africa.",
+      badge: "MARKETPLACE",
+    });
   }
 
   const image =
     Array.isArray(product.media) && typeof product.media[0] === "string"
       ? product.media[0]
-      : (product.image || "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800");
+      : (product.image || "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=1200&h=630&fit=crop");
 
   const priceFormatted = product.price_xof
     ? ` • ${new Intl.NumberFormat("fr-FR").format(product.price_xof)} XOF`
     : "";
-  const title = `${product.title}${priceFormatted}`;
-  const description = (product.description || "Produit vérifié disponible sur la Marketplace Envol Africa.")
+  const title = `${product.title}${priceFormatted} | Marketplace Envol Africa`;
+  const description = (product.description || "Produit vérifié disponible sur la Marketplace Envol Africa. Paiement sécurisé par séquestre.")
     .replace(/<[^>]*>/g, "")
     .slice(0, 180)
     .trim();
 
-  return {
+  return buildShareMetadata({
+    type: "product",
+    id,
     title,
     description,
-    alternates: {
-      canonical: `/marketplace/produits/${encodeURIComponent(id)}`,
-    },
-    openGraph: {
-      title,
-      description,
-      url: `/marketplace/produits/${encodeURIComponent(id)}`,
-      type: "website",
-      images: [
-        {
-          url: image,
-          alt: product.title,
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: [image],
-    },
-  };
+    imageUrl: image,
+    badge: "MARKETPLACE VÉRIFIÉE",
+  });
 }
 
 export default async function ProductDetailPage({

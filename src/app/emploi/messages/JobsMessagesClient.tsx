@@ -11,6 +11,13 @@ import type {
   JobsCallSession,
   JobsSubscriptionStatus,
 } from "@/lib/jobs-messages-db";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import {
+  subscribeToChatChannel,
+  broadcastNewMessage,
+  broadcastTypingState,
+  getChatChannelName,
+} from "@/lib/realtime-chat";
 
 const EMOJI_REACTIONS = ["👍", "👏", "💼", "🔥", "🤝", "❤️"];
 
@@ -112,14 +119,53 @@ export default function JobsMessagesClient() {
     return () => clearInterval(interval);
   }, []);
 
-  // Polling messages toutes les 4s pour la conversation active
+  // Écoute temps réel de la conversation active (< 50ms)
   useEffect(() => {
     if (!selectedConversation) return;
+
+    loadMessages(selectedConversation.id, false);
+
+    const supabase = getSupabaseBrowserClient();
+    const channelName = getChatChannelName("jobs", selectedConversation.id);
+
+    const channel = subscribeToChatChannel(
+      supabase,
+      channelName,
+      {
+        onMessageNew: (payload) => {
+          if (!payload?.message || payload.conversationId !== selectedConversation.id) return;
+          const incoming = payload.message as JobsMessage;
+
+          setMessages((prev) => {
+            const exists = prev.some(
+              (m) => m.id === incoming.id || (payload.clientId && m.client_msg_id === payload.clientId)
+            );
+            if (exists) {
+              return prev.map((m) =>
+                m.id === incoming.id || (payload.clientId && m.client_msg_id === payload.clientId)
+                  ? { ...incoming, status: "sent" }
+                  : m
+              );
+            }
+            return [...prev, { ...incoming, status: "delivered" }];
+          });
+
+          loadConversations(false);
+        },
+      },
+      currentUser?.id
+    );
+
+    // Polling de résilience de secours toutes les 10s
     const interval = setInterval(() => {
       loadMessages(selectedConversation.id, false);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [selectedConversation?.id]);
+    }, 10000);
+
+    return () => {
+      clearInterval(interval);
+      if (channel && supabase) supabase.removeChannel(channel);
+    };
+  }, [selectedConversation?.id, currentUser?.id]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -208,7 +254,7 @@ export default function JobsMessagesClient() {
     }
   };
 
-  // Send text message
+  // Send text message avec UI optimiste et diffusion temps réel
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!selectedConversation || !inputText.trim() || sending) return;
@@ -218,32 +264,148 @@ export default function JobsMessagesClient() {
       return;
     }
 
+    const contentToSend = inputText.trim();
+    const replyRef = replyingTo;
+    setTextInput("");
+    setReplyingTo(null);
     setSending(true);
+
+    const clientMsgId = `cmsg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const optimisticMsg: JobsMessage = {
+      id: clientMsgId,
+      client_msg_id: clientMsgId,
+      conversationId: selectedConversation.id,
+      senderId: currentUser?.id || "",
+      senderName: currentUser?.name || "Moi",
+      senderRole: "candidate",
+      content: contentToSend,
+      type: "text",
+      replyToId: replyRef?.id,
+      replyToMessage: replyRef
+        ? { id: replyRef.id, senderName: replyRef.senderName, content: replyRef.content, type: replyRef.type }
+        : undefined,
+      reactions: {},
+      readBy: currentUser ? [currentUser.id] : [],
+      createdAt: new Date().toISOString(),
+      attachments: [],
+      status: "sending",
+    };
+
+    setMessages((prev) => [...prev, optimisticMsg]);
+
     try {
       const res = await fetch("/api/jobs/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           conversationId: selectedConversation.id,
-          content: inputText.trim(),
+          content: contentToSend,
           type: "text",
-          replyToId: replyingTo?.id,
+          replyToId: replyRef?.id,
         }),
       });
 
-      if (res.ok) {
-        setTextInput("");
-        setReplyingTo(null);
-        await loadMessages(selectedConversation.id, false);
+      const data = await res.json();
+      if (res.ok && data.message) {
+        const realMsg: JobsMessage = {
+          ...data.message,
+          client_msg_id: clientMsgId,
+          status: "sent",
+        };
+
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === clientMsgId || m.client_msg_id === clientMsgId ? realMsg : m
+          )
+        );
+
+        // Diffusion temps réel instantanée (< 50ms)
+        const supabase = getSupabaseBrowserClient();
+        if (supabase) {
+          const channelName = getChatChannelName("jobs", selectedConversation.id);
+          broadcastNewMessage(supabase, channelName, {
+            message: realMsg,
+            clientId: clientMsgId,
+            conversationId: selectedConversation.id,
+            senderId: currentUser?.id || "",
+          });
+        }
         loadConversations(false);
       } else {
-        const err = await res.json();
-        alert(err.error || "Impossible d'envoyer le message.");
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === clientMsgId ? { ...m, status: "failed", error: data.error || "Échec d'envoi." } : m
+          )
+        );
       }
     } catch {
-      alert("Erreur de connexion lors de l'envoi du message.");
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === clientMsgId ? { ...m, status: "failed", error: "Problème de connexion réseau." } : m
+        )
+      );
     } finally {
       setSending(false);
+    }
+  };
+
+  // Réessayer un message Jobs ayant échoué
+  const handleRetryMessage = async (failedMsg: JobsMessage) => {
+    if (!selectedConversation) return;
+
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === failedMsg.id ? { ...m, status: "sending", error: undefined } : m
+      )
+    );
+
+    try {
+      const res = await fetch("/api/jobs/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId: selectedConversation.id,
+          content: failedMsg.content,
+          type: failedMsg.type,
+          replyToId: failedMsg.replyToId,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.message) {
+        const realMsg: JobsMessage = {
+          ...data.message,
+          client_msg_id: failedMsg.client_msg_id || failedMsg.id,
+          status: "sent",
+        };
+
+        setMessages((prev) =>
+          prev.map((m) => (m.id === failedMsg.id ? realMsg : m))
+        );
+
+        const supabase = getSupabaseBrowserClient();
+        if (supabase) {
+          const channelName = getChatChannelName("jobs", selectedConversation.id);
+          broadcastNewMessage(supabase, channelName, {
+            message: realMsg,
+            clientId: failedMsg.client_msg_id || failedMsg.id,
+            conversationId: selectedConversation.id,
+            senderId: currentUser?.id || "",
+          });
+        }
+      } else {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === failedMsg.id ? { ...m, status: "failed", error: data.error } : m
+          )
+        );
+      }
+    } catch {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === failedMsg.id ? { ...m, status: "failed", error: "Erreur réseau." } : m
+        )
+      );
     }
   };
 
@@ -646,7 +808,7 @@ export default function JobsMessagesClient() {
   });
 
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden bg-[#071b36] font-sans text-slate-100">
+    <div className="fixed inset-0 z-[9999] md:relative md:inset-auto md:z-auto flex h-[100dvh] md:h-screen w-full flex-col overflow-hidden bg-[#071b36] font-sans text-slate-100">
       {/* ========================================================================= */}
       {/* 1. HEADER SUPÉRIEUR AVEC 4-WAY SWITCHER & STATUT JOBS */}
       {/* ========================================================================= */}
@@ -656,10 +818,10 @@ export default function JobsMessagesClient() {
           <Link
             href="/emploi"
             className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-200 transition hover:bg-white/10 active:scale-95"
-            title="Quitter la messagerie et retourner au portail Emploi"
+            title="Quitter la messagerie et retourner au site"
           >
             <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-            <span className="hidden sm:inline">Retour Emploi</span>
+            <span>Retour au site</span>
           </Link>
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-[#8ee0c0] animate-pulse" />
@@ -1175,9 +1337,26 @@ export default function JobsMessagesClient() {
                               })}
                             </span>
                             {isMe && (
-                              <span className="material-symbols-outlined text-[13px] text-[#8ee0c0]">
-                                done_all
-                              </span>
+                              msg.status === "sending" ? (
+                                <span className="material-symbols-outlined text-[13px] text-amber-400 animate-spin" title="Envoi en cours...">
+                                  progress_activity
+                                </span>
+                              ) : msg.status === "failed" ? (
+                                <div className="flex items-center gap-1 text-rose-400">
+                                  <span className="material-symbols-outlined text-[13px]">error</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRetryMessage(msg)}
+                                    className="underline font-bold text-[10px] hover:text-rose-300 cursor-pointer"
+                                  >
+                                    Réessayer
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="material-symbols-outlined text-[13px] text-[#8ee0c0]" title="Distribué">
+                                  done_all
+                                </span>
+                              )
                             )}
                           </div>
                         </div>

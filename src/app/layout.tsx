@@ -13,6 +13,7 @@ import GoogleOneTapPrompt from "@/components/GoogleOneTapPrompt";
 import InAppNotificationBanner from "@/components/InAppNotificationBanner";
 import AssistanceChatWidget from "@/components/AssistanceChatWidget";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
+import { PromptProvider } from "@/lib/prompt-orchestrator";
 
 export const dynamic = "force-dynamic";
 
@@ -170,16 +171,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className="min-h-full flex flex-col bg-[#fcf9f8]" style={{ fontFamily: "Source Serif 4, Georgia, serif" }}>
         <LocaleProvider>
-          <AutoTranslator />
-          <Header user={user ? { id: user.id, nom: user.nom, prenom: user.prenom, email: user.email, role: user.role, avatar: user.avatar } : undefined} />
-          <PromoPopup />
-          <CookieConsentBanner />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <GoogleOneTapPrompt user={user ? { id: user.id } : null} />
-          <InAppNotificationBanner />
-          <AssistanceChatWidget />
-          <PwaInstallPrompt />
+          <PromptProvider initialUser={user ? { id: user.id, email: user.email, nom: user.nom, prenom: user.prenom } : null}>
+            <AutoTranslator />
+            <Header user={user ? { id: user.id, nom: user.nom, prenom: user.prenom, email: user.email, role: user.role, avatar: user.avatar } : undefined} />
+            <PromoPopup />
+            <CookieConsentBanner />
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <GoogleOneTapPrompt user={user ? { id: user.id } : null} />
+            <InAppNotificationBanner />
+            <AssistanceChatWidget />
+            <PwaInstallPrompt />
+          </PromptProvider>
         </LocaleProvider>
         <script dangerouslySetInnerHTML={{__html: `
           (function(){

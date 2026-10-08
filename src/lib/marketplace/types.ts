@@ -50,6 +50,9 @@ export interface MarketplaceMessage {
   moderation_reason?: string | null;
   read_at?: string | null;
   created_at: string;
+  client_msg_id?: string;
+  status?: "sending" | "sent" | "delivered" | "read" | "failed";
+  error?: string;
   sender?: {
     id: string;
     name: string;

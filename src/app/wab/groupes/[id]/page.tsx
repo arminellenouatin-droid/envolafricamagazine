@@ -1,18 +1,76 @@
-"use client";
+import type { Metadata } from "next";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { readWabDB } from "@/lib/wab-db";
+import { buildShareMetadata } from "@/lib/share-metadata-service";
+import WabGroupClient from "./WabGroupClient";
 
-import { useEffect, useState } from "react";
+async function getGroup(id: string) {
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    try {
+      const { data } = await supabase
+        .from("wab_groups")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      if (data) {
+        return {
+          id: data.id,
+          name: data.name,
+          description: data.description,
+          logoUrl: data.logo_url,
+          avatarUrl: data.avatar_url,
+          coverUrl: data.cover_url,
+          privacy: data.privacy,
+        };
+      }
+    } catch {}
+  }
+  try {
+    const local = readWabDB().groups.find((g) => g.id === id);
+    if (local) return local;
+  } catch {}
+  return null;
+}
 
-type Group = { id: string; name: string; description?: string; logoUrl?: string; avatarUrl?: string; coverUrl?: string; privacy: "community" | "private"; memberCount: number };
-type Membership = { role: string; status: string } | null;
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const group = await getGroup(id);
 
-export default function WabGroupPage({ params }: { params: Promise<{ id: string }> }) {
-  const [group, setGroup] = useState<Group | null>(null);
-  const [membership, setMembership] = useState<Membership>(null);
-  const [message, setMessage] = useState("");
-  const [busy, setBusy] = useState(false);
-  useEffect(() => { params.then(({ id }) => fetch(`/api/wab/groups/${id}`).then((response) => response.json()).then((data) => { if (!data.group) throw new Error(data.error); setGroup(data.group); setMembership(data.membership); }).catch((error) => setMessage(error instanceof Error ? error.message : "Groupe indisponible."))); }, [params]);
-  async function join() { if (!group) return; setBusy(true); setMessage(""); try { const response = await fetch(`/api/wab/groups/${group.id}/join`, { method: "POST" }); const data = await response.json(); if (!response.ok) throw new Error(data.error); setMembership(data.membership); setGroup((current) => current ? { ...current, memberCount: data.membership?.status === "active" ? current.memberCount + 1 : current.memberCount } : current); setMessage(data.message); } catch (error) { setMessage(error instanceof Error ? error.message : "Impossible de rejoindre le groupe."); } finally { setBusy(false); } }
-  if (!group) return <main className="min-h-screen bg-[#e9f7f5] px-5 py-12"><div className="mx-auto max-w-3xl rounded-3xl bg-white p-8 text-center">{message || "Chargement du groupe…"}</div></main>;
-  const avatar = group.avatarUrl || group.logoUrl;
-  return <main className="min-h-screen bg-[#e9f7f5] px-5 py-10"><div className="mx-auto max-w-3xl"><a href="/wab" className="text-sm font-bold text-[#006874]">← Retour au fil WAB</a><section className="mt-6 overflow-hidden rounded-3xl border border-[#d1e9e6] bg-white shadow-sm"><div className="relative h-44 bg-gradient-to-br from-[#006874] via-[#0b8790] to-[#b9e4df] sm:h-56">{group.coverUrl && <img src={group.coverUrl} alt={`Couverture de ${group.name}`} className="h-full w-full object-cover" />}<div className="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent" /><div className="absolute bottom-4 left-5 rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#006874]">Groupe WAB</div></div><div className="relative px-6 pb-7 pt-0 sm:px-8"><div className="-mt-12 flex flex-col gap-4 sm:-mt-14 sm:flex-row sm:items-end"><div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-2xl border-4 border-white bg-[#eefcfa] text-[#006874] shadow-lg sm:h-28 sm:w-28">{avatar ? <img src={avatar} alt={group.name} className="h-full w-full object-cover" /> : <span className="material-symbols-outlined text-4xl">groups</span>}</div><div className="pb-1"><h1 className="font-display text-3xl font-extrabold text-[#082843]">{group.name}</h1><p className="mt-1 text-sm text-[#43474d]">{group.privacy === "private" ? "Groupe privé" : "Groupe communautaire"} · {group.memberCount} membre{group.memberCount > 1 ? "s" : ""}</p></div></div><p className="mt-6 leading-7 text-[#111e1d]">{group.description || "Un espace de discussion et de publication au sein du réseau WAB."}</p><div className="mt-6 flex flex-wrap items-center gap-3">{membership?.status === "active" ? <span className="rounded-full bg-[#e9f7f5] px-4 py-2 text-sm font-bold text-[#006874]">Vous êtes membre · vous pouvez publier</span> : membership?.status === "pending" ? <span className="rounded-full bg-[#fff3dc] px-4 py-2 text-sm font-bold text-[#875600]">Demande en attente</span> : <button type="button" onClick={join} disabled={busy} className="rounded-xl bg-[#006874] px-5 py-3 text-sm font-bold text-white disabled:opacity-50">{busy ? "Envoi…" : group.privacy === "private" ? "Demander à rejoindre" : "Rejoindre le groupe"}</button>}<a href="/wab#publier" className="rounded-xl border border-[#d1e9e6] px-5 py-3 text-sm font-bold text-[#006874]">Créer une publication</a></div>{message && <p className="mt-4 rounded-xl bg-[#eefcfa] p-3 text-sm font-semibold text-[#006874]">{message}</p>}</div></section></div></main>;
+  if (!group) {
+    return buildShareMetadata({
+      type: "group",
+      id,
+      title: "Groupe Communautaire • World Africa Business (WAB)",
+      description: "Rejoignez ce groupe professionnel sur le réseau World Africa Business d'Envol Africa.",
+      badge: "GROUPE WAB",
+    });
+  }
+
+  const title = `${group.name} • Groupe WAB | Envol Africa`;
+  const description =
+    group.description ||
+    `Rejoignez le groupe ${group.name} sur World Africa Business (WAB) pour échanger avec des professionnels panafricains.`;
+
+  return buildShareMetadata({
+    type: "group",
+    id: group.id,
+    title,
+    description,
+    imageUrl: group.coverUrl || group.avatarUrl || group.logoUrl,
+    badge: "COMMUNAUTÉ WAB",
+  });
+}
+
+export default async function WabGroupPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  return <WabGroupClient id={id} />;
 }

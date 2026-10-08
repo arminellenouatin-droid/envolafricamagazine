@@ -18,6 +18,7 @@ export interface SinglePostData {
   media: Array<{ path: string; mimeType: string; name: string; size?: number; mediaUrl?: string }>;
   backgroundColor?: string;
   videoUrl?: string;
+  thumbnailUrl?: string;
   imageUrl?: string;
   views: number;
   likes: number;
@@ -220,6 +221,7 @@ export default function WabSinglePostView({ post }: { post: SinglePostData }) {
             <div className="mt-5 overflow-hidden rounded-2xl bg-black shadow-lg">
               <video
                 src={post.videoUrl}
+                poster={post.thumbnailUrl || (post.imageUrl && !post.imageUrl.includes("/api/og/") ? post.imageUrl : undefined)}
                 controls
                 playsInline
                 preload="metadata"

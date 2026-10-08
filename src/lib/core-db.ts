@@ -168,10 +168,22 @@ export async function findUserByEmail(email: string): Promise<User | null> {
 }
 
 export async function findUserById(id: string): Promise<User | null> {
+  const cleanId = (id || "").trim();
+  if (!cleanId) return null;
   const client = getAdminClient();
-  if (!client) return canUseJsonFallback() ? getJsonUserById(id) ?? null : null;
-  const { data, error } = await client.from("users").select("*").eq("id", id).maybeSingle();
-  if (error) throw error;
+  if (!client) return canUseJsonFallback() ? getJsonUserById(cleanId) ?? null : null;
+
+  // Si l'identifiant n'est pas un UUID valide, éviter l'erreur Postgres 22P02
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
+  if (!isUuid) {
+    return canUseJsonFallback() ? getJsonUserById(cleanId) ?? null : null;
+  }
+
+  const { data, error } = await client.from("users").select("*").eq("id", cleanId).maybeSingle();
+  if (error) {
+    if (error.code === "22P02") return null;
+    throw error;
+  }
   return data ? mapUser(data as Record<string, unknown>) : null;
 }
 

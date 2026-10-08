@@ -16,16 +16,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Jeton d'authentification Google manquant." }, { status: 400 });
     }
 
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[AUTH][ONE_TAP] credential received");
+      console.log("[AUTH][ONE_TAP] API request started");
+    }
+
     // Validation du token auprès du endpoint officiel de Google
     const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
     if (!googleRes.ok) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[AUTH][ONE_TAP] Échec validation tokeninfo Google:", googleRes.status);
+      }
       return NextResponse.json({ error: "Le jeton Google n'a pas pu être validé par les serveurs Google." }, { status: 401 });
     }
 
     const payload = await googleRes.json();
-    const expectedClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    if (expectedClientId && payload.aud !== expectedClientId) {
-      return NextResponse.json({ error: "L'identifiant client Google ne correspond pas à cette application." }, { status: 401 });
+    const expectedClientId = (process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "").trim();
+    if (expectedClientId) {
+      const audMatches = payload.aud === expectedClientId;
+      const azpMatches = payload.azp === expectedClientId;
+      if (!audMatches && !azpMatches) {
+        if (process.env.NODE_ENV !== "production") {
+          console.error("[AUTH][ONE_TAP] Mismatch Client ID aud/azp:", { aud: payload.aud, azp: payload.azp, expected: expectedClientId });
+        }
+        return NextResponse.json({ error: "L'identifiant client Google ne correspond pas à cette application." }, { status: 401 });
+      }
     }
 
     const email = String(payload.email || "").trim().toLowerCase();
@@ -73,7 +88,13 @@ export async function POST(request: NextRequest) {
         twoFactorRequired: true,
         challenge,
         userId: user.id,
+        redirectUrl: `/auth/login?challenge=${encodeURIComponent(challenge)}&userId=${encodeURIComponent(user.id)}`,
       });
+    }
+
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[AUTH][ONE_TAP] API response: 200");
+      console.log("[AUTH][ONE_TAP] session cookie expected for user:", user.id);
     }
 
     const response = NextResponse.json({

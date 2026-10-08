@@ -11,6 +11,10 @@ import {
   getStatusChangeSystemMessage,
 } from "@/lib/marketplace/order-machine";
 import { MarketplaceAttachment } from "@/lib/marketplace/types";
+import {
+  releaseMarketplaceOrderEscrow,
+  refundMarketplaceOrderEscrow,
+} from "@/lib/marketplace/marketplace-escrow-service";
 
 export async function POST(request: NextRequest) {
   const user = await getCurrentUserFromCookie();
@@ -56,9 +60,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "La commande n'est plus en attente d'acceptation." }, { status: 400 });
     }
     if (isAcceptanceExpired(order.acceptance_deadline)) {
-      // Dépassé -> auto-annulation
+      // Dépassé -> auto-annulation et remboursement de l'acheteur si fonds bloqués
       await supabase.from("marketplace_conversations").update({ status: "order_rejected", updated_at: now }).eq("id", conversation.id);
       await supabase.from("marketplace_orders").update({ status: "cancelled", updated_at: now }).eq("id", order.id);
+      try {
+        await refundMarketplaceOrderEscrow({
+          orderId: order.id,
+          authorizedByUserId: user.id,
+          reason: "Délai d'acceptation de 48h expiré",
+        });
+      } catch {}
       await insertMarketplaceMessage({
         conversationId: conversation.id,
         senderId: user.id,
@@ -97,6 +108,15 @@ export async function POST(request: NextRequest) {
 
     await supabase.from("marketplace_conversations").update({ status: "order_rejected", updated_at: now }).eq("id", conversation.id);
     await supabase.from("marketplace_orders").update({ status: "cancelled", updated_at: now }).eq("id", order.id);
+
+    // Rembourser l'acheteur si un séquestre existait
+    try {
+      await refundMarketplaceOrderEscrow({
+        orderId: order.id,
+        authorizedByUserId: user.id,
+        reason: "Refus de la commande par le fournisseur",
+      });
+    } catch {}
 
     await insertMarketplaceMessage({
       conversationId: conversation.id,
@@ -234,6 +254,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "La commande ne peut pas être validée dans son état actuel." }, { status: 400 });
     }
 
+    // Libération financière du séquestre vers le portefeuille du vendeur
+    let escrowResult = null;
+    try {
+      escrowResult = await releaseMarketplaceOrderEscrow({
+        orderId: order.id,
+        buyerOrAdminUserId: user.id,
+      });
+    } catch (escrowErr) {
+      console.error("[marketplace] Erreur libération séquestre:", escrowErr);
+    }
+
     await supabase
       .from("marketplace_conversations")
       .update({ status: "completed", updated_at: now })
@@ -257,7 +288,7 @@ export async function POST(request: NextRequest) {
     });
 
     const updated = await getMarketplaceConversationById(conversation.id, user.id);
-    return NextResponse.json({ success: true, conversation: updated });
+    return NextResponse.json({ success: true, conversation: updated, escrow: escrowResult });
   }
 
   return NextResponse.json({ error: "Action inconnue." }, { status: 400 });

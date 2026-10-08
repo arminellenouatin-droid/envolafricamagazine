@@ -9,6 +9,14 @@ import {
   MarketplaceConversationStatus,
   MarketplaceAttachment,
 } from "@/lib/marketplace/types";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import {
+  subscribeToChatChannel,
+  broadcastNewMessage,
+  broadcastTypingState,
+  broadcastMessageRead,
+  getChatChannelName,
+} from "@/lib/realtime-chat";
 
 interface AuthUser {
   id: string;
@@ -201,18 +209,66 @@ export default function MarketplaceMessagesClient() {
       return;
     }
     loadMessages(selectedConvId);
+
+    // Abonnement Supabase Realtime Broadcast (< 50ms)
+    const supabase = getSupabaseBrowserClient();
+    const channelName = getChatChannelName("marketplace", selectedConvId);
+
+    const channel = subscribeToChatChannel(
+      supabase,
+      channelName,
+      {
+        onMessageNew: (payload) => {
+          if (!payload?.message || payload.conversationId !== selectedConvId) return;
+          const incoming = payload.message as MarketplaceMessage;
+
+          setMessages((prev) => {
+            const exists = prev.some(
+              (m) => m.id === incoming.id || (payload.clientId && m.client_msg_id === payload.clientId)
+            );
+            if (exists) {
+              return prev.map((m) =>
+                m.id === incoming.id || (payload.clientId && m.client_msg_id === payload.clientId)
+                  ? { ...incoming, status: "sent" }
+                  : m
+              );
+            }
+            return [...prev, { ...incoming, status: incoming.read_at ? "read" : "delivered" }];
+          });
+
+          scrollToBottom(true);
+          loadConversations();
+        },
+      },
+      user?.id
+    );
+
+    // Polling de résilience de secours (10s)
     const interval = setInterval(() => {
       fetch(`/api/marketplace/messages?conversationId=${encodeURIComponent(selectedConvId)}`)
         .then((r) => r.json())
         .then((data) => {
           if (data.messages) {
-            setMessages(data.messages);
+            setMessages((prev) => {
+              const pending = prev.filter((m) => m.status === "sending" || m.status === "failed");
+              const serverMsgs = data.messages;
+              return [
+                ...serverMsgs,
+                ...pending.filter(
+                  (p) => !serverMsgs.some((s: any) => s.id === p.id || (p.client_msg_id && s.client_msg_id === p.client_msg_id))
+                ),
+              ];
+            });
           }
         })
         .catch(() => {});
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [selectedConvId, loadMessages]);
+    }, 10000);
+
+    return () => {
+      clearInterval(interval);
+      if (channel && supabase) supabase.removeChannel(channel);
+    };
+  }, [selectedConvId, loadMessages, scrollToBottom, loadConversations, user?.id]);
 
   // 4. Load Quick Replies for sellers
   const loadQuickReplies = useCallback(async () => {
@@ -252,19 +308,44 @@ export default function MarketplaceMessagesClient() {
     return null;
   }, [inputText]);
 
-  // 5. Send regular message
+  // 5. Send regular message avec UI optimiste et diffusion temps réel
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!selectedConvId || !inputText.trim() || sending) return;
 
+    const contentToSend = inputText.trim();
+    setInputText("");
     setSending(true);
+
+    const clientMsgId = `cmsg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const optimisticMsg: MarketplaceMessage = {
+      id: clientMsgId,
+      client_msg_id: clientMsgId,
+      conversation_id: selectedConvId,
+      sender_id: user?.id || "",
+      sender_role: roleMode,
+      message_type: "text",
+      body: contentToSend,
+      media: [],
+      is_delivery: false,
+      delivery_assets: [],
+      is_quick_reply: false,
+      moderation_status: "approved",
+      read_at: null,
+      created_at: new Date().toISOString(),
+      status: "sending",
+    };
+
+    setMessages((prev) => [...prev, optimisticMsg]);
+    scrollToBottom(true);
+
     try {
       const res = await fetch("/api/marketplace/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           conversationId: selectedConvId,
-          content: inputText.trim(),
+          content: contentToSend,
         }),
       });
 
@@ -274,18 +355,103 @@ export default function MarketplaceMessagesClient() {
         if (data.bypassDetected) {
           showToast(`Avertissement Sécurité EAM : ${data.reason}`, "warning");
         }
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === clientMsgId ? { ...m, status: "failed", error: data.error } : m
+          )
+        );
       } else {
-        setInputText("");
         if (data.message) {
-          setMessages((prev) => [...prev, data.message]);
+          const realMsg: MarketplaceMessage = {
+            ...data.message,
+            client_msg_id: clientMsgId,
+            status: "sent",
+          };
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === clientMsgId || m.client_msg_id === clientMsgId ? realMsg : m
+            )
+          );
+
+          // Diffusion instantanée Realtime (< 50ms)
+          const supabase = getSupabaseBrowserClient();
+          if (supabase) {
+            const channelName = getChatChannelName("marketplace", selectedConvId);
+            broadcastNewMessage(supabase, channelName, {
+              message: realMsg,
+              clientId: clientMsgId,
+              conversationId: selectedConvId,
+              senderId: user?.id || "",
+            });
+          }
           scrollToBottom(true);
         }
         loadConversations();
       }
     } catch (err) {
       showToast("Erreur de connexion. Message non transmis.", "error");
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === clientMsgId ? { ...m, status: "failed", error: "Erreur réseau" } : m
+        )
+      );
     } finally {
       setSending(false);
+    }
+  };
+
+  // Réessayer un message échoué
+  const handleRetryMessage = async (failedMsg: MarketplaceMessage) => {
+    if (!selectedConvId) return;
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === failedMsg.id ? { ...m, status: "sending", error: undefined } : m
+      )
+    );
+
+    try {
+      const res = await fetch("/api/marketplace/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId: selectedConvId,
+          content: failedMsg.body || "",
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.message) {
+        const realMsg: MarketplaceMessage = {
+          ...data.message,
+          client_msg_id: failedMsg.client_msg_id || failedMsg.id,
+          status: "sent",
+        };
+        setMessages((prev) =>
+          prev.map((m) => (m.id === failedMsg.id ? realMsg : m))
+        );
+        const supabase = getSupabaseBrowserClient();
+        if (supabase) {
+          const channelName = getChatChannelName("marketplace", selectedConvId);
+          broadcastNewMessage(supabase, channelName, {
+            message: realMsg,
+            clientId: failedMsg.client_msg_id || failedMsg.id,
+            conversationId: selectedConvId,
+            senderId: user?.id || "",
+          });
+        }
+      } else {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === failedMsg.id ? { ...m, status: "failed", error: data.error } : m
+          )
+        );
+      }
+    } catch {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === failedMsg.id ? { ...m, status: "failed", error: "Erreur réseau" } : m
+        )
+      );
     }
   };
 
@@ -634,17 +800,18 @@ export default function MarketplaceMessagesClient() {
   };
 
   return (
-    <main className="min-h-screen bg-[#fcf9f8] text-[#2a211a]">
+    <main className="fixed inset-0 z-[9999] md:relative md:inset-auto md:z-auto h-[100dvh] md:min-h-screen flex flex-col bg-[#fcf9f8] text-[#2a211a] overflow-hidden md:overflow-visible">
       {/* Top Banner Navigation & Role Bar */}
-      <header className="border-b border-[#eadfce] bg-white shadow-sm">
+      <header className="border-b border-[#eadfce] bg-white shadow-sm shrink-0">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <Link
               href="/marketplace"
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#eadfce] bg-[#fcf9f8] px-3.5 py-1.5 text-xs font-bold text-[#725f4d] transition hover:border-[#9e001f] hover:text-[#9e001f]"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#eadfce] bg-[#fcf9f8] px-3.5 py-1.5 text-xs font-bold text-[#725f4d] transition hover:border-[#9e001f] hover:text-[#9e001f] active:scale-95"
+              title="Quitter la messagerie et retourner au Marketplace"
             >
               <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-              <span>Marketplace</span>
+              <span>Retour au site</span>
             </Link>
             <div>
               <h1 className="font-display text-lg font-black text-[#2a211a] sm:text-xl">
@@ -1347,7 +1514,33 @@ export default function MarketplaceMessagesClient() {
                                 minute: "2-digit",
                               })}
                             </span>
-                            {isMe && <span>✓✓</span>}
+                            {isMe && (
+                              msg.status === "sending" ? (
+                                <span className="material-symbols-outlined text-[13px] text-amber-500 animate-spin" title="Envoi en cours...">
+                                  progress_activity
+                                </span>
+                              ) : msg.status === "failed" ? (
+                                <div className="flex items-center gap-1 text-rose-500">
+                                  <span className="material-symbols-outlined text-[13px]">error</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRetryMessage(msg)}
+                                    className="underline font-bold text-[10px] hover:text-rose-700 cursor-pointer"
+                                  >
+                                    Réessayer
+                                  </button>
+                                </div>
+                              ) : (
+                                <span
+                                  className={`material-symbols-outlined text-[13px] ${
+                                    msg.read_at ? "text-sky-500 font-bold" : "text-[#a39281]"
+                                  }`}
+                                  title={msg.read_at ? "Lu" : "Distribué"}
+                                >
+                                  done_all
+                                </span>
+                              )
+                            )}
                           </div>
                         </div>
                       );

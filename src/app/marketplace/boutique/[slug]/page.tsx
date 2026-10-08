@@ -8,6 +8,8 @@ import {
 } from "@/lib/marketplace-slug";
 import VendorHubClient from "./VendorHubClient";
 
+import { buildShareMetadata } from "@/lib/share-metadata-service";
+
 export async function generateMetadata({
   params,
 }: {
@@ -20,18 +22,13 @@ export async function generateMetadata({
   if (vendorData.vendor) {
     const title = `Boutiques de ${vendorData.vendor.name} • Marketplace Envol Africa`;
     const description = `Découvrez l'ensemble des boutiques officielles gérées par ${vendorData.vendor.name} sur Envol Africa Marketplace. Commandes directes et paiement sécurisé par séquestre.`;
-    return {
+    return buildShareMetadata({
+      type: "boutique",
+      slug: vendorData.vendor.slug,
       title,
       description,
-      alternates: {
-        canonical: `/marketplace/boutique/${encodeURIComponent(vendorData.vendor.slug)}`,
-      },
-      openGraph: {
-        title,
-        description,
-        type: "website",
-      },
-    };
+      badge: "BOUTIQUES VENDEUR",
+    });
   }
 
   // 2. Vérifier si c'est un nom ou ID de boutique directe (ex: /marketplace/boutique/les-plats-du-roi)
@@ -43,25 +40,23 @@ export async function generateMetadata({
       .slice(0, 180)
       .trim();
 
-    return {
+    return buildShareMetadata({
+      type: "boutique",
+      vendor: supplier.vendor_slug || "vendeur",
+      slug: supplier.slug || generateStoreSlug(supplier.business_name),
       title,
       description,
-      alternates: {
-        canonical: `/marketplace/boutique/${encodeURIComponent(supplier.vendor_slug || "vendeur")}/${encodeURIComponent(supplier.slug || generateStoreSlug(supplier.business_name))}`,
-      },
-      openGraph: {
-        title,
-        description,
-        type: "website",
-        images: supplier.logo_url ? [supplier.logo_url] : [],
-      },
-    };
+      imageUrl: supplier.logo_url || supplier.banner_url,
+      badge: "BOUTIQUE OFFICIELLE",
+    });
   }
 
-  return {
+  return buildShareMetadata({
+    type: "boutique",
+    slug,
     title: "Boutique introuvable • Marketplace Envol Africa",
     description: "Cette boutique n'existe pas ou a été déplacée sur la Marketplace Envol Africa.",
-  };
+  });
 }
 
 export default async function BoutiqueSlugPage({

@@ -3,15 +3,20 @@ import { findMagazineById } from "@/lib/core-db";
 import { getMagazineProductSchema, getBreadcrumbSchema } from "@/lib/schema-org";
 import MagazineDetailClient from "./MagazineDetailClient";
 
+import { buildShareMetadata } from "@/lib/share-metadata-service";
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const magazine = await findMagazineById(id).catch(() => null);
 
   if (!magazine) {
-    return {
+    return buildShareMetadata({
+      type: "magazine",
+      id,
       title: "Magazine Kiosque | Envol Africa",
       description: "Découvrez nos éditions et dossiers économiques au Kiosque Envol Africa.",
-    };
+      badge: "KIOSQUE NUMÉRIQUE",
+    });
   }
 
   const title = magazine.title || `Envol Africa Magazine N°${magazine.numero || ""}`;
@@ -20,35 +25,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     .slice(0, 180)
     .trim();
 
-  const image = magazine.cover || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800";
-
   const canonicalSlug = magazine.numero ? String(magazine.numero) : encodeURIComponent(id);
 
-  return {
-    title,
+  return buildShareMetadata({
+    type: "magazine",
+    id: canonicalSlug,
+    title: `${title} • Kiosque | Envol Africa`,
     description,
-    alternates: {
-      canonical: `/kiosque/${canonicalSlug}`,
-    },
-    openGraph: {
-      title,
-      description,
-      url: `/kiosque/${canonicalSlug}`,
-      type: "book",
-      images: [
-        {
-          url: image,
-          alt: title,
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: [image],
-    },
-  };
+    imageUrl: magazine.cover,
+    badge: magazine.numero ? `MAGAZINE N°${magazine.numero}` : "ÉDITION KIOSQUE",
+  });
 }
 
 export default async function MagazineDetailPage({ params }: { params: Promise<{ id: string }> }) {

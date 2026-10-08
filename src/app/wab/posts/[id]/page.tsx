@@ -4,8 +4,7 @@ import { headers } from "next/headers";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { readWabDB } from "@/lib/wab-db";
 import { resolveFileUrl } from "@/lib/storage/resolve-url";
-import WabClient from "../../WabClient";
-import type { SinglePostData } from "./WabSinglePostView";
+import WabSinglePostView, { type SinglePostData } from "./WabSinglePostView";
 
 async function getSiteOrigin(): Promise<string> {
   try {
@@ -98,7 +97,8 @@ async function getPostData(id: string, origin = "https://envolafrica.vercel.app"
         const videoMedia = resolvedMediaList.find(
           (m: any) => m.mimeType?.startsWith("video/") || /\.(mp4|webm|mov)$/i.test(m.name || m.path)
         );
-        const videoUrl = videoMedia?.mediaUrl || undefined;
+        const videoUrl = videoMedia?.mediaUrl || (videoMedia?.path ? resolveFileUrl(videoMedia.path) : undefined);
+        const thumbnailUrl = videoMedia?.thumbnailUrl || videoMedia?.posterUrl || undefined;
 
         // Détection d'image
         const imageMedia = resolvedMediaList.find(
@@ -106,8 +106,9 @@ async function getPostData(id: string, origin = "https://envolafrica.vercel.app"
         );
 
         // Si l'image de la publication existe, on l'utilise
-        // Sinon (notamment pour les vidéos ou posts texte), on utilise la miniature dynamique 1200x630
-        let imageUrl = imageMedia?.mediaUrl;
+        // Sinon la miniature vidéo si présente
+        // Sinon l'aperçu dynamique 1200x630
+        let imageUrl = imageMedia?.mediaUrl || (imageMedia?.path ? resolveFileUrl(imageMedia.path) : undefined) || thumbnailUrl;
         if (!imageUrl) {
           imageUrl = `${origin}/api/og/wab-post?id=${id}`;
         }
@@ -124,6 +125,7 @@ async function getPostData(id: string, origin = "https://envolafrica.vercel.app"
           media: resolvedMediaList,
           backgroundColor,
           videoUrl,
+          thumbnailUrl,
           imageUrl,
           views: data.views_count || 0,
           likes: data.likes_count || 0,
@@ -182,17 +184,19 @@ async function getPostData(id: string, origin = "https://envolafrica.vercel.app"
   return null;
 }
 
+import { buildShareMetadata, CANONICAL_SITE_URL } from "@/lib/share-metadata-service";
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const origin = await getSiteOrigin();
-  const post = await getPostData(id, origin);
+  const post = await getPostData(id, CANONICAL_SITE_URL);
 
   if (!post) {
-    return {
-      title: "Publication | World Africa Business (WAB)",
-      description: "Découvrez cette publication sur World Africa Business.",
-      metadataBase: new URL(origin),
-    };
+    return buildShareMetadata({
+      type: "post",
+      id,
+      title: "Publication introuvable • World Africa Business (WAB)",
+      description: "Cette publication n'existe pas ou a été archivée sur World Africa Business.",
+    });
   }
 
   const cleanContent = (post.content || "")
@@ -206,49 +210,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : `${cleanContent.slice(0, 70)} | ${post.author} sur WAB`;
 
   const description = cleanContent.slice(0, 180) + (cleanContent.length > 180 ? "…" : "");
-  const postUrl = `${origin}/wab/posts/${id}`;
-  const ogImageUrl = post.imageUrl || `${origin}/api/og/wab-post?id=${id}`;
 
-  return {
-    metadataBase: new URL(origin),
-    title: `${title} | Envol Africa WAB`,
+  return buildShareMetadata({
+    type: isVideo ? "video" : "post",
+    id,
+    title,
     description,
-    openGraph: {
-      type: isVideo ? "video.other" : "article",
-      locale: "fr_FR",
-      url: postUrl,
-      siteName: "World Africa Business (WAB) | Envol Africa",
-      title,
-      description,
-      images: [
-        {
-          url: ogImageUrl,
-          width: 1200,
-          height: 630,
-          type: "image/png",
-          alt: title,
-        },
-      ],
-      ...(isVideo && post.videoUrl
-        ? {
-            videos: [
-              {
-                url: post.videoUrl,
-                type: "video/mp4",
-                width: 1280,
-                height: 720,
-              },
-            ],
-          }
-        : {}),
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: [ogImageUrl],
-    },
-  };
+    imageUrl: post.imageUrl || post.thumbnailUrl,
+    videoUrl: post.videoUrl,
+    author: post.author,
+    publishedTime: post.createdAt,
+    badge: isVideo ? "VIDÉO EXCLUSIVE WAB" : "PUBLICATION WAB",
+  });
 }
 
 export default async function WabSharedPostPage({ params }: Props) {
@@ -279,5 +252,5 @@ export default async function WabSharedPostPage({ params }: Props) {
     );
   }
 
-  return <WabClient targetPostId={id} />;
+  return <WabSinglePostView post={post} />;
 }

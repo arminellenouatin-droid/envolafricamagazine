@@ -32,13 +32,45 @@ export default function ComptePage() {
   const [user, setUser] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [earnings, setEarnings] = useState<any[]>([]);
+  const [wallet, setWallet] = useState<any>(null);
 
-  useEffect(() => { fetch("/api/auth/me").then((response) => response.json()).then((data) => { if (!data.user) return; setUser(data.user); setRole((currentRole) => currentRole === "visitor" ? resolvePlatformRole(platform, data.user.role) : currentRole); fetch(`/api/orders?userId=${encodeURIComponent(data.user.id)}`).then((response) => response.ok ? response.json() : { orders: [] }).then((data) => setOrders(data.orders || [])).catch(() => undefined); fetch("/api/affiliate").then((response) => response.ok ? response.json() : { earnings: [] }).then((data) => setEarnings(data.earnings || [])).catch(() => undefined); }).catch(() => undefined); }, [platform]);
+  useEffect(() => {
+    fetch("/api/auth/me").then((response) => response.json()).then((data) => {
+      if (!data.user) return;
+      setUser(data.user);
+      setRole((currentRole) => currentRole === "visitor" ? resolvePlatformRole(platform, data.user.role) : currentRole);
+      fetch(`/api/orders?userId=${encodeURIComponent(data.user.id)}`).then((response) => response.ok ? response.json() : { orders: [] }).then((data) => setOrders(data.orders || [])).catch(() => undefined);
+      fetch("/api/affiliate").then((response) => response.ok ? response.json() : { earnings: [] }).then((data) => setEarnings(data.earnings || [])).catch(() => undefined);
+      fetch("/api/wallet").then((response) => response.ok ? response.json() : null).then((data) => { if (data?.wallet) setWallet(data.wallet); }).catch(() => undefined);
+    }).catch(() => undefined);
+  }, [platform]);
   const isStaff = Boolean(user && ["redacteur", "redacteur_chef", "gerant", "admin"].includes(user.role));
   const totalGains = earnings.reduce((sum, item) => sum + Number(item.commission || 0), 0);
 
   return <div className="space-y-6">
     <div className="rounded-[24px] p-6 text-white" style={{ background: `linear-gradient(135deg, ${context.accent}, #0A1931)` }}><p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/70">Dashboard contextuel</p><h1 className="mt-2 text-3xl font-black">{currentRole.dashboardLabel}</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-white/75">{currentRole.description} Votre compte reste unique sur Envol Africa, mais cet espace affiche uniquement les données de {context.label}.</p>{isStaff && currentRole.id === "admin" && <div className="mt-5 inline-flex rounded-full bg-white/15 px-4 py-2 text-xs font-bold">Accès administrateur limité au volet {context.label}</div>}</div>
+    {/* Portefeuille Envol Africa */}
+    <div className="rounded-[22px] border border-amber-200/80 bg-gradient-to-r from-amber-500/10 via-white to-amber-50/50 p-6 shadow-sm flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/15 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-amber-800">
+          💳 Portefeuille Central (Wallet)
+        </div>
+        <div className="mt-2 text-2xl font-black text-[#0A1931]">
+          {wallet ? `${wallet.availableBalance.toLocaleString("fr-FR")} ${wallet.currency || "XOF"}` : "Chargement du solde..."}
+        </div>
+        <p className="mt-1 text-xs text-zinc-600">
+          Solde disponible pour vos paiements Marketplace, séquestres (escrow), votes Awards et retraits Mobile Money.
+        </p>
+      </div>
+      <div className="flex gap-2">
+        <Link
+          href="/compte/wallet"
+          className="inline-flex items-center gap-2 rounded-full bg-[#0A1931] px-5 py-2.5 text-xs font-black text-white shadow-sm transition hover:bg-[#102A43]"
+        >
+          Gérer mon Portefeuille →
+        </Link>
+      </div>
+    </div>
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{cards.map((card) => <div key={card.label} className="rounded-[20px] border border-zinc-200 bg-white p-5 shadow-sm"><div className="text-[11px] font-black uppercase tracking-wide text-zinc-500">{card.label}</div><div className="mt-2 text-xl font-black text-[#0A1931]">{card.value}</div><p className="mt-2 text-sm leading-5 text-zinc-600">{card.detail}</p>{card.href && <Link href={card.href} className="mt-4 inline-flex rounded-full px-4 py-2 text-xs font-bold text-white" style={{ backgroundColor: context.accent }}>Ouvrir →</Link>}</div>)}</div>
     <div className="grid gap-4 md:grid-cols-2"><div className="rounded-[20px] border border-zinc-200 bg-white p-6"><div className="text-[11px] font-black uppercase tracking-wide text-zinc-500">Affiliation globale</div><p className="mt-2 text-2xl font-black text-[#0A1931]">{totalGains.toLocaleString("fr-FR")} XOF</p><p className="mt-1 text-sm text-zinc-600">Le lien fonctionne sur les différentes plateformes, avec une attribution propre au volet concerné.</p><Link href={`/compte/parrainage?platform=${platform}`} className="mt-4 inline-flex rounded-full bg-[#0A1931] px-4 py-2 text-xs font-bold text-white">Voir les gains →</Link></div><div className="rounded-[20px] border border-zinc-200 bg-white p-6"><div className="text-[11px] font-black uppercase tracking-wide text-zinc-500">Identité commune</div><p className="mt-2 text-sm leading-6 text-zinc-700">{user ? `${user.prenom} ${user.nom} · ${user.email}` : "Chargement du compte…"}</p><p className="mt-2 text-xs text-zinc-500">Une seule connexion pour tous les volets. Les rôles, données et outils affichés restent propres à {context.label}.</p></div></div>
     {platform === "magazine" && <div className="rounded-[20px] border border-zinc-200 bg-white p-6"><h2 className="font-bold text-[#0A1931]">Activité Magazine</h2><p className="mt-2 text-sm text-zinc-600">{orders.length} commande(s) éditoriale(s) rattachée(s) à votre compte global.</p></div>}

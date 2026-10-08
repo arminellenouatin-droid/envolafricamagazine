@@ -5,49 +5,36 @@ import { readAwardsDB } from "@/lib/awards-db";
 import { getSupabaseCandidates, getSupabaseCompetitions } from "@/lib/awards-supabase";
 import VisitorPrice from "@/components/VisitorPrice";
 
+import { buildShareMetadata } from "@/lib/share-metadata-service";
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const remote = await getSupabaseCompetitions({ slug });
   const comp = remote.configured ? remote.competitions[0] : readAwardsDB().competitions.find((item) => item.slug === slug);
   if (!comp) {
-    return {
-      title: "Compétition Africa Awards",
+    return buildShareMetadata({
+      type: "competition",
+      slug,
+      title: "Compétition Africa Awards | Envol Africa",
       description: "Découvrez les compétitions et votez pour vos talents préférés.",
-    };
+      badge: "AFRICA AWARDS",
+    });
   }
 
-  const title = `${comp.title} • Africa Awards`;
+  const title = `${comp.title} • Compétition Officielle | Africa Awards`;
   const description = (comp.description || "Votez et soutenez les candidats de cette compétition sur Envol Africa Awards.")
     .replace(/<[^>]*>/g, "")
     .slice(0, 180)
     .trim();
-  const image = comp.cover_image || "https://images.unsplash.com/photo-1511578314322-379afb476865?w=800";
 
-  return {
+  return buildShareMetadata({
+    type: "competition",
+    slug: comp.slug,
     title,
     description,
-    alternates: {
-      canonical: `/africa-awards/competitions/${encodeURIComponent(slug)}`,
-    },
-    openGraph: {
-      title,
-      description,
-      url: `/africa-awards/competitions/${encodeURIComponent(slug)}`,
-      type: "website",
-      images: [
-        {
-          url: image,
-          alt: comp.title,
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: [image],
-    },
-  };
+    imageUrl: comp.cover_image,
+    badge: comp.category ? `AWARDS • ${comp.category.toUpperCase()}` : "AFRICA AWARDS",
+  });
 }
 
 export default async function CompetitionDetail({ params }: { params: Promise<{ slug: string }> }) {

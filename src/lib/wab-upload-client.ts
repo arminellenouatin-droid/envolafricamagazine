@@ -155,29 +155,50 @@ export async function uploadWabMedia(file: File, onProgress?: (status: string) =
       if (prepareRes.ok) {
         const prep = await readJsonResponse<{ uploadUrl?: string; token?: string; path?: string }>(prepareRes);
         if (prep.uploadUrl && prep.path) {
-          onProgress?.("Téléversement direct du fichier…");
-          // Upload direct avec FormData multipart comme attendu par le endpoint Supabase Storage upload/sign
-          const formData = new FormData();
-          formData.append("cacheControl", "3600");
-          formData.append("", file);
-
           let putSuccess = false;
-          try {
-            const putRes = await fetch(prep.uploadUrl, {
-              method: "PUT",
-              body: formData,
-            });
-            if (putRes.ok) putSuccess = true;
-          } catch {}
+          const isR2 =
+            prep.token === "r2" ||
+            (prep as any).storage === "r2" ||
+            prep.uploadUrl.includes("r2.cloudflarestorage.com");
 
-          if (!putSuccess) {
-            // Tenter avec body direct si le endpoint accepte le binaire brut
-            const directPut = await fetch(prep.uploadUrl, {
-              method: "PUT",
-              headers: { "Content-Type": file.type },
-              body: file,
-            });
-            if (directPut.ok) putSuccess = true;
+          if (isR2) {
+            // Upload direct binaire vers Cloudflare R2 avec le bon Content-Type (S3 PUT presigned)
+            try {
+              const r2Put = await fetch(prep.uploadUrl, {
+                method: "PUT",
+                headers: {
+                  "Content-Type": file.type || "application/octet-stream",
+                },
+                body: file,
+              });
+              if (r2Put.ok) putSuccess = true;
+            } catch (err) {
+              console.warn("Échec PUT direct R2:", err);
+            }
+          } else {
+            // Fallback Supabase Storage : FormData multipart
+            const formData = new FormData();
+            formData.append("cacheControl", "3600");
+            formData.append("", file);
+
+            try {
+              const putRes = await fetch(prep.uploadUrl, {
+                method: "PUT",
+                body: formData,
+              });
+              if (putRes.ok) putSuccess = true;
+            } catch {}
+
+            if (!putSuccess) {
+              try {
+                const directPut = await fetch(prep.uploadUrl, {
+                  method: "PUT",
+                  headers: { "Content-Type": file.type },
+                  body: file,
+                });
+                if (directPut.ok) putSuccess = true;
+              } catch {}
+            }
           }
 
           if (putSuccess) {

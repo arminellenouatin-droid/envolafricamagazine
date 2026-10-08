@@ -22,6 +22,8 @@ export default function PorteurDashboardClient({ user }: { user: UserProp }) {
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [rapports, setRapports] = useState<any[]>([]);
+  const [repayments, setRepayments] = useState<any[]>([]);
+  const [payingRepaymentId, setPayingRepaymentId] = useState<string | null>(null);
   const [payout, setPayout] = useState<any>(null);
   const [payoutMessage, setPayoutMessage] = useState("");
   const [newRapport, setNewRapport] = useState({
@@ -93,7 +95,43 @@ export default function PorteurDashboardClient({ user }: { user: UserProp }) {
       .then((r) => (r.ok ? r.json() : { payouts: [] }))
       .then((d) => setPayout((d.payouts || [])[0] || null))
       .catch(() => setPayout(null));
+
+    fetch(`/api/crowdfunding/repayments?projetId=${selectedProjet.id}`)
+      .then((r) => (r.ok ? r.json() : { repayments: [] }))
+      .then((d) => setRepayments(d.repayments || []))
+      .catch(() => setRepayments([]));
   }, [selectedProjet]);
+
+  const payRepaymentWithWallet = async (repaymentId: string) => {
+    if (!repaymentId || payingRepaymentId) return;
+    const confirm = window.confirm("Confirmer le règlement de cette échéance via votre portefeuille central Envol Africa ?");
+    if (!confirm) return;
+
+    setPayingRepaymentId(repaymentId);
+    try {
+      const res = await fetch("/api/crowdfunding/repayments", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: repaymentId, use_wallet: true }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message || "Échéance remboursée avec succès depuis votre portefeuille !");
+        // Recharger les échéances
+        if (selectedProjet) {
+          fetch(`/api/crowdfunding/repayments?projetId=${selectedProjet.id}`)
+            .then((r) => (r.ok ? r.json() : { repayments: [] }))
+            .then((d) => setRepayments(d.repayments || []));
+        }
+      } else {
+        alert(data.error || "Impossible de régler cette échéance.");
+      }
+    } catch {
+      alert("Erreur réseau lors du règlement de l'échéance.");
+    } finally {
+      setPayingRepaymentId(null);
+    }
+  };
 
   const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
     const file = e.target.files?.[0];
@@ -312,7 +350,79 @@ export default function PorteurDashboardClient({ user }: { user: UserProp }) {
                 </div>
               )}
               {payoutMessage && <p className="mt-3 text-[11px] font-semibold text-[#9e001f]">{payoutMessage}</p>}
+              <div className="mt-4 flex flex-wrap items-center justify-between text-[11px] pt-3 border-t border-[#e5bdbb]/40">
+                <span className="text-[#5c403f]">Les fonds débloqués sont crédités sur votre portefeuille central Envol Africa.</span>
+                <Link href="/compte/wallet" className="text-[#9e001f] font-bold hover:underline">
+                  Ouvrir mon Portefeuille & Retirer (MTN/Moov/Orange/Wave) →
+                </Link>
+              </div>
             </div>
+
+            {/* Échéancier de remboursement des prêts */}
+            {repayments.length > 0 && (
+              <div className="bg-white rounded-xl border p-6 lg:col-span-2 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h4 className="font-bold text-[16px] text-[#071b36]">Échéancier de remboursement du prêt</h4>
+                    <p className="text-[11px] text-[#5c403f] mt-1">
+                      Réglez vos mensualités en 1 clic via votre portefeuille central Envol Africa. Les fonds sont directement reversés aux investisseurs.
+                    </p>
+                  </div>
+                  <Link href="/compte/wallet" className="text-[11px] font-bold text-[#9e001f] underline">
+                    Recharger mon portefeuille →
+                  </Link>
+                </div>
+
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b bg-slate-50 text-[#5c403f]">
+                        <th className="py-2.5 px-3">Date prévue</th>
+                        <th className="py-2.5 px-3">Capital</th>
+                        <th className="py-2.5 px-3">Intérêts</th>
+                        <th className="py-2.5 px-3">Total mensualité</th>
+                        <th className="py-2.5 px-3">Statut</th>
+                        <th className="py-2.5 px-3 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {repayments.map((r: any) => (
+                        <tr key={r.id} className="hover:bg-slate-50/50">
+                          <td className="py-3 px-3 font-medium">{r.datePrevue || r.date_prevue}</td>
+                          <td className="py-3 px-3 notranslate" translate="no">{formatPrice(Number(r.capital || 0))}</td>
+                          <td className="py-3 px-3 notranslate" translate="no">{formatPrice(Number(r.interet || 0))}</td>
+                          <td className="py-3 px-3 font-bold notranslate" translate="no">{formatPrice(Number(r.total || 0))}</td>
+                          <td className="py-3 px-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              r.statut === 'paye'
+                                ? 'bg-green-100 text-green-700'
+                                : r.statut === 'retard'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}>
+                              {r.statut}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-right">
+                            {r.statut === 'paye' ? (
+                              <span className="text-[11px] text-green-600 font-bold">✓ Réglé</span>
+                            ) : (
+                              <button
+                                onClick={() => payRepaymentWithWallet(r.id)}
+                                disabled={payingRepaymentId === r.id}
+                                className="px-3 py-1.5 rounded-full bg-[#9e001f] text-white text-[11px] font-bold hover:bg-[#800019] transition disabled:opacity-50"
+                              >
+                                {payingRepaymentId === r.id ? "Règlement..." : "Payer via Portefeuille →"}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             {/* Documents */}
             <div className="bg-white rounded-xl border p-6 shadow-sm">

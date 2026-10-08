@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { createGlobalNotification } from "@/lib/ecosystem-inbox";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { getUserChannelName, REALTIME_EVENTS } from "@/lib/realtime-chat";
 
 export const runtime = "nodejs";
 
@@ -24,69 +26,25 @@ export interface ActiveAudioCall {
   endedAt?: number;
 }
 
-import fs from "fs";
-import path from "path";
-
-// Fichier de stockage partagé pour la signalisation des appels
-const CALLS_FILE = path.join(
-  process.platform === "win32"
-    ? path.join(process.cwd(), "src", "data", "wab-calls.json")
-    : "/tmp",
-  "wab-calls.json"
-);
-
-function loadActiveCalls(): Map<string, ActiveAudioCall> {
-  const map = new Map<string, ActiveAudioCall>();
-  try {
-    if (fs.existsSync(CALLS_FILE)) {
-      const data = JSON.parse(fs.readFileSync(CALLS_FILE, "utf-8")) as ActiveAudioCall[];
-      if (Array.isArray(data)) {
-        const now = Date.now();
-        for (const item of data) {
-          if (now - item.createdAt < 15 * 60 * 1000) {
-            map.set(item.id, item);
-          }
-        }
-      }
-    }
-  } catch {}
-  return map;
-}
-
-function persistActiveCalls(map: Map<string, ActiveAudioCall>) {
-  try {
-    fs.mkdirSync(path.dirname(CALLS_FILE), { recursive: true });
-    const list = Array.from(map.values());
-    fs.writeFileSync(CALLS_FILE, JSON.stringify(list, null, 2), "utf-8");
-  } catch {}
-}
-
 declare global {
   // eslint-disable-next-line no-var
   var __wabActiveCalls: Map<string, ActiveAudioCall> | undefined;
 }
 
 if (!global.__wabActiveCalls) {
-  global.__wabActiveCalls = loadActiveCalls();
+  global.__wabActiveCalls = new Map<string, ActiveAudioCall>();
 }
 
 const activeCalls = global.__wabActiveCalls;
 
-// Nettoyer les appels expirés (> 15 minutes) et synchroniser avec le fichier
+// Nettoyer les appels expirés (> 15 minutes)
 function cleanExpiredCalls() {
-  const diskCalls = loadActiveCalls();
   const now = Date.now();
-  for (const [id, call] of diskCalls.entries()) {
-    if (!activeCalls.has(id)) {
-      activeCalls.set(id, call);
-    }
-  }
   for (const [id, call] of activeCalls.entries()) {
     if (now - call.createdAt > 15 * 60 * 1000 || (call.status === "ended" && now - (call.endedAt || call.createdAt) > 60 * 1000)) {
       activeCalls.delete(id);
     }
   }
-  persistActiveCalls(activeCalls);
 }
 
 export async function GET(request: NextRequest) {
@@ -168,7 +126,19 @@ export async function POST(request: NextRequest) {
     };
 
     activeCalls.set(id, newCall);
-    persistActiveCalls(activeCalls);
+
+    // Diffusion temps réel immédiate de l'appel entrant via Supabase Realtime
+    try {
+      const supabaseAdmin = getSupabaseAdmin();
+      if (supabaseAdmin) {
+        const userChan = getUserChannelName(recipientId);
+        supabaseAdmin.channel(userChan).send({
+          type: "broadcast",
+          event: REALTIME_EVENTS.INCOMING_CALL,
+          payload: { call: newCall },
+        }).catch(() => {});
+      }
+    } catch {}
 
     // Déclencher une notification pour l'utilisateur appelé
     const notifTitle = callType === "video" ? "🎥 Appel vidéo entrant" : "📞 Appel audio entrant";
@@ -213,7 +183,6 @@ export async function POST(request: NextRequest) {
       existing.answer = body.answer;
     }
     activeCalls.set(callId, existing);
-    persistActiveCalls(activeCalls);
     return NextResponse.json({ call: existing });
   }
 
@@ -222,7 +191,6 @@ export async function POST(request: NextRequest) {
     existing.status = "rejected";
     existing.endedAt = Date.now();
     activeCalls.set(callId, existing);
-    persistActiveCalls(activeCalls);
     return NextResponse.json({ call: existing });
   }
 
@@ -231,7 +199,6 @@ export async function POST(request: NextRequest) {
     existing.status = "ended";
     existing.endedAt = Date.now();
     activeCalls.set(callId, existing);
-    persistActiveCalls(activeCalls);
     return NextResponse.json({ call: existing });
   }
 
@@ -239,7 +206,6 @@ export async function POST(request: NextRequest) {
   if (action === "upgrade_video") {
     existing.callType = "video";
     activeCalls.set(callId, existing);
-    persistActiveCalls(activeCalls);
     return NextResponse.json({ call: existing });
   }
 
@@ -268,7 +234,6 @@ export async function POST(request: NextRequest) {
       }
     }
     activeCalls.set(callId, existing);
-    persistActiveCalls(activeCalls);
     return NextResponse.json({ call: existing });
   }
 

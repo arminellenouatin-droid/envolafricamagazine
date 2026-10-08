@@ -10,14 +10,18 @@ import SameCategoryCarousel from "@/components/article/SameCategoryCarousel";
 import SameAuthorArticles from "@/components/article/SameAuthorArticles";
 import { getNewsArticleSchema, getBreadcrumbSchema } from "@/lib/schema-org";
 
+import { buildShareMetadata } from "@/lib/share-metadata-service";
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const article = await findArticleBySlug(slug);
   if (!article) {
-    return {
-      title: "Article introuvable",
+    return buildShareMetadata({
+      type: "article",
+      slug,
+      title: "Article introuvable • Envol Africa",
       description: "L'article demandé n'existe pas ou a été déplacé.",
-    };
+    });
   }
 
   const cleanDescription = (article.summary || article.content || "")
@@ -26,50 +30,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     .slice(0, 180)
     .trim() || "Article publié sur Envol Africa Magazine.";
 
-  const rawImage = article.image || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&h=630&fit=crop";
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://www.envolafrica.site";
-  const absoluteImage = rawImage.startsWith("http") ? rawImage : `${siteUrl}${rawImage.startsWith("/") ? "" : "/"}${rawImage}`;
-  const canonicalUrl = `${siteUrl}/article/${encodeURIComponent(article.slug)}`;
-
-  return {
+  return buildShareMetadata({
+    type: "article",
+    slug: article.slug,
     title: article.title,
     description: cleanDescription,
-    alternates: {
-      canonical: canonicalUrl,
-    },
-    openGraph: {
-      title: article.title,
-      description: cleanDescription,
-      url: canonicalUrl,
-      siteName: "Envol Africa Magazine",
-      type: "article",
-      locale: "fr_FR",
-      publishedTime: article.publishedAt || article.createdAt,
-      authors: [article.author || "Envol Africa"],
-      images: [
-        {
-          url: absoluteImage,
-          width: 1200,
-          height: 630,
-          alt: article.title,
-          type: "image/jpeg",
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: article.title,
-      description: cleanDescription,
-      images: [
-        {
-          url: absoluteImage,
-          width: 1200,
-          height: 630,
-          alt: article.title,
-        },
-      ],
-    },
-  };
+    imageUrl: article.image,
+    author: article.author || "Envol Africa",
+    publishedTime: article.publishedAt || article.createdAt,
+    section: article.category,
+    badge: article.category || "ARTICLE DE FOND",
+  });
 }
 
 async function getIsSubscribed() {

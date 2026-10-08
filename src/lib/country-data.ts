@@ -125,3 +125,31 @@ export function getCountryInfo(code?: string | null): CountryInfo {
     }
   );
 }
+
+/**
+ * Détermine de façon déterministe la langue supportée pour un pays :
+ * 1. Correspondance avec Accept-Language du navigateur parmi les langues officielles du pays
+ * 2. Première langue officielle du pays supportée par la plateforme (fr, en, es, pt, ar, sw)
+ * 3. Fallback officiel : Français (fr)
+ */
+export function getSupportedLanguageForCountry(
+  country: CountryInfo,
+  acceptLanguage?: string | null
+): "fr" | "en" | "es" | "pt" | "ar" | "sw" {
+  const supported = ["fr", "en", "es", "pt", "ar", "sw"] as const;
+  const browserLangs = (acceptLanguage || "")
+    .split(",")
+    .map((item) => item.split(";")[0].trim().split("-")[0].toLowerCase());
+
+  const browserMatch = country.languages.find(
+    (l) => browserLangs.includes(l) && (supported as readonly string[]).includes(l)
+  );
+  if (browserMatch) return browserMatch as (typeof supported)[number];
+
+  const countryMatch = country.languages.find((l) =>
+    (supported as readonly string[]).includes(l)
+  );
+  if (countryMatch) return countryMatch as (typeof supported)[number];
+
+  return "fr";
+}

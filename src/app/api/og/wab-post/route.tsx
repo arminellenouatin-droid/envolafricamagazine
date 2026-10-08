@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { readWabDB } from "@/lib/wab-db";
+import sharp from "sharp";
 
 export const runtime = "nodejs";
 
@@ -13,9 +14,22 @@ async function fetchImageAsBase64(url?: string | null): Promise<string> {
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timeout);
     if (!res.ok) return "";
-    const buffer = await res.arrayBuffer();
-    const mime = res.headers.get("content-type") || "image/jpeg";
-    const base64 = Buffer.from(buffer).toString("base64");
+    const arrayBuffer = await res.arrayBuffer();
+    let buffer = Buffer.from(arrayBuffer);
+    let mime = res.headers.get("content-type") || "image/jpeg";
+
+    // Satori / @resvg/resvg-js ne prend PAS en charge le WebP dans les balises <img /> SVG
+    // Conversion en PNG pour compatibilité totale
+    if (mime.includes("webp") || url.toLowerCase().includes(".webp")) {
+      try {
+        buffer = await sharp(buffer).png().toBuffer();
+        mime = "image/png";
+      } catch (err) {
+        console.warn("[OG WAB] Échec conversion WebP -> PNG:", err);
+      }
+    }
+
+    const base64 = buffer.toString("base64");
     return `data:${mime};base64,${base64}`;
   } catch {
     return "";
@@ -68,8 +82,9 @@ function getDocMetadata(mimeType: string, name: string) {
 }
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get("id");
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
 
   let author = "Membre WAB";
   let headline = "Réseau World Africa Business";
@@ -576,4 +591,61 @@ export async function GET(request: NextRequest) {
       },
     }
   );
+  } catch (err) {
+    console.error("[OG WAB] Erreur critique génération OG, utilisation fallback:", err);
+    return new ImageResponse(
+      (
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            padding: "48px 56px",
+            backgroundColor: "#001325",
+            color: "#ffffff",
+            fontFamily: "system-ui, -apple-system, sans-serif",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "14px",
+                backgroundColor: "#9e001f",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#ffffff",
+                fontWeight: 900,
+                fontSize: "24px",
+              }}
+            >
+              E
+            </div>
+            <span style={{ fontSize: "16px", fontWeight: 900, color: "#f0b27e", letterSpacing: "2px" }}>
+              WORLD AFRICA BUSINESS
+            </span>
+          </div>
+          <div style={{ fontSize: "36px", fontWeight: 800, color: "#ffffff", lineHeight: 1.3 }}>
+            Publication exclusive sur World Africa Business
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(255,255,255,0.2)", paddingTop: "16px" }}>
+            <span style={{ fontSize: "18px", fontWeight: 700, color: "#ffffff" }}>Envol Africa</span>
+            <span style={{ fontSize: "14px", color: "rgba(255,255,255,0.8)" }}>envolafrica.site</span>
+          </div>
+        </div>
+      ),
+      {
+        width: 1200,
+        height: 630,
+        headers: {
+          "Content-Type": "image/png",
+          "Cache-Control": "public, max-age=86400",
+        },
+      }
+    );
+  }
 }

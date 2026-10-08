@@ -448,7 +448,7 @@ export default function AffiliationPage() {
                 target="_blank"
                 rel="noreferrer"
                 href={`https://wa.me/?text=${encodeURIComponent(
-                  `Découvrez Envol Africa Magazine et rejoignez mon réseau : ${affiliateLink}`
+                  `Découvrez Envol Africa Magazine et rejoignez mon réseau :\n\n${affiliateLink}`
                 )}`}
                 className="rounded-full bg-[#25D366] hover:bg-[#20ba59] px-4 py-2 text-xs font-bold text-white shadow-sm transition"
               >

@@ -4,6 +4,12 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useLocale } from "@/components/LocaleProvider";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import {
+  subscribeToChatChannel,
+  broadcastNewMessage,
+  getChatChannelName,
+} from "@/lib/realtime-chat";
 
 interface UserProfile {
   id: string;
@@ -83,6 +89,9 @@ interface MessageItem {
   readBy: string[];
   createdAt: string;
   attachments: AttachmentItem[];
+  client_msg_id?: string;
+  status?: "sending" | "sent" | "delivered" | "read" | "failed";
+  error?: string;
 }
 
 export default function CrowdfundingMessagesClient() {
@@ -274,15 +283,51 @@ export default function CrowdfundingMessagesClient() {
   }, [showToast]);
 
   useEffect(() => {
-    if (activeSpaceId) {
+    if (!activeSpaceId) return;
+
+    fetchMessagesAndDetails(activeSpaceId, filterUpdatesOnly, messageSearchQuery);
+
+    const supabase = getSupabaseBrowserClient();
+    const channelName = getChatChannelName("crowdfunding", activeSpaceId);
+
+    const channel = subscribeToChatChannel(
+      supabase,
+      channelName,
+      {
+        onMessageNew: (payload) => {
+          if (!payload?.message || payload.conversationId !== activeSpaceId) return;
+          const incoming = payload.message as MessageItem;
+
+          setMessages((prev) => {
+            const exists = prev.some(
+              (m) => m.id === incoming.id || (payload.clientId && m.client_msg_id === payload.clientId)
+            );
+            if (exists) {
+              return prev.map((m) =>
+                m.id === incoming.id || (payload.clientId && m.client_msg_id === payload.clientId)
+                  ? { ...incoming, status: "sent" }
+                  : m
+              );
+            }
+            return [...prev, { ...incoming, status: "delivered" }];
+          });
+
+          scrollToBottom(true);
+        },
+      },
+      user?.id
+    );
+
+    // Polling de résilience de secours toutes les 10s
+    const interval = setInterval(() => {
       fetchMessagesAndDetails(activeSpaceId, filterUpdatesOnly, messageSearchQuery);
-      // Polling léger toutes les 6 secondes
-      const interval = setInterval(() => {
-        fetchMessagesAndDetails(activeSpaceId, filterUpdatesOnly, messageSearchQuery);
-      }, 6000);
-      return () => clearInterval(interval);
-    }
-  }, [activeSpaceId, filterUpdatesOnly, messageSearchQuery, fetchMessagesAndDetails]);
+    }, 10000);
+
+    return () => {
+      clearInterval(interval);
+      if (channel && supabase) supabase.removeChannel(channel);
+    };
+  }, [activeSpaceId, filterUpdatesOnly, messageSearchQuery, fetchMessagesAndDetails, scrollToBottom, user?.id]);
 
   useEffect(() => {
     scrollToBottom(false);
@@ -409,18 +454,59 @@ export default function CrowdfundingMessagesClient() {
     }
   };
 
-  // Send message with combined content
+  // Send message avec UI optimiste et diffusion temps réel
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!activeSpaceId || (!inputText.trim() && pendingAttachments.length === 0)) return;
 
+    const contentToSend = inputText.trim();
+    const updateMode = isOfficialUpdate;
+    const currentUpdateTitle = isOfficialUpdate ? updateTitle.trim() || "Mise à jour officielle" : undefined;
+    const currentAttachments = [...pendingAttachments];
+
+    setInputText("");
+    setIsOfficialUpdate(false);
+    setUpdateTitle("");
+    setPendingAttachments([]);
     setSending(true);
+
+    const clientMsgId = `cmsg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const optimisticMsg: MessageItem = {
+      id: clientMsgId,
+      client_msg_id: clientMsgId,
+      spaceId: activeSpaceId,
+      senderId: user?.id || "",
+      senderRole: isPorteur ? "porteur" : "investisseur",
+      senderName: [user?.prenom, user?.nom].filter(Boolean).join(" ") || "Membre",
+      senderAvatar: user?.avatar,
+      content: contentToSend,
+      isUpdate: updateMode,
+      updateTitle: currentUpdateTitle,
+      isPinned: false,
+      mentions: [],
+      readBy: user?.id ? [user.id] : [],
+      createdAt: new Date().toISOString(),
+      attachments: currentAttachments.map((a, i) => ({
+        id: `att_${Date.now()}_${i}`,
+        messageId: clientMsgId,
+        type: a.type,
+        url: a.url,
+        name: a.name,
+        size: a.size,
+        duration: a.duration,
+        mimeType: a.mimeType,
+      })),
+      status: "sending",
+    };
+
+    setMessages((prev) => [...prev, optimisticMsg]);
+    scrollToBottom(true);
+
     try {
-      // Extraction automatique des mentions @nom
       const mentionRegex = /@([a-zA-Z0-9_\u00C0-\u017F]+)/g;
       const mentionsFound: string[] = [];
       let match;
-      while ((match = mentionRegex.exec(inputText)) !== null) {
+      while ((match = mentionRegex.exec(contentToSend)) !== null) {
         mentionsFound.push(match[1]);
       }
 
@@ -429,30 +515,121 @@ export default function CrowdfundingMessagesClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           spaceId: activeSpaceId,
-          content: inputText.trim(),
-          isUpdate: isOfficialUpdate,
-          updateTitle: isOfficialUpdate ? updateTitle.trim() || "Mise à jour officielle" : undefined,
+          content: contentToSend,
+          isUpdate: updateMode,
+          updateTitle: currentUpdateTitle,
           mentions: mentionsFound,
-          attachments: pendingAttachments,
+          attachments: currentAttachments,
         }),
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
-        setMessages((prev) => [...prev, data.message]);
-        setInputText("");
-        setIsOfficialUpdate(false);
-        setUpdateTitle("");
-        setPendingAttachments([]);
+        const realMsg: MessageItem = {
+          ...data.message,
+          client_msg_id: clientMsgId,
+          status: "sent",
+        };
+
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === clientMsgId || m.client_msg_id === clientMsgId ? realMsg : m
+          )
+        );
+
+        // Diffusion instantanée (< 50ms)
+        const supabase = getSupabaseBrowserClient();
+        if (supabase) {
+          const channelName = getChatChannelName("crowdfunding", activeSpaceId);
+          broadcastNewMessage(supabase, channelName, {
+            message: realMsg,
+            clientId: clientMsgId,
+            conversationId: activeSpaceId,
+            senderId: user?.id || "",
+          });
+        }
+
         scrollToBottom(true);
-        showToast(isOfficialUpdate ? "Mise à jour officielle diffusée à tous les investisseurs !" : "Message envoyé.", "success");
+        showToast(updateMode ? "Mise à jour officielle diffusée à tous les investisseurs !" : "Message envoyé.", "success");
       } else {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === clientMsgId ? { ...m, status: "failed", error: data.error } : m
+          )
+        );
         showToast(data.error || "Impossible d'envoyer le message.", "error");
       }
     } catch {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === clientMsgId ? { ...m, status: "failed", error: "Erreur réseau" } : m
+        )
+      );
       showToast("Erreur de connexion au serveur.", "error");
     } finally {
       setSending(false);
+    }
+  };
+
+  // Réessayer un message échoué
+  const handleRetryMessage = async (failedMsg: MessageItem) => {
+    if (!activeSpaceId) return;
+
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === failedMsg.id ? { ...m, status: "sending", error: undefined } : m
+      )
+    );
+
+    try {
+      const res = await fetch("/api/crowdfunding/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          spaceId: activeSpaceId,
+          content: failedMsg.content,
+          isUpdate: failedMsg.isUpdate,
+          updateTitle: failedMsg.updateTitle,
+          mentions: failedMsg.mentions,
+          attachments: failedMsg.attachments,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const realMsg: MessageItem = {
+          ...data.message,
+          client_msg_id: failedMsg.client_msg_id || failedMsg.id,
+          status: "sent",
+        };
+
+        setMessages((prev) =>
+          prev.map((m) => (m.id === failedMsg.id ? realMsg : m))
+        );
+
+        const supabase = getSupabaseBrowserClient();
+        if (supabase) {
+          const channelName = getChatChannelName("crowdfunding", activeSpaceId);
+          broadcastNewMessage(supabase, channelName, {
+            message: realMsg,
+            clientId: failedMsg.client_msg_id || failedMsg.id,
+            conversationId: activeSpaceId,
+            senderId: user?.id || "",
+          });
+        }
+      } else {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === failedMsg.id ? { ...m, status: "failed", error: data.error } : m
+          )
+        );
+      }
+    } catch {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === failedMsg.id ? { ...m, status: "failed", error: "Erreur réseau" } : m
+        )
+      );
     }
   };
 
@@ -643,7 +820,7 @@ export default function CrowdfundingMessagesClient() {
   };
 
   return (
-    <div className="flex h-screen w-full flex-col bg-[#071322] text-slate-100 antialiased overflow-hidden font-sans">
+    <div className="fixed inset-0 z-[9999] md:relative md:inset-auto md:z-auto flex h-[100dvh] md:h-screen w-full flex-col bg-[#071322] text-slate-100 antialiased overflow-hidden font-sans">
       {/* Toast Alert */}
       {toast && (
         <div
@@ -662,27 +839,24 @@ export default function CrowdfundingMessagesClient() {
         </div>
       )}
 
-      {/* TOP HEADER: Switcher 3 Messageries & Branding */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-800 bg-[#0B2545] px-4">
+      {/* TOP HEADER: Switcher 4 Messageries & Branding */}
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-800 bg-[#0B2545] px-3 sm:px-6">
         <div className="flex items-center gap-3">
           <Link
             href="/financement"
-            className="flex items-center gap-2 hover:opacity-85 transition"
-            title="Retour au module Crowdfunding"
+            className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-200 transition hover:bg-white/10 active:scale-95"
+            title="Quitter la messagerie et retourner au site"
           >
-            <span className="material-symbols-outlined text-amber-400 text-[22px]">arrow_back</span>
-            <span className="hidden sm:inline text-xs font-black uppercase tracking-wider text-amber-400">
-              AfricaCrowdFunding
-            </span>
+            <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+            <span>Retour au site</span>
           </Link>
-          <span className="text-slate-600">|</span>
           <div className="flex items-center gap-2">
             <img
               src="/crowdfunding-message-icon.png"
               alt="Messagerie Investisseurs"
               className="h-6 w-6 object-contain"
             />
-            <h1 className="text-sm font-black tracking-tight text-white">
+            <h1 className="text-sm font-black tracking-tight text-white hidden sm:block">
               Espace Investisseurs & Porteurs
             </h1>
           </div>
@@ -1192,6 +1366,32 @@ export default function CrowdfundingMessagesClient() {
                                 {msg.attachments.map((att) => (
                                   <AttachmentCard key={att.id} attachment={att} isMe={isMe} />
                                 ))}
+                              </div>
+                            )}
+
+                            {/* Statut d'envoi & accusé */}
+                            {isMe && (
+                              <div className="mt-1 flex items-center justify-end gap-1 text-[9px] opacity-80">
+                                {msg.status === "sending" ? (
+                                  <span className="material-symbols-outlined text-[12px] text-amber-300 animate-spin" title="Envoi en cours...">
+                                    progress_activity
+                                  </span>
+                                ) : msg.status === "failed" ? (
+                                  <div className="flex items-center gap-1 text-rose-300">
+                                    <span className="material-symbols-outlined text-[12px]">error</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRetryMessage(msg)}
+                                      className="underline font-bold text-[9px] hover:text-white cursor-pointer"
+                                    >
+                                      Réessayer
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <span className="material-symbols-outlined text-[12px] text-emerald-300" title="Distribué">
+                                    done_all
+                                  </span>
+                                )}
                               </div>
                             )}
                           </div>

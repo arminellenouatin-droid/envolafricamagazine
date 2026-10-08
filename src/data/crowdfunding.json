@@ -274,13 +274,381 @@
         "prise_part": 0,
         "pret": 1
       }
+    },
+    {
+      "id": "proj_test_phase3_cf",
+      "nom": "BioAgro Sahel - Ferme Connectée",
+      "secteur": "Agroalimentaire",
+      "description": "Projet pilote d’irrigation solaire au Sahel",
+      "montantRecherche": 5000000,
+      "montantCollecte": 280000,
+      "niveauRisque": "faible",
+      "dureeJours": 360,
+      "typesFinancement": [
+        "don",
+        "prise_part",
+        "pret"
+      ],
+      "statut": "en_cours",
+      "porteurId": "porteur-cf-test-01",
+      "pays": "BJ",
+      "tauxInteret": 10,
+      "pourcentageVendu": 12,
+      "createdAt": "2026-10-08T09:42:04.380Z",
+      "dateFin": "2026-11-07T09:42:04.380Z",
+      "vues": 120,
+      "investisseurs": 16,
+      "repartition": {
+        "dons": 200000,
+        "prise_part": 80000,
+        "pret": 0
+      }
     }
   ],
-  "contributions": [],
+  "contributions": [
+    {
+      "id": "12c3ffc8-a7cd-4a2d-a782-48e683e57aa7",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "type": "don",
+      "montant": 25000,
+      "createdAt": "2026-10-08T09:44:58.845Z"
+    },
+    {
+      "id": "e0de28f4-9733-47d6-9db5-05dcfd9e13fc",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "type": "prise_part",
+      "montant": 10000,
+      "pourcentage": 1.5,
+      "contratPdf": "CTR-EQUITY-MUZCOL3Z-A4FC84",
+      "createdAt": "2026-10-08T09:44:58.849Z"
+    },
+    {
+      "id": "dce769e6-2bd6-4b45-979e-576a22ae94f1",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "type": "don",
+      "montant": 25000,
+      "createdAt": "2026-10-08T09:45:30.015Z"
+    },
+    {
+      "id": "a58c3186-8a14-4975-81bf-c8569817e265",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "type": "prise_part",
+      "montant": 10000,
+      "pourcentage": 1.5,
+      "contratPdf": "CTR-EQUITY-MUZCP95V-87288F",
+      "createdAt": "2026-10-08T09:45:30.022Z"
+    },
+    {
+      "id": "32ffed55-b850-4925-82a3-90799ae5793e",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "type": "don",
+      "montant": 25000,
+      "createdAt": "2026-10-08T09:46:41.352Z"
+    },
+    {
+      "id": "83ba6635-972f-4924-81fa-3af759371dff",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "type": "prise_part",
+      "montant": 10000,
+      "pourcentage": 1.5,
+      "contratPdf": "CTR-EQUITY-MUZCQS7F-49901D",
+      "createdAt": "2026-10-08T09:46:41.357Z"
+    },
+    {
+      "id": "d5cc5c36-157c-42c6-8cd6-750ffc895428",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "type": "don",
+      "montant": 25000,
+      "createdAt": "2026-10-08T10:01:44.645Z"
+    },
+    {
+      "id": "4a6eb94b-b29f-41d2-b72a-d7db506cbb06",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "type": "prise_part",
+      "montant": 10000,
+      "pourcentage": 1.5,
+      "contratPdf": "CTR-EQUITY-MUZDA56W-178704",
+      "createdAt": "2026-10-08T10:01:44.649Z"
+    },
+    {
+      "id": "d896a530-b0b1-43f8-b787-c47cd9aa5f80",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "type": "don",
+      "montant": 25000,
+      "createdAt": "2026-10-08T10:12:20.203Z"
+    },
+    {
+      "id": "54952489-0216-4f87-9cc7-5eb6f748b131",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "type": "prise_part",
+      "montant": 10000,
+      "pourcentage": 1.5,
+      "contratPdf": "CTR-EQUITY-MUZDNRLB-A42E04",
+      "createdAt": "2026-10-08T10:12:20.209Z"
+    },
+    {
+      "id": "bd86b2ea-70b7-4ec3-9d71-ab8e14dc32ab",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "type": "don",
+      "montant": 25000,
+      "createdAt": "2026-10-08T10:14:02.221Z"
+    },
+    {
+      "id": "934bc5a4-0ee2-4bea-8c80-d2834da925f6",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "type": "prise_part",
+      "montant": 10000,
+      "pourcentage": 1.5,
+      "contratPdf": "CTR-EQUITY-MUZDPYB4-9AC569",
+      "createdAt": "2026-10-08T10:14:02.225Z"
+    },
+    {
+      "id": "dcf1dedd-315f-4869-a7bb-ae9f84025bae",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "type": "don",
+      "montant": 25000,
+      "createdAt": "2026-10-08T10:15:38.888Z"
+    },
+    {
+      "id": "fcedcf55-87e1-4301-b284-0cc19b0725ee",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "type": "prise_part",
+      "montant": 10000,
+      "pourcentage": 1.5,
+      "contratPdf": "CTR-EQUITY-MUZDS0WB-B8899D",
+      "createdAt": "2026-10-08T10:15:38.893Z"
+    },
+    {
+      "id": "d6dad7c1-a841-4ee2-a169-c16087749a34",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "type": "don",
+      "montant": 25000,
+      "createdAt": "2026-10-08T10:17:29.515Z"
+    },
+    {
+      "id": "4acb27c6-6fd0-447d-ace5-b6ddd5477b62",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "type": "prise_part",
+      "montant": 10000,
+      "pourcentage": 1.5,
+      "contratPdf": "CTR-EQUITY-MUZDUE9A-BCA6AE",
+      "createdAt": "2026-10-08T10:17:29.520Z"
+    }
+  ],
   "documents": [],
   "messages": [],
-  "repayments": [],
+  "repayments": [
+    {
+      "id": "rep_test_phase3_001",
+      "contributionId": "contrib_123",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "porteurId": "porteur-cf-test-01",
+      "datePrevue": "2026-10-08",
+      "capital": 80000,
+      "interet": 20000,
+      "total": 100000,
+      "statut": "paye",
+      "retardJours": 0,
+      "datePayee": "2026-10-08T09:44:58.858Z"
+    },
+    {
+      "id": "rep_test_phase3_001",
+      "contributionId": "contrib_123",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "porteurId": "porteur-cf-test-01",
+      "datePrevue": "2026-10-08",
+      "capital": 80000,
+      "interet": 20000,
+      "total": 100000,
+      "statut": "prevu",
+      "retardJours": 0
+    },
+    {
+      "id": "rep_test_1791452801367_zffko",
+      "contributionId": "contrib_123",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "porteurId": "porteur-cf-test-01",
+      "datePrevue": "2026-10-08",
+      "capital": 80000,
+      "interet": 20000,
+      "total": 100000,
+      "statut": "paye",
+      "retardJours": 0,
+      "datePayee": "2026-10-08T09:46:41.370Z"
+    },
+    {
+      "id": "rep_test_1791453704661_uj7km",
+      "contributionId": "contrib_123",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "porteurId": "porteur-cf-test-01",
+      "datePrevue": "2026-10-08",
+      "capital": 80000,
+      "interet": 20000,
+      "total": 100000,
+      "statut": "paye",
+      "retardJours": 0,
+      "datePayee": "2026-10-08T10:01:44.664Z"
+    },
+    {
+      "id": "rep_test_1791454340221_biifr",
+      "contributionId": "contrib_123",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "porteurId": "porteur-cf-test-01",
+      "datePrevue": "2026-10-08",
+      "capital": 80000,
+      "interet": 20000,
+      "total": 100000,
+      "statut": "paye",
+      "retardJours": 0,
+      "datePayee": "2026-10-08T10:12:20.224Z"
+    },
+    {
+      "id": "rep_test_1791454442237_n3ni6",
+      "contributionId": "contrib_123",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "porteurId": "porteur-cf-test-01",
+      "datePrevue": "2026-10-08",
+      "capital": 80000,
+      "interet": 20000,
+      "total": 100000,
+      "statut": "paye",
+      "retardJours": 0,
+      "datePayee": "2026-10-08T10:14:02.240Z"
+    },
+    {
+      "id": "rep_test_1791454538907_kyukb",
+      "contributionId": "contrib_123",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "porteurId": "porteur-cf-test-01",
+      "datePrevue": "2026-10-08",
+      "capital": 80000,
+      "interet": 20000,
+      "total": 100000,
+      "statut": "paye",
+      "retardJours": 0,
+      "datePayee": "2026-10-08T10:15:38.910Z"
+    },
+    {
+      "id": "rep_test_1791454649532_9byar",
+      "contributionId": "contrib_123",
+      "projetId": "proj_test_phase3_cf",
+      "investisseurId": "investor-cf-test-01",
+      "porteurId": "porteur-cf-test-01",
+      "datePrevue": "2026-10-08",
+      "capital": 80000,
+      "interet": 20000,
+      "total": 100000,
+      "statut": "paye",
+      "retardJours": 0,
+      "datePayee": "2026-10-08T10:17:29.535Z"
+    }
+  ],
   "retraits": [],
   "cagnottes": [],
-  "rapports": []
+  "rapports": [],
+  "payout_requests": [
+    {
+      "id": "payout_test_001",
+      "project_id": "proj_test_phase3_cf",
+      "porteur_id": "porteur-cf-test-01",
+      "gross_amount": 5000000,
+      "commission_rate": 4,
+      "commission_amount": 200000,
+      "net_amount": 4800000,
+      "status": "requested"
+    },
+    {
+      "id": "payout_test_001",
+      "project_id": "proj_test_phase3_cf",
+      "porteur_id": "porteur-cf-test-01",
+      "gross_amount": 5000000,
+      "commission_rate": 4,
+      "commission_amount": 200000,
+      "net_amount": 4800000,
+      "status": "requested"
+    },
+    {
+      "id": "payout_test_1791452801376",
+      "project_id": "proj_test_phase3_cf",
+      "porteur_id": "porteur-cf-test-01",
+      "gross_amount": 5000000,
+      "commission_rate": 4,
+      "commission_amount": 200000,
+      "net_amount": 4800000,
+      "status": "requested"
+    },
+    {
+      "id": "payout_test_1791453704673",
+      "project_id": "proj_test_phase3_cf",
+      "porteur_id": "porteur-cf-test-01",
+      "gross_amount": 5000000,
+      "commission_rate": 4,
+      "commission_amount": 200000,
+      "net_amount": 4800000,
+      "status": "requested"
+    },
+    {
+      "id": "payout_test_1791454340232",
+      "project_id": "proj_test_phase3_cf",
+      "porteur_id": "porteur-cf-test-01",
+      "gross_amount": 5000000,
+      "commission_rate": 4,
+      "commission_amount": 200000,
+      "net_amount": 4800000,
+      "status": "requested"
+    },
+    {
+      "id": "payout_test_1791454442247",
+      "project_id": "proj_test_phase3_cf",
+      "porteur_id": "porteur-cf-test-01",
+      "gross_amount": 5000000,
+      "commission_rate": 4,
+      "commission_amount": 200000,
+      "net_amount": 4800000,
+      "status": "requested"
+    },
+    {
+      "id": "payout_test_1791454538920",
+      "project_id": "proj_test_phase3_cf",
+      "porteur_id": "porteur-cf-test-01",
+      "gross_amount": 5000000,
+      "commission_rate": 4,
+      "commission_amount": 200000,
+      "net_amount": 4800000,
+      "status": "requested"
+    },
+    {
+      "id": "payout_test_1791454649543",
+      "project_id": "proj_test_phase3_cf",
+      "porteur_id": "porteur-cf-test-01",
+      "gross_amount": 5000000,
+      "commission_rate": 4,
+      "commission_amount": 200000,
+      "net_amount": 4800000,
+      "status": "requested"
+    }
+  ]
 }

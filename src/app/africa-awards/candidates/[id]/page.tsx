@@ -4,6 +4,8 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { buildShareMetadata } from "@/lib/share-metadata-service";
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   let candidate: any = null;
@@ -16,44 +18,29 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     candidate = readAwardsDB().candidates.find((c) => c.id === id);
   }
   if (!candidate) {
-    return {
-      title: "Candidat Africa Awards",
+    return buildShareMetadata({
+      type: "candidate",
+      id,
+      title: "Candidat Africa Awards | Envol Africa",
       description: "Profil et projet du candidat aux Africa Awards.",
-    };
+      badge: "CANDIDAT AFRICA AWARDS",
+    });
   }
 
-  const title = `${candidate.display_name} • Candidat Africa Awards`;
+  const title = `${candidate.display_name} • Candidat Officiel | Africa Awards`;
   const description = (candidate.bio || candidate.project_description || "Votez et soutenez ce candidat aux Africa Awards.")
     .replace(/<[^>]*>/g, "")
     .slice(0, 180)
     .trim();
-  const image = candidate.photo_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800";
 
-  return {
+  return buildShareMetadata({
+    type: "candidate",
+    id,
     title,
     description,
-    alternates: {
-      canonical: `/africa-awards/candidates/${encodeURIComponent(id)}`,
-    },
-    openGraph: {
-      title,
-      description,
-      url: `/africa-awards/candidates/${encodeURIComponent(id)}`,
-      type: "profile",
-      images: [
-        {
-          url: image,
-          alt: candidate.display_name,
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: [image],
-    },
-  };
+    imageUrl: candidate.photo_url,
+    badge: candidate.country ? `CANDIDAT • ${candidate.country.toUpperCase()}` : "AFRICA AWARDS",
+  });
 }
 
 export default async function CandidateProfile({ params }: { params: Promise<{ id: string }> }) {

@@ -1,101 +1,83 @@
-"use client";
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import { MIN_PAYMENT_AMOUNT_XOF } from "@/lib/payment-policy";
-import { useLocale } from "@/components/LocaleProvider";
+import type { Metadata } from "next";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { readAwardsDB } from "@/lib/awards-db";
+import { buildShareMetadata } from "@/lib/share-metadata-service";
+import VoteClient from "./VoteClient";
 
-export default function VotePage() {
-  const params = useParams();
-  const candidateId = params.candidateId as string;
-  const [candidate, setCandidate] = useState<any>(null);
-  const [competition, setCompetition] = useState<any>(null);
-  const [votes, setVotes] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const { formatPrice } = useLocale();
+async function getCandidateAndCompetition(candidateId: string) {
+  let candidate: any = null;
+  let competition: any = null;
 
-  useEffect(()=>{
-    fetch(`/api/awards/candidates`).then(r=>r.json()).then(d=>{
-      const cand = (d.candidates||[]).find((c:any)=>c.id===candidateId);
-      setCandidate(cand);
-      if (cand) {
-        fetch(`/api/awards/competitions`).then(r=>r.json()).then(dc=>{
-          const comp = (dc.competitions||[]).find((c:any)=>c.id===cand.competition_id);
-          setCompetition(comp);
-        });
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    try {
+      const { data: cData } = await supabase
+        .from("awards_candidates")
+        .select("id, display_name, bio, photo_url, country, competition_id")
+        .eq("id", candidateId)
+        .maybeSingle();
+      if (cData) {
+        candidate = cData;
+        const { data: compData } = await supabase
+          .from("awards_competitions")
+          .select("id, title, category, slug")
+          .eq("id", cData.competition_id)
+          .maybeSingle();
+        competition = compData;
       }
-    });
-  },[candidateId]);
+    } catch {}
+  }
 
-  const votePriceXOF = Math.max(MIN_PAYMENT_AMOUNT_XOF, Number(competition?.vote_price_cents) || MIN_PAYMENT_AMOUNT_XOF);
-  const handleVote = async () => {
-    setLoading(true);
-    // Le montant est exprimé directement en XOF : Moneroo affiche 100 comme 100 F CFA.
-    const amount = votes * votePriceXOF;
-    const res = await fetch("/api/payment/init", {
-      method: "POST",
-      headers: { "Content-Type":"application/json" },
-      body: JSON.stringify({
-        donAmount: amount,
-        currency: "XOF",
-        metadata: { product: "award_vote", candidate_id: candidateId, competition_id: candidate?.competition_id, points: votes },
-        email: "voter@envolafrica.com",
-        firstName: "Voter",
-        lastName: "Awards",
-      })
-    });
-    const data = await res.json();
-    if (data.checkout_url) {
-      // Le vote sera comptabilisé uniquement par le webhook après confirmation Moneroo.
-      window.location.href = data.checkout_url;
+  if (!candidate) {
+    const db = readAwardsDB();
+    candidate = db.candidates.find((c) => c.id === candidateId);
+    if (candidate) {
+      competition = db.competitions.find((comp) => comp.id === candidate.competition_id);
     }
-    setLoading(false);
-  };
+  }
 
-  if (!candidate) return <div className="bg-[#0B0B0F] text-white min-h-screen p-10">Chargement candidat...</div>;
+  return { candidate, competition };
+}
 
-  const total = votes * votePriceXOF;
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ candidateId: string }>;
+}): Promise<Metadata> {
+  const { candidateId } = await params;
+  const { candidate, competition } = await getCandidateAndCompetition(candidateId);
 
-  return (
-    <div className="bg-[#0B0B0F] text-[#F5F3EE] min-h-screen pb-20">
-      <div className="max-w-[720px] mx-auto px-5 md:px-[64px] py-10">
-        <div className="flex items-center gap-2 text-[11px] uppercase tracking-widest text-[#A8A6A0]"><Link href="/africa-awards" className="hover:text-[#D4AF37]">Awards</Link><span>›</span><span className="text-white">Voter</span></div>
-        <h1 className="text-[28px] font-black mt-4" style={{ fontFamily: "Fraunces" }}>Voter pour {candidate.display_name}</h1>
-        <p className="text-[#A8A6A0] text-[13px] mt-2">Choisissez un candidat, un nombre de votes, un moyen de paiement (Moneroo). Récapitulatif clair avant confirmation.</p>
+  if (!candidate) {
+    return buildShareMetadata({
+      type: "vote",
+      id: candidateId,
+      title: "Voter pour un candidat • Africa Awards | Envol Africa",
+      description: "Votez pour votre talent favori et participez au couronnement des leaders de l'Afrique économique.",
+      badge: "VOTE OFFICIEL",
+    });
+  }
 
-        <div className="mt-8 bg-[#16161D] border border-white/10 rounded-[16px] p-6">
-          <div className="flex gap-4">
-            <img src={candidate.photo_url} alt="" className="w-20 h-20 rounded-xl object-cover" />
-            <div><div className="font-bold text-[16px]">{candidate.display_name}</div><div className="text-[12px] text-[#A8A6A0] mt-1">{candidate.country} • {candidate.votes} votes • {candidate.bio?.slice(0,80)}</div><div className="text-[11px] text-[#D4AF37] mt-1">Nombre exact votes jamais affiché publiquement que classement relatif</div></div>
-          </div>
+  const compTitle = competition?.title ? ` • ${competition.title}` : "";
+  const title = `🗳 Votez pour ${candidate.display_name}${compTitle} | Africa Awards`;
+  const description =
+    candidate.bio ||
+    `Soutenez ${candidate.display_name} (${candidate.country || "Afrique"}) aux Africa Awards. Paiement sécurisé par Mobile Money / Carte et classement en temps réel.`;
 
-          <div className="mt-6">
-            <label className="text-[11px] font-bold uppercase tracking-wider">Nombre de votes</label>
-            <div className="mt-2 flex items-center gap-4">
-              <button onClick={()=>setVotes(Math.max(1, votes-1))} className="w-10 h-10 rounded-full bg-white/10 border border-white/10 flex items-center justify-center">-</button>
-              <span className="text-[32px] font-black w-16 text-center">{votes}</span>
-              <button onClick={()=>setVotes(votes+1)} className="w-10 h-10 rounded-full bg-white/10 border border-white/10 flex items-center justify-center">+</button>
-              <span className="text-[12px] text-[#A8A6A0]">= {votes} points • {formatPrice(total)}</span>
-            </div>
-          </div>
+  return buildShareMetadata({
+    type: "vote",
+    id: candidateId,
+    title,
+    description,
+    imageUrl: candidate.photo_url,
+    badge: "🗳 VOTE OFFICIEL EN DIRECT",
+  });
+}
 
-          <div className="mt-6 border-t border-white/10 pt-6">
-            <h4 className="font-bold text-[14px]">Récapitulatif avant confirmation</h4>
-            <div className="mt-3 space-y-2 text-[13px]">
-              <div className="flex justify-between"><span className="text-[#A8A6A0]">Candidat</span><span className="font-bold">{candidate.display_name}</span></div>
-              <div className="flex justify-between"><span className="text-[#A8A6A0]">Nombre de votes</span><span>{votes}</span></div>
-              <div className="flex justify-between"><span className="text-[#A8A6A0]">Points obtenus</span><span>{votes} pts</span></div>
-              <div className="flex justify-between font-bold border-t border-white/10 pt-2 mt-2"><span>Montant</span><span className="text-[#D4AF37]">{formatPrice(total)}</span></div>
-            </div>
-          </div>
-
-          <button onClick={handleVote} disabled={loading} className="mt-8 w-full h-12 rounded-full bg-[#D4AF37] text-black font-bold text-[14px] disabled:opacity-50 hover:bg-[#F4D976]">
-            {loading?"Redirection Moneroo...":`Payer ${formatPrice(total)} via Moneroo →`}
-          </button>
-          <p className="text-[11px] text-[#A8A6A0] mt-3 text-center">Paiement via Moneroo Mobile Money/Carte/PayPal - Webhook vérifié signature obligatoire - Comptabilisation &lt;5s + classement temps réel - Historique dans /my-votes</p>
-        </div>
-      </div>
-    </div>
-  );
+export default async function VotePage({
+  params,
+}: {
+  params: Promise<{ candidateId: string }>;
+}) {
+  const { candidateId } = await params;
+  return <VoteClient candidateId={candidateId} />;
 }

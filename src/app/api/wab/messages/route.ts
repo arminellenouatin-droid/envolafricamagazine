@@ -233,3 +233,32 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ message }, { status: 201 });
 }
+
+export async function PATCH(request: NextRequest) {
+  const user = await getCurrentUserFromCookie();
+  if (!user) return NextResponse.json({ error: "Connexion requise." }, { status: 401 });
+
+  const body = (await request.json().catch(() => null)) as {
+    conversationId?: unknown;
+  } | null;
+
+  if (typeof body?.conversationId !== "string" || !body.conversationId) {
+    return NextResponse.json({ error: "conversationId requis." }, { status: 400 });
+  }
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return NextResponse.json({ success: false }, { status: 503 });
+
+  const { error } = await supabase
+    .from("wab_messages")
+    .update({ read_at: new Date().toISOString() })
+    .eq("conversation_id", body.conversationId)
+    .neq("sender_id", user.id)
+    .is("read_at", null);
+
+  if (error) {
+    console.error("[wab/messages] Erreur accusé de lecture:", error.message);
+  }
+
+  return NextResponse.json({ success: !error });
+}
