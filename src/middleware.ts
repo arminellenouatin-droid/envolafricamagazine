@@ -11,8 +11,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(canonicalUrl, 308);
   }
 
-  // 2. Protection des pages d'administration à l'Edge
-  if (pathname.startsWith("/admin")) {
+  // 2. Protection des pages d'administration à l'Edge (hors API qui gère ses propres 401/403 JSON)
+  const isAdminPage = !pathname.startsWith("/api") && (
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/marketplace/admin") ||
+    pathname.startsWith("/emploi/admin") ||
+    pathname.startsWith("/wab/admin")
+  );
+  if (isAdminPage) {
     const token = request.cookies.get("eam_token")?.value;
     if (!token) {
       const loginUrl = new URL("/auth/login", request.url);

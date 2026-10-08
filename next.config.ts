@@ -1,5 +1,20 @@
 import type { NextConfig } from "next";
 
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com https://download.agora.io",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "img-src 'self' blob: data: https://images.unsplash.com https://*.supabase.co https://*.r2.dev https://pub-df336181dd964534a4866a10762a3327.r2.dev https://*.cloudflarestorage.com https://*.googleusercontent.com https://lh3.googleusercontent.com https://i.ytimg.com",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "connect-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co https://*.moneroo.io https://api.moneroo.io https://*.agora.io wss://*.agora.io https://*.agoraio.cn wss://*.agoraio.cn https://*.sd-rtn.com https://*.edge.agora.io https://*.r2.dev https://pub-df336181dd964534a4866a10762a3327.r2.dev https://*.cloudflarestorage.com https://www.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://accounts.google.com",
+  "media-src 'self' blob: data: https://*.r2.dev https://pub-df336181dd964534a4866a10762a3327.r2.dev https://*.cloudflarestorage.com https://*.supabase.co",
+  "frame-src 'self' https://accounts.google.com https://www.youtube.com https://www.youtube-nocookie.com https://checkout.moneroo.io https://*.moneroo.io",
+  "frame-ancestors 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self' https://accounts.google.com https://checkout.moneroo.io https://*.moneroo.io",
+].join("; ");
+
 const nextConfig: NextConfig = {
   serverExternalPackages: ["@napi-rs/canvas"],
   images: {
@@ -19,7 +34,7 @@ const nextConfig: NextConfig = {
         headers: [
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
-          { key: "Content-Security-Policy", value: "frame-ancestors 'self';" },
+          { key: "Content-Security-Policy", value: contentSecurityPolicy },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=()" },
