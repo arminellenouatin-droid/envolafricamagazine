@@ -1,22 +1,22 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import DonClient from "./DonClient";
 
 export const metadata: Metadata = {
-  title: "Soutenir Envol Africa | Don & Mécénat Éditorial",
-  description: "Soutenez un média économique panafricain indépendant, rigoureux et engagé. Vos dons financent nos enquêtes d'impact, nos correspondants locaux et la traduction en langues africaines.",
+  title: "Soutenir Envol Africa | Combat pour l'envol de l'Afrique",
+  description: "Votre don aide dans notre combat pour l'envol de l'Afrique. Soutenez l'écosystème Envol Africa : Magazine d'impact, Africa Awards, Crowdfunding, Marketplace, Emploi et WAB.",
   alternates: {
     canonical: "/don",
   },
   openGraph: {
-    title: "Soutenir Envol Africa | Don & Mécénat Éditorial",
-    description: "Financez le journalisme économique qui compte en Afrique. Indépendance, rigueur et impact mesurable.",
+    title: "Soutenir Envol Africa | Combat pour l'envol de l'Afrique",
+    description: "Votre don aide dans notre combat pour l'envol de l'Afrique. Soutenez l'écosystème Envol Africa et participez à l'émergence économique du continent.",
     url: "/don",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Soutenir l'information économique africaine",
-    description: "Faites un don sécurisé pour soutenir les enquêtes et correspondants d'Envol Africa.",
+    title: "Votre don aide dans notre combat pour l'envol de l'Afrique",
+    description: "Faites un don sécurisé pour soutenir l'écosystème Envol Africa et nos 6 piliers d'action.",
   },
 };
 
