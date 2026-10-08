@@ -4,7 +4,7 @@ import { writeDB } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 import { publishMagazineToWab } from "@/lib/magazine-republication";
 import { notifyPushSubscribers } from "@/lib/ecosystem-inbox";
-import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { getSupabaseAdmin, isProductionRuntime } from "@/lib/supabase-admin";
 
 function mapMagazine(row: any) {
   return { ...row, previewPages: Number(row.preview_pages ?? 5), previewImages: row.preview_images || [], pdfs: row.pdfs || {}, audios: row.audios || {}, prices: row.prices || {}, sommaire: row.sommaire || [], priceOverrides: row.price_overrides || {}, isPublished: row.is_published ?? true };
@@ -68,6 +68,9 @@ export async function POST(req: NextRequest) {
       if (result.error) return NextResponse.json({ error: `Impossible d’enregistrer le magazine : ${result.error.message}` }, { status: 503 });
       persistedMagazine = mapMagazine(result.data);
     } else {
+      if (isProductionRuntime()) {
+        return NextResponse.json({ error: "Base de données Supabase indisponible en production" }, { status: 503 });
+      }
       db!.magazines.push(newMag as any);
       writeDB(db!);
     }
@@ -99,6 +102,9 @@ export async function PUT(req: NextRequest) {
       const republication = await publishMagazineToWab(persistedMagazine as any, user?.id || "");
       return NextResponse.json({ success: true, magazine: persistedMagazine, republication });
     }
+    if (isProductionRuntime()) {
+      return NextResponse.json({ error: "Base de données Supabase indisponible en production" }, { status: 503 });
+    }
     const mag = db!.magazines.find(m=>m.id===id);
     if (!mag) return NextResponse.json({ error: "Magazine introuvable" }, { status: 404 });
     Object.assign(mag, updates);
@@ -124,6 +130,9 @@ export async function DELETE(req: NextRequest) {
       const result = await client.from("magazines").delete().eq("id", id);
       if (result.error) return NextResponse.json({ error: `Impossible de supprimer le magazine : ${result.error.message}` }, { status: 503 });
       return NextResponse.json({ success: true });
+    }
+    if (isProductionRuntime()) {
+      return NextResponse.json({ error: "Base de données Supabase indisponible en production" }, { status: 503 });
     }
     const idx = db!.magazines.findIndex(m=>m.id===id);
     if (idx===-1) return NextResponse.json({ error: "Introuvable" }, { status: 404 });

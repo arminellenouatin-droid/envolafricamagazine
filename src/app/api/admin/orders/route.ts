@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserForAdmin } from "@/lib/admin-auth";
 import { writeDB } from "@/lib/db";
 import { listOrders } from "@/lib/core-db";
-import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { getSupabaseAdmin, isProductionRuntime } from "@/lib/supabase-admin";
 
 export async function GET() {
   const { db, error, status } = await getCurrentUserForAdmin('gerant');
@@ -46,6 +46,10 @@ export async function PUT(req: NextRequest) {
       }
       if (!data) return NextResponse.json({ error: "Commande introuvable" }, { status: 404 });
       return NextResponse.json({ success: true, order: data });
+    }
+
+    if (isProductionRuntime() && !client) {
+      return NextResponse.json({ error: "Base de données Supabase indisponible en production" }, { status: 503 });
     }
 
     if (db?.orders) {

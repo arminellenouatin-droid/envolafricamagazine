@@ -3,7 +3,7 @@ import { getCurrentUserForAdmin } from "@/lib/admin-auth";
 import { writeDB, type Article } from "@/lib/db";
 import { publishArticleToWab } from "@/lib/article-republication";
 import { v4 as uuidv4 } from "uuid";
-import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { getSupabaseAdmin, isProductionRuntime } from "@/lib/supabase-admin";
 import { notifyPushSubscribers } from "@/lib/ecosystem-inbox";
 import { sanitizeRichText } from "@/lib/rich-text";
 
@@ -82,6 +82,9 @@ export async function POST(req: NextRequest) {
       const notifications = newArticle.isPublished ? await notifyPushSubscribers({ platform: "magazine", type: "new_article", title: "ENVOL AFRICA", body: newArticle.title, link: `/article/${newArticle.slug}`, image: newArticle.image, entityType: "article", entityId: newArticle.id, dedupePrefix: `article:${newArticle.id}` }) : { count: 0 };
       return NextResponse.json({ success: true, article, republication, notifications });
     }
+    if (isProductionRuntime() && !client) {
+      return NextResponse.json({ error: "Base de données Supabase indisponible en production" }, { status: 503 });
+    }
     db!.articles.push(newArticle); writeDB(db!);
     const republication = newArticle.isPublished ? await publishArticleToWab(newArticle, user!.id) : { published: false, reason: "article_draft" };
     const notifications = newArticle.isPublished ? await notifyPushSubscribers({ platform: "magazine", type: "new_article", title: "ENVOL AFRICA", body: newArticle.title, link: `/article/${newArticle.slug}`, image: newArticle.image, entityType: "article", entityId: newArticle.id, dedupePrefix: `article:${newArticle.id}` }) : { count: 0 };
@@ -152,6 +155,9 @@ export async function PUT(req: NextRequest) {
       const notifications = isPublishing && article ? await notifyPushSubscribers({ platform: "magazine", type: "new_article", title: "ENVOL AFRICA", body: article.title, link: `/article/${article.slug}`, image: article.image, entityType: "article", entityId: article.id, dedupePrefix: `article:${article.id}` }) : { count: 0 };
       return NextResponse.json({ success: true, article, republication, notifications });
     }
+    if (isProductionRuntime() && !client) {
+      return NextResponse.json({ error: "Base de données Supabase indisponible en production" }, { status: 503 });
+    }
     const article = existing as Article;
     const localUpdates = { ...updates } as Partial<Article>;
     if (Object.prototype.hasOwnProperty.call(updates, "content")) localUpdates.content = sanitizeRichText(String(updates.content ?? ""));
@@ -179,6 +185,9 @@ export async function DELETE(req: NextRequest) {
       const result = await client.from("articles").delete().eq("id", id);
       if (result.error) return NextResponse.json({ error: `Impossible de supprimer l’article : ${result.error.message}` }, { status: 503 });
       return NextResponse.json({ success: true });
+    }
+    if (isProductionRuntime() && !client) {
+      return NextResponse.json({ error: "Base de données Supabase indisponible en production" }, { status: 503 });
     }
     const index = db!.articles.findIndex((article) => article.id === id);
     if (index === -1) return NextResponse.json({ error: "Article introuvable" }, { status: 404 });

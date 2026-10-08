@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { readAwardsDB, writeAwardsDB } from "@/lib/awards-db";
 import { v4 as uuidv4 } from "uuid";
 import { getCurrentUserFromCookie } from "@/lib/auth";
-import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { getSupabaseAdmin, isProductionRuntime } from "@/lib/supabase-admin";
 import { MIN_PAYMENT_AMOUNT_XOF } from "@/lib/payment-policy";
 
 export const dynamic = "force-dynamic";
@@ -126,7 +126,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, pending: true, message: "Le vote est enregistré par le webhook Moneroo après confirmation du paiement." }, { status: 202 });
   }
 
-  // Fallback local
+  // Fallback local (hors-production uniquement)
+  if (isProductionRuntime() && !supabase) {
+    return NextResponse.json({ error: "Service de vote temporairement indisponible." }, { status: 503 });
+  }
+
   const db = readAwardsDB();
   const comp = db.competitions.find((competition) => competition.id === competitionId);
   const candidate = db.candidates.find((item) => item.id === candidateId && item.competition_id === competitionId);
