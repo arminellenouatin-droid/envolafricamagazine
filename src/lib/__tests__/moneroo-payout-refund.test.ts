@@ -387,4 +387,36 @@ describe('PHASE 8, 9, 10 & 20 — Financial Core, Sécurité Webhook & Tests de 
       completeWithdrawal(wdr.withdrawalId, 'payout_prov_1', 'admin_1')
     ).rejects.toThrow(/Statut invalide/);
   });
+
+  it('bloque les demandes concurrentes de remboursement excédant le solde cumulé', async () => {
+    const origPayId = 'pay_concurrent_race_test';
+    const origAmt = 10000;
+
+    // Premier remboursement partiel de 6 000 XOF (reste 4 000 XOF)
+    const ref1 = await requestRefund({
+      originalPaymentId: origPayId,
+      userId: concUser,
+      amount: 6000,
+      originalAmount: origAmt,
+      reason: 'Premier remboursement partiel',
+      requestedBy: concUser,
+    });
+    expect(ref1.amount).toBe(6000);
+
+    // Deuxième remboursement concurrent de 5 000 XOF (dépasse les 4 000 restants)
+    await expect(
+      requestRefund({
+        originalPaymentId: origPayId,
+        userId: concUser,
+        amount: 5000,
+        originalAmount: origAmt,
+        reason: 'Deuxième remboursement concurrent excédentaire',
+        requestedBy: concUser,
+      })
+    ).rejects.toThrow(RefundDomainError);
+
+    // Solde restant vérifiable
+    const remaining = await getRemainingRefundableAmount(origPayId, origAmt);
+    expect(remaining).toBe(4000);
+  });
 });

@@ -136,7 +136,12 @@ export function readCrowdDB(): CrowdDB {
   }
 }
 
+import { isProductionRuntime } from '@/lib/supabase-admin';
+
 export function writeCrowdDB(db: CrowdDB) {
+  if (isProductionRuntime()) {
+    throw new Error('Écriture du stockage Crowdfunding JSON local désactivée en production. Utilisez la persistance Supabase.');
+  }
   inMemory = db;
   try {
     ensureDir();

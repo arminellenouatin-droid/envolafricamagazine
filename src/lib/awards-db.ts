@@ -92,7 +92,12 @@ export function readAwardsDB(): AwardsDB {
   }
 }
 
+import { isProductionRuntime } from '@/lib/supabase-admin';
+
 export function writeAwardsDB(db: AwardsDB) {
+  if (isProductionRuntime()) {
+    throw new Error('Écriture du stockage Awards JSON local désactivée en production. Utilisez la persistance Supabase.');
+  }
   ensureAwardsDB();
   fs.writeFileSync(AWARDS_DB_FILE, JSON.stringify(db, null, 2));
 }

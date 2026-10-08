@@ -181,6 +181,21 @@ export async function requestRefund(params: RequestRefundParams): Promise<Refund
       .single();
 
     if (!error && data) {
+      // Re-vérification atomique de concurrence post-insert
+      const remainingPost = await getRemainingRefundableAmount(originalPaymentId, originalAmount);
+      if (remainingPost < 0) {
+        await supabase
+          .from('financial_refunds')
+          .update({
+            status: 'REJECTED',
+            rejection_reason: 'Dépassement concurrentiel du solde remboursable',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', data.id);
+        throw new RefundDomainError(
+          `Conflit concurrentiel : le total des remboursements dépasse le montant de la transaction initiale`
+        );
+      }
       return mapDbRowToRefund(data);
     }
   }
@@ -191,6 +206,13 @@ export async function requestRefund(params: RequestRefundParams): Promise<Refund
   }
 
   localRefunds.set(refundItem.id, refundItem);
+  const remainingLocal = await getRemainingRefundableAmount(originalPaymentId, originalAmount);
+  if (remainingLocal < 0) {
+    localRefunds.delete(refundItem.id);
+    throw new RefundDomainError(
+      `Conflit concurrentiel : le montant cumulé dépasse le montant de la transaction initiale`
+    );
+  }
   return refundItem;
 }
 
