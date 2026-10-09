@@ -11,6 +11,7 @@ import SameAuthorArticles from "@/components/article/SameAuthorArticles";
 import { getNewsArticleSchema, getBreadcrumbSchema } from "@/lib/schema-org";
 
 import { buildShareMetadata } from "@/lib/share-metadata-service";
+import EvSlot from "@/components/ads/EvSlot";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -188,12 +189,23 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               <figcaption className="mt-4 text-[12px] text-[#5f5e5e] italic text-center">{article.title} - {article.category} • {article.views.toLocaleString()} vues • © Envol Africa</figcaption>
             </figure>
             <LocalizedArticleExperience article={readerArticle} isSubscriber={isSubscriber} preferredLanguage={preferredLanguage} />
+
+            {/* Slot publicitaire Envol Ads - Pavé au cœur de l'article */}
+            <div className="my-8">
+              <EvSlot code="article_inline_1" category={article.category} pageType="article" />
+            </div>
+
             <div className="mb-6 flex items-center gap-3 lg:hidden"><img src={editorialAuthor?.photoUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100"} alt={editorialAuthor?.name || article.author} className="h-9 w-9 rounded-full object-cover"/><div><p className="text-[12px] font-bold text-[#1b1c1c]">{editorialAuthor?.name || article.author}</p><p className="text-[10px] text-[#9e001f]">{editorialAuthor?.roleLabel || "Rédacteur"}</p></div></div>
             <div className="mb-6 flex items-center justify-between py-4 border-y border-[#e5bdbb]"><div className="hidden text-[12px] text-[#5f5e5e] sm:block">Par {editorialAuthor?.name || article.author}</div><div className="ml-auto text-right"><p className="text-[11px] uppercase text-[#5c403f]">{new Date(article.publishedAt!).toLocaleDateString('fr-FR',{day:'numeric', month:'short', year:'numeric'})}</p><p className="flex items-center justify-end gap-1 text-[11px] text-[#5f5e5e]"><span className="material-symbols-outlined text-[14px]">schedule</span> {article.readingTime} min</p></div></div>
 
           </header>
 
           <ArticleActions articleId={article.id} slug={article.slug} initialLikes={article.likes} initialViews={article.views} />
+
+          {/* Slot publicitaire Envol Ads - Fin d'article */}
+          <div className="my-8">
+            <EvSlot code="article_end" category={article.category} pageType="article" />
+          </div>
           </div>
         </article>
 

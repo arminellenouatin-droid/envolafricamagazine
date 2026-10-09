@@ -6,6 +6,7 @@ import CommentsPanel from "./CommentsPanel";
 import RichTextContent from "@/components/RichTextContent";
 import { buildSocialShareLinks, buildShareUrl } from "@/lib/share-metadata-service";
 import { resolveFileUrl } from "@/lib/storage/resolve-url";
+import EvSlot from "@/components/ads/EvSlot";
 
 export type VideoPostItem = {
   id: string;
@@ -451,6 +452,11 @@ export default function WabTikTokVideoViewer({
 
               {/* 1. Bas à gauche : Nom, Avatar, Badge, Description */}
               <div className="absolute left-4 bottom-6 sm:bottom-8 z-30 max-w-[calc(100%-80px)] sm:max-w-md pb-[env(safe-area-inset-bottom)] pointer-events-auto">
+                {/* Slot publicitaire vidéo Envol Ads (overlay non-intrusif) */}
+                <div className="mb-2 max-w-[280px] sm:max-w-xs">
+                  <EvSlot code="wab_video_overlay" pageType="wab_video" />
+                </div>
+
                 {/* Ligne créateur */}
                 <div className="flex items-center gap-2.5 mb-2">
                   <Link

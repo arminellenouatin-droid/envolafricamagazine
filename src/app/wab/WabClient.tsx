@@ -20,6 +20,7 @@ import { useLocale } from "@/components/LocaleProvider";
 import { uploadWabMedia, readJsonResponse } from "@/lib/wab-upload-client";
 import { WAB_BACKGROUND_PRESETS, getWabBackground } from "@/lib/wab-backgrounds";
 import { resolveFileUrl } from "@/lib/storage/resolve-url";
+import EvSlot from "@/components/ads/EvSlot";
 
 type PublishPage = { id: string; name: string; logoUrl?: string; logo_url?: string };
 type PublishGroup = { id: string; name: string; privacy: "community" | "private" };
@@ -1478,6 +1479,13 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
 
                   {discoveryTypeForInsertion(index + 1) && (
                     <DiscoveryCarousel type={discoveryTypeForInsertion(index + 1)!} />
+                  )}
+
+                  {/* Slot publicitaire natif first-party Envol Ads tous les 5 posts */}
+                  {(index + 1) % 5 === 0 && (
+                    <div className="my-2">
+                      <EvSlot code="wab_feed_native" pageType="wab_feed" />
+                    </div>
                   )}
                 </Fragment>
               ))}
