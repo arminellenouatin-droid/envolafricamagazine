@@ -72,7 +72,7 @@ export default function ProductDetailClient({
   const activeAffiliation = product.product_affiliations?.[0]?.is_active ? product.product_affiliations[0] : null;
   const affiliateRate = activeAffiliation?.commission_rate || 0.10;
   const affiliateCommission = Math.round(price * affiliateRate);
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://envolafrica.vercel.app";
+  const origin = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL || "https://www.envolafrica.site");
   const affiliateShareUrl = `${origin}/marketplace/produits/${product.id}?ref=${currentUser?.id || "ambassadeur"}`;
 
   const copyAffiliateLink = async () => {

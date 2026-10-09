@@ -300,11 +300,11 @@ export default function Footer() {
           </p>
           <div className="flex flex-wrap items-center gap-4 text-[12px] text-[#474646]">
             <Link href="/conditions" className="hover:text-[#9e001f]">Conditions (CGU)</Link>
-            <span className="text-[#e5bdbb]">;</span>
+            <span className="text-[#e5bdbb] select-none" aria-hidden="true">·</span>
             <Link href="/politique-de-confidentialite" className="hover:text-[#9e001f]">Confidentialité</Link>
-            <span className="text-[#e5bdbb]">;</span>
+            <span className="text-[#e5bdbb] select-none" aria-hidden="true">·</span>
             <Link href="/mentions-legales" className="hover:text-[#9e001f]">Mentions Légales</Link>
-            <span className="text-[#e5bdbb]">;</span>
+            <span className="text-[#e5bdbb] select-none" aria-hidden="true">·</span>
             <Link href="/cookies" className="hover:text-[#9e001f]">Cookies</Link>
             <span className="hidden items-center gap-2 md:flex">
               <span className="h-2 w-2 rounded-full bg-green-600" />

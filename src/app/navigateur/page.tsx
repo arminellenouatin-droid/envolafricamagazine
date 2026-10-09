@@ -3,22 +3,26 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
-import { validateExternalUrl } from "@/lib/internal-browser";
+import { validateExternalUrl, isAllowedInternalNavDomain } from "@/lib/internal-browser";
 
 function InternalBrowserContent() {
   const router = useRouter();
   const params = useSearchParams();
   const [frameFailed, setFrameFailed] = useState(false);
-  const target = useMemo(() => validateExternalUrl(params.get("url") || ""), [params]);
+  const target = useMemo(() => {
+    const parsed = validateExternalUrl(params.get("url") || "");
+    if (!parsed || !isAllowedInternalNavDomain(parsed.hostname)) return null;
+    return parsed;
+  }, [params]);
   const targetHref = target?.toString() || "";
 
   if (!target) {
     return (
       <main className="min-h-[65vh] bg-[#fcf9f8] px-5 py-20">
         <div className="mx-auto max-w-2xl rounded-3xl border border-[#e5bdbb] bg-white p-8 text-center shadow-sm">
-          <span className="material-symbols-outlined text-5xl text-[#9e001f]">link_off</span>
-          <h1 className="mt-4 font-display text-2xl font-black text-[#303030]">Lien externe invalide</h1>
-          <p className="mt-3 text-sm leading-6 text-[#5c403f]">Pour votre sécurité, EAM accepte uniquement les liens HTTP ou HTTPS sans identifiant intégré et sans adresse locale.</p>
+          <span className="material-symbols-outlined text-5xl text-[#9e001f] notranslate" translate="no">link_off</span>
+          <h1 className="mt-4 font-display text-2xl font-black text-[#303030]">Lien externe non autorisé</h1>
+          <p className="mt-3 text-sm leading-6 text-[#5c403f]">Pour votre sécurité, le navigateur intégré EAM accepte uniquement les plateformes partenaires vérifiées de notre écosystème en HTTPS sécurisé.</p>
           <Link href="/" className="mt-6 inline-flex h-11 items-center rounded-full bg-[#303030] px-6 text-sm font-bold text-white">Retour à l’accueil</Link>
         </div>
       </main>
@@ -29,10 +33,10 @@ function InternalBrowserContent() {
     <main className="min-h-[70vh] bg-[#f3f5f6]">
       <div className="border-b border-slate-200 bg-white px-4 py-3 shadow-sm md:px-8">
         <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-3">
-          <button type="button" onClick={() => router.back()} aria-label="Retour" className="grid h-10 w-10 place-items-center rounded-full border border-slate-200 text-slate-700 transition hover:bg-slate-100"><span className="material-symbols-outlined">arrow_back</span></button>
+          <button type="button" onClick={() => router.back()} aria-label="Retour" className="grid h-10 w-10 place-items-center rounded-full border border-slate-200 text-slate-700 transition hover:bg-slate-100"><span className="material-symbols-outlined notranslate" translate="no">arrow_back</span></button>
           <Link href="/" className="font-display text-lg font-black text-[#9e001f]">EAM</Link>
           <div className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-600"><span className="mr-2 inline-block h-2 w-2 rounded-full bg-emerald-500" />{target.hostname}{target.pathname !== "/" ? target.pathname : ""}</div>
-          <a href={targetHref} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-300 px-4 text-xs font-bold text-slate-700 transition hover:bg-slate-100"><span className="material-symbols-outlined text-[17px]">open_in_new</span>Ouvrir dehors</a>
+          <a href={targetHref} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-300 px-4 text-xs font-bold text-slate-700 transition hover:bg-slate-100"><span className="material-symbols-outlined text-[17px] notranslate" translate="no">open_in_new</span>Ouvrir dehors</a>
         </div>
       </div>
 

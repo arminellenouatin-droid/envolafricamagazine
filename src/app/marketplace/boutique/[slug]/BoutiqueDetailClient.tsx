@@ -78,7 +78,7 @@ export default function BoutiqueDetailClient({
   const [catalogCategory, setCatalogCategory] = useState("all");
 
   // URLs & Short Link
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://envolafrica.vercel.app";
+  const origin = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL || "https://www.envolafrica.site");
   const canonicalSlug = supplier.slug || generateStoreSlug(supplier.business_name);
   const vendorSlug = supplier.vendor_slug || "vendeur";
   const storeUrl = `${origin}/marketplace/boutique/${vendorSlug}/${canonicalSlug}`;

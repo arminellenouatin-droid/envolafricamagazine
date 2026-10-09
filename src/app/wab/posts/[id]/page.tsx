@@ -20,7 +20,7 @@ async function getSiteOrigin(): Promise<string> {
       ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
       : process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
-      : "https://envolafrica.vercel.app")
+      : "https://www.envolafrica.site")
   );
 }
 
@@ -43,7 +43,7 @@ async function resolveMediaUrl(supabase: any, pathOrUrl?: string): Promise<strin
   }
 }
 
-async function getPostData(id: string, origin = "https://envolafrica.vercel.app"): Promise<SinglePostData | null> {
+async function getPostData(id: string, origin = "https://www.envolafrica.site"): Promise<SinglePostData | null> {
   const supabase = getSupabaseAdmin();
 
   if (supabase) {

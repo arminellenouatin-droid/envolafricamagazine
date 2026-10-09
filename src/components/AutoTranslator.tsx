@@ -103,6 +103,20 @@ export default function AutoTranslator() {
   useEffect(() => {
     protectIconsOnce();
 
+    // Observation continue des nœuds ajoutés pour immuniser 100% des icônes (y compris lazy/dynamiques)
+    let iconObserver: MutationObserver | null = null;
+    if (typeof MutationObserver !== "undefined") {
+      iconObserver = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          if (m.addedNodes.length > 0) {
+            protectIconsOnce();
+            break;
+          }
+        }
+      });
+      iconObserver.observe(document.body, { childList: true, subtree: true });
+    }
+
     // Nettoyer l'indicateur de rechargement pour le français une fois la page stabilisée
     const persisted = readPersistedVisitorLocale();
     if (persisted.language === "fr") {
@@ -218,6 +232,7 @@ export default function AutoTranslator() {
 
     window.addEventListener("ea-locale-updated", onLocaleUpdate);
     return () => {
+      iconObserver?.disconnect();
       window.removeEventListener("ea-locale-updated", onLocaleUpdate);
     };
   }, []);

@@ -138,9 +138,35 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" rel="stylesheet" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                function protect(root) {
+                  try {
+                    var els = (root || document).querySelectorAll('.material-symbols-outlined:not([translate="no"]), [class*="material-symbols"]:not([translate="no"])');
+                    for (var i = 0; i < els.length; i++) {
+                      els[i].setAttribute('translate', 'no');
+                      if (!els[i].classList.contains('notranslate')) {
+                        els[i].classList.add('notranslate');
+                      }
+                    }
+                  } catch(e) {}
+                }
+                if (typeof window !== 'undefined') {
+                  if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', function() { protect(); });
+                  } else {
+                    protect();
+                  }
+                }
+              })();
+            `,
+          }}
+        />
         <style>{`
           .material-symbols-outlined {
-            font-family: 'Material Symbols Outlined';
+            font-family: 'Material Symbols Outlined' !important;
             font-weight: normal;
             font-style: normal;
             font-size: 24px;
@@ -161,6 +187,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
             vertical-align: middle;
             user-select: none;
+            speak: never;
           }
           :root {
             --font-geist-sans: 'Inter', system-ui, sans-serif;
@@ -188,11 +215,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           (function(){
             try {
               const params = new URLSearchParams(window.location.search);
-              const ref = params.get('ref') || params.get('affiliate') || params.get('parrain');
-              if (ref) {
-                localStorage.setItem('eam_affiliate', ref);
-                document.cookie = 'eam_affiliate=' + ref + '; path=/; max-age=' + (30*24*60*60);
-                fetch('/api/affiliate', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({code: ref})}).catch(()=>{});
+              const rawRef = params.get('ref') || params.get('affiliate') || params.get('parrain');
+              if (rawRef && /^[a-zA-Z0-9_-]{3,64}$/.test(rawRef)) {
+                const cleanRef = encodeURIComponent(rawRef);
+                localStorage.setItem('eam_affiliate', cleanRef);
+                const isSecure = window.location.protocol === 'https:' ? '; Secure' : '';
+                document.cookie = 'eam_affiliate=' + cleanRef + '; path=/; max-age=' + (30*24*60*60) + '; SameSite=Lax' + isSecure;
+                fetch('/api/affiliate', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({code: cleanRef})}).catch(()=>{});
               }
             } catch {}
           })();
