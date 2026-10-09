@@ -49,12 +49,25 @@ export default function PreviewFlipbook({
   const renderTaskLeftRef = useRef<any>(null);
   const renderTaskRightRef = useRef<any>(null);
 
-  // Resolved PDF target URL: fallback to the project's official edition PDF if none specified
-  const targetPdfUrl = pdfUrl || "/magazines/23/numero-23.pdf";
+  // Resolved PDF target URL: support previewUrl first, then pdfUrl, then fallback only if numero 23
+  const targetPdfUrl = previewUrl || pdfUrl || (numero === 23 ? "/magazines/23/numero-23.pdf" : "");
+  const hasImagePages = Array.isArray(pages) && pages.length > 0;
   const maxPage = 8;
   const isBlocked = (p: number) => p >= 8;
   const rightPage = page + 1;
   const showSpread = mode === "spread" && page > 1 && page < 8;
+
+  // Prefetch image pages eagerly into browser cache for instant flip
+  useEffect(() => {
+    if (hasImagePages && pages) {
+      pages.forEach((src) => {
+        if (typeof src === "string" && src.trim()) {
+          const img = new window.Image();
+          img.src = src;
+        }
+      });
+    }
+  }, [hasImagePages, pages]);
 
   // Detect screen width and update mode automatically
   useEffect(() => {
@@ -78,9 +91,14 @@ export default function PreviewFlipbook({
     setMode(newMode);
   };
 
-  // Load PDF directly with pdfjs-dist
+  // Load PDF directly with pdfjs-dist (only if pre-rendered pages are not supplied)
   useEffect(() => {
     let cancelled = false;
+    if (hasImagePages) {
+      setPdfLoading(false);
+      return;
+    }
+
     if (!targetPdfUrl) {
       setPdfLoading(false);
       return;
@@ -460,39 +478,51 @@ export default function PreviewFlipbook({
                 <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-black/20 to-transparent" />
               )}
 
-              {/* PDF Canvas for Left Page */}
-              <canvas
-                ref={canvasLeftRef}
-                className={`h-full w-full object-contain bg-white ${
-                  !isBlocked(page) && !pdfLoading && !pdfError ? "block" : "hidden"
-                }`}
-                aria-label={`${title}, page ${page}`}
-              />
-
-              {/* Page 1 Cover image while PDF loads */}
-              {page === 1 && (pdfLoading || pdfError) && (
+              {/* Affichage instantané haute performance si images pré-générées disponibles */}
+              {hasImagePages && pages[page - 1] && !isBlocked(page) ? (
                 <img
-                  src={cover}
-                  alt={`${title}, couverture`}
-                  className="h-full w-full object-cover"
+                  src={pages[page - 1]}
+                  alt={`${title}, page ${page}`}
+                  className="h-full w-full object-contain bg-white"
+                  loading="eager"
                 />
-              )}
+              ) : (
+                <>
+                  {/* PDF Canvas for Left Page */}
+                  <canvas
+                    ref={canvasLeftRef}
+                    className={`h-full w-full object-contain bg-white ${
+                      !isBlocked(page) && !pdfLoading && !pdfError ? "block" : "hidden"
+                    }`}
+                    aria-label={`${title}, page ${page}`}
+                  />
 
-              {/* Loading indicator for pages 2 to 7 (never show cover in background!) */}
-              {page > 1 && !isBlocked(page) && (pdfLoading || pageRendering) && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white p-6 text-center text-[#746665]">
-                  <div className="h-8 w-8 animate-spin rounded-full border-3 border-[#e5bdbb] border-t-[#9e001f]" />
-                  <p className="mt-3 text-xs font-medium">Chargement de la page {page}…</p>
-                </div>
-              )}
+                  {/* Page 1 Cover image while PDF loads */}
+                  {page === 1 && (pdfLoading || pdfError) && (
+                    <img
+                      src={cover}
+                      alt={`${title}, couverture`}
+                      className="h-full w-full object-cover"
+                    />
+                  )}
 
-              {/* Error fallback if PDF cannot be loaded */}
-              {pdfError && !isBlocked(page) && page > 1 && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white p-6 text-center text-[#746665]">
-                  <span className="material-symbols-outlined text-4xl text-[#9e001f]">menu_book</span>
-                  <p className="mt-2 text-xs font-medium">Aperçu en cours d&apos;optimisation</p>
-                  <p className="mt-1 text-[11px] text-[#9c8e8d]">La page {page} sera disponible sous peu.</p>
-                </div>
+                  {/* Loading indicator for pages 2 to 7 (never show cover in background!) */}
+                  {page > 1 && !isBlocked(page) && (pdfLoading || pageRendering) && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white p-6 text-center text-[#746665]">
+                      <div className="h-8 w-8 animate-spin rounded-full border-3 border-[#e5bdbb] border-t-[#9e001f]" />
+                      <p className="mt-3 text-xs font-medium">Chargement de la page {page}…</p>
+                    </div>
+                  )}
+
+                  {/* Error fallback if PDF cannot be loaded */}
+                  {pdfError && !isBlocked(page) && page > 1 && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white p-6 text-center text-[#746665]">
+                      <span className="material-symbols-outlined text-4xl text-[#9e001f]">menu_book</span>
+                      <p className="mt-2 text-xs font-medium">Aperçu en cours d&apos;optimisation</p>
+                      <p className="mt-1 text-[11px] text-[#9c8e8d]">La page {page} sera disponible sous peu.</p>
+                    </div>
+                  )}
+                </>
               )}
 
               {/* Page 8: Exact Paywall Screen requested by user */}
@@ -505,21 +535,33 @@ export default function PreviewFlipbook({
                 {/* Inner spine shadow in spread mode */}
                 <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-black/20 to-transparent" />
 
-                {/* PDF Canvas for Right Page */}
-                <canvas
-                  ref={canvasRightRef}
-                  className={`h-full w-full object-contain bg-white ${
-                    !isBlocked(rightPage) && !pdfLoading && !pdfError ? "block" : "hidden"
-                  }`}
-                  aria-label={`${title}, page ${rightPage}`}
-                />
+                {/* Affichage instantané haute performance si images pré-générées disponibles */}
+                {hasImagePages && pages[rightPage - 1] && !isBlocked(rightPage) ? (
+                  <img
+                    src={pages[rightPage - 1]}
+                    alt={`${title}, page ${rightPage}`}
+                    className="h-full w-full object-contain bg-white"
+                    loading="eager"
+                  />
+                ) : (
+                  <>
+                    {/* PDF Canvas for Right Page */}
+                    <canvas
+                      ref={canvasRightRef}
+                      className={`h-full w-full object-contain bg-white ${
+                        !isBlocked(rightPage) && !pdfLoading && !pdfError ? "block" : "hidden"
+                      }`}
+                      aria-label={`${title}, page ${rightPage}`}
+                    />
 
-                {/* Loading indicator for Right Page */}
-                {!isBlocked(rightPage) && (pdfLoading || pageRendering) && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-white p-6 text-center text-[#746665]">
-                    <div className="h-8 w-8 animate-spin rounded-full border-3 border-[#e5bdbb] border-t-[#9e001f]" />
-                    <p className="mt-3 text-xs font-medium">Chargement de la page {rightPage}…</p>
-                  </div>
+                    {/* Loading indicator for Right Page */}
+                    {!isBlocked(rightPage) && (pdfLoading || pageRendering) && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-white p-6 text-center text-[#746665]">
+                        <div className="h-8 w-8 animate-spin rounded-full border-3 border-[#e5bdbb] border-t-[#9e001f]" />
+                        <p className="mt-3 text-xs font-medium">Chargement de la page {rightPage}…</p>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {/* Page 8 Paywall on Right Page */}

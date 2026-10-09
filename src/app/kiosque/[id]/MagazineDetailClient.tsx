@@ -271,15 +271,20 @@ export default function MagazineDetailPage({ initialMagazine }: { initialMagazin
         </section>}
       </main>
       {previewOpen && (() => {
-        const selectedPdf = magazine.pdfs?.[localeLanguage] || magazine.pdfs?.fr || "/magazines/23/numero-23.pdf";
+        const selectedPdf = magazine.pdfs?.[localeLanguage] || magazine.pdfs?.fr || (magazine.id === "23" ? "/magazines/23/numero-23.pdf" : "");
         const protectedPdf = selectedPdf?.startsWith("private-pdf://")
           ? `/api/magazines/${encodeURIComponent(id)}/preview?lang=${encodeURIComponent(localeLanguage)}`
           : undefined;
+        const previewPages = (magazine.previewImages && magazine.previewImages.length > 0)
+          ? magazine.previewImages
+          : protectedPdf
+          ? [1, 2, 3, 4, 5, 6, 7].map((p) => `${protectedPdf}&page=${p}`)
+          : [];
         return (
           <PreviewFlipbook
             title={magazine.title}
             cover={magazine.cover}
-            pages={magazine.previewImages}
+            pages={previewPages}
             pdfUrl={protectedPdf ? undefined : selectedPdf}
             previewUrl={protectedPdf}
             language={localeLanguage}

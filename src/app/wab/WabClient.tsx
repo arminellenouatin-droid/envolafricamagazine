@@ -21,6 +21,7 @@ import { uploadWabMedia, readJsonResponse } from "@/lib/wab-upload-client";
 import { WAB_BACKGROUND_PRESETS, getWabBackground } from "@/lib/wab-backgrounds";
 import { resolveFileUrl } from "@/lib/storage/resolve-url";
 import EvSlot from "@/components/ads/EvSlot";
+import WabPollWidget from "@/components/wab/WabPollWidget";
 
 type PublishPage = { id: string; name: string; logoUrl?: string; logo_url?: string };
 type PublishGroup = { id: string; name: string; privacy: "community" | "private" };
@@ -177,6 +178,9 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("default");
   const [liveSalons, setLiveSalons] = useState<any[]>([]);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [pollMode, setPollMode] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const [tiktokViewerPostId, setTiktokViewerPostId] = useState<string | null>(null);
   const marker = useRef<HTMLDivElement>(null);
   const feedTopRef = useRef<HTMLDivElement>(null);
@@ -641,7 +645,8 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
   }
 
   async function publish() {
-    if (!content.trim()) return;
+    const validPoll = pollMode && pollQuestion.trim() && pollOptions.filter((o) => o.trim()).length >= 2;
+    if (!content.trim() && !validPoll) return;
     if (!accountLoaded) { setMessage("Vérification de votre compte WAB en cours…"); return; }
     const hasVideo = selectedFiles.some((file) => file.type.startsWith("video/"));
     const hasLargeMedia = selectedFiles.some((file) => file.size > 10 * 1024 * 1024);
@@ -656,13 +661,17 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
         const uploadData = await uploadWabMedia(file, (status) => setMessage(status));
         media.push(uploadData);
       }
+      const pollText = validPoll
+        ? `\n\n[SONDAGE]\n❓ ${pollQuestion.trim()}\n` + pollOptions.filter((o) => o.trim()).map((opt, i) => `${i + 1}. ${opt.trim()}`).join("\n")
+        : "";
+      const finalContent = (content.trim() + pollText).trim();
       const response = await fetch("/api/wab/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          content,
-          type,
-          tags: [],
+          content: finalContent,
+          type: validPoll ? "poll" : type,
+          tags: validPoll ? ["sondage", "b2b"] : [],
           media,
           backgroundColor: selectedFiles.length === 0 ? selectedBg || undefined : undefined,
           pageId: publishTarget === "page" ? selectedPageId : undefined,
@@ -679,6 +688,9 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
       setContent("");
       setSelectedFiles([]);
       setSelectedBg(null);
+      setPollMode(false);
+      setPollQuestion("");
+      setPollOptions(["", ""]);
       setPublishOpen(false);
       setUpgradeRequired(null);
       sessionStorage.removeItem("wab-publish-draft");
@@ -874,7 +886,18 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[#43474d] transition hover:bg-[#f3f7f6]"
                 >
                   <span className="material-symbols-outlined text-[20px] text-[#9333ea]">article</span>
-                  <span className="hidden sm:inline">Rédiger un article</span>
+                  <span className="hidden sm:inline">Article</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPollMode(true);
+                    setPublishOpen(true);
+                  }}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[#43474d] transition hover:bg-[#f3f7f6]"
+                >
+                  <span className="material-symbols-outlined text-[20px] text-[#006874]">poll</span>
+                  <span className="hidden sm:inline">Sondage</span>
                 </button>
               </div>
             </div>
@@ -934,6 +957,97 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                       minHeight={150}
                     />
                   </div>
+
+                  {/* LinkedIn Poll Creator */}
+                  {pollMode ? (
+                    <div className="mt-3 rounded-2xl border-2 border-[#006874]/30 bg-[#f4fbfa] p-4">
+                      <div className="flex items-center justify-between pb-2 border-b border-[#d1e9e6]">
+                        <div className="flex items-center gap-2 text-[#006874]">
+                          <span className="material-symbols-outlined text-[20px]">poll</span>
+                          <span className="text-xs font-black uppercase tracking-wider">Créer un sondage B2B</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPollMode(false);
+                            setPollQuestion("");
+                            setPollOptions(["", ""]);
+                          }}
+                          className="text-[11px] font-bold text-red-600 hover:underline"
+                        >
+                          ✕ Supprimer le sondage
+                        </button>
+                      </div>
+                      <div className="mt-3 space-y-2.5">
+                        <div>
+                          <label className="block text-[11px] font-bold text-[#082843] mb-1">
+                            Votre question
+                          </label>
+                          <input
+                            type="text"
+                            value={pollQuestion}
+                            onChange={(e) => setPollQuestion(e.target.value)}
+                            placeholder="Ex : Quel secteur portera la croissance africaine en 2026 ?"
+                            className="w-full rounded-xl border border-[#cbe4e1] bg-white px-3 py-2 text-xs font-semibold text-[#082843] focus:border-[#006874] focus:outline-none focus:ring-1 focus:ring-[#006874]"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="block text-[11px] font-bold text-[#082843]">
+                            Options de réponse (au moins 2)
+                          </label>
+                          {pollOptions.map((opt, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <span className="grid h-6 w-6 place-items-center rounded-full bg-[#006874]/10 text-[10px] font-extrabold text-[#006874] shrink-0">
+                                {idx + 1}
+                              </span>
+                              <input
+                                type="text"
+                                value={opt}
+                                onChange={(e) => {
+                                  const updated = [...pollOptions];
+                                  updated[idx] = e.target.value;
+                                  setPollOptions(updated);
+                                }}
+                                placeholder={`Option ${idx + 1}`}
+                                className="w-full rounded-lg border border-[#cbe4e1] bg-white px-3 py-1.5 text-xs text-[#082843] focus:border-[#006874] focus:outline-none"
+                              />
+                              {pollOptions.length > 2 && (
+                                <button
+                                  type="button"
+                                  onClick={() => setPollOptions(pollOptions.filter((_, i) => i !== idx))}
+                                  className="text-gray-400 hover:text-red-500 p-1"
+                                  title="Supprimer cette option"
+                                >
+                                  <span className="material-symbols-outlined text-[16px]">close</span>
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                          {pollOptions.length < 4 && (
+                            <button
+                              type="button"
+                              onClick={() => setPollOptions([...pollOptions, ""])}
+                              className="mt-1 flex items-center gap-1 rounded-lg border border-dashed border-[#006874] px-3 py-1 text-[11px] font-bold text-[#006874] hover:bg-[#eefcfa]"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">add</span>
+                              <span>Ajouter une option (max 4)</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-2 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setPollMode(true)}
+                        className="flex items-center gap-1.5 text-xs font-bold text-[#006874] hover:underline"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">poll</span>
+                        <span>+ Créer un sondage avec ce post</span>
+                      </button>
+                    </div>
+                  )}
 
                   {/* Quick Hashtags shortcut bar (style Facebook) */}
                   <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-xs">
@@ -1436,6 +1550,30 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                             <PostMedia postId={post.id} media={post.media} />
                           </div>
                         )}
+
+                        {/* Interactive Poll Rendering */}
+                        {post.content.includes("[SONDAGE]") && (() => {
+                          const parts = post.content.split("[SONDAGE]");
+                          const pollSection = parts[1] || "";
+                          const qMatch = pollSection.match(/❓\s*([^\n]+)/);
+                          const optMatches = [...pollSection.matchAll(/\d+\.\s*([^\n]+)/g)].map((m) => m[1]);
+                          if (qMatch && optMatches.length >= 2) {
+                            return (
+                              <div className="mt-3">
+                                <WabPollWidget
+                                  postId={`poll-${post.id}`}
+                                  question={qMatch[1]}
+                                  options={optMatches.map((text, idx) => ({
+                                    id: `opt-${idx}`,
+                                    text,
+                                    votes: 0,
+                                  }))}
+                                />
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     )}
 
@@ -1476,6 +1614,24 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                       onCountChange={(count) => setPosts((items) => items.map((item) => item.id === post.id ? { ...item, comments: count } : item))}
                     />
                   </article>
+
+                  {/* Sondage Communautaire Panafricain interactif (Style LinkedIn) */}
+                  {index === 1 && (
+                    <div className="my-3">
+                      <WabPollWidget
+                        postId="poll-b2b-afcfta-2026"
+                        question="📊 Baromètre Économique EAM : Quel est le principal levier pour accélérer la ZLECAf en 2026 ?"
+                        options={[
+                          { id: "opt-1", text: "Interconnexion des paiements en devises locales (PAPSS)", votes: 142 },
+                          { id: "opt-2", text: "Développement des infrastructures logistiques & corridors", votes: 98 },
+                          { id: "opt-3", text: "Numérisation des procédures douanières & conformité", votes: 76 },
+                          { id: "opt-4", text: "Harmonisation fiscale et accords bilatéraux", votes: 53 },
+                        ]}
+                        totalVotes={369}
+                        endsAtLabel="Sondage officiel Envol Africa · Il reste 4 jours"
+                      />
+                    </div>
+                  )}
 
                   {discoveryTypeForInsertion(index + 1) && (
                     <DiscoveryCarousel type={discoveryTypeForInsertion(index + 1)!} />
@@ -1573,27 +1729,40 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
               </div>
             </div>
 
-            {/* Suggestions de connexions (People you may know) */}
+            {/* Décideurs & Leaders à connaître (Style LinkedIn Executive Network) */}
             <div className="rounded-2xl border border-[#d8e2e6] bg-white p-4 shadow-sm">
               <div className="flex items-center justify-between pb-3 border-b border-[#edf2f4]">
-                <h3 className="font-display text-sm font-bold text-[#001325]">Suggestions de relations</h3>
-                <a href="/wab/profil" className="text-[11px] font-bold text-[#006874] hover:underline">Voir tout</a>
+                <div className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[18px] text-[#006874]">verified</span>
+                  <h3 className="font-display text-sm font-bold text-[#001325]">Décideurs à connaître</h3>
+                </div>
+                <a href="/wab/profil" className="text-[11px] font-bold text-[#006874] hover:underline">Explorer</a>
               </div>
 
               <div className="mt-3 flex flex-col gap-3.5">
                 {[
-                  { id: "sug-1", name: "Dr. Amadou Diallo", role: "Directeur Investissement · Dakar", avatar: MODEL_AUTHOR },
-                  { id: "sug-2", name: "Aïssatou Traoré", role: "Fondatrice AgriTech · Abidjan", avatar: MODEL_PROFILE },
-                  { id: "sug-3", name: "Kwame Mensah", role: "Consultant FinTech · Accra", avatar: MODEL_COMPANY },
+                  { id: "lead-1", name: "Dr. Makhtar Diop", role: "Directeur Général IFC / SFI", country: "🇸🇳 Sénégal", avatar: MODEL_AUTHOR, verified: true },
+                  { id: "lead-2", name: "Vera Songwe", role: "Présidente Liquidity & Sustainability Facility", country: "🇨🇲 Cameroun", avatar: MODEL_PROFILE, verified: true },
+                  { id: "lead-3", name: "Aigboje Aig-Imoukhuede", role: "Président Access Holdings Plc", country: "🇳🇬 Nigeria", avatar: MODEL_COMPANY, verified: true },
+                  { id: "lead-4", name: "Tidjane Thiam", role: "Leader Financier & Industriel Panafricain", country: "🇨🇮 Côte d'Ivoire", avatar: MODEL_AUTHOR, verified: true },
+                  { id: "lead-5", name: "Rebecca Enonchong", role: "Présidente AfriLabs & CEO AppsTech", country: "🇨🇲 Cameroun", avatar: MODEL_PROFILE, verified: true },
                 ].map((person) => {
                   const isFollowed = Boolean(suggestedFollows[person.id]);
                   return (
                     <div key={person.id} className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <img src={person.avatar} alt={person.name} className="h-9 w-9 shrink-0 rounded-full object-cover border border-[#d1e9e6]" />
+                        <div className="relative shrink-0">
+                          <img src={person.avatar} alt={person.name} className="h-9 w-9 rounded-full object-cover border border-[#d1e9e6]" />
+                          {person.verified && (
+                            <span className="absolute -bottom-0.5 -right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-[#006874] text-[8px] text-white ring-1 ring-white">
+                              ✓
+                            </span>
+                          )}
+                        </div>
                         <div className="min-w-0">
-                          <p className="truncate text-xs font-bold text-[#001325]">{person.name}</p>
+                          <p className="truncate text-xs font-bold text-[#001325] hover:text-[#006874] transition-colors">{person.name}</p>
                           <p className="truncate text-[10px] text-[#5f6368]">{person.role}</p>
+                          <p className="text-[9px] font-medium text-[#82888e]">{person.country}</p>
                         </div>
                       </div>
                       <button
@@ -1605,7 +1774,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                             : "border border-[#006874] text-[#006874] hover:bg-[#eefcfa]"
                         }`}
                       >
-                        {isFollowed ? "✓ Suivi" : "+ Suivre"}
+                        {isFollowed ? "✓ Connecté" : "+ Suivre"}
                       </button>
                     </div>
                   );

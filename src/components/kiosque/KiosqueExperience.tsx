@@ -93,11 +93,16 @@ export default function KiosquePage({ initialMagazines = [] }: { initialMagazine
         const protectedPdf = selectedPdf?.startsWith("private-pdf://")
           ? `/api/magazines/${encodeURIComponent(currentMagazine.id)}/preview?lang=${encodeURIComponent(language)}`
           : undefined;
+        const previewPages = (currentMagazine.previewImages && currentMagazine.previewImages.length > 0)
+          ? currentMagazine.previewImages
+          : protectedPdf
+          ? [1, 2, 3, 4, 5, 6, 7].map((p) => `${protectedPdf}&page=${p}`)
+          : [];
         return (
           <PreviewFlipbook
             title={currentMagazine.title}
             cover={currentMagazine.cover}
-            pages={currentMagazine.previewImages}
+            pages={previewPages}
             pdfUrl={protectedPdf ? undefined : selectedPdf}
             previewUrl={protectedPdf}
             language={language}

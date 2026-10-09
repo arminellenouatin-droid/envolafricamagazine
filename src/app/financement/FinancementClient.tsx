@@ -26,6 +26,193 @@ const PAYS_OPTIONS = [
   { code: "NG", label: "Nigeria 🇳🇬" },
 ];
 
+function CrowdfundingRoiSimulator() {
+  const { formatPrice } = useLocale();
+  const [montant, setMontant] = useState(500000);
+  const [type, setType] = useState<"pret" | "equity" | "don">("pret");
+  const [dureeMois, setDureeMois] = useState(24);
+
+  // Prêt calcul
+  const tauxAnnuel = 0.095;
+  const interetsTotaux = Math.round(montant * tauxAnnuel * (dureeMois / 12));
+  const totalRembourse = montant + interetsTotaux;
+  const mensualite = Math.round(totalRembourse / dureeMois);
+
+  // Equity calcul
+  const valProjection = Math.round(montant * 2.4);
+  const plusValueEstimee = valProjection - montant;
+
+  return (
+    <section className="relative mx-auto -mt-8 mb-10 max-w-7xl px-5 sm:px-8 z-20">
+      <div className="overflow-hidden rounded-[28px] border border-[#eadfce] bg-white p-6 shadow-2xl lg:p-8">
+        <div className="flex flex-col justify-between gap-4 border-b border-[#f0e7dc] pb-5 md:flex-row md:items-center">
+          <div>
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fff4e0] px-3 py-1 text-[10px] font-black uppercase text-[#a36300]">
+              <span className="material-symbols-outlined text-[15px]">calculate</span> Simulateur de Rendement & ROI
+            </div>
+            <h3 className="mt-2 font-display text-2xl font-black text-[#082843]">
+              Estimez l&apos;impact et les gains de votre investissement
+            </h3>
+            <p className="mt-1 text-xs text-[#5c403f]">
+              Simulez vos retours financiers et dividendes selon le mode d&apos;engagement choisi.
+            </p>
+          </div>
+          <div className="flex rounded-full border border-slate-200 bg-slate-100 p-1 text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => setType("pret")}
+              className={`rounded-full px-4 py-2 transition ${
+                type === "pret" ? "bg-[#082843] text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              ↗ Prêt (9.5%)
+            </button>
+            <button
+              type="button"
+              onClick={() => setType("equity")}
+              className={`rounded-full px-4 py-2 transition ${
+                type === "equity" ? "bg-[#f59e0b] text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              % Parts / Equity
+            </button>
+            <button
+              type="button"
+              onClick={() => setType("don")}
+              className={`rounded-full px-4 py-2 transition ${
+                type === "don" ? "bg-[#9e001f] text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              ❤️ Don Solidaire
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-8 lg:grid-cols-12 lg:items-center">
+          <div className="lg:col-span-7 space-y-5">
+            <div>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black uppercase tracking-wider text-slate-500">
+                  Montant engagé
+                </label>
+                <strong className="font-display text-2xl font-black text-[#9e001f]">{formatPrice(montant)}</strong>
+              </div>
+              <input
+                type="range"
+                min={25000}
+                max={10000000}
+                step={25000}
+                value={montant}
+                onChange={(e) => setMontant(Number(e.target.value))}
+                className="mt-3 h-2.5 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 accent-[#9e001f]"
+              />
+              <div className="mt-1 flex justify-between text-[10px] text-slate-400 font-bold">
+                <span>25 000 FCFA</span>
+                <span>5 000 000 FCFA</span>
+                <span>10 000 000 FCFA</span>
+              </div>
+            </div>
+
+            {type === "pret" && (
+              <div>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-500">
+                    Durée d&apos;amortissement
+                  </label>
+                  <strong className="text-sm font-black text-slate-800">{dureeMois} mois ({dureeMois / 12} ans)</strong>
+                </div>
+                <div className="mt-2 flex gap-2">
+                  {[12, 24, 36].map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setDureeMois(m)}
+                      className={`flex-1 rounded-xl py-2 text-xs font-bold transition border ${
+                        dureeMois === m ? "border-[#082843] bg-[#082843] text-white shadow-sm" : "border-slate-200 bg-slate-50 text-slate-700"
+                      }`}
+                    >
+                      {m} mois
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <p className="text-xs leading-5 text-slate-500">
+              {type === "pret" && "Les intérêts sont versés mensuellement selon un échéancier certifié par convention obligataire contractuelle."}
+              {type === "equity" && "Les prises de participation font l'objet d'un pacte d'actionnaires formel, de certificats de parts et de droits de vote aux assemblées générales."}
+              {type === "don" && "Les dons bénéficient d'un reçu fiscal officiel, d'un badge Pionnier sur WAB et de contreparties exclusives des porteurs de projets."}
+            </p>
+          </div>
+
+          <div className="lg:col-span-5 rounded-2xl bg-gradient-to-br from-[#10141d] to-[#1a1f2c] p-6 text-white shadow-xl border border-white/10">
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#f6c453]">Projection financière détaillée</p>
+            {type === "pret" && (
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <span className="text-xs text-slate-300">Mensualité perçue :</span>
+                  <strong className="text-base font-black text-emerald-400">{formatPrice(mensualite)} / mois</strong>
+                </div>
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <span className="text-xs text-slate-300">Intérêts nets générés :</span>
+                  <strong className="text-base font-black text-[#f6c453]">+{formatPrice(interetsTotaux)}</strong>
+                </div>
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-xs font-bold text-white">Total remboursé :</span>
+                  <strong className="font-display text-xl font-black text-white">{formatPrice(totalRembourse)}</strong>
+                </div>
+              </div>
+            )}
+            {type === "equity" && (
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <span className="text-xs text-slate-300">Multiple projeté (3-5 ans) :</span>
+                  <strong className="text-base font-black text-[#f6c453]">2.4× le capital investi</strong>
+                </div>
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <span className="text-xs text-slate-300">Plus-value potentielle :</span>
+                  <strong className="text-base font-black text-emerald-400">+{formatPrice(plusValueEstimee)}</strong>
+                </div>
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-xs font-bold text-white">Valorisation projetée :</span>
+                  <strong className="font-display text-xl font-black text-white">{formatPrice(valProjection)}</strong>
+                </div>
+              </div>
+            )}
+            {type === "don" && (
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <span className="text-xs text-slate-300">Badge donateur officiel :</span>
+                  <strong className="text-sm font-bold text-[#ffdad8]">Badge Certifié WAB</strong>
+                </div>
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <span className="text-xs text-slate-300">Impact économique direct :</span>
+                  <strong className="text-sm font-bold text-emerald-400">100% alloué au projet</strong>
+                </div>
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-xs font-bold text-white">Reçu fiscal :</span>
+                  <strong className="text-xs font-bold text-white">Délivré instantanément</strong>
+                </div>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById("projets");
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="mt-6 w-full rounded-full bg-[#9e001f] py-3 text-center text-xs font-black text-white shadow-lg hover:bg-[#c8102e] transition"
+            >
+              Découvrir les campagnes éligibles →
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function FinancementClient() {
   const { formatPrice } = useLocale();
   const [projets, setProjets] = useState<CrowdProject[]>([]);
@@ -168,6 +355,32 @@ export default function FinancementClient() {
             </div>
           </div>
 
+          {/* Baromètre Financier & Impact Pan-Africain */}
+          <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
+              <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Total levé</span>
+              <strong className="mt-1 block font-display text-xl sm:text-2xl font-black text-[#f6c453]">
+                {formatPrice(485000000)}
+              </strong>
+              <span className="text-[10px] text-emerald-400">● 100% sécurisé Moneroo</span>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
+              <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Taux de succès</span>
+              <strong className="mt-1 block font-display text-xl sm:text-2xl font-black text-white">94.2%</strong>
+              <span className="text-[10px] text-slate-400">des objectifs atteints</span>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
+              <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Investisseurs</span>
+              <strong className="mt-1 block font-display text-xl sm:text-2xl font-black text-white">12 400+</strong>
+              <span className="text-[10px] text-[#ffdad8]">Continent & Diaspora</span>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
+              <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Pays actifs</span>
+              <strong className="mt-1 block font-display text-xl sm:text-2xl font-black text-[#8ee0c0]">54 États</strong>
+              <span className="text-[10px] text-slate-400">Zone CEDEAO, CEMAC & +</span>
+            </div>
+          </div>
+
           {/* Les 3 Cartes de Modes d'Investissement */}
           <div className="mt-12 grid gap-4 sm:grid-cols-3">
             {/* Mode Don */}
@@ -244,6 +457,9 @@ export default function FinancementClient() {
           </div>
         </div>
       </section>
+
+      {/* Simulateur ROI & Gains Interactif */}
+      <CrowdfundingRoiSimulator />
 
       {/* Barre de Filtres Flottante & Responsive */}
       <div className="sticky top-0 z-30 border-b border-[#e5bdbb]/40 bg-white/95 px-5 py-3.5 shadow-sm backdrop-blur-md sm:px-8">
@@ -622,6 +838,65 @@ export default function FinancementClient() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pactes d'Investisseurs & Sécurité Juridique Fintech */}
+      <section className="border-t border-[#eadfce] bg-[#10141d] text-white py-16 px-5 sm:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-3xl">
+            <span className="rounded-full bg-[#f6c453]/20 px-3.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#f6c453]">
+              Gouvernance & Protection des Capitaux
+            </span>
+            <h2 className="mt-3 font-display text-3xl sm:text-4xl font-black">
+              Pactes d&apos;Investisseurs & Cadre Juridique
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              AfricaCrowdFunding opère selon les standards de conformité financière les plus stricts en zone UEMOA / CEMAC. Chaque opération d&apos;investissement est encadrée par des actes juridiques opposables.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
+              <span className="grid h-12 w-12 place-items-center rounded-xl bg-[#9e001f] text-2xl text-white">
+                🛡️
+              </span>
+              <h3 className="mt-4 font-display text-base font-black text-white">Séquestre Bancaire Moneroo</h3>
+              <p className="mt-2 text-xs leading-5 text-slate-400">
+                Les fonds collectés sont bloqués sur compte séquestre et ne sont libérés au porteur qu&apos;en cas d&apos;atteinte de l&apos;objectif minimum de la levée.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
+              <span className="grid h-12 w-12 place-items-center rounded-xl bg-[#f6c453] text-2xl text-[#513000]">
+                📜
+              </span>
+              <h3 className="mt-4 font-display text-base font-black text-white">Pacte d&apos;Actionnaires Signé</h3>
+              <p className="mt-2 text-xs leading-5 text-slate-400">
+                Génération automatique de conventions d&apos;émission obligataire et de pactes d&apos;actionnaires conformes au droit OHADA avec signature électronique.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
+              <span className="grid h-12 w-12 place-items-center rounded-xl bg-[#8ee0c0] text-2xl text-[#004d40]">
+                📊
+              </span>
+              <h3 className="mt-4 font-display text-base font-black text-white">Reporting Trimestriel Audité</h3>
+              <p className="mt-2 text-xs leading-5 text-slate-400">
+                Suivi transparent des KPI financiers, des comptes de résultats et accès à un espace de dialogue réservé entre investisseurs et fondateurs.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
+              <span className="grid h-12 w-12 place-items-center rounded-xl bg-[#ff8c94] text-2xl text-[#880e4f]">
+                ↩️
+              </span>
+              <h3 className="mt-4 font-display text-base font-black text-white">Garantie Tout ou Rien</h3>
+              <p className="mt-2 text-xs leading-5 text-slate-400">
+                Si la campagne n&apos;atteint pas son seuil de réussite (100% de l&apos;objectif) avant la date limite, tous les souscripteurs sont intégralement remboursés sans frais.
+              </p>
+            </div>
           </div>
         </div>
       </section>

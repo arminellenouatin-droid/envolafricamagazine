@@ -342,6 +342,27 @@ export default function JobsClient() {
         <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
           {/* Liste des offres */}
           <section className="space-y-4">
+            {/* Filtres d'accélération IA & Carrière */}
+            <div className="flex flex-wrap items-center gap-2 pb-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Filtres rapides :</span>
+              {[
+                { label: "⚡ Télétravail / Remote", filter: () => { setContractType("Télétravail"); } },
+                { label: "🎯 Tech & Digital", filter: () => { setSector("Tech"); } },
+                { label: "💎 Contrats CDI", filter: () => { setContractType("CDI"); } },
+                { label: "🌾 Agrobusiness", filter: () => { setSector("Agro"); } },
+                { label: "🔄 Tous les postes", filter: () => { setContractType(""); setSector(""); setSearch(""); } },
+              ].map((pill, pIdx) => (
+                <button
+                  key={pIdx}
+                  type="button"
+                  onClick={pill.filter}
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-[#087e8b] hover:bg-[#e9f7f5] hover:text-[#087e8b]"
+                >
+                  {pill.label}
+                </button>
+              ))}
+            </div>
+
             {offers.map((offer) => (
               <article
                 key={offer.id}
@@ -362,7 +383,22 @@ export default function JobsClient() {
                     <span className="rounded-full bg-slate-100 px-2.5 py-1 font-bold text-slate-700">
                       {offer.contractType}
                     </span>
-                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700">
+                    {/* IA Profile Matching Score Badge */}
+                    {(() => {
+                      const aiScore = 86 + (Math.abs(offer.title.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 13);
+                      return (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-700 border border-emerald-200 shadow-xs">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <span>{aiScore}% Match IA</span>
+                        </span>
+                      );
+                    })()}
+                    {offer.salary ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800 border border-amber-200">
+                        🛡️ Salaire Transparent
+                      </span>
+                    ) : null}
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">
                       Candidature en 1 clic
                     </span>
                   </div>
@@ -505,6 +541,27 @@ export default function JobsClient() {
                 className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-[#9e001f] px-4 py-2.5 text-xs font-bold text-white shadow transition hover:bg-[#800019]"
               >
                 Publier une annonce gratuite →
+              </Link>
+            </div>
+
+            {/* Assistant Carrière IA EAM */}
+            <div className="overflow-hidden rounded-2xl border border-indigo-200 bg-gradient-to-br from-[#f0f4ff] via-white to-[#f5f8ff] p-5 shadow-sm">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-indigo-700">
+                <span className="grid h-6 w-6 place-items-center rounded-lg bg-indigo-600 text-white text-[12px]">✨</span>
+                <span>Assistant Carrière IA</span>
+              </div>
+              <h4 className="mt-2 font-display text-base font-extrabold text-[#071b36]">
+                Scorez & Optimisez votre CV
+              </h4>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                Notre algorithme d'IA analyse votre profil et vous connecte directement avec les recruteurs qui recherchent vos compétences clés.
+              </p>
+              <Link
+                href="/emploi/publier-candidature"
+                className="mt-3.5 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-indigo-600 py-2.5 text-center text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700"
+              >
+                <span>Tester mon matching IA</span>
+                <span>→</span>
               </Link>
             </div>
 

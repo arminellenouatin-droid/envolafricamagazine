@@ -132,11 +132,15 @@ function mapMagazine(row: Record<string, unknown>): Magazine {
   const numero = Number(row.numero);
   const coverFallback = numero > 0 ? `/covers/envol-africa-cover-${String(((numero - 1) % 4) + 1).padStart(2, "0")}.jpg` : "";
   const rawPdfs = row.pdfs && typeof row.pdfs === "object" ? (row.pdfs as Record<string, string>) : {};
-  const normalizedPdfs: Record<string, string> = {
-    fr: normalizePdfUrl(rawPdfs.fr || rawPdfs.en || Object.values(rawPdfs)[0]),
-  };
+  const defaultFallback = (numero === 23 || String(row.id) === "23") ? "/magazines/23/numero-23.pdf" : "";
+  const normalizedPdfs: Record<string, string> = {};
+  if (rawPdfs.fr || rawPdfs.en || Object.values(rawPdfs)[0]) {
+    normalizedPdfs.fr = normalizePdfUrl(rawPdfs.fr || rawPdfs.en || Object.values(rawPdfs)[0], defaultFallback);
+  } else if (defaultFallback) {
+    normalizedPdfs.fr = defaultFallback;
+  }
   for (const [lang, val] of Object.entries(rawPdfs)) {
-    if (val) normalizedPdfs[lang] = normalizePdfUrl(val);
+    if (val) normalizedPdfs[lang] = normalizePdfUrl(val, "");
   }
 
   return {
