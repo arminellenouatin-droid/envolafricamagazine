@@ -12,7 +12,7 @@ async function readApiResponse(response: Response) {
   try { return JSON.parse(raw); } catch { return { error: raw.slice(0, 300) }; }
 }
 
-type AdminPlatform = "magazine" | "jobs" | "wab" | "marketplace" | "financement" | "awards";
+type AdminPlatform = "magazine" | "jobs" | "wab" | "marketplace" | "financement" | "awards" | "ads";
 
 function categoryDepth(category: any, all: any[]) { let depth = 0; let current = category; while (current?.parent_id && depth < 12) { current = all.find((item) => item.id === current.parent_id); depth += 1; } return depth; }
 function categoryPath(category: any, all: any[]) { const names: string[] = []; let current = category; let guard = 0; while (current && guard < 12) { names.unshift(current.label); current = all.find((item) => item.id === current.parent_id); guard += 1; } return names.join(" / "); }
@@ -110,6 +110,19 @@ const adminPlatforms: Array<{ id: AdminPlatform; label: string; accent: string; 
       { label: "Validation des demandes", href: "/africa-awards/admin/dashboard/requests", detail: "Examiner les demandes des organisateurs et animateurs." },
       { label: "Valider les candidatures", href: "/africa-awards/admin/dashboard/applications", detail: "Examiner les dossiers et promouvoir en nominés officiels." },
       { label: "Sponsors & Partenaires", href: "/africa-awards/admin/dashboard/sponsors", detail: "Gérer la régie publicitaire et partenaires des Awards." },
+    ],
+  },
+  {
+    id: "ads",
+    label: "Régie Envol Ads",
+    accent: "#f59e0b",
+    description: "Régie publicitaire first-party, modération des annonces, 16 slots, enchères et signalements.",
+    href: "/admin/publicite",
+    modules: [
+      { label: "Modération des créatives", href: "/admin/publicite", detail: "Valider ou refuser les visuels et textes d'annonces en attente." },
+      { label: "Inventaire des 16 slots", href: "/admin/publicite", detail: "Activer les emplacements et ajuster les planchers CPM/CPC/CPD." },
+      { label: "Signalements lecteurs", href: "/admin/publicite", detail: "Traiter les plaintes de lecteurs et suspendre les annonces non conformes." },
+      { label: "Espace Annonceur", href: "/publicite/espace", detail: "Accéder au portail libre-service de création de campagne." },
     ],
   },
 ];
