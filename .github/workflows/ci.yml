@@ -1,0 +1,36 @@
+name: CI Quality & Security Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma Client Generation
+        run: npx prisma generate
+
+      - name: TypeScript Check
+        run: npx tsc --noEmit
+
+      - name: Automated Tests (Vitest)
+        run: npm test
+
+      - name: Next.js Production Build
+        run: npx next build
