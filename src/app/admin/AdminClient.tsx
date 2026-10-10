@@ -198,7 +198,7 @@ function PlatformAdminLanding({ platform, user }: { platform: AdminPlatform; use
 
 export default function AdminDashboardClient({ user, stats, db }: { user: any, stats: any, db: any }) {
   const [activePlatform, setActivePlatform] = useState<AdminPlatform>("magazine");
-  const [activeTab, setActiveTab] = useState<"overview"|"landing"|"articles"|"magazines"|"users"|"orders"|"affiliate"|"abonnements"|"commentaires"|"service"|"settings"|"redacteurs"|"categories">("overview");
+  const [activeTab, setActiveTab] = useState<"overview"|"landing"|"articles"|"magazines"|"users"|"orders"|"affiliate"|"abonnements"|"commentaires"|"service"|"settings"|"redacteurs"|"categories"|"tarifs"|"kyc">("overview");
   const [articles, setArticles] = useState<any[]>(db.articles);
   const [magazines, setMagazines] = useState<any[]>(db.magazines);
   const [users, setUsers] = useState<any[]>(db.users);
@@ -209,6 +209,7 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
   const [editingArticle, setEditingArticle] = useState<any>(null);
   const [showMagModal, setShowMagModal] = useState(false);
   const [editingMag, setEditingMag] = useState<any>(null);
+  const [copiedMagId, setCopiedMagId] = useState<string | null>(null);
   const [showUserModal, setShowUserModal] = useState<any>(null);
   const [userFilter, setUserFilter] = useState<"all" | "pending" | "verified">("all");
   const [message, setMessage] = useState<string>("");
@@ -223,6 +224,16 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
   const [showAuthorModal, setShowAuthorModal] = useState(false);
   const [editingAuthor, setEditingAuthor] = useState<any>(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showEditCategoryModal, setShowEditCategoryModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [editCategoryLabel, setEditCategoryLabel] = useState("");
+  const [editCategoryColor, setEditCategoryColor] = useState("#9e001f");
+  const [editCategoryParentId, setEditCategoryParentId] = useState("");
+  const [editCategoryIsActive, setEditCategoryIsActive] = useState(true);
+  const [showEditMagCategoryModal, setShowEditMagCategoryModal] = useState(false);
+  const [editingMagCategory, setEditingMagCategory] = useState<any>(null);
+  const [editMagCategoryLabel, setEditMagCategoryLabel] = useState("");
+  const [editMagCategoryColor, setEditMagCategoryColor] = useState("#9e001f");
   const [authorPhoto, setAuthorPhoto] = useState("");
   const [uploadingAuthorPhoto, setUploadingAuthorPhoto] = useState(false);
   const [selectedAuthorId, setSelectedAuthorId] = useState("");
@@ -245,6 +256,60 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
   const [articleIsEncrypted, setArticleIsEncrypted] = useState(true);
   const [articleIsPublished, setArticleIsPublished] = useState(false);
   const [articleLandingTag, setArticleLandingTag] = useState("");
+  const [articleIsFeatured, setArticleIsFeatured] = useState(false);
+  const [articleIsSentinelle, setArticleIsSentinelle] = useState(false);
+  const [articleIsEssor, setArticleIsEssor] = useState(false);
+  const [articleIsOmbreDouce, setArticleIsOmbreDouce] = useState(false);
+
+  // KYC & AML States
+  const [kycProfiles, setKycProfiles] = useState<any[]>([]);
+  const [kycFilter, setKycFilter] = useState("all");
+  const [amlLogs, setAmlLogs] = useState<any[]>([]);
+  const [kycActiveTab, setKycActiveTab] = useState<"dossiers" | "aml">("dossiers");
+  const [inspectKycProfile, setInspectKycProfile] = useState<any | null>(null);
+  const [rejectModalProfile, setRejectModalProfile] = useState<any | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [loadingKyc, setLoadingKyc] = useState(false);
+
+  // Tarifs & Pricing Centralisé States
+  const [pricingSettings, setPricingSettings] = useState<any>({
+    ads: {
+      cpmPlancher: 2500,
+      cpcPlancher: 250,
+      cpdFixe: 15000,
+      adsenseCommissionPercent: 15,
+      sponsoredArticlePrice: 150000,
+    },
+    wab: {
+      creditPack100: 5000,
+      creditPack500: 20000,
+      boostPublication24h: 3000,
+      boostPublication7j: 12000,
+      salonPayantTicket: 2000,
+    },
+    marketplace: {
+      commissionStandardPercent: 8,
+      boostProduit7j: 7500,
+      badgeVerifieMensuel: 10000,
+    },
+    crowdfunding: {
+      fraisDossier: 25000,
+      commissionSuccesPercent: 5,
+    },
+    awards: {
+      fraisCandidature: 35000,
+      votePayantUnitaire: 500,
+    },
+    jobs: {
+      offreStandard: 25000,
+      offrePremiumBoost: 60000,
+      deblocageCvUnitaire: 5000,
+    },
+    shippingRates: {
+      BJ: 2000, CI: 2500, SN: 3000, TG: 2000, CM: 3500, NG: 4000, GH: 3500, FR: 8000, US: 12000, GB: 10000, default: 5000
+    }
+  });
+  const [savingPricing, setSavingPricing] = useState(false);
 
   const openCreateArticleModal = () => {
     setEditingArticle(null);
@@ -256,6 +321,10 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
     setArticleIsEncrypted(true);
     setArticleIsPublished(false);
     setArticleLandingTag("");
+    setArticleIsFeatured(false);
+    setArticleIsSentinelle(false);
+    setArticleIsEssor(false);
+    setArticleIsOmbreDouce(false);
     setArticleTranslations({});
     setArticleAudios({});
     setSelectedAuthorId("");
@@ -273,6 +342,10 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
     setArticleTags(Array.isArray(a.tags) ? a.tags.join(", ") : (a.tags || ""));
     setArticleIsEncrypted(a.isEncrypted !== false && a.is_encrypted !== false);
     setArticleIsPublished(Boolean(a.isPublished ?? a.is_published));
+    setArticleIsFeatured(Boolean(a.isFeatured ?? a.is_featured));
+    setArticleIsSentinelle(Boolean(a.isSentinelle ?? a.is_sentinelle));
+    setArticleIsEssor(Boolean(a.isEssor ?? a.is_essor));
+    setArticleIsOmbreDouce(Boolean(a.isOmbreDouce ?? a.is_ombre_douce));
     setArticleTranslations(a.translations || {});
     setArticleAudios(a.audioByLanguage || a.audio_by_language || {});
     setSelectedAuthorId(a.authorProfileId || a.author_profile_id || "");
@@ -282,6 +355,7 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
     setArticleLandingTag(landingTag);
     setShowArticleModal(true);
   };
+
 
   const fetchArticles = async () => { const res = await fetch("/api/admin/articles"); if (res.ok) { const d = await res.json(); setArticles(d.articles); } };
   const fetchMagazines = async () => { const res = await fetch("/api/admin/magazines"); if (res.ok) { const d = await res.json(); setMagazines(d.magazines); } };
@@ -307,6 +381,157 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
   const deleteEditorialAuthor = async (author: any) => { if (!window.confirm(`Supprimer le rédacteur « ${author.name} » ?`)) return; const res = await fetch(`/api/admin/editorial?type=author&id=${author.id}`, { method: "DELETE" }); const d = await res.json().catch(() => ({})); if (!res.ok) { setMessage(d.error || "Suppression impossible"); return; } setAuthors((items) => items.filter((item) => item.id !== author.id)); setMessage("Rédacteur supprimé"); };
   const handleAuthorPhotoUpload = async (file: File) => { setUploadingAuthorPhoto(true); try { const form = new FormData(); form.append("file", file); form.append("type", "cover"); form.append("magazineId", "authors"); const res = await fetch("/api/upload", { method: "POST", body: form }); const d = await res.json().catch(() => ({})); if (!res.ok || !d.url) throw new Error(d.error || "Upload impossible"); setAuthorPhoto(d.url); } catch (error) { setMessage(`Erreur portrait : ${error instanceof Error ? error.message : "réessayez"}`); } finally { setUploadingAuthorPhoto(false); } };
 
+  const handleCopyMagLink = async (mag: any) => {
+    const link = `${window.location.origin}/kiosque/${encodeURIComponent(mag.id)}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopiedMagId(mag.id);
+      setMessage(`Lien du magazine N°${mag.numero} copié dans le presse-papier ✅`);
+      setTimeout(() => setCopiedMagId(null), 2500);
+    } catch {
+      setMessage(`Lien du magazine : ${link}`);
+    }
+  };
+
+  const handleShareMagLink = async (mag: any) => {
+    const link = `${window.location.origin}/kiosque/${encodeURIComponent(mag.id)}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Envol Africa Magazine N°${mag.numero} - ${mag.title}`,
+          text: mag.description || mag.title,
+          url: link,
+        });
+        return;
+      } catch {
+        // Annulation utilisateur
+      }
+    }
+    await handleCopyMagLink(mag);
+  };
+
+  const updateEditorialCategory = async (id: string, payload: any) => {
+    const res = await fetch("/api/admin/editorial", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "category", id, ...payload }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(d.error || "Modification de la catégorie impossible");
+    setCategories((items) => items.map((c) => (c.id === id ? d.category : c)).sort((a, b) => a.label.localeCompare(b.label)));
+    return d.category;
+  };
+
+  const deleteEditorialCategory = async (id: string) => {
+    if (!window.confirm("Supprimer cette catégorie d'articles ?")) return;
+    const res = await fetch(`/api/admin/editorial?type=category&id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setMessage(`Erreur suppression catégorie : ${d.error || "impossible"}`);
+      return;
+    }
+    setCategories((items) => items.filter((c) => c.id !== id));
+    setMessage("Catégorie supprimée ✅");
+  };
+
+  const updateMagazineCategory = async (id: string, payload: any) => {
+    const res = await fetch("/api/admin/magazine-categories", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ id, ...payload }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(d.error || "Modification de la catégorie Magazine impossible");
+    setMagazineCategories((items) => items.map((c) => (c.id === id ? d.category : c)));
+    return d.category;
+  };
+
+  const fetchKycData = async () => {
+    setLoadingKyc(true);
+    try {
+      const [resProfiles, resLogs] = await Promise.all([
+        fetch(`/api/admin/kyc?statut=${kycFilter}`),
+        fetch("/api/admin/kyc?tab=aml")
+      ]);
+      const dataProfiles = await resProfiles.json();
+      const dataLogs = await resLogs.json();
+      if (dataProfiles?.profiles) setKycProfiles(dataProfiles.profiles);
+      if (dataLogs?.logs) setAmlLogs(dataLogs.logs);
+    } catch {
+      // ignore
+    } finally {
+      setLoadingKyc(false);
+    }
+  };
+
+  const handleApproveKyc = async (userId: string) => {
+    try {
+      const res = await fetch("/api/admin/kyc", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, statut: "approuve" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setMessage(data.message || "Dossier KYC approuvé avec succès ✅");
+      await fetchKycData();
+    } catch (err: any) {
+      setMessage(`Erreur KYC : ${err.message}`);
+    }
+  };
+
+  const handleRejectKyc = async (userId: string, motif: string) => {
+    try {
+      const res = await fetch("/api/admin/kyc", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, statut: "rejete", motifRejet: motif }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setMessage(data.message || "Dossier KYC rejeté ❌");
+      setRejectModalProfile(null);
+      setRejectionReason("");
+      await fetchKycData();
+    } catch (err: any) {
+      setMessage(`Erreur KYC : ${err.message}`);
+    }
+  };
+
+  const fetchPricingSettings = async () => {
+    try {
+      const res = await fetch("/api/admin/settings");
+      const data = await res.json();
+      if (data?.settings) {
+        setPricingSettings((prev: any) => ({
+          ...prev,
+          ...data.settings,
+        }));
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const savePricingSettings = async () => {
+    setSavingPricing(true);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pricingSettings),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Sauvegarde impossible");
+      setMessage("Grille tarifaire et paramètres de monétisation enregistrés avec succès ✅");
+    } catch (err: any) {
+      setMessage(`Erreur sauvegarde tarifs : ${err.message}`);
+    } finally {
+      setSavingPricing(false);
+    }
+  };
+
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get("platform") as AdminPlatform | null;
     if (requested && adminPlatforms.some((item) => item.id === requested)) setActivePlatform(requested);
@@ -324,7 +549,10 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
     if(activeTab==="categories" || activeTab==="magazines") fetchMagazineCategories();
     if(activeTab==="overview") fetchLiveKpis();
     if(activeTab==="landing") fetchMagazineLanding();
-  },[activePlatform, activeTab]);
+    if(activeTab==="kyc") fetchKycData();
+    if(activeTab==="tarifs") fetchPricingSettings();
+  },[activePlatform, activeTab, kycFilter]);
+
 
   const handleCreateArticle = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -375,10 +603,10 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
         tags: selectedTags,
         isEncrypted: articleIsEncrypted,
         isPublished: articleIsPublished,
-        isFeatured: editingArticle?.isFeatured ?? false,
-        isSentinelle: editingArticle?.isSentinelle ?? false,
-        isEssor: editingArticle?.isEssor ?? false,
-        isOmbreDouce: editingArticle?.isOmbreDouce ?? false,
+        isFeatured: articleIsFeatured,
+        isSentinelle: articleIsSentinelle,
+        isEssor: articleIsEssor,
+        isOmbreDouce: articleIsOmbreDouce,
       };
       if (editingArticle) payload.id = editingArticle.id;
 
@@ -568,6 +796,8 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
             { id:"users", label:`Utilisateurs (${users.length})` },
             { id:"orders", label:`Commandes` },
             { id:"abonnements", label:`Abonnements` },
+            { id:"tarifs", label:`Tarifs & Monétisation` },
+            { id:"kyc", label:`Conformité KYC & AML` },
             { id:"commentaires", label:`Commentaires` },
             { id:"affiliate", label:`Affiliation` },
             { id:"service", label:"Services" },
@@ -657,8 +887,52 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
                     </div>
                     <div className="rounded-[16px] border border-dashed border-zinc-300 bg-zinc-50 p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="text-xs font-black text-[#0A1931]">Image principale</div><div className="mt-1 text-[11px] text-zinc-500">Uploadez une image ou utilisez une URL externe.</div></div><label className="inline-flex h-9 cursor-pointer items-center justify-center rounded-full bg-[#0A1931] px-4 text-[11px] font-bold text-white">{uploadingArticleImage ? "Upload en cours…" : "Choisir une image"}<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadingArticleImage} onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleArticleImageUpload(file); }} /></label></div><input name="image" value={articleImage} onChange={(event) => setArticleImage(event.target.value)} placeholder="URL de l’image" className="mt-3 h-10 w-full rounded-full border bg-white px-4 text-[12px]" />{articleImage && <img src={articleImage} alt="Aperçu de l’article" className="mt-3 h-32 w-full rounded-xl object-cover" />}</div>
                     <input name="tags" value={articleTags} onChange={(e)=>setArticleTags(e.target.value)} placeholder="Tags séparés par des virgules" className="h-11 rounded-full border bg-zinc-50 px-4 text-[13px]" />
-                    <div className="rounded-[16px] border border-zinc-200 bg-white p-4"><div className="mb-3 text-xs font-black text-[#0A1931]">Accès au contenu</div><div className="flex flex-wrap gap-4 text-[12px]"><label className="flex items-center gap-2"><input type="checkbox" name="isEncrypted" checked={articleIsEncrypted} onChange={(e)=>setArticleIsEncrypted(e.target.checked)} aria-describedby="article-access-help"/> <span><strong>Article réservé aux abonnés</strong><span className="ml-1 text-zinc-500">(aperçu pour les visiteurs)</span></span></label><label className="flex items-center gap-2"><input type="checkbox" name="isPublished" checked={articleIsPublished} onChange={(e)=>setArticleIsPublished(e.target.checked)}/> Publié</label></div><p id="article-access-help" className="mt-3 text-[11px] leading-5 text-zinc-500"><strong>Ouvert à tout le monde :</strong> décochez « Article réservé aux abonnés ». L’article sera lisible sans abonnement après publication.</p></div>
-                    <div className="rounded-[16px] border border-[#e5bdbb] bg-[#fffaf8] p-4"><div className="mb-2 text-xs font-black text-[#0A1931]">Positionner sur le Landing Magazine</div><p className="mb-3 text-[11px] leading-5 text-zinc-500">Choisissez une seule étiquette. Après publication, l’article sera automatiquement placé dans le bloc correspondant.</p><select name="landingTag" value={articleLandingTag} onChange={(e)=>setArticleLandingTag(e.target.value)} className="h-11 w-full rounded-full border bg-white px-4 text-[12px] font-semibold"><option value="">Aucun placement Landing</option>{LANDING_ARTICLE_TAGS.map((tag) => <option key={tag} value={tag}>{tag}</option>)}</select><p className="mt-2 text-[10px] text-zinc-500">Les anciennes cases techniques restent compatibles avec les articles existants, mais les nouveaux articles utilisent ce sélecteur simple.</p></div>
+                    <div className="rounded-[16px] border border-zinc-200 bg-white p-4">
+                      <div className="mb-3 text-xs font-black text-[#0A1931]">Accès au contenu & Mise en avant éditoriale</div>
+                      <div className="flex flex-wrap gap-4 text-[12px]">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" name="isEncrypted" checked={articleIsEncrypted} onChange={(e)=>setArticleIsEncrypted(e.target.checked)} aria-describedby="article-access-help"/>
+                          <span><strong>Article réservé aux abonnés</strong><span className="ml-1 text-zinc-500">(aperçu pour les visiteurs)</span></span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" name="isPublished" checked={articleIsPublished} onChange={(e)=>setArticleIsPublished(e.target.checked)}/>
+                          <span>Publié en ligne</span>
+                        </label>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-zinc-100">
+                        <div className="text-[11px] font-bold text-zinc-700 mb-2">Attribution aux blocs éditoriaux du Landing Magazine :</div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-[12px]">
+                          <label className="flex items-center gap-2 cursor-pointer bg-zinc-50 p-2.5 rounded-xl border border-zinc-200 hover:bg-zinc-100 transition">
+                            <input type="checkbox" name="isFeatured" checked={articleIsFeatured} onChange={(e)=>setArticleIsFeatured(e.target.checked)} className="accent-[#9e001f]"/>
+                            <span className="font-medium text-[#0A1931]">⭐ À la une (Hero)</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer bg-zinc-50 p-2.5 rounded-xl border border-zinc-200 hover:bg-zinc-100 transition">
+                            <input type="checkbox" name="isSentinelle" checked={articleIsSentinelle} onChange={(e)=>setArticleIsSentinelle(e.target.checked)} className="accent-[#9e001f]"/>
+                            <span className="font-medium text-[#0A1931]">🛡️ Sentinelles</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer bg-zinc-50 p-2.5 rounded-xl border border-zinc-200 hover:bg-zinc-100 transition">
+                            <input type="checkbox" name="isEssor" checked={articleIsEssor} onChange={(e)=>setArticleIsEssor(e.target.checked)} className="accent-[#9e001f]"/>
+                            <span className="font-medium text-[#0A1931]">🚀 L’Essor</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer bg-zinc-50 p-2.5 rounded-xl border border-zinc-200 hover:bg-zinc-100 transition">
+                            <input type="checkbox" name="isOmbreDouce" checked={articleIsOmbreDouce} onChange={(e)=>setArticleIsOmbreDouce(e.target.checked)} className="accent-[#9e001f]"/>
+                            <span className="font-medium text-[#0A1931]">🌿 Ombre & Douceur</span>
+                          </label>
+                        </div>
+                      </div>
+                      <p id="article-access-help" className="mt-3 text-[11px] leading-5 text-zinc-500"><strong>Ouvert à tout le monde :</strong> décochez « Article réservé aux abonnés ». L’article sera lisible sans abonnement après publication.</p>
+                    </div>
+
+                    <div className="rounded-[16px] border border-[#e5bdbb] bg-[#fffaf8] p-4">
+                      <div className="mb-2 text-xs font-black text-[#0A1931]">Positionner sur le Landing Magazine</div>
+                      <p className="mb-3 text-[11px] leading-5 text-zinc-500">Choisissez l’emplacement exact sur le Landing. Après publication, l’article sera automatiquement injecté dans le bloc correspondant.</p>
+                      <select name="landingTag" value={articleLandingTag} onChange={(e)=>setArticleLandingTag(e.target.value)} className="h-11 w-full rounded-full border bg-white px-4 text-[12px] font-semibold">
+                        <option value="">Aucun placement exclusif</option>
+                        {LANDING_ARTICLE_TAGS.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
+                      </select>
+                      <p className="mt-2 text-[10px] text-zinc-500">Blocs gérés : Fil d’infos Image, Fil d’infos Titres, Manager du mois, Financement, Opportunités, Prochain numéro, Start’ups.</p>
+                    </div>
                   </div>
                   <div className="mt-6 flex gap-2"><button type="submit" disabled={savingArticle || uploadingArticleImage} className="h-10 px-5 rounded-full bg-[#0A1931] text-white text-[13px] font-bold disabled:cursor-not-allowed disabled:opacity-60">{savingArticle ? "Enregistrement…" : "Enregistrer"}</button><button type="button" onClick={()=>{setShowArticleModal(false); setEditingArticle(null);}} className="h-10 px-5 rounded-full border text-[13px]">Annuler</button></div>
                 </form>
@@ -674,7 +948,140 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
         )}
 
         {activeTab==="categories" && (
-          <div className="space-y-5"><div className="rounded-[18px] border bg-white p-6"><div className="flex items-center justify-between"><div><h3 className="text-lg font-bold text-[#0A1931]">Catégories d’articles</h3><p className="mt-1 text-xs text-zinc-500">Référentiel réservé aux articles éditoriaux.</p></div><button onClick={() => { setActiveTab("articles"); setShowCategoryModal(true); }} className="h-10 rounded-full bg-[#9e001f] px-4 text-xs font-bold text-white">+ Nouvelle catégorie article</button></div><div className="mt-6 grid gap-2">{categories.filter((item) => item.is_active !== false).sort((a, b) => categoryPath(a, categories).localeCompare(categoryPath(b, categories))).map((category) => <div key={category.id} className="flex items-center justify-between rounded-xl border px-4 py-2 text-xs font-bold" style={{ marginLeft: `${categoryDepth(category, categories) * 18}px`, borderColor: category.color_hex || "#9e001f", color: category.color_hex || "#9e001f" }}><span>{categoryDepth(category, categories) > 0 ? "└ " : ""}{category.label}</span><span className="text-[10px] font-normal text-zinc-400">{categoryPath(category, categories)}</span></div>)}</div></div><div className="rounded-[18px] border bg-white p-6"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h3 className="text-lg font-bold text-[#0A1931]">Catégories Magazine</h3><p className="mt-1 text-xs text-zinc-500">Référentiel séparé pour les numéros du Magazine.</p></div><div className="flex gap-2"><input value={newMagazineCategory} onChange={(event) => setNewMagazineCategory(event.target.value)} placeholder="Nouvelle catégorie Magazine" className="h-10 rounded-full border bg-zinc-50 px-4 text-xs"/><button type="button" onClick={() => void createMagazineCategory()} className="h-10 rounded-full bg-[#0A1931] px-4 text-xs font-bold text-white">+ Ajouter</button></div></div><div className="mt-6 flex flex-wrap gap-3">{magazineCategories.map((category) => <div key={category.id} className="flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-bold" style={{ borderColor: category.color_hex || "#9e001f", color: category.color_hex || "#9e001f" }}><span>{category.label}</span><button type="button" onClick={() => void deleteMagazineCategory(category)} aria-label={`Désactiver ${category.label}`} className="text-zinc-400 hover:text-red-700">×</button></div>)}</div></div></div>
+          <div className="space-y-5">
+            <div className="rounded-[18px] border bg-white p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-[#0A1931]">Catégories d’articles</h3>
+                  <p className="mt-1 text-xs text-zinc-500">Référentiel réservé aux articles éditoriaux. Modifiez, organisez ou désactivez chaque catégorie.</p>
+                </div>
+                <button onClick={() => { setActiveTab("articles"); setShowCategoryModal(true); }} className="h-10 rounded-full bg-[#9e001f] px-4 text-xs font-bold text-white">+ Nouvelle catégorie article</button>
+              </div>
+              <div className="mt-6 grid gap-2">
+                {categories.filter((item) => item.is_active !== false).sort((a, b) => categoryPath(a, categories).localeCompare(categoryPath(b, categories))).map((category) => (
+                  <div key={category.id} className="flex items-center justify-between rounded-xl border px-4 py-2.5 text-xs font-bold bg-white hover:bg-zinc-50 transition" style={{ marginLeft: `${categoryDepth(category, categories) * 18}px`, borderColor: category.color_hex || "#9e001f" }}>
+                    <div className="flex items-center gap-2" style={{ color: category.color_hex || "#9e001f" }}>
+                      <span>{categoryDepth(category, categories) > 0 ? "└ " : ""}{category.label}</span>
+                      <span className="text-[10px] font-normal text-zinc-400">({categoryPath(category, categories)})</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button type="button" onClick={() => { setEditingCategory(category); setShowEditCategoryModal(true); }} className="h-7 px-3 rounded-full border border-zinc-200 bg-white text-[11px] font-semibold text-[#0A1931] hover:bg-zinc-100">
+                        Modifier
+                      </button>
+                      <button type="button" onClick={() => void deleteEditorialCategory(category.id)} className="h-7 px-2.5 rounded-full border border-red-200 bg-red-50 text-[11px] font-semibold text-red-700 hover:bg-red-100" title="Désactiver cette catégorie">
+                        Supprimer
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[18px] border bg-white p-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-[#0A1931]">Catégories Magazine</h3>
+                  <p className="mt-1 text-xs text-zinc-500">Référentiel pour les numéros du Kiosque et Flipbooks.</p>
+                </div>
+                <div className="flex gap-2">
+                  <input value={newMagazineCategory} onChange={(event) => setNewMagazineCategory(event.target.value)} placeholder="Nouvelle catégorie Magazine" className="h-10 rounded-full border bg-zinc-50 px-4 text-xs"/>
+                  <button type="button" onClick={() => void createMagazineCategory()} className="h-10 rounded-full bg-[#0A1931] px-4 text-xs font-bold text-white">+ Ajouter</button>
+                </div>
+              </div>
+              <div className="mt-6 flex flex-wrap gap-3">
+                {magazineCategories.map((category) => (
+                  <div key={category.id} className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold bg-white" style={{ borderColor: category.color_hex || "#9e001f", color: category.color_hex || "#9e001f" }}>
+                    <span>{category.label}</span>
+                    <button type="button" onClick={() => { setEditingMagCategory(category); setShowEditMagCategoryModal(true); }} className="text-zinc-500 hover:text-[#0A1931] text-[11px] px-1 font-bold" title="Modifier cette catégorie">✎</button>
+                    <button type="button" onClick={() => void deleteMagazineCategory(category)} aria-label={`Désactiver ${category.label}`} className="text-zinc-400 hover:text-red-700 text-sm font-bold">×</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Modale d'édition Catégorie Article */}
+            {showEditCategoryModal && editingCategory && (
+              <div className="fixed inset-0 z-[60] grid place-items-center bg-black/50 p-4">
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  const form = new FormData(e.currentTarget);
+                  await updateEditorialCategory(editingCategory.id, {
+                    label: form.get("label") as string,
+                    parentId: (form.get("parentId") as string) || null,
+                    colorHex: form.get("colorHex") as string
+                  });
+                }} className="w-full max-w-[440px] rounded-[20px] bg-white p-6 shadow-2xl">
+                  <div className="flex items-center justify-between border-b pb-3">
+                    <h3 className="font-bold text-[#0A1931]">Modifier la catégorie d’article</h3>
+                    <button type="button" onClick={() => { setShowEditCategoryModal(false); setEditingCategory(null); }} className="text-xl text-zinc-400">×</button>
+                  </div>
+                  <div className="mt-4 grid gap-3">
+                    <label className="text-[11px] font-bold text-zinc-600">Nom de la catégorie
+                      <input name="label" required defaultValue={editingCategory.label} className="mt-1 h-11 w-full rounded-full border bg-zinc-50 px-4 text-sm font-semibold"/>
+                    </label>
+                    <label className="text-[11px] font-bold text-zinc-600">Catégorie parente
+                      <select name="parentId" defaultValue={editingCategory.parent_id || ""} className="mt-1 h-11 w-full rounded-full border bg-zinc-50 px-4 text-sm">
+                        <option value="">Catégorie racine — aucune catégorie parente</option>
+                        {categories.filter((item) => item.id !== editingCategory.id && item.is_active !== false).map((item) => (
+                          <option key={item.id} value={item.id}>{categoryPath(item, categories)}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="text-[11px] font-bold text-zinc-600">Couleur d’accentuation
+                      <div className="flex items-center gap-2 mt-1">
+                        <input name="colorHex" defaultValue={editingCategory.color_hex || "#9e001f"} className="h-11 flex-1 rounded-full border bg-zinc-50 px-4 text-sm font-mono"/>
+                        <input type="color" defaultValue={editingCategory.color_hex || "#9e001f"} onChange={(e) => {
+                          const input = (e.currentTarget.parentElement?.querySelector('input[name="colorHex"]') as HTMLInputElement);
+                          if (input) input.value = e.currentTarget.value;
+                        }} className="w-10 h-10 rounded-full border cursor-pointer p-0.5"/>
+                      </div>
+                    </label>
+                  </div>
+                  <div className="mt-6 flex justify-end gap-2">
+                    <button type="button" onClick={() => { setShowEditCategoryModal(false); setEditingCategory(null); }} className="h-10 px-4 rounded-full border text-xs font-bold">Annuler</button>
+                    <button type="submit" className="h-10 px-5 rounded-full bg-[#9e001f] text-xs font-bold text-white">Enregistrer</button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Modale d'édition Catégorie Magazine */}
+            {showEditMagCategoryModal && editingMagCategory && (
+              <div className="fixed inset-0 z-[60] grid place-items-center bg-black/50 p-4">
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  const form = new FormData(e.currentTarget);
+                  await updateMagazineCategory(editingMagCategory.id, {
+                    label: form.get("label") as string,
+                    colorHex: form.get("colorHex") as string
+                  });
+                }} className="w-full max-w-[440px] rounded-[20px] bg-white p-6 shadow-2xl">
+                  <div className="flex items-center justify-between border-b pb-3">
+                    <h3 className="font-bold text-[#0A1931]">Modifier la catégorie Magazine</h3>
+                    <button type="button" onClick={() => { setShowEditMagCategoryModal(false); setEditingMagCategory(null); }} className="text-xl text-zinc-400">×</button>
+                  </div>
+                  <div className="mt-4 grid gap-3">
+                    <label className="text-[11px] font-bold text-zinc-600">Nom de la catégorie
+                      <input name="label" required defaultValue={editingMagCategory.label} className="mt-1 h-11 w-full rounded-full border bg-zinc-50 px-4 text-sm font-semibold"/>
+                    </label>
+                    <label className="text-[11px] font-bold text-zinc-600">Couleur d’accentuation
+                      <div className="flex items-center gap-2 mt-1">
+                        <input name="colorHex" defaultValue={editingMagCategory.color_hex || "#9e001f"} className="h-11 flex-1 rounded-full border bg-zinc-50 px-4 text-sm font-mono"/>
+                        <input type="color" defaultValue={editingMagCategory.color_hex || "#9e001f"} onChange={(e) => {
+                          const input = (e.currentTarget.parentElement?.querySelector('input[name="colorHex"]') as HTMLInputElement);
+                          if (input) input.value = e.currentTarget.value;
+                        }} className="w-10 h-10 rounded-full border cursor-pointer p-0.5"/>
+                      </div>
+                    </label>
+                  </div>
+                  <div className="mt-6 flex justify-end gap-2">
+                    <button type="button" onClick={() => { setShowEditMagCategoryModal(false); setEditingMagCategory(null); }} className="h-10 px-4 rounded-full border text-xs font-bold">Annuler</button>
+                    <button type="submit" className="h-10 px-5 rounded-full bg-[#0A1931] text-xs font-bold text-white">Enregistrer</button>
+                  </div>
+                </form>
+              </div>
+            )}
+          </div>
         )}
 
         {activeTab==="magazines" && (
@@ -693,9 +1100,22 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
                   <div className="font-bold text-[12px] mt-2 line-clamp-2">{m.title}</div>
                   <div className="text-[10px] text-zinc-500 mt-1">{m.periode||m.year} • {m.category||"Economie"} • {m.previewImages?.length||0}/10 pages • {Object.keys(m.pdfs||{}).length||0} PDF • {Object.keys(m.audios||{}).length||0} audios</div>
                   <div className="text-[10px] text-zinc-500">Prix: {m.prices ? `${m.prices.numerique?.toLocaleString()||10}k F CFA num` : "10k F num"}</div>
-                  <div className="mt-2 flex gap-1">
-                    <button onClick={()=>{setEditingMag(m); setShowMagModal(true);}} className="h-7 flex-1 rounded-full border text-[10px] hover:bg-zinc-50">Éditer complet</button>
-                    <button onClick={()=>handleDeleteMag(m.id)} className="h-7 flex-1 rounded-full bg-red-50 text-red-600 border border-red-100 text-[10px]">Suppr</button>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    <a href={`/kiosque/${encodeURIComponent(m.id)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 h-7 px-2.5 rounded-full border border-blue-200 bg-blue-50 text-[10px] font-semibold text-blue-700 hover:bg-blue-100 transition" title="Consulter dans le kiosque">
+                      <span>Voir</span><span className="text-[9px]">↗</span>
+                    </a>
+                    <button type="button" onClick={() => void handleCopyMagLink(m)} className={`inline-flex items-center gap-1 h-7 px-2.5 rounded-full border text-[10px] font-semibold transition ${copiedMagId === m.id ? "border-green-300 bg-green-100 text-green-800" : "border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100"}`} title="Copier le lien direct du magazine">
+                      <span>{copiedMagId === m.id ? "✓ Copié !" : "Copier"}</span>
+                    </button>
+                    <button type="button" onClick={() => void handleShareMagLink(m)} className="h-7 px-2.5 rounded-full border border-purple-200 bg-purple-50 text-[10px] font-semibold text-purple-700 hover:bg-purple-100 transition" title="Partager ce magazine">
+                      Partager
+                    </button>
+                    <button type="button" onClick={()=>{setEditingMag(m); setShowMagModal(true);}} className="h-7 px-2.5 rounded-full border border-zinc-200 bg-white text-[10px] font-semibold text-[#0A1931] hover:bg-zinc-50">
+                      Éditer
+                    </button>
+                    <button type="button" onClick={()=>handleDeleteMag(m.id)} className="h-7 px-2.5 bg-red-50 text-red-600 border border-red-100 rounded-full text-[10px] font-semibold hover:bg-red-100">
+                      Suppr
+                    </button>
                   </div>
                 </div>
               ))}
@@ -753,6 +1173,808 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
               <div className="mt-6 p-4 rounded-[12px] bg-amber-50 border border-amber-100 text-[11px] text-amber-900">Règle : le tarif mensuel et le tarif annuel sont administrables séparément. Si le tarif annuel est vide, le serveur le calcule à partir du mensuel × 12 × (1 − réduction). Le tarif du premier mois reste une promotion distincte, sans modifier le prix récurrent. Les modifications sont sauvegardées dans Supabase.</div>
               {editingPlan && <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4"><div className="w-full max-w-[520px] rounded-[22px] bg-white p-6 shadow-2xl"><div className="flex items-center justify-between"><h3 className="font-bold">Modifier le tarif — {editingPlan.name}</h3><button type="button" onClick={() => setEditingPlan(null)} className="grid h-9 w-9 place-items-center rounded-full bg-zinc-100">×</button></div><div className="mt-5 grid gap-3"><label className="text-[11px] font-bold">Tarif principal (F CFA)<input type="number" min="0" value={editingPlan.price} onChange={(event) => setEditingPlan({ ...editingPlan, price: Number(event.target.value) })} className="mt-1 h-11 w-full rounded-full border bg-zinc-50 px-4" /></label><label className="text-[11px] font-bold">Premier mois — facultatif<input type="number" min="0" value={editingPlan.firstMonthPrice ?? ""} onChange={(event) => setEditingPlan({ ...editingPlan, firstMonthPrice: event.target.value === "" ? null : Number(event.target.value) })} className="mt-1 h-11 w-full rounded-full border bg-zinc-50 px-4" /></label><label className="text-[11px] font-bold">Tarif mensuel affiché — facultatif<input type="number" min="0" value={editingPlan.monthlyPrice ?? ""} onChange={(event) => setEditingPlan({ ...editingPlan, monthlyPrice: event.target.value === "" ? null : Number(event.target.value) })} className="mt-1 h-11 w-full rounded-full border bg-zinc-50 px-4" /></label><label className="text-[11px] font-bold">Tarif annuel<input type="number" min="0" value={editingPlan.annualPrice ?? ""} onChange={(event) => setEditingPlan({ ...editingPlan, annualPrice: event.target.value === "" ? null : Number(event.target.value) })} className="mt-1 h-11 w-full rounded-full border bg-zinc-50 px-4" /></label><label className="text-[11px] font-bold">Réduction annuelle (%)<input type="number" min="0" max="100" step="1" value={editingPlan.annualDiscountPercent ?? 30} onChange={(event) => setEditingPlan({ ...editingPlan, annualDiscountPercent: Math.min(100, Math.max(0, Number(event.target.value) || 0)) })} className="mt-1 h-11 w-full rounded-full border bg-zinc-50 px-4" /></label><label className="text-[11px] font-bold">Description<textarea value={editingPlan.description || ""} onChange={(event) => setEditingPlan({ ...editingPlan, description: event.target.value })} rows={3} className="mt-1 w-full rounded-[14px] border bg-zinc-50 p-3" /></label></div><div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setEditingPlan(null)} className="h-10 rounded-full border px-4 text-xs font-bold">Annuler</button><button type="button" onClick={() => saveSubscriptionPlan(editingPlan).catch((error) => setMessage(`Erreur tarif : ${error instanceof Error ? error.message : "réessayez"}`))} className="h-10 rounded-full bg-[#0A1931] px-5 text-xs font-bold text-white">Enregistrer</button></div></div></div>}
             </div>
+          </div>
+        )}
+
+        {activeTab==="tarifs" && (
+          <div className="space-y-6">
+            <section className="relative overflow-hidden rounded-[24px] bg-[#0A1931] p-7 text-white shadow-xl">
+              <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#f2b84b]">Monétisation & Régie · Administration Centrale</p>
+                  <h1 className="mt-2 text-3xl font-black">Gestion de tous les tarifs de la plateforme</h1>
+                  <p className="mt-3 max-w-3xl text-sm leading-6 text-white/70">
+                    Définissez et ajustez en temps réel l’ensemble des prix et commissions de l’écosystème ENVOL AFRICA : Régie publicitaire, Envol Ads, AdSense, packs WAB, commissions Marketplace, frais Crowdfunding, Africa Awards et offres Emploi.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void savePricingSettings()}
+                  disabled={savingPricing}
+                  className="h-11 shrink-0 rounded-full bg-[#f2b84b] px-6 text-xs font-black text-[#0A1931] shadow-md hover:bg-[#e0a83b] transition disabled:opacity-50"
+                >
+                  {savingPricing ? "Sauvegarde en cours…" : "Enregistrer tous les tarifs ✅"}
+                </button>
+              </div>
+            </section>
+
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {/* Régie Publicitaire & Envol Ads */}
+              <div className="rounded-[20px] border border-zinc-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-3 border-b pb-4">
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-amber-50 text-amber-700 font-bold">
+                    📢
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-[#0A1931] text-[15px]">Envol Ads & Régie Publicitaire</h3>
+                    <p className="text-[10px] text-zinc-500">Bannières, formats fixes et sponsoring</p>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-4 text-xs">
+                  <label className="block font-semibold text-zinc-700">
+                    CPM Plancher (coût / 1 000 affichages)
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={pricingSettings?.ads?.cpmPlancher ?? 2500}
+                        onChange={(e) => setPricingSettings({ ...pricingSettings, ads: { ...(pricingSettings.ads || {}), cpmPlancher: Number(e.target.value) } })}
+                        className="h-10 w-full rounded-xl border bg-zinc-50 px-3 font-bold text-[#0A1931]"
+                      />
+                      <span className="text-zinc-500 font-bold text-[11px]">XOF</span>
+                    </div>
+                  </label>
+                  <label className="block font-semibold text-zinc-700">
+                    CPC Plancher (coût par clic ciblé)
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={pricingSettings?.ads?.cpcPlancher ?? 250}
+                        onChange={(e) => setPricingSettings({ ...pricingSettings, ads: { ...(pricingSettings.ads || {}), cpcPlancher: Number(e.target.value) } })}
+                        className="h-10 w-full rounded-xl border bg-zinc-50 px-3 font-bold text-[#0A1931]"
+                      />
+                      <span className="text-zinc-500 font-bold text-[11px]">XOF</span>
+                    </div>
+                  </label>
+                  <label className="block font-semibold text-zinc-700">
+                    Bannière Fixe Header Leaderboard (par jour)
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={pricingSettings?.ads?.cpdFixe ?? 15000}
+                        onChange={(e) => setPricingSettings({ ...pricingSettings, ads: { ...(pricingSettings.ads || {}), cpdFixe: Number(e.target.value) } })}
+                        className="h-10 w-full rounded-xl border bg-zinc-50 px-3 font-bold text-[#0A1931]"
+                      />
+                      <span className="text-zinc-500 font-bold text-[11px]">XOF/j</span>
+                    </div>
+                  </label>
+                  <label className="block font-semibold text-zinc-700">
+                    Publi-reportage Sponsorisé (parution unique)
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={pricingSettings?.ads?.sponsoredArticlePrice ?? 150000}
+                        onChange={(e) => setPricingSettings({ ...pricingSettings, ads: { ...(pricingSettings.ads || {}), sponsoredArticlePrice: Number(e.target.value) } })}
+                        className="h-10 w-full rounded-xl border bg-zinc-50 px-3 font-bold text-[#0A1931]"
+                      />
+                      <span className="text-zinc-500 font-bold text-[11px]">XOF</span>
+                    </div>
+                  </label>
+                  <label className="block font-semibold text-zinc-700">
+                    Commission plateforme régie AdSense
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={pricingSettings?.ads?.adsenseCommissionPercent ?? 15}
+                        onChange={(e) => setPricingSettings({ ...pricingSettings, ads: { ...(pricingSettings.ads || {}), adsenseCommissionPercent: Number(e.target.value) } })}
+                        className="h-10 w-full rounded-xl border bg-zinc-50 px-3 font-bold text-[#0A1931]"
+                      />
+                      <span className="text-zinc-500 font-bold text-[11px]">%</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* WAB Réseau Social & Créateurs */}
+              <div className="rounded-[20px] border border-zinc-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-3 border-b pb-4">
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-purple-50 text-purple-700 font-bold">
+                    ✨
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-[#0A1931] text-[15px]">WAB & Monétisation Créateurs</h3>
+                    <p className="text-[10px] text-zinc-500">Crédits, boosts et salons virtuels payants</p>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-4 text-xs">
+                  <label className="block font-semibold text-zinc-700">
+                    Pack 100 Pièces WAB Stars
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={pricingSettings?.wab?.creditPack100 ?? 5000}
+                        onChange={(e) => setPricingSettings({ ...pricingSettings, wab: { ...(pricingSettings.wab || {}), creditPack100: Number(e.target.value) } })}
+                        className="h-10 w-full rounded-xl border bg-zinc-50 px-3 font-bold text-[#0A1931]"
+                      />
+                      <span className="text-zinc-500 font-bold text-[11px]">XOF</span>
+                    </div>
+                  </label>
+                  <label className="block font-semibold text-zinc-700">
+                    Pack 500 Pièces WAB Stars
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={pricingSettings?.wab?.creditPack500 ?? 20000}
+                        onChange={(e) => setPricingSettings({ ...pricingSettings, wab: { ...(pricingSettings.wab || {}), creditPack500: Number(e.target.value) } })}
+                        className="h-10 w-full rounded-xl border bg-zinc-50 px-3 font-bold text-[#0A1931]"
+                      />
+                      <span className="text-zinc-500 font-bold text-[11px]">XOF</span>
+                    </div>
+                  </label>
+                  <label className="block font-semibold text-zinc-700">
+                    Boost de publication WAB 24h
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={pricingSettings?.wab?.boostPublication24h ?? 3000}
+                        onChange={(e) => setPricingSettings({ ...pricingSettings, wab: { ...(pricingSettings.wab || {}), boostPublication24h: Number(e.target.value) } })}
+                        className="h-10 w-full rounded-xl border bg-zinc-50 px-3 font-bold text-[#0A1931]"
+                      />
+                      <span className="text-zinc-500 font-bold text-[11px]">XOF</span>
+                    </div>
+                  </label>
+                  <label className="block font-semibold text-zinc-700">
+                    Boost de publication WAB 7 jours
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={pricingSettings?.wab?.boostPublication7j ?? 12000}
+                        onChange={(e) => setPricingSettings({ ...pricingSettings, wab: { ...(pricingSettings.wab || {}), boostPublication7j: Number(e.target.value) } })}
+                        className="h-10 w-full rounded-xl border bg-zinc-50 px-3 font-bold text-[#0A1931]"
+                      />
+                      <span className="text-zinc-500 font-bold text-[11px]">XOF</span>
+                    </div>
+                  </label>
+                  <label className="block font-semibold text-zinc-700">
+                    Ticket d'accès Salon Live Premium
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={pricingSettings?.wab?.salonPayantTicket ?? 2000}
+                        onChange={(e) => setPricingSettings({ ...pricingSettings, wab: { ...(pricingSettings.wab || {}), salonPayantTicket: Number(e.target.value) } })}
+                        className="h-10 w-full rounded-xl border bg-zinc-50 px-3 font-bold text-[#0A1931]"
+                      />
+                      <span className="text-zinc-500 font-bold text-[11px]">XOF</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Marketplace & E-Commerce */}
+              <div className="rounded-[20px] border border-zinc-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-3 border-b pb-4">
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-700 font-bold">
+                    🛍️
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-[#0A1931] text-[15px]">Marketplace & Vendeurs</h3>
+                    <p className="text-[10px] text-zinc-500">Commissions sur transactions et badges pro</p>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-4 text-xs">
+                  <label className="block font-semibold text-zinc-700">
+                    Commission sur vente standard
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={pricingSettings?.marketplace?.commissionStandardPercent ?? 8}
+                        onChange={(e) => setPricingSettings({ ...pricingSettings, marketplace: { ...(pricingSettings.marketplace || {}), commissionStandardPercent: Number(e.target.value) } })}
+                        className="h-10 w-full rounded-xl border bg-zinc-50 px-3 font-bold text-[#0A1931]"
+                      />
+                      <span className="text-zinc-500 font-bold text-[11px]">%</span>
+                    </div>
+                  </label>
+                  <label className="block font-semibold text-zinc-700">
+                    Boost mise en avant Produit (7 jours)
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={pricingSettings?.marketplace?.boostProduit7j ?? 7500}
+                        onChange={(e) => setPricingSettings({ ...pricingSettings, marketplace: { ...(pricingSettings.marketplace || {}), boostProduit7j: Number(e.target.value) } })}
+                        className="h-10 w-full rounded-xl border bg-zinc-50 px-3 font-bold text-[#0A1931]"
+                      />
+                      <span className="text-zinc-500 font-bold text-[11px]">XOF</span>
+                    </div>
+                  </label>
+                  <label className="block font-semibold text-zinc-700">
+                    Abonnement Boutique Vendeur Certifié
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={pricingSettings?.marketplace?.badgeVerifieMensuel ?? 10000}
+                        onChange={(e) => setPricingSettings({ ...pricingSettings, marketplace: { ...(pricingSettings.marketplace || {}), badgeVerifieMensuel: Number(e.target.value) } })}
+                        className="h-10 w-full rounded-xl border bg-zinc-50 px-3 font-bold text-[#0A1931]"
+                      />
+                      <span className="text-zinc-500 font-bold text-[11px]">XOF/mois</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Africa Crowdfunding */}
+              <div className="rounded-[20px] border border-zinc-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-3 border-b pb-4">
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-700 font-bold">
+                    🌱
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-[#0A1931] text-[15px]">Africa Crowdfunding</h3>
+                    <p className="text-[10px] text-zinc-500">Financement participatif & PME</p>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-4 text-xs">
+                  <label className="block font-semibold text-zinc-700">
+                    Frais d'étude et validation de campagne
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={pricingSettings?.crowdfunding?.fraisDossier ?? 25000}
+                        onChange={(e) => setPricingSettings({ ...pricingSettings, crowdfunding: { ...(pricingSettings.crowdfunding || {}), fraisDossier: Number(e.target.value) } })}
+                        className="h-10 w-full rounded-xl border bg-zinc-50 px-3 font-bold text-[#0A1931]"
+                      />
+                      <span className="text-zinc-500 font-bold text-[11px]">XOF</span>
+                    </div>
+                  </label>
+                  <label className="block font-semibold text-zinc-700">
+                    Commission de succès sur fonds collectés
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={pricingSettings?.crowdfunding?.commissionSuccesPercent ?? 5}
+                        onChange={(e) => setPricingSettings({ ...pricingSettings, crowdfunding: { ...(pricingSettings.crowdfunding || {}), commissionSuccesPercent: Number(e.target.value) } })}
+                        className="h-10 w-full rounded-xl border bg-zinc-50 px-3 font-bold text-[#0A1931]"
+                      />
+                      <span className="text-zinc-500 font-bold text-[11px]">%</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Africa Awards */}
+              <div className="rounded-[20px] border border-zinc-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-3 border-b pb-4">
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-yellow-50 text-yellow-700 font-bold">
+                    🏆
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-[#0A1931] text-[15px]">Africa Awards</h3>
+                    <p className="text-[10px] text-zinc-500">Candidatures et votes payants</p>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-4 text-xs">
+                  <label className="block font-semibold text-zinc-700">
+                    Frais de candidature par catégorie
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={pricingSettings?.awards?.fraisCandidature ?? 35000}
+                        onChange={(e) => setPricingSettings({ ...pricingSettings, awards: { ...(pricingSettings.awards || {}), fraisCandidature: Number(e.target.value) } })}
+                        className="h-10 w-full rounded-xl border bg-zinc-50 px-3 font-bold text-[#0A1931]"
+                      />
+                      <span className="text-zinc-500 font-bold text-[11px]">XOF</span>
+                    </div>
+                  </label>
+                  <label className="block font-semibold text-zinc-700">
+                    Prix d'un vote public unitaire (Moneroo)
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={pricingSettings?.awards?.votePayantUnitaire ?? 500}
+                        onChange={(e) => setPricingSettings({ ...pricingSettings, awards: { ...(pricingSettings.awards || {}), votePayantUnitaire: Number(e.target.value) } })}
+                        className="h-10 w-full rounded-xl border bg-zinc-50 px-3 font-bold text-[#0A1931]"
+                      />
+                      <span className="text-zinc-500 font-bold text-[11px]">XOF/vote</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Emploi & Recrutement */}
+              <div className="rounded-[20px] border border-zinc-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-3 border-b pb-4">
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-cyan-50 text-cyan-700 font-bold">
+                    💼
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-[#0A1931] text-[15px]">Emploi & Recrutement</h3>
+                    <p className="text-[10px] text-zinc-500">Publications d'offres et accès talents</p>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-4 text-xs">
+                  <label className="block font-semibold text-zinc-700">
+                    Dépôt d'offre d'emploi standard (30 jours)
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={pricingSettings?.jobs?.offreStandard ?? 25000}
+                        onChange={(e) => setPricingSettings({ ...pricingSettings, jobs: { ...(pricingSettings.jobs || {}), offreStandard: Number(e.target.value) } })}
+                        className="h-10 w-full rounded-xl border bg-zinc-50 px-3 font-bold text-[#0A1931]"
+                      />
+                      <span className="text-zinc-500 font-bold text-[11px]">XOF</span>
+                    </div>
+                  </label>
+                  <label className="block font-semibold text-zinc-700">
+                    Offre d'emploi Premium (Boostée & Alerte)
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={pricingSettings?.jobs?.offrePremiumBoost ?? 60000}
+                        onChange={(e) => setPricingSettings({ ...pricingSettings, jobs: { ...(pricingSettings.jobs || {}), offrePremiumBoost: Number(e.target.value) } })}
+                        className="h-10 w-full rounded-xl border bg-zinc-50 px-3 font-bold text-[#0A1931]"
+                      />
+                      <span className="text-zinc-500 font-bold text-[11px]">XOF</span>
+                    </div>
+                  </label>
+                  <label className="block font-semibold text-zinc-700">
+                    Déblocage fiche candidat / CV qualifié
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={pricingSettings?.jobs?.deblocageCvUnitaire ?? 5000}
+                        onChange={(e) => setPricingSettings({ ...pricingSettings, jobs: { ...(pricingSettings.jobs || {}), deblocageCvUnitaire: Number(e.target.value) } })}
+                        className="h-10 w-full rounded-xl border bg-zinc-50 px-3 font-bold text-[#0A1931]"
+                      />
+                      <span className="text-zinc-500 font-bold text-[11px]">XOF</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[18px] border border-amber-200 bg-amber-50 p-5 text-xs text-amber-900 flex items-center justify-between">
+              <div>
+                <strong className="block font-bold">Règle de gouvernance financière :</strong>
+                <span>Tous les prix enregistrés ici sont immédiatement appliqués côté serveur. Aucun montant n’est jamais accepté ou calculé depuis le navigateur client.</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => void savePricingSettings()}
+                disabled={savingPricing}
+                className="h-10 rounded-full bg-[#0A1931] px-5 font-bold text-white shadow hover:bg-black transition disabled:opacity-50"
+              >
+                {savingPricing ? "Enregistrement…" : "Enregistrer la grille"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab==="kyc" && (
+          <div className="space-y-6">
+            <section className="relative overflow-hidden rounded-[24px] bg-[#0A1931] p-7 text-white shadow-xl">
+              <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#f2b84b]">Conformité Réglementaire · KYC & AML</p>
+                  <h1 className="mt-2 text-3xl font-black">Vérification d’Identité & Lutte Anti-Blanchiment</h1>
+                  <p className="mt-3 max-w-3xl text-sm leading-6 text-white/70">
+                    Contrôle obligatoire des pièces d’identité (CNI, selfie tenant la pièce, RCCM, IFU pour entreprises) avant toute activation de retrait ou remboursement pour affiliés, gagnants Africa Awards, vendeurs Marketplace et créateurs WAB. Traçabilité légale des adresses IP sur chaque mouvement de fonds.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void fetchKycData()}
+                  disabled={loadingKyc}
+                  className="h-11 shrink-0 rounded-full bg-white/10 border border-white/20 px-5 text-xs font-bold text-white hover:bg-white/20 transition"
+                >
+                  {loadingKyc ? "Actualisation…" : "Actualiser les dossiers ↻"}
+                </button>
+              </div>
+            </section>
+
+            {/* KPIs KYC */}
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-[18px] border border-zinc-200 bg-white p-4 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Total dossiers</p>
+                <strong className="mt-2 block text-2xl font-black text-[#0A1931]">{kycProfiles.length}</strong>
+                <span className="text-[11px] text-zinc-500">soumis sur la plateforme</span>
+              </div>
+              <div className="rounded-[18px] border border-amber-200 bg-amber-50/50 p-4 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-wider text-amber-800">En attente de validation</p>
+                <strong className="mt-2 block text-2xl font-black text-amber-700">{kycProfiles.filter((p: any) => p.statut === "en_attente").length}</strong>
+                <span className="text-[11px] text-amber-800">dossiers à examiner</span>
+              </div>
+              <div className="rounded-[18px] border border-emerald-200 bg-emerald-50/50 p-4 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-wider text-emerald-800">Approuvés (Retraits actifs)</p>
+                <strong className="mt-2 block text-2xl font-black text-emerald-700">{kycProfiles.filter((p: any) => p.statut === "approuve").length}</strong>
+                <span className="text-[11px] text-emerald-800">comptes conformes</span>
+              </div>
+              <div className="rounded-[18px] border border-red-200 bg-red-50/50 p-4 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-wider text-red-800">Rejetés</p>
+                <strong className="mt-2 block text-2xl font-black text-red-700">{kycProfiles.filter((p: any) => p.statut === "rejete").length}</strong>
+                <span className="text-[11px] text-red-800">avec motif notifié</span>
+              </div>
+            </div>
+
+            {/* Navigation sous-onglets KYC / AML */}
+            <div className="flex gap-2 border-b pb-3">
+              <button
+                type="button"
+                onClick={() => setKycActiveTab("dossiers")}
+                className={`h-10 px-5 rounded-full text-xs font-bold transition ${kycActiveTab === "dossiers" ? "bg-[#0A1931] text-white shadow-sm" : "bg-white border text-zinc-600 hover:bg-zinc-50"}`}
+              >
+                Dossiers d’Identité KYC ({kycProfiles.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setKycActiveTab("aml")}
+                className={`h-10 px-5 rounded-full text-xs font-bold transition ${kycActiveTab === "aml" ? "bg-[#0A1931] text-white shadow-sm" : "bg-white border text-zinc-600 hover:bg-zinc-50"}`}
+              >
+                Registre d’Audit AML & IPs ({amlLogs.length})
+              </button>
+            </div>
+
+            {kycActiveTab === "dossiers" && (
+              <div className="rounded-[20px] border border-zinc-200 bg-white p-6 shadow-sm">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-4">
+                  <div className="flex gap-2 overflow-x-auto">
+                    {[
+                      { id: "all", label: `Tous (${kycProfiles.length})` },
+                      { id: "en_attente", label: `En attente (${kycProfiles.filter((p: any) => p.statut === "en_attente").length})` },
+                      { id: "approuve", label: `Approuvés (${kycProfiles.filter((p: any) => p.statut === "approuve").length})` },
+                      { id: "rejete", label: `Rejetés (${kycProfiles.filter((p: any) => p.statut === "rejete").length})` },
+                    ].map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => setKycFilter(f.id)}
+                        className={`h-8 px-3.5 rounded-full text-[11px] font-bold transition ${kycFilter === f.id ? "bg-[#9e001f] text-white" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"}`}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-5 overflow-x-auto">
+                  <table className="w-full text-left text-[12px]">
+                    <thead className="border-b text-[10px] font-black uppercase tracking-wider text-zinc-400">
+                      <tr>
+                        <th className="py-3">Utilisateur / Entreprise</th>
+                        <th>Type profil</th>
+                        <th>Pièces jointes</th>
+                        <th>Statut</th>
+                        <th>Date soumission</th>
+                        <th className="text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {kycProfiles
+                        .filter((p: any) => kycFilter === "all" ? true : p.statut === kycFilter)
+                        .map((profile: any) => (
+                          <tr key={profile.id || profile.userId} className="hover:bg-zinc-50 transition">
+                            <td className="py-3 font-semibold text-[#0A1931]">
+                              <div>{profile.prenom} {profile.nom}</div>
+                              {profile.typeProfil === "entreprise" && profile.nomEntreprise && (
+                                <div className="text-[10px] text-zinc-500 font-normal">🏢 {profile.nomEntreprise} (RCCM: {profile.numeroRccm || "—"})</div>
+                              )}
+                              <div className="text-[10px] text-zinc-400 font-mono">{profile.telephone || profile.userId.slice(0, 10)}</div>
+                            </td>
+                            <td>
+                              <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${profile.typeProfil === "entreprise" ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800"}`}>
+                                {profile.typeProfil === "entreprise" ? "Entreprise" : "Particulier"}
+                              </span>
+                            </td>
+                            <td className="text-[11px] text-zinc-600">
+                              <div className="flex flex-wrap gap-1">
+                                {profile.cniRectoUrl && <span className="bg-zinc-100 px-1.5 py-0.5 rounded text-[10px]">Recto</span>}
+                                {profile.cniVersoUrl && <span className="bg-zinc-100 px-1.5 py-0.5 rounded text-[10px]">Verso</span>}
+                                {profile.selfieUrl && <span className="bg-zinc-100 px-1.5 py-0.5 rounded text-[10px]">Selfie</span>}
+                                {profile.documentRccmUrl && <span className="bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded text-[10px]">RCCM</span>}
+                                {profile.documentIfuUrl && <span className="bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded text-[10px]">IFU</span>}
+                              </div>
+                            </td>
+                            <td>
+                              <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                                profile.statut === "approuve"
+                                  ? "bg-green-100 text-green-800"
+                                  : profile.statut === "rejete"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-amber-100 text-amber-800"
+                              }`}>
+                                {profile.statut === "approuve" ? "✓ Approuvé" : profile.statut === "rejete" ? "✕ Rejeté" : "⏳ En attente"}
+                              </span>
+                            </td>
+                            <td className="text-[11px] text-zinc-500">
+                              {profile.soumisLe ? new Date(profile.soumisLe).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }) : "—"}
+                            </td>
+                            <td className="py-2 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setInspectKycProfile(profile)}
+                                  className="h-7 px-2.5 rounded-full border border-zinc-200 bg-white text-[11px] font-semibold text-[#0A1931] hover:bg-zinc-100"
+                                >
+                                  Inspecter 🔍
+                                </button>
+                                {profile.statut !== "approuve" && (
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleApproveKyc(profile.userId)}
+                                    className="h-7 px-2.5 rounded-full bg-emerald-600 text-white text-[11px] font-bold hover:bg-emerald-700"
+                                  >
+                                    Approuver ✓
+                                  </button>
+                                )}
+                                {profile.statut !== "rejete" && (
+                                  <button
+                                    type="button"
+                                    onClick={() => { setRejectModalProfile(profile); setRejectionReason(""); }}
+                                    className="h-7 px-2.5 rounded-full border border-red-200 bg-red-50 text-[11px] font-bold text-red-700 hover:bg-red-100"
+                                  >
+                                    Rejeter ✕
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                  {kycProfiles.length === 0 && (
+                    <div className="py-12 text-center text-zinc-400 text-sm">
+                      Aucun dossier de vérification KYC soumis pour le moment.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {kycActiveTab === "aml" && (
+              <div className="rounded-[20px] border border-zinc-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center justify-between border-b pb-4">
+                  <div>
+                    <h3 className="font-bold text-[#0A1931] text-[15px]">Registre Légal AML & Traçabilité des Transactions</h3>
+                    <p className="text-[11px] text-zinc-500">Journalisation immuable de chaque opération financière avec capture de l’adresse IP et de l’empreinte de session.</p>
+                  </div>
+                  <span className="text-[11px] font-bold text-zinc-400">{amlLogs.length} opérations enregistrées</span>
+                </div>
+
+                <div className="mt-5 overflow-x-auto">
+                  <table className="w-full text-left text-[12px]">
+                    <thead className="border-b text-[10px] font-black uppercase tracking-wider text-zinc-400">
+                      <tr>
+                        <th className="py-3">Date & Heure</th>
+                        <th>Utilisateur</th>
+                        <th>Mouvement</th>
+                        <th>Montant</th>
+                        <th>Adresse IP</th>
+                        <th>Statut AML</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y font-mono">
+                      {amlLogs.map((log: any) => (
+                        <tr key={log.id} className="hover:bg-zinc-50 transition text-[11px]">
+                          <td className="py-3 text-zinc-500">{new Date(log.creeLe || log.date).toLocaleString("fr-FR")}</td>
+                          <td className="font-sans font-semibold text-[#0A1931]">{log.userNom || log.userId?.slice(0, 8)}</td>
+                          <td>
+                            <span className="bg-zinc-100 px-2 py-0.5 rounded text-[10px] font-bold uppercase text-zinc-700">
+                              {log.typeMouvement}
+                            </span>
+                          </td>
+                          <td className="font-bold text-[#0A1931]">
+                            {Number(log.montant || 0).toLocaleString()} {log.devise || "XOF"}
+                          </td>
+                          <td className="text-blue-700 font-bold">{log.ipAddress || "127.0.0.1"}</td>
+                          <td>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${log.statutAml === "conforme" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}`}>
+                              {log.statutAml || "conforme"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {amlLogs.length === 0 && (
+                    <div className="py-12 text-center text-zinc-400 text-sm font-sans">
+                      Aucune transaction financière n'a encore été journalisée dans le registre AML.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Modale d'inspection de dossier KYC */}
+            {inspectKycProfile && (
+              <div className="fixed inset-0 z-[70] grid place-items-center bg-black/60 p-4 backdrop-blur-sm overflow-y-auto">
+                <div className="w-full max-w-[800px] max-h-[90vh] overflow-y-auto rounded-[24px] bg-white p-6 shadow-2xl">
+                  <div className="flex items-center justify-between border-b pb-4">
+                    <div>
+                      <h3 className="font-bold text-[#0A1931] text-lg">Dossier KYC — {inspectKycProfile.prenom} {inspectKycProfile.nom}</h3>
+                      <p className="text-[11px] text-zinc-500">Profil {inspectKycProfile.typeProfil === "entreprise" ? "Entreprise / Société" : "Particulier"}</p>
+                    </div>
+                    <button type="button" onClick={() => setInspectKycProfile(null)} className="text-2xl text-zinc-400 hover:text-black">×</button>
+                  </div>
+
+                  <div className="mt-5 space-y-6 text-xs">
+                    {/* Infos personnelles */}
+                    <div className="rounded-[16px] bg-zinc-50 p-4 border border-zinc-200">
+                      <h4 className="font-bold text-[#0A1931] mb-2 uppercase text-[10px] tracking-wider text-[#9e001f]">Données d’identification</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <div><span className="text-zinc-500 block">Nom complet :</span> <strong>{inspectKycProfile.prenom} {inspectKycProfile.nom}</strong></div>
+                        <div><span className="text-zinc-500 block">Date de naissance :</span> <strong>{inspectKycProfile.dateNaissance || "—"}</strong></div>
+                        <div><span className="text-zinc-500 block">Nationalité :</span> <strong>{inspectKycProfile.nationalite || "—"}</strong></div>
+                        <div><span className="text-zinc-500 block">Téléphone :</span> <strong>{inspectKycProfile.telephone || "—"}</strong></div>
+                        <div><span className="text-zinc-500 block">Adresse :</span> <strong>{inspectKycProfile.adresse || "—"}</strong></div>
+                        <div><span className="text-zinc-500 block">Type de pièce :</span> <strong>{inspectKycProfile.typePiece || "CNI"} (N° {inspectKycProfile.numeroPiece || "—"})</strong></div>
+                      </div>
+                    </div>
+
+                    {/* Données entreprise si applicable */}
+                    {inspectKycProfile.typeProfil === "entreprise" && (
+                      <div className="rounded-[16px] bg-purple-50/50 p-4 border border-purple-200">
+                        <h4 className="font-bold text-purple-900 mb-2 uppercase text-[10px] tracking-wider">Informations Société (Marketplace / Partenaire)</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          <div><span className="text-zinc-500 block">Raison sociale :</span> <strong>{inspectKycProfile.nomEntreprise || "—"}</strong></div>
+                          <div><span className="text-zinc-500 block">Numéro RCCM :</span> <strong>{inspectKycProfile.numeroRccm || "—"}</strong></div>
+                          <div><span className="text-zinc-500 block">Numéro IFU :</span> <strong>{inspectKycProfile.numeroIfu || "—"}</strong></div>
+                          <div><span className="text-zinc-500 block">Forme juridique :</span> <strong>{inspectKycProfile.formeJuridique || "SARL"}</strong></div>
+                          <div><span className="text-zinc-500 block">Siège social :</span> <strong>{inspectKycProfile.siegeSocial || "—"}</strong></div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Visualisation des pièces */}
+                    <div>
+                      <h4 className="font-bold text-[#0A1931] mb-3 text-[13px]">Pièces justificatives téléchargées</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {inspectKycProfile.cniRectoUrl && (
+                          <div className="rounded-xl border p-2 bg-zinc-50">
+                            <span className="font-bold block mb-1 text-[11px]">Pièce d’identité (Recto)</span>
+                            <a href={inspectKycProfile.cniRectoUrl} target="_blank" rel="noopener noreferrer">
+                              <img src={inspectKycProfile.cniRectoUrl} alt="CNI Recto" className="h-32 w-full object-cover rounded-lg hover:opacity-90" />
+                            </a>
+                          </div>
+                        )}
+                        {inspectKycProfile.cniVersoUrl && (
+                          <div className="rounded-xl border p-2 bg-zinc-50">
+                            <span className="font-bold block mb-1 text-[11px]">Pièce d’identité (Verso)</span>
+                            <a href={inspectKycProfile.cniVersoUrl} target="_blank" rel="noopener noreferrer">
+                              <img src={inspectKycProfile.cniVersoUrl} alt="CNI Verso" className="h-32 w-full object-cover rounded-lg hover:opacity-90" />
+                            </a>
+                          </div>
+                        )}
+                        {inspectKycProfile.selfieUrl && (
+                          <div className="rounded-xl border p-2 bg-zinc-50 border-amber-300 bg-amber-50/30">
+                            <span className="font-bold block mb-1 text-[11px] text-amber-900">Selfie tenant la pièce</span>
+                            <a href={inspectKycProfile.selfieUrl} target="_blank" rel="noopener noreferrer">
+                              <img src={inspectKycProfile.selfieUrl} alt="Selfie avec pièce" className="h-32 w-full object-cover rounded-lg hover:opacity-90" />
+                            </a>
+                          </div>
+                        )}
+                        {inspectKycProfile.documentRccmUrl && (
+                          <div className="rounded-xl border p-2 bg-zinc-50">
+                            <span className="font-bold block mb-1 text-[11px]">Extrait RCCM Société</span>
+                            <a href={inspectKycProfile.documentRccmUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-32 w-full items-center justify-center bg-purple-50 rounded-lg text-purple-700 font-bold">
+                              Voir le RCCM ↗
+                            </a>
+                          </div>
+                        )}
+                        {inspectKycProfile.documentIfuUrl && (
+                          <div className="rounded-xl border p-2 bg-zinc-50">
+                            <span className="font-bold block mb-1 text-[11px]">Attestation IFU</span>
+                            <a href={inspectKycProfile.documentIfuUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-32 w-full items-center justify-center bg-purple-50 rounded-lg text-purple-700 font-bold">
+                              Voir l'IFU ↗
+                            </a>
+                          </div>
+                        )}
+                        {inspectKycProfile.documentStatutsUrl && (
+                          <div className="rounded-xl border p-2 bg-zinc-50">
+                            <span className="font-bold block mb-1 text-[11px]">Statuts Société</span>
+                            <a href={inspectKycProfile.documentStatutsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-32 w-full items-center justify-center bg-purple-50 rounded-lg text-purple-700 font-bold">
+                              Voir les Statuts ↗
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex justify-end gap-3 border-t pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setInspectKycProfile(null)}
+                      className="h-10 px-5 rounded-full border text-xs font-bold"
+                    >
+                      Fermer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = inspectKycProfile;
+                        setInspectKycProfile(null);
+                        setRejectModalProfile(target);
+                        setRejectionReason("");
+                      }}
+                      className="h-10 px-5 rounded-full border border-red-200 bg-red-50 text-xs font-bold text-red-700 hover:bg-red-100"
+                    >
+                      Rejeter le dossier
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const targetId = inspectKycProfile.userId;
+                        setInspectKycProfile(null);
+                        void handleApproveKyc(targetId);
+                      }}
+                      className="h-10 px-6 rounded-full bg-emerald-600 text-xs font-bold text-white hover:bg-emerald-700"
+                    >
+                      Valider et activer les retraits ✓
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modale de motif de rejet KYC */}
+            {rejectModalProfile && (
+              <div className="fixed inset-0 z-[80] grid place-items-center bg-black/60 p-4 backdrop-blur-sm">
+                <div className="w-full max-w-[460px] rounded-[22px] bg-white p-6 shadow-2xl">
+                  <div className="flex items-center justify-between border-b pb-3">
+                    <h3 className="font-bold text-[#0A1931]">Rejeter le dossier KYC</h3>
+                    <button type="button" onClick={() => setRejectModalProfile(null)} className="text-xl text-zinc-400">×</button>
+                  </div>
+                  <p className="mt-3 text-xs text-zinc-600 leading-5">
+                    Indiquez le motif exact du rejet (pièce illisible, selfie manquant, document expiré, nom non conforme). L'utilisateur sera notifié et pourra corriger son dossier.
+                  </p>
+                  <textarea
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    rows={4}
+                    placeholder="Ex: La photo de la CNI est floue et les coins sont coupés. Veuillez fournir un scan net ou une photo lisible avec le selfie tenant la pièce."
+                    className="mt-3 w-full rounded-xl border bg-zinc-50 p-3 text-xs"
+                    required
+                  />
+                  <div className="mt-5 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setRejectModalProfile(null)}
+                      className="h-10 px-4 rounded-full border text-xs font-bold"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!rejectionReason.trim()}
+                      onClick={() => void handleRejectKyc(rejectModalProfile.userId, rejectionReason)}
+                      className="h-10 px-5 rounded-full bg-red-600 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50"
+                    >
+                      Confirmer le rejet
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

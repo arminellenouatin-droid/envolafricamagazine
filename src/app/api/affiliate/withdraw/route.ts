@@ -1,10 +1,13 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { requestWithdrawal, AffiliationError } from "@/lib/affiliation/enrollment";
 import { WITHDRAWAL_THRESHOLD } from "@/lib/affiliation/constants";
+import { getClientIp } from "@/lib/rate-limit";
+import { assertKYCVerifiedForWithdrawal, logAMLMovement } from "@/lib/kyc/kyc-service";
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
   const user = await getCurrentUserFromCookie();
   if (!user) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
@@ -33,6 +36,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // CONTRÔLE DE SÉCURITÉ OBLIGATOIRE : CONFORMITÉ KYC & AML
+    const userAgent = req.headers.get("user-agent") || undefined;
+    await assertKYCVerifiedForWithdrawal(user.id, {
+      movementType: "retrait_affiliation",
+      amount: numAmount,
+      ipAddress: ip,
+      userAgent,
+    });
+
     const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json({ error: "Base de données indisponible" }, { status: 503 });
@@ -56,6 +68,26 @@ export async function POST(req: NextRequest) {
       amount: numAmount,
       mobileMoneyProvider,
       mobileMoneyNumber,
+    });
+
+    // JOURNALISATION AML AVEC TRAÇABILITÉ IP
+    await logAMLMovement({
+      userId: user.id,
+      userEmail: user.email,
+      userName: `${user.prenom || ""} ${user.nom || ""}`.trim() || user.email,
+      type: "retrait_affiliation",
+      montant: numAmount,
+      devise: "XOF",
+      ipAddress: ip,
+      userAgent,
+      kycVerified: true,
+      statut: "succes",
+      referenceExterne: withdrawal.id,
+      details: {
+        affiliateId: affiliate.id,
+        mobileMoneyProvider,
+        mobileMoneyNumber,
+      },
     });
 
     return NextResponse.json({

@@ -107,44 +107,56 @@ function fileKind(mimeType: string, name: string) {
   };
 }
 
+function getSynchronousMediaUrl(path: string): string | null {
+  if (!path) return null;
+  if (path.includes("/covers/")) {
+    const match = path.match(/\/covers\/[^?#\s]+/);
+    return match ? match[0] : path;
+  }
+  if (/^https?:\/\//i.test(path) && !path.includes("envolafricamagazinegildas.vercel.app")) {
+    return path;
+  }
+  if (path.startsWith("prod/") || path.startsWith("dev/") || path.startsWith("wab/") || path.startsWith("articles/") || path.startsWith("magazines/")) {
+    return resolveFileUrl(path);
+  }
+  if (path.startsWith("/")) {
+    return path;
+  }
+  return null;
+}
+
 export default function PostMedia({ postId, media }: { postId: string; media: Media[] }) {
-  const [resolvedItems, setResolvedItems] = useState<ResolvedMedia[]>([]);
+  const [resolvedItems, setResolvedItems] = useState<ResolvedMedia[]>(() => {
+    if (!media || !media.length) return [];
+    return media
+      .map((item) => {
+        const syncUrl = getSynchronousMediaUrl(item.path);
+        if (syncUrl) {
+          return {
+            url: syncUrl,
+            mimeType: item.mimeType || (syncUrl.includes("/covers/") ? "image/jpeg" : ""),
+            name: item.name,
+            size: item.size,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean) as ResolvedMedia[];
+  });
   const [selectedImageModal, setSelectedImageModal] = useState<string | null>(null);
 
   useEffect(() => {
     if (!media || !media.length) return;
 
-    // Resolve media paths
+    // Resolve media paths (only fetch async if not already resolved synchronously)
     Promise.all(
       media.map(async (item, index): Promise<ResolvedMedia | null> => {
         let directUrl = item.path || "";
-        // If it's a relative path like /covers/...
-        if (directUrl.includes("/covers/")) {
-          const match = directUrl.match(/\/covers\/[^?#\s]+/);
-          if (match) directUrl = match[0];
+        const syncUrl = getSynchronousMediaUrl(directUrl);
+        if (syncUrl) {
           return {
-            url: directUrl,
-            mimeType: item.mimeType || "image/jpeg",
-            name: item.name,
-            size: item.size,
-          };
-        }
-
-        // Si URL directe complète
-        if (/^https?:\/\//i.test(directUrl) && !directUrl.includes("envolafricamagazinegildas.vercel.app")) {
-          return {
-            url: directUrl,
-            mimeType: item.mimeType,
-            name: item.name,
-            size: item.size,
-          };
-        }
-
-        // Si fichier stocké sur Cloudflare R2
-        if (directUrl.startsWith("prod/") || directUrl.startsWith("dev/") || directUrl.startsWith("wab/")) {
-          return {
-            url: resolveFileUrl(directUrl),
-            mimeType: item.mimeType,
+            url: syncUrl,
+            mimeType: item.mimeType || (syncUrl.includes("/covers/") ? "image/jpeg" : ""),
             name: item.name,
             size: item.size,
           };

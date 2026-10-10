@@ -399,11 +399,38 @@ h1, h2, h3, h4, .font-display {
 .dark [class*="border-[#e5bdbb]"],
 .dark [class*="border-[#d8c3c1]"],
 .dark [class*="border-[#eee2e0]"] { border-color: var(--outline-variant) !important; }
-.dark .material-symbols-outlined { color: #f0b27e; }
+.dark .material-symbols-outlined:not([class*="text-"]) { color: currentColor; }
 .dark input::placeholder,
 .dark textarea::placeholder { color: #c8b8b6 !important; }
 .dark ::-webkit-scrollbar-track { background: var(--surface-container); }
-.dark ::-webkit-scrollbar-thumb { background: #f0b27e; }
+.dark ::-webkit-scrollbar-thumb { background: #55403e; border-radius: 9999px; }
+
+/* UI/UX Pro Max : Modales & Popups Élégantes & Fluides */
+@keyframes modalPopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-surface,
+.fixed.inset-0 > div:not(.fixed):not(.backdrop-blur-none),
+.fixed.inset-0 > form:not(.fixed) {
+  animation: modalPopIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  box-shadow: 0 20px 50px -10px rgba(10, 25, 49, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.dark .modal-surface,
+.dark .fixed.inset-0 > div:not(.fixed),
+.dark .fixed.inset-0 > form:not(.fixed) {
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  background-color: #1a1c1e !important;
+  color: #f1efed;
+}
 
 
 /* Subscription, Affiliation & Don dark-mode contrast: explicit utility colors remain readable on dark cards. */

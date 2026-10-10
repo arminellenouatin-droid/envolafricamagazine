@@ -158,9 +158,28 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
       <form onSubmit={handleSubmit} className="bg-white rounded-[20px] p-6 w-full max-w-[900px] max-h-[95vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-[18px]">{editingMag?"Modifier magazine - Version corrigée":"Nouveau magazine - Version corrigée"}</h3>
-          <button type="button" onClick={onClose} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center">×</button>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3 mb-4">
+          <div>
+            <h3 className="font-bold text-[18px] text-[#0A1931]">{editingMag ? "Modifier le magazine" : "Nouveau magazine"}</h3>
+            <p className="mt-0.5 text-[11px] text-zinc-500">Numéro, couverture, preview flipbook, fichiers PDF & audios, tarification par format.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {editingMag && (
+              <>
+                <a href={`/kiosque/${encodeURIComponent(editingMag.id)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-full hover:bg-blue-100">
+                  <span>Voir dans le Kiosque</span><span>↗</span>
+                </a>
+                <button type="button" onClick={() => {
+                  const url = `${window.location.origin}/kiosque/${editingMag.id}`;
+                  navigator.clipboard.writeText(url);
+                  setMessage("Lien copié dans le presse-papier ! ✅");
+                }} className="text-[11px] font-bold text-zinc-700 bg-zinc-100 border border-zinc-200 px-3 py-1.5 rounded-full hover:bg-zinc-200">
+                  Copier le lien
+                </button>
+              </>
+            )}
+            <button type="button" onClick={onClose} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center font-bold">×</button>
+          </div>
         </div>
 
         {message && <div className="mb-4 p-3 rounded-full bg-amber-50 border border-amber-200 text-[12px] text-amber-900">{message}</div>}

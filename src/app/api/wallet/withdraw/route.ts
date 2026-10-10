@@ -3,6 +3,7 @@ import { getCurrentUserFromCookie } from '@/lib/auth';
 import { getClientIp, rateLimit } from '@/lib/rate-limit';
 import { requestWithdrawal } from '@/lib/wallet/financial-core';
 import type { WithdrawalMethod } from '@/lib/wallet/types';
+import { assertKYCVerifiedForWithdrawal, logAMLMovement } from '@/lib/kyc/kyc-service';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,6 +59,15 @@ export async function POST(req: NextRequest) {
 
     const amount = Math.round(rawAmount);
 
+    // CONTRÔLE DE SÉCURITÉ OBLIGATOIRE : CONFORMITÉ KYC & AML
+    const userAgent = req.headers.get('user-agent') || undefined;
+    await assertKYCVerifiedForWithdrawal(user.id, {
+      movementType: 'retrait_wallet',
+      amount,
+      ipAddress: ip,
+      userAgent,
+    });
+
     const result = await requestWithdrawal({
       userId: user.id,
       amount,
@@ -68,6 +78,28 @@ export async function POST(req: NextRequest) {
         userEmail: user.email,
         userName: `${user.prenom} ${user.nom}`.trim(),
         requestedVia: 'web',
+        clientIp: ip,
+      },
+    });
+
+    // JOURNALISATION AUDIT AML AVEC TRAÇABILITÉ IP
+    await logAMLMovement({
+      userId: user.id,
+      userEmail: user.email,
+      userName: `${user.prenom} ${user.nom}`.trim(),
+      type: 'retrait_wallet',
+      montant: amount,
+      devise: 'XOF',
+      ipAddress: ip,
+      userAgent,
+      kycVerified: true,
+      statut: 'succes',
+      referenceExterne: result.reference,
+      details: {
+        withdrawalId: result.withdrawalId,
+        method,
+        destinationAccount,
+        accountHolder,
       },
     });
 

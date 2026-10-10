@@ -42,3 +42,4 @@ next-env.d.ts
 .env.local
 supabase/.temp/
 scratch/
+src/data/kyc-aml.json

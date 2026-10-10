@@ -33,13 +33,14 @@ export async function PUT(req: NextRequest) {
   if (error) return NextResponse.json({ error }, { status });
   try {
     const body = await req.json();
-    const { homeSections, ads, shippingRates, plans } = body;
+    const { homeSections, ads, shippingRates, plans, pricing } = body;
     if (db) {
       if (!db.settings) db.settings = { ...DEFAULT_SETTINGS };
       if (homeSections) db.settings.homeSections = { ...db.settings.homeSections, ...homeSections };
       if (ads) db.settings.ads = ads;
       if (shippingRates) db.settings.shippingRates = shippingRates;
       if (plans) db.settings.plans = plans;
+      if (pricing) db.settings.pricing = { ...(db.settings.pricing || {}), ...pricing };
       writeDB(db);
       return NextResponse.json({ success: true, settings: db.settings });
     }
@@ -48,6 +49,7 @@ export async function PUT(req: NextRequest) {
     if (ads) cachedProdSettings.ads = ads;
     if (shippingRates) cachedProdSettings.shippingRates = shippingRates;
     if (plans) cachedProdSettings.plans = plans;
+    if (pricing) cachedProdSettings.pricing = { ...(cachedProdSettings.pricing || {}), ...pricing };
     return NextResponse.json({ success: true, settings: cachedProdSettings });
   } catch (e) {
     console.error(e);

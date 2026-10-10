@@ -27,6 +27,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "*.r2.dev" },
       { protocol: "https", hostname: "pub-df336181dd964534a4866a10762a3327.r2.dev" },
       { protocol: "https", hostname: "*.cloudflarestorage.com" },
+      { protocol: "https", hostname: "*.googleusercontent.com" },
+      { protocol: "https", hostname: "lh3.googleusercontent.com" },
     ],
   },
   async headers() {

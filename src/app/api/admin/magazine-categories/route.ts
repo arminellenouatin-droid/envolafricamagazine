@@ -37,6 +37,32 @@ export async function POST(request: NextRequest) {
   } catch (cause) { return NextResponse.json({ error: cause instanceof Error ? cause.message : "Création impossible." }, { status: 500 }); }
 }
 
+export async function PUT(request: NextRequest) {
+  const { error, status } = await getCurrentUserForAdmin("admin");
+  if (error) return NextResponse.json({ error }, { status });
+  try {
+    const body = await request.json();
+    const id = String(body.id || "");
+    const label = String(body.label || "").trim();
+    if (!id || !label) return NextResponse.json({ error: "Identifiant et libellé requis." }, { status: 400 });
+    const client = getSupabaseAdmin();
+    if (!client) return NextResponse.json({ error: "Stockage des catégories Magazine indisponible." }, { status: 503 });
+    const patch: Record<string, unknown> = {
+      label,
+      slug: slugify(label),
+      updated_at: new Date().toISOString(),
+    };
+    if (body.colorHex) patch.color_hex = String(body.colorHex);
+    if (typeof body.isActive === "boolean") patch.is_active = body.isActive;
+
+    const result = await client.from("magazine_categories").update(patch).eq("id", id).select("id,slug,label,color_hex,is_active").single();
+    if (result.error) return NextResponse.json({ error: result.error.message }, { status: 503 });
+    return NextResponse.json({ category: result.data });
+  } catch (cause) {
+    return NextResponse.json({ error: cause instanceof Error ? cause.message : "Modification impossible." }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: NextRequest) {
   const { error, status } = await getCurrentUserForAdmin("admin");
   if (error) return NextResponse.json({ error }, { status });
@@ -48,3 +74,4 @@ export async function DELETE(request: NextRequest) {
   if (result.error) return NextResponse.json({ error: result.error.message }, { status: 503 });
   return NextResponse.json({ success: true });
 }
+
