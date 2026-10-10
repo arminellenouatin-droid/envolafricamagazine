@@ -205,22 +205,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .trim();
 
   const isVideo = post.type === "video" || Boolean(post.videoUrl);
+  const isDocument = !isVideo && (post.type === "document" || post.media?.some((m) => !m.mimeType?.startsWith("image/") && !m.mimeType?.startsWith("video/")));
   const title = isVideo
     ? `▶ Vidéo : ${cleanContent.slice(0, 70)} | ${post.author}`
     : `${cleanContent.slice(0, 70)} | ${post.author} sur WAB`;
 
   const description = cleanContent.slice(0, 180) + (cleanContent.length > 180 ? "…" : "");
 
+  // Si c'est une vidéo : l'aperçu OG dynamique superpose la capture vidéo et le bouton de lecture Play central
+  // Si c'est un document : l'aperçu OG dynamique affiche le visuel document avec le badge PDF officiel
+  const shareImageUrl = isVideo || isDocument
+    ? `${CANONICAL_SITE_URL}/api/og/wab-post?id=${encodeURIComponent(id)}`
+    : (post.imageUrl || `${CANONICAL_SITE_URL}/api/og/wab-post?id=${encodeURIComponent(id)}`);
+
   return buildShareMetadata({
     type: isVideo ? "video" : "post",
     id,
     title,
     description,
-    imageUrl: post.imageUrl || post.thumbnailUrl,
+    imageUrl: shareImageUrl,
     videoUrl: post.videoUrl,
     author: post.author,
     publishedTime: post.createdAt,
-    badge: isVideo ? "VIDÉO EXCLUSIVE WAB" : "PUBLICATION WAB",
+    badge: isVideo ? "VIDÉO EXCLUSIVE WAB" : (isDocument ? "DOCUMENT OFFICIEL WAB" : "PUBLICATION WAB"),
   });
 }
 

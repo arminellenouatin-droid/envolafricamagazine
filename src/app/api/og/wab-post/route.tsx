@@ -2,16 +2,29 @@ import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { readWabDB } from "@/lib/wab-db";
+import { resolveFileUrl } from "@/lib/storage/resolve-url";
 import sharp from "sharp";
 
 export const runtime = "nodejs";
 
+const CANONICAL_BASE = (
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  process.env.NEXT_PUBLIC_BASE_URL ||
+  "https://www.envolafrica.site"
+).replace(/\/+$/, "");
+
 async function fetchImageAsBase64(url?: string | null): Promise<string> {
   if (!url) return "";
   try {
+    let targetUrl = url.trim();
+    if (targetUrl.startsWith("/")) {
+      targetUrl = `${CANONICAL_BASE}${targetUrl}`;
+    } else if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
+      targetUrl = `${CANONICAL_BASE}/${targetUrl}`;
+    }
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 3500);
-    const res = await fetch(url, { signal: controller.signal });
+    const res = await fetch(targetUrl, { signal: controller.signal });
     clearTimeout(timeout);
     if (!res.ok) return "";
     const arrayBuffer = await res.arrayBuffer();
@@ -171,12 +184,17 @@ export async function GET(request: NextRequest) {
   // Resolve visual thumbnail
   let visualUrl = "";
   if (isVideo) {
-    visualUrl =
-      videoMedia?.thumbnailUrl ||
-      videoMedia?.posterUrl ||
-      (id ? `https://rtfjwpytiuvoekomevpu.supabase.co/storage/v1/object/public/article-media/thumbnails/video_${id}.jpg` : "");
+    const rawThumb = videoMedia?.thumbnailUrl || videoMedia?.posterUrl || imageMedia?.mediaUrl || imageMedia?.path;
+    if (rawThumb) {
+      visualUrl = resolveFileUrl(rawThumb);
+    } else if (id) {
+      visualUrl = `https://rtfjwpytiuvoekomevpu.supabase.co/storage/v1/object/public/article-media/thumbnails/video_${id}.jpg`;
+    }
   } else if (isImage) {
-    visualUrl = imageMedia?.mediaUrl || imageMedia?.path || "";
+    visualUrl = resolveFileUrl(imageMedia?.mediaUrl || imageMedia?.path || "");
+  } else if (isDocument) {
+    const docThumb = imageMedia?.mediaUrl || imageMedia?.path || docMedia?.thumbnailUrl;
+    if (docThumb) visualUrl = resolveFileUrl(docThumb);
   }
 
   // Pre-fetch images as Base64 to ensure instant Satori rendering without timeout
@@ -356,39 +374,40 @@ export async function GET(request: NextRequest) {
             >
               <div
                 style={{
-                  width: "92px",
-                  height: "92px",
+                  width: "100px",
+                  height: "100px",
                   borderRadius: "50%",
-                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                  backgroundColor: "rgba(158, 0, 31, 0.95)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  boxShadow: "0 0 45px rgba(0, 0, 0, 0.7), 0 0 25px rgba(240, 178, 126, 0.6)",
-                  border: "3px solid #ffffff",
+                  boxShadow: "0 14px 45px rgba(0, 0, 0, 0.8), 0 0 35px rgba(158, 0, 31, 0.65)",
+                  border: "4px solid #ffffff",
                 }}
               >
                 <div
                   style={{
-                    color: "#9e001f",
-                    fontSize: "40px",
-                    fontWeight: 900,
-                    marginLeft: "6px",
+                    width: 0,
+                    height: 0,
+                    borderTop: "20px solid transparent",
+                    borderBottom: "20px solid transparent",
+                    borderLeft: "32px solid #ffffff",
+                    marginLeft: "8px",
                   }}
-                >
-                  ▶
-                </div>
+                />
               </div>
               <div
                 style={{
                   fontSize: "15px",
-                  fontWeight: 800,
+                  fontWeight: 900,
                   letterSpacing: "1.5px",
-                  color: "#f0b27e",
-                  backgroundColor: "rgba(6, 25, 43, 0.85)",
-                  padding: "6px 20px",
-                  borderRadius: "20px",
-                  border: "1px solid rgba(240, 178, 126, 0.5)",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+                  color: "#ffffff",
+                  backgroundColor: "rgba(6, 25, 43, 0.9)",
+                  padding: "8px 24px",
+                  borderRadius: "24px",
+                  border: "1px solid rgba(240, 178, 126, 0.6)",
+                  boxShadow: "0 6px 18px rgba(0,0,0,0.6)",
+                  textTransform: "uppercase",
                 }}
               >
                 REGARDER LA VIDÉO SUR WAB

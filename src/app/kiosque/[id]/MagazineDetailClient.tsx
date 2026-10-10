@@ -7,6 +7,7 @@ import { getAvailablePaymentMethods } from "@/lib/payment-methods";
 import PreviewFlipbook from "@/components/kiosque/PreviewFlipbook";
 import RichTextContent from "@/components/RichTextContent";
 import { useLocale } from "@/components/LocaleProvider";
+import { CHARIOW_PRODUCT_URLS } from "@/lib/chariow";
 
 type Magazine = {
   id: string;
@@ -222,11 +223,22 @@ export default function MagazineDetailPage({ initialMagazine }: { initialMagazin
                   <span className="block text-[11px] uppercase tracking-wider text-[#5c403f]">Total de votre sélection</span>
                   <strong className="text-[36px] font-bold text-[#9e001f]" style={{ fontFamily: "Montserrat" }}>{formatPrice(total)}</strong>
                 </div>
-                <div className="w-full sm:w-auto">
+                <div className="w-full sm:w-auto flex flex-col gap-2">
                   <button onClick={addToCart} disabled={adding} className="flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-[#9e001f] px-8 py-4 text-[15px] font-bold text-white shadow-lg shadow-[#9e001f]/20 transition hover:brightness-110 active:scale-[.98] disabled:opacity-60 sm:w-auto">
                     <span className="material-symbols-outlined">shopping_cart</span> {adding ? "Ajout..." : "AJOUTER AU PANIER"}
                   </button>
-                  <p className="mt-2 text-center text-[11px] text-[#5f5e5e]">Livraison offerte Papier en zone CEDEAO • Lien sécurisé 24h</p>
+
+                  <a
+                    href={CHARIOW_PRODUCT_URLS.magazineNumerique}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#f0b27e] bg-[#fffaf5] px-6 py-3 text-[13px] font-bold text-[#944400] shadow-sm hover:bg-[#f0b27e]/20 transition active:scale-[.98] sm:w-auto"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">bolt</span>
+                    <span>Acheter la version numérique sur Chariow ↗</span>
+                  </a>
+
+                  <p className="mt-1 text-center text-[11px] text-[#5f5e5e]">Livraison offerte Papier en zone CEDEAO • Lien numérique immédiat</p>
                 </div>
               </div>
 

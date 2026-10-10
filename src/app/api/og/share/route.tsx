@@ -4,12 +4,24 @@ import sharp from "sharp";
 
 export const runtime = "nodejs";
 
+const CANONICAL_BASE = (
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  process.env.NEXT_PUBLIC_BASE_URL ||
+  "https://www.envolafrica.site"
+).replace(/\/+$/, "");
+
 async function fetchImageAsBase64(url?: string | null): Promise<string> {
   if (!url) return "";
   try {
+    let targetUrl = url.trim();
+    if (targetUrl.startsWith("/")) {
+      targetUrl = `${CANONICAL_BASE}${targetUrl}`;
+    } else if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
+      targetUrl = `${CANONICAL_BASE}/${targetUrl}`;
+    }
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 3500);
-    const res = await fetch(url, { signal: controller.signal });
+    const res = await fetch(targetUrl, { signal: controller.signal });
     clearTimeout(timeout);
     if (!res.ok) return "";
     const arrayBuffer = await res.arrayBuffer();
@@ -103,6 +115,213 @@ export async function GET(request: NextRequest) {
   // Pre-fetch image
   const backgroundBase64 = rawImg ? await fetchImageAsBase64(rawImg) : "";
   const hasBackground = Boolean(backgroundBase64);
+  const isMagazine = type === "magazine";
+
+  // Template Spécifique pour les Magazines du Kiosque :
+  // Affiche la véritable couverture dans toute sa hauteur (3:4) sans rognage, avec mise en scène éditoriale de luxe
+  if (isMagazine && hasBackground) {
+    return new ImageResponse(
+      (
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "48px 64px",
+            backgroundColor: "#030c17",
+            color: "#ffffff",
+            fontFamily: "system-ui, -apple-system, sans-serif",
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          {/* Fond cinématographique avec la couverture floutée en filigrane */}
+          <img
+            src={backgroundBase64}
+            alt="Ambiance"
+            style={{
+              position: "absolute",
+              top: -50,
+              left: -50,
+              width: "1300px",
+              height: "730px",
+              objectFit: "cover",
+              filter: "blur(40px)",
+              opacity: 0.28,
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "1200px",
+              height: "630px",
+              background: "linear-gradient(135deg, rgba(3,12,23,0.95) 0%, rgba(58,8,18,0.85) 50%, rgba(3,12,23,0.98) 100%)",
+            }}
+          />
+
+          {/* CÔTÉ GAUCHE : Textes, Badges et Appel à la lecture */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              height: "100%",
+              width: "640px",
+              zIndex: 10,
+              paddingRight: "20px",
+            }}
+          >
+            {/* Header Marque */}
+            <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "14px",
+                  backgroundColor: "#9e001f",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#ffffff",
+                  fontWeight: 900,
+                  fontSize: "24px",
+                  boxShadow: "0 4px 14px rgba(158, 0, 31, 0.6)",
+                }}
+              >
+                E
+              </div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span style={{ fontSize: "18px", fontWeight: 900, letterSpacing: "2px", color: "#f0b27e" }}>
+                  ENVOL AFRICA
+                </span>
+                <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.8)" }}>
+                  Le Magazine Économique Panafricain
+                </span>
+              </div>
+            </div>
+
+            {/* Titre et Détails du Magazine */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px", margin: "auto 0" }}>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignSelf: "flex-start",
+                  padding: "8px 18px",
+                  borderRadius: "30px",
+                  backgroundColor: "#9e001f",
+                  color: "#ffffff",
+                  fontSize: "13px",
+                  fontWeight: 800,
+                  letterSpacing: "1.5px",
+                  textTransform: "uppercase",
+                  boxShadow: "0 4px 15px rgba(158,0,31,0.5)",
+                  border: "1px solid rgba(255,255,255,0.3)",
+                }}
+              >
+                {badge || "ÉDITION OFFICIELLE KIOSQUE"}
+              </div>
+
+              <h1
+                style={{
+                  fontSize: title.length > 50 ? "38px" : "44px",
+                  fontWeight: 900,
+                  lineHeight: 1.15,
+                  color: "#ffffff",
+                  margin: 0,
+                  textShadow: "0 3px 12px rgba(0,0,0,0.85)",
+                }}
+              >
+                {title}
+              </h1>
+
+              <div
+                style={{
+                  fontSize: "16px",
+                  fontWeight: 600,
+                  color: "#cbd5e1",
+                  lineHeight: 1.4,
+                }}
+              >
+                Grandes enquêtes, dossiers sectoriels et analyses stratégiques exclusives.
+              </div>
+            </div>
+
+            {/* Footer Kiosque */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                paddingTop: "16px",
+                borderTop: "1px solid rgba(255,255,255,0.2)",
+              }}
+            >
+              <div
+                style={{
+                  backgroundColor: "rgba(240, 178, 126, 0.15)",
+                  border: "1px solid rgba(240, 178, 126, 0.5)",
+                  borderRadius: "20px",
+                  padding: "6px 16px",
+                  fontSize: "13px",
+                  fontWeight: 800,
+                  color: "#f0b27e",
+                }}
+              >
+                Disponible en Numérique, Papier & Audio
+              </div>
+              <span style={{ fontSize: "13px", color: "rgba(255,255,255,0.7)" }}>
+                • www.envolafrica.site/kiosque
+              </span>
+            </div>
+          </div>
+
+          {/* CÔTÉ DROIT : La véritable couverture du magazine dans toute sa splendeur */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 10,
+              width: "420px",
+              height: "100%",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                borderRadius: "12px",
+                overflow: "hidden",
+                boxShadow: "0 25px 60px rgba(0,0,0,0.85), 0 0 40px rgba(0,0,0,0.5)",
+                border: "3px solid rgba(255,255,255,0.8)",
+              }}
+            >
+              <img
+                src={backgroundBase64}
+                alt="Couverture du Magazine"
+                style={{
+                  width: "360px",
+                  height: "510px",
+                  objectFit: "cover",
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      ),
+      {
+        width: 1200,
+        height: 630,
+        headers: {
+          "Content-Type": "image/png",
+          "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
+        },
+      }
+    );
+  }
 
   return new ImageResponse(
     (

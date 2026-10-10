@@ -30,6 +30,8 @@ describe("Système de Conformité KYC & Traçabilité AML", () => {
         profileType: "particulier",
         nom: "Testeur",
         prenom: "Conforme",
+        paysResidence: "BJ",
+        adresse: "Cotonou",
         pieceIdentiteType: "cni",
         pieceIdentiteNumero: "1234567890",
         pieceIdentiteUrl: "https://example.com/cni-recto.jpg",
@@ -91,7 +93,7 @@ describe("Système de Conformité KYC & Traçabilité AML", () => {
       ipAddress: "102.164.88.12",
       userAgent: "Mozilla/5.0 Test",
       kycVerified: true,
-      statut: "autorise",
+      statut: "succes",
       details: { withdrawalId: "wd-789", method: "MTN Mobile Money" }
     });
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { CHARIOW_PRODUCT_URLS } from "@/lib/chariow";
 
 type FlipMode = "single" | "spread";
 
@@ -719,13 +720,25 @@ function LockedPage({ onPurchase }: { onPurchase: () => void }) {
       <p className="mt-3 max-w-sm text-xs sm:text-sm leading-relaxed text-[#746665]">
         Les sept premières pages sont accessibles gratuitement. La lecture est protégée à partir de la page 8
       </p>
-      <button
-        type="button"
-        onClick={onPurchase}
-        className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#9e001f] px-8 text-sm font-bold text-white shadow-lg hover:bg-[#c8102e] transition active:scale-95"
-      >
-        choisir une version
-      </button>
+      <div className="mt-6 flex flex-col sm:flex-row items-center gap-3">
+        <button
+          type="button"
+          onClick={onPurchase}
+          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#9e001f] px-7 text-sm font-bold text-white shadow-lg hover:bg-[#c8102e] transition active:scale-95"
+        >
+          choisir une version
+        </button>
+
+        <a
+          href={CHARIOW_PRODUCT_URLS.magazineNumerique}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#f0b27e] bg-[#fffaf5] px-6 text-xs font-bold text-[#944400] shadow-sm hover:bg-[#f0b27e]/20 transition active:scale-95 gap-1.5"
+        >
+          <span className="material-symbols-outlined text-[16px]">bolt</span>
+          <span>Acheter directement sur Chariow ↗</span>
+        </a>
+      </div>
     </div>
   );
 }

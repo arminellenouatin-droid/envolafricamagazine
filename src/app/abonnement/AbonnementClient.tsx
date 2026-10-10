@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SUBSCRIPTION_PLANS } from "@/lib/constants";
 import { useLocale } from "@/components/LocaleProvider";
+import { CHARIOW_PRODUCT_URLS } from "@/lib/chariow";
 
 export default function AbonnementClient() {
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
@@ -187,10 +188,23 @@ export default function AbonnementClient() {
                         : "bg-[#1b1c1c] hover:bg-[#9e001f] text-white"
                     }`}
                   >
-                    {loadingPlan === plan.id ? "Ouverture de Moneroo…" : `Choisir ${plan.name} →`}
+                    {loadingPlan === plan.id ? "Ouverture de Moneroo…" : `Choisir ${plan.name} (Moneroo) →`}
                   </button>
+
+                  {plan.id === "entreprise" && (
+                    <a
+                      href={CHARIOW_PRODUCT_URLS.abonnementChefEntreprise}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2.5 w-full h-11 rounded-full border border-[#f0b27e] bg-[#fffaf5] hover:bg-[#f0b27e]/20 text-[#944400] font-bold text-[12px] flex items-center justify-center gap-1.5 transition shadow-sm"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">credit_card</span>
+                      <span>Souscrire via Chariow (Boutique Officielle) ↗</span>
+                    </a>
+                  )}
+
                   <div className="mt-2 text-center text-[10px] text-[#8e7474]">
-                    Paiement sécurisé Moneroo • Mobile Money & Cartes
+                    Paiement sécurisé Moneroo (Mobile Money) & Chariow (CB / International)
                   </div>
                 </div>
               </div>

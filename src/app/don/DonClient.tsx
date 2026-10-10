@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { MIN_PAYMENT_AMOUNT_XOF } from "@/lib/payment-policy";
 import { useLocale } from "@/components/LocaleProvider";
+import { CHARIOW_PRODUCT_URLS } from "@/lib/chariow";
 
 const amounts = [5000, 10000, 25000, 50000, 100000];
 
@@ -191,24 +192,46 @@ export default function DonClient() {
               />
             </div>
 
-            <button
-              onClick={handleDon}
-              disabled={loading}
-              className="mt-8 w-full h-14 rounded-full bg-[#9e001f] text-white font-black text-[15px] hover:bg-[#7f0019] shadow-md hover:shadow-lg disabled:opacity-50 transition active:scale-95 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                "Redirection sécurisée..."
-              ) : (
-                <>
-                  <span>Faire un don de {formatPrice(Number(finalAmount || 0))}</span>
-                  <span className="text-[11px] bg-white/20 rounded-full px-2.5 py-0.5 font-bold uppercase tracking-wider">
-                    via Moneroo
-                  </span>
-                </>
-              )}
-            </button>
-            <div className="mt-3 text-center text-[12px] text-[#746665]">
-              🔒 Don 100% sécurisé • Reçu instantané • Mobile Money (MTN, Moov, Orange, Wave) & Carte Bancaire
+            <div className="mt-8 space-y-3">
+              <button
+                onClick={handleDon}
+                disabled={loading}
+                className="w-full h-14 rounded-full bg-[#9e001f] text-white font-black text-[15px] hover:bg-[#7f0019] shadow-md hover:shadow-lg disabled:opacity-50 transition active:scale-95 flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  "Redirection sécurisée..."
+                ) : (
+                  <>
+                    <span>Faire un don de {formatPrice(Number(finalAmount || 0))}</span>
+                    <span className="text-[11px] bg-white/20 rounded-full px-2.5 py-0.5 font-bold uppercase tracking-wider">
+                      via Moneroo (Mobile Money)
+                    </span>
+                  </>
+                )}
+              </button>
+
+              <div className="relative flex py-1 items-center">
+                <div className="flex-grow border-t border-[#eadad8]"></div>
+                <span className="flex-shrink mx-3 text-[11px] font-bold uppercase tracking-wider text-[#746665]">ou passer par la boutique Chariow</span>
+                <div className="flex-grow border-t border-[#eadad8]"></div>
+              </div>
+
+              <a
+                href={CHARIOW_PRODUCT_URLS.don}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full h-14 rounded-full bg-[#1b1c1c] text-white font-bold text-[14px] hover:bg-[#9e001f] shadow-md hover:shadow-lg transition active:scale-95 flex items-center justify-center gap-2.5 border border-[#4d4444]"
+              >
+                <span className="material-symbols-outlined text-lg text-[#f0b27e]">volunteer_activism</span>
+                <span>Faire un don direct sur Chariow (Paiement International & Diaspora)</span>
+                <span className="text-[11px] bg-[#f0b27e]/20 text-[#f0b27e] rounded-full px-2 py-0.5 font-bold">
+                  Boutique Officielle ↗
+                </span>
+              </a>
+            </div>
+
+            <div className="mt-4 text-center text-[12px] text-[#746665]">
+              🔒 Don 100% sécurisé • Reçu instantané • Mobile Money (MTN, Moov, Orange, Wave), Cartes & Chariow
             </div>
           </div>
 

@@ -186,7 +186,22 @@ export function buildShareMetadata(target: ShareContentTarget): Metadata {
 
   // Choix de l'image Open Graph (1200x630)
   let ogImageUrl: string;
-  if (target.imageUrl && target.imageUrl.trim()) {
+  if (target.type === "magazine" && target.imageUrl && target.imageUrl.trim()) {
+    if (target.imageUrl.includes("/api/og/")) {
+      ogImageUrl = resolveAbsoluteImageUrl(target.imageUrl);
+    } else {
+      const absCover = resolveAbsoluteImageUrl(target.imageUrl);
+      ogImageUrl = buildDynamicOgImageUrl({
+        title: cleanTitle,
+        type: "magazine",
+        badge: target.badge || "ÉDITION KIOSQUE",
+        imageUrl: absCover,
+      });
+    }
+  } else if (isVideo && target.id && (target.type === "video" || target.type === "post")) {
+    // Pour une vidéo WAB : privilégier l'image avec bouton de lecture Play central
+    ogImageUrl = `${CANONICAL_SITE_URL}/api/og/wab-post?id=${encodeURIComponent(target.id)}`;
+  } else if (target.imageUrl && target.imageUrl.trim()) {
     ogImageUrl = resolveAbsoluteImageUrl(target.imageUrl);
   } else if (isVideo) {
     // Si c'est une vidéo sans thumbnail, utiliser l'image dynamique avec bouton Play
@@ -253,8 +268,20 @@ export function buildShareMetadata(target: ShareContentTarget): Metadata {
           width: 1200,
           height: 630,
           alt: cleanTitle,
-          type: ogImageUrl.endsWith(".png") ? "image/png" : "image/jpeg",
+          type: ogImageUrl.includes(".png") || ogImageUrl.includes("/api/og/") ? "image/png" : "image/jpeg",
         },
+        ...(target.type === "magazine" && target.imageUrl && !target.imageUrl.includes("/api/og/")
+          ? [
+              {
+                url: resolveAbsoluteImageUrl(target.imageUrl),
+                secureUrl: resolveAbsoluteImageUrl(target.imageUrl).startsWith("https://")
+                  ? resolveAbsoluteImageUrl(target.imageUrl)
+                  : undefined,
+                alt: `Couverture ${cleanTitle}`,
+                type: "image/jpeg",
+              },
+            ]
+          : []),
       ],
       ...(target.publishedTime ? { publishedTime: target.publishedTime } : {}),
       ...(target.modifiedTime ? { modifiedTime: target.modifiedTime } : {}),

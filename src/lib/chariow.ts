@@ -2,6 +2,21 @@ import crypto from "crypto";
 
 const CHARIOW_API_BASE = "https://api.chariow.com/v1";
 
+/**
+ * URLs et IDs des produits créés directement dans la boutique Chariow par le propriétaire
+ */
+export const CHARIOW_PRODUCT_URLS = {
+  magazineNumerique: "https://toerbwke.mychariow.shop/prd_ac3bruo2",
+  abonnementChefEntreprise: "https://toerbwke.mychariow.shop/prd_g8iz7mej",
+  don: "https://toerbwke.mychariow.shop/prd_d1v11apk",
+} as const;
+
+export const CHARIOW_PRODUCT_IDS = {
+  magazineNumerique: "prd_ac3bruo2",
+  abonnementChefEntreprise: "prd_g8iz7mej",
+  don: "prd_d1v11apk",
+} as const;
+
 export interface ChariowPhone {
   number: string;
   country_code: string;
