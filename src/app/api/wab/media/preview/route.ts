@@ -64,22 +64,22 @@ export async function GET(request: NextRequest) {
   const isDocument = media.mimeType === "application/pdf" || /\.(pdf|doc|docx|xls|xlsx|csv|ppt|pptx)$/.test(lower);
   if (!isDocument) return NextResponse.json({ error: "Ce fichier ne possède pas d’aperçu documentaire." }, { status: 415 });
   const workspace = await mkdtemp(join(tmpdir(), "wab-preview-"));
-  const source = join(workspace, media.name.replace(/[^a-zA-Z0-9._-]/g, "_") || "document");
-  const pdf = join(workspace, "document.pdf");
-  const outputPrefix = join(workspace, "page");
+  const source = join(/*turbopackIgnore: true*/ workspace, media.name.replace(/[^a-zA-Z0-9._-]/g, "_") || "document");
+  const pdf = join(/*turbopackIgnore: true*/ workspace, "document.pdf");
+  const outputPrefix = join(/*turbopackIgnore: true*/ workspace, "page");
   try {
     const response = await fetch(url);
     if (!response.ok) return NextResponse.json({ error: "Téléchargement du document impossible." }, { status: 502 });
     await writeFile(source, Buffer.from(await response.arrayBuffer()));
     if (media.mimeType === "application/pdf" || lower.endsWith(".pdf")) {
-      await writeFile(pdf, await readFile(source));
+      await writeFile(pdf, await readFile(/*turbopackIgnore: true*/ source));
     } else {
       await execFileAsync("libreoffice", ["--headless", "--convert-to", "pdf", "--outdir", workspace, source], { timeout: 30000 });
-      const converted = join(workspace, `${source.split("/").pop()?.replace(/\.[^.]+$/, "")}.pdf`);
-      await writeFile(pdf, await readFile(converted));
+      const converted = join(/*turbopackIgnore: true*/ workspace, `${source.split("/").pop()?.replace(/\.[^.]+$/, "")}.pdf`);
+      await writeFile(pdf, await readFile(/*turbopackIgnore: true*/ converted));
     }
     await execFileAsync("pdftoppm", ["-f", "1", "-l", "1", "-png", "-singlefile", "-scale-to", "1400", pdf, outputPrefix], { timeout: 30000 });
-    const image = await readFile(`${outputPrefix}.png`);
+    const image = await readFile(/*turbopackIgnore: true*/ `${outputPrefix}.png`);
     return new NextResponse(image, { headers: { "Content-Type": "image/png", "Cache-Control": "private, max-age=300", "Content-Disposition": "inline" } });
   } catch {
     return NextResponse.json({ error: "Aperçu documentaire indisponible sur ce serveur." }, { status: 503 });
