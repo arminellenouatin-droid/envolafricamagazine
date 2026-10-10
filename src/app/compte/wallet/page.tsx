@@ -69,6 +69,17 @@ export default function WalletPage() {
     fetchWalletData();
   }, []);
 
+  useEffect(() => {
+    const rechargeParam = searchParams?.get("recharge");
+    if (rechargeParam) {
+      const parsed = Number(rechargeParam);
+      if (Number.isFinite(parsed) && parsed >= 500) {
+        setDepositAmount(Math.round(parsed));
+      }
+      setShowDepositModal(true);
+    }
+  }, [searchParams]);
+
   const handleDeposit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (depositAmount < 500) {
@@ -78,10 +89,15 @@ export default function WalletPage() {
     setDepositSubmitting(true);
     setDepositError(null);
     try {
+      const returnUrlParam = searchParams?.get("returnUrl");
+      const targetReturnUrl = returnUrlParam
+        ? `${window.location.origin}${returnUrlParam}${returnUrlParam.includes("?") ? "&" : "?"}wallet_recharged=1`
+        : undefined;
+
       const res = await fetch("/api/wallet/deposit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: depositAmount }),
+        body: JSON.stringify({ amount: depositAmount, returnUrl: targetReturnUrl }),
       });
       const data = await res.json();
       if (!res.ok || !data.checkoutUrl) {

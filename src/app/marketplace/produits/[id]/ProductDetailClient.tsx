@@ -35,6 +35,43 @@ export default function ProductDetailClient({
   const [affiliateCopied, setAffiliateCopied] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [payMethod, setPayMethod] = useState<"wallet" | "moneroo">("wallet");
+  const [favorite, setFavorite] = useState(false);
+
+  useEffect(() => {
+    try {
+      const favorites = JSON.parse(localStorage.getItem("eam_marketplace_favorites") || "[]") as string[];
+      setFavorite(favorites.includes(id));
+    } catch {}
+    fetch("/api/favorites")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.favorites && Array.isArray(d.favorites)) {
+          if (d.favorites.includes(id)) setFavorite(true);
+        }
+      })
+      .catch(() => {});
+  }, [id]);
+
+  const toggleFavorite = () => {
+    try {
+      const favorites = JSON.parse(localStorage.getItem("eam_marketplace_favorites") || "[]") as string[];
+      const isAdding = !favorites.includes(id);
+      const next = isAdding ? [...favorites, id] : favorites.filter((f) => f !== id);
+      localStorage.setItem("eam_marketplace_favorites", JSON.stringify(next));
+      setFavorite(isAdding);
+      if (isAdding) {
+        fetch("/api/favorites", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productId: id }),
+        }).catch(() => {});
+      } else {
+        fetch(`/api/favorites?productId=${encodeURIComponent(id)}`, {
+          method: "DELETE",
+        }).catch(() => {});
+      }
+    } catch {}
+  };
 
   useEffect(() => {
     if (currentUser?.id) {
@@ -121,7 +158,7 @@ export default function ProductDetailClient({
     }
   };
 
-  return <main className="min-h-screen bg-[#fcf9f8] px-5 py-10 text-[#2a211a] md:px-10 lg:px-16">
+  return <main className="min-h-screen bg-[#fcf9f8] px-5 py-10 pb-28 sm:pb-10 text-[#2a211a] md:px-10 lg:px-16">
     <div className="mx-auto max-w-[1180px]">
       <nav className="mb-8 text-xs text-[#806c58]"><Link href="/marketplace" className="hover:text-[#9e001f]">Marketplace</Link> <span className="px-2">›</span> Produit</nav>
       <div className="grid gap-8 lg:grid-cols-[.9fr_1.1fr]">
@@ -177,7 +214,43 @@ export default function ProductDetailClient({
                 </button>
               </div>
             </div>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2"><Link href={`/marketplace/messages?product=${encodeURIComponent(product.id)}`} className="rounded-full border border-[#cdbb9f] dark:border-slate-700 px-5 py-3 text-center text-xs font-black text-[#5c3d19] dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Contacter le fournisseur</Link><button type="button" onClick={() => void startOrder()} disabled={orderLoading || (mode === "installment" && !installment)} className="rounded-full bg-[#9e001f] hover:bg-[#b00023] px-5 py-3 text-center text-xs font-black text-white disabled:opacity-60 transition shadow">{orderLoading ? "Traitement…" : payMethod === "wallet" ? "Payer via Portefeuille EAM" : "Payer via Moneroo"}</button></div>{orderError && <p className="mt-3 rounded-xl bg-red-50 dark:bg-red-950/40 p-3 text-xs font-semibold text-red-800 dark:text-red-300">{orderError}</p>}</div>
+            {payMethod === "wallet" && walletBalance !== null && walletBalance < price && (
+              <div className="mt-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 flex items-center justify-between gap-2">
+                <span>Solde insuffisant (manque {formatPrice(price - walletBalance)})</span>
+                <Link
+                  href={`/compte/wallet?recharge=${price - walletBalance}&returnUrl=${encodeURIComponent(`/marketplace/produits/${product.id}`)}`}
+                  className="font-black text-[#9e001f] dark:text-red-400 hover:underline shrink-0"
+                >
+                  Recharger →
+                </Link>
+              </div>
+            )}
+            <div className="mt-5 flex flex-wrap gap-2.5">
+              <Link href={`/marketplace/messages?product=${encodeURIComponent(product.id)}`} className="flex-1 rounded-full border border-[#cdbb9f] dark:border-slate-700 px-4 py-3 text-center text-xs font-black text-[#5c3d19] dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition min-w-[140px]">
+                Contacter le fournisseur
+              </Link>
+              <button
+                type="button"
+                onClick={toggleFavorite}
+                aria-label={favorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+                className={`grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-full border transition shrink-0 ${
+                  favorite ? "border-[#9e001f] text-[#9e001f] bg-[#fff3f2]" : "border-[#eadfce] text-[#806c58] hover:text-[#9e001f]"
+                }`}
+                title={favorite ? "Dans vos favoris" : "Ajouter aux favoris"}
+              >
+                <span className="material-symbols-outlined text-[20px]">{favorite ? "favorite" : "favorite_border"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => void startOrder()}
+                disabled={orderLoading || (mode === "installment" && !installment)}
+                className="flex-1 rounded-full bg-[#9e001f] hover:bg-[#b00023] px-5 py-3 text-center text-xs font-black text-white disabled:opacity-60 transition shadow min-w-[160px]"
+              >
+                {orderLoading ? "Traitement…" : payMethod === "wallet" ? "Payer via Portefeuille EAM" : "Payer via Moneroo"}
+              </button>
+            </div>
+            {orderError && <p className="mt-3 rounded-xl bg-red-50 dark:bg-red-950/40 p-3 text-xs font-semibold text-red-800 dark:text-red-300">{orderError}</p>}
+          </div>
 
           {/* Encadré Programme Ambassadeur & Affiliation */}
           {activeAffiliation && (
@@ -222,6 +295,34 @@ export default function ProductDetailClient({
           <div className="mt-6 rounded-[20px] border border-[#eadfce] bg-[#2a211a] p-5 text-sm leading-6 text-white/80"><strong className="text-white">Protection EAM :</strong> ne partagez aucun contact externe dans la messagerie. Les paiements et échanges hors plateforme ne sont pas couverts.</div>
           <p className="mt-5 text-sm text-[#806c58]">Fournisseur : <strong className="text-[#2a211a]">{supplierName}</strong>{supplier?.rating ? ` · ${supplier.rating}/5` : ""}</p>
         </div>
+      </div>
+    </div>
+
+    {/* Barre d'action fixe mobile (Sticky Bottom Bar) */}
+    <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-[#eadfce] dark:border-slate-800 p-3 sm:hidden flex items-center justify-between gap-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+      <div className="min-w-0">
+        <p className="text-[10px] uppercase font-bold text-[#806c58] dark:text-slate-400">Total</p>
+        <p className="text-sm font-black text-[#9e001f] dark:text-red-400 truncate">{formatPrice(price)}</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={toggleFavorite}
+          aria-label={favorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+          className={`grid h-10 w-10 place-items-center rounded-xl border transition shrink-0 ${
+            favorite ? "border-[#9e001f] text-[#9e001f] bg-[#fff3f2]" : "border-[#eadfce] text-[#806c58] hover:text-[#9e001f]"
+          }`}
+        >
+          <span className="material-symbols-outlined text-[19px]">{favorite ? "favorite" : "favorite_border"}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => void startOrder()}
+          disabled={orderLoading || (mode === "installment" && !installment)}
+          className="rounded-xl bg-[#9e001f] hover:bg-[#b00023] px-4 py-2.5 text-center text-xs font-black text-white disabled:opacity-60 transition shadow"
+        >
+          {orderLoading ? "…" : payMethod === "wallet" ? "Payer Portefeuille" : "Commander"}
+        </button>
       </div>
     </div>
   </main>;

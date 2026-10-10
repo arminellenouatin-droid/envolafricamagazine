@@ -413,9 +413,21 @@ function ProductDetailModal({
 
   const toggleFavorite = () => {
     const favorites = JSON.parse(localStorage.getItem("eam_marketplace_favorites") || "[]") as string[];
-    const next = favorites.includes(product.id) ? favorites.filter((id) => id !== product.id) : [...favorites, product.id];
+    const isAdding = !favorites.includes(product.id);
+    const next = isAdding ? [...favorites, product.id] : favorites.filter((id) => id !== product.id);
     localStorage.setItem("eam_marketplace_favorites", JSON.stringify(next));
-    setFavorite(next.includes(product.id));
+    setFavorite(isAdding);
+    if (isAdding) {
+      fetch("/api/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: product.id }),
+      }).catch(() => {});
+    } else {
+      fetch(`/api/favorites?productId=${encodeURIComponent(product.id)}`, {
+        method: "DELETE",
+      }).catch(() => {});
+    }
   };
 
   const addToCart = () => {
@@ -755,9 +767,21 @@ function ProductCard({
 
   const toggleFavorite = () => {
     const favorites = JSON.parse(localStorage.getItem("eam_marketplace_favorites") || "[]") as string[];
-    const next = favorites.includes(product.id) ? favorites.filter((id) => id !== product.id) : [...favorites, product.id];
+    const isAdding = !favorites.includes(product.id);
+    const next = isAdding ? [...favorites, product.id] : favorites.filter((id) => id !== product.id);
     localStorage.setItem("eam_marketplace_favorites", JSON.stringify(next));
-    setFavorite(next.includes(product.id));
+    setFavorite(isAdding);
+    if (isAdding) {
+      fetch("/api/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: product.id }),
+      }).catch(() => {});
+    } else {
+      fetch(`/api/favorites?productId=${encodeURIComponent(product.id)}`, {
+        method: "DELETE",
+      }).catch(() => {});
+    }
   };
 
   const openProduct = () => onOpen(product);

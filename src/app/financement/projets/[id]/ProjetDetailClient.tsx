@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useLocale } from "@/components/LocaleProvider";
+import { CHARIOW_PRODUCT_URLS } from "@/lib/chariow";
 
 export default function ProjetDetail({ id: propId, initialProjet }: { id?: string; initialProjet?: any }) {
   const { formatPrice } = useLocale();
@@ -13,9 +14,10 @@ export default function ProjetDetail({ id: propId, initialProjet }: { id?: strin
   const [montant, setMontant] = useState(10000);
   const [pourcentage, setPourcentage] = useState(1);
   const [paying, setPaying] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"wallet" | "moneroo">("wallet");
+  const [paymentMethod, setPaymentMethod] = useState<"wallet" | "moneroo" | "chariow">("wallet");
   const [wallet, setWallet] = useState<{ availableBalance: number; currency: string } | null>(null);
   const [walletLoading, setWalletLoading] = useState(false);
+  const [insufficientBalance, setInsufficientBalance] = useState<{ current: number; missing: number; needed: number } | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [daysRemaining, setDaysRemaining] = useState(() => {
     if (!initialProjet?.dateFin) return 0;
@@ -78,16 +80,35 @@ export default function ProjetDetail({ id: propId, initialProjet }: { id?: strin
     if (!Number.isFinite(amountToPay) || amountToPay <= 0 || paying) return;
     setPaying(true);
     setSuccessMessage(null);
+    setInsufficientBalance(null);
 
-    const useWallet = paymentMethod === "wallet" && wallet !== null;
-
-    if (useWallet && wallet.availableBalance < amountToPay) {
-      window.alert(
-        `Solde insuffisant dans votre portefeuille (${formatPrice(wallet.availableBalance)}). Veuillez recharger votre portefeuille ou choisir le paiement par Mobile Money.`
-      );
+    // Routage explicite vers Chariow
+    if (paymentMethod === "chariow") {
       setPaying(false);
+      window.location.href = CHARIOW_PRODUCT_URLS.don;
       return;
     }
+
+    // Contrôle strict du Portefeuille
+    if (paymentMethod === "wallet") {
+      if (!wallet) {
+        setPaying(false);
+        window.location.assign(`/auth/login?next=${encodeURIComponent(`/financement/projets/${id}`)}`);
+        return;
+      }
+
+      if (wallet.availableBalance < amountToPay) {
+        setInsufficientBalance({
+          current: wallet.availableBalance,
+          missing: amountToPay - wallet.availableBalance,
+          needed: amountToPay,
+        });
+        setPaying(false);
+        return;
+      }
+    }
+
+    const useWallet = paymentMethod === "wallet";
 
     try {
       const response = await fetch("/api/crowdfunding/payments", {
@@ -107,7 +128,7 @@ export default function ProjetDetail({ id: propId, initialProjet }: { id?: strin
       if (data.paidWithWallet) {
         setSuccessMessage(data.message || "Contribution enregistrée avec succès !");
         if (typeof data.walletRemainingBalance === "number") {
-          setWallet((prev) => prev ? { ...prev, availableBalance: data.walletRemainingBalance } : null);
+          setWallet((prev) => (prev ? { ...prev, availableBalance: data.walletRemainingBalance } : null));
         }
         // Recharger les données du projet
         fetch(`/api/crowdfunding/projects?id=${id}`)
@@ -205,41 +226,91 @@ export default function ProjetDetail({ id: propId, initialProjet }: { id?: strin
                 <div className="text-[11px] font-bold text-[#5c403f] mb-2 uppercase tracking-wide">
                   Moyen de règlement
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                <div className="grid grid-cols-3 gap-1.5 text-[11px]">
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod("wallet")}
+                    onClick={() => {
+                      setPaymentMethod("wallet");
+                      setInsufficientBalance(null);
+                    }}
                     className={`p-2 rounded-lg font-bold border transition text-left flex flex-col justify-between ${
                       paymentMethod === "wallet"
                         ? "bg-[#9e001f] text-white border-[#9e001f]"
                         : "bg-white text-[#1b1c1c] border-[#e5bdbb]"
                     }`}
                   >
-                    <span>💼 Portefeuille EAM</span>
+                    <span>💼 Wallet EAM</span>
                     {wallet ? (
                       <span className="text-[10px] opacity-90 mt-1 font-normal">
-                        Solde: {formatPrice(wallet.availableBalance)}
+                        {formatPrice(wallet.availableBalance)}
                       </span>
                     ) : (
-                      <span className="text-[10px] opacity-75 mt-1 font-normal">Connexion requise</span>
+                      <span className="text-[10px] opacity-75 mt-1 font-normal">Connexion</span>
                     )}
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod("moneroo")}
+                    onClick={() => {
+                      setPaymentMethod("moneroo");
+                      setInsufficientBalance(null);
+                    }}
                     className={`p-2 rounded-lg font-bold border transition text-left flex flex-col justify-between ${
                       paymentMethod === "moneroo"
                         ? "bg-[#9e001f] text-white border-[#9e001f]"
                         : "bg-white text-[#1b1c1c] border-[#e5bdbb]"
                     }`}
                   >
-                    <span>📱 Mobile Money / CB</span>
-                    <span className="text-[10px] opacity-75 mt-1 font-normal">MTN, Moov, Wave, Carte</span>
+                    <span>📱 Mobile Money</span>
+                    <span className="text-[10px] opacity-75 mt-1 font-normal">Moneroo</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPaymentMethod("chariow");
+                      setInsufficientBalance(null);
+                    }}
+                    className={`p-2 rounded-lg font-bold border transition text-left flex flex-col justify-between ${
+                      paymentMethod === "chariow"
+                        ? "bg-[#9e001f] text-white border-[#9e001f]"
+                        : "bg-white text-[#1b1c1c] border-[#e5bdbb]"
+                    }`}
+                  >
+                    <span>💳 CB Monde</span>
+                    <span className="text-[10px] opacity-75 mt-1 font-normal">Chariow</span>
                   </button>
                 </div>
 
-                {paymentMethod === "wallet" && wallet && (
+                {insufficientBalance && (
+                  <div className="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+                    <p className="font-bold">Votre solde Wallet est insuffisant.</p>
+                    <p className="mt-0.5">
+                      Solde actuel : <span className="font-semibold">{formatPrice(insufficientBalance.current)}</span>. Montant manquant :{" "}
+                      <span className="font-semibold text-[#9e001f]">{formatPrice(insufficientBalance.missing)}</span>.
+                    </p>
+                    <div className="mt-2.5 flex flex-wrap gap-2">
+                      <Link
+                        href={`/compte/wallet?recharge=${insufficientBalance.missing}&returnUrl=${encodeURIComponent(`/financement/projets/${id}`)}`}
+                        className="px-3 py-1.5 rounded-lg bg-[#9e001f] text-white text-[11px] font-bold hover:bg-[#800019] transition"
+                      >
+                        Recharger mon portefeuille
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPaymentMethod("moneroo");
+                          setInsufficientBalance(null);
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-white border border-amber-300 text-amber-900 text-[11px] font-medium hover:bg-amber-100 transition"
+                      >
+                        Payer par Mobile Money
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {paymentMethod === "wallet" && wallet && !insufficientBalance && (
                   <div className="mt-2 text-[10px] text-[#5c403f] flex justify-between items-center">
                     <span>Vote & investissement instantanés sans redirection</span>
                     <Link href="/compte/wallet" className="text-[#9e001f] font-bold underline">
