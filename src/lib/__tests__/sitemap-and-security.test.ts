@@ -59,3 +59,50 @@ describe("LOT 1, 2 & LOT 8 — Tests d'Intégration Fail-Closed et Détection Pr
     }
   });
 });
+
+import { getOrganizationSchema, getWebSiteSchema, getNewsArticleSchema, getMarketplaceProductSchema } from "@/lib/schema-org";
+import fs from "fs";
+import path from "path";
+
+describe("PHASE 4 — Données Structurées Schema.org JSON-LD & Robots.txt", () => {
+  it("génère des microdonnées Schema.org valides pour l'organisation et le site", () => {
+    const org = getOrganizationSchema();
+    expect(org["@context"]).toBe("https://schema.org");
+    expect(org["@type"]).toBe("NewsMediaOrganization");
+    expect(org.name).toBe("Envol Africa Magazine");
+
+    const site = getWebSiteSchema();
+    expect(site["@context"]).toBe("https://schema.org");
+    expect(site["@type"]).toBe("WebSite");
+  });
+
+  it("génère des microdonnées NewsArticle et Product conformes", () => {
+    const articleSchema = getNewsArticleSchema({
+      title: "Croissance africaine 2026",
+      slug: "croissance-africaine-2026",
+      summary: "Analyse économique de la zone UEMOA",
+    });
+    expect(articleSchema["@type"]).toBe("NewsArticle");
+    expect(articleSchema.headline).toBe("Croissance africaine 2026");
+
+    const prodSchema = getMarketplaceProductSchema({
+      id: "prod-123",
+      title: "Café torréfié artisanal",
+      price_xof: 6500,
+    });
+    expect(prodSchema["@type"]).toBe("Product");
+    expect(prodSchema.offers.price).toBe(6500);
+    expect(prodSchema.offers.priceCurrency).toBe("XOF");
+  });
+
+  it("vérifie la présence du fichier public/robots.txt avec interdiction des zones privées", () => {
+    const robotsPath = path.join(process.cwd(), "public", "robots.txt");
+    expect(fs.existsSync(robotsPath)).toBe(true);
+    const content = fs.readFileSync(robotsPath, "utf-8");
+    expect(content).toContain("Disallow: /admin/");
+    expect(content).toContain("Disallow: /compte/");
+    expect(content).toContain("Disallow: /panier");
+    expect(content).toContain("Disallow: /api/");
+  });
+});
+
