@@ -7,8 +7,6 @@ import { getAvailablePaymentMethods } from "@/lib/payment-methods";
 import PreviewFlipbook from "@/components/kiosque/PreviewFlipbook";
 import RichTextContent from "@/components/RichTextContent";
 import { useLocale } from "@/components/LocaleProvider";
-import { CHARIOW_PRODUCT_URLS, getChariowMagazineUrl } from "@/lib/chariow";
-
 type Magazine = {
   id: string;
   numero?: number;
@@ -17,6 +15,7 @@ type Magazine = {
   date: string;
   description?: string;
   year?: number;
+  sommaire?: string[] | string;
   previewImages?: string[];
   pdfs?: Record<string, string>;
   prices?: Record<string, number>;
@@ -34,6 +33,7 @@ export default function MagazineDetailPage({ initialMagazine }: { initialMagazin
   const [loading, setLoading] = useState(!initialMagazine);
   const [adding, setAdding] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const { locale, formatPrice } = useLocale();
   const currency = locale.currency;
   const countryCode = locale.countryCode;
@@ -74,9 +74,7 @@ export default function MagazineDetailPage({ initialMagazine }: { initialMagazin
   const formatOptions = [
     { id: "numerique", label: "Numérique", icon: "tablet_android", desc: "Accès immédiat PDF/Web" },
     { id: "papier", label: "Papier", icon: "auto_stories", desc: "Livraison à domicile" },
-    { id: "audio_pdf", label: "Audio + PDF", icon: "headphones", desc: "Lecture & écoute" },
     { id: "cd_audio", label: "CD Audio", icon: "album", desc: "Version collector" },
-    { id: "audio_papier", label: "Audio + Papier", icon: "auto_awesome", desc: "Expérience complète" },
   ];
   const formatPriceInXof: Record<string, number> = Object.fromEntries(KIOSQUE_FORMATS.map((item) => [item.id, item.price]));
   const prices: Record<string, number> = { ...formatPriceInXof, ...(magazine?.prices || {}), ...(magazine?.priceOverrides || {}) };
@@ -161,18 +159,82 @@ export default function MagazineDetailPage({ initialMagazine }: { initialMagazin
                 <span className="text-[#5c403f] text-[12px] italic">N° {magazine.numero} — {magazine.year} • 124 pages</span>
               </div>
               <h1 className="text-[32px] md:text-[40px] font-bold leading-tight text-[#1b1c1c] mb-2" style={{ fontFamily: "Montserrat" }}>{magazine.title}</h1>
-              <div className="max-w-2xl text-[18px] leading-relaxed text-[#5f5e5e]" style={{ fontFamily: "Source Serif 4" }}><RichTextContent value={`${magazine.description || ""} Ce numéro inclut notre enquête sur la transformation locale du cacao, entretien CEO Wave, classement 50 entreprises les plus performantes.`} /></div>
+              <div className="max-w-2xl mt-3">
+                <div
+                  className={`text-[16px] md:text-[18px] leading-relaxed text-[#5f5e5e] transition-all ${
+                    !isDescriptionExpanded ? "line-clamp-5 overflow-hidden" : ""
+                  }`}
+                  style={{ fontFamily: "Source Serif 4" }}
+                >
+                  <RichTextContent
+                    value={
+                      magazine.description ||
+                      "Dans ce numéro exclusif d'Envol Africa, retrouvez nos grands dossiers économiques, analyses pointues, reportages et entretiens de référence sur les dynamiques du continent."
+                    }
+                  />
+                </div>
+                {Boolean(magazine.description && magazine.description.length > 200) && (
+                  <button
+                    type="button"
+                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                    className="mt-2 inline-flex items-center gap-1 text-[13px] font-bold text-[#9e001f] hover:underline cursor-pointer"
+                  >
+                    <span>{isDescriptionExpanded ? "Lire moins" : "Lire plus"}</span>
+                    <span className="material-symbols-outlined text-[16px]">
+                      {isDescriptionExpanded ? "expand_less" : "expand_more"}
+                    </span>
+                  </button>
+                )}
+              </div>
             </header>
 
-            <section className="p-6 bg-[#f0eded] rounded-xl">
-              <h3 className="text-[14px] font-bold uppercase tracking-widest mb-4">Au sommaire de ce numéro</h3>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[#5c403f] text-[14px]">
-                <li className="flex items-start gap-2"><span className="material-symbols-outlined text-[#9e001f] text-[20px] mt-0.5">check_circle</span><span><strong>Économie :</strong> Les nouveaux corridors commerciaux de l&apos;Est.</span></li>
-                <li className="flex items-start gap-2"><span className="material-symbols-outlined text-[#9e001f] text-[20px]">check_circle</span><span><strong>Finance :</strong> Pourquoi les banques misent sur la Fintech.</span></li>
-                <li className="flex items-start gap-2"><span className="material-symbols-outlined text-[#9e001f] text-[20px]">check_circle</span><span><strong>Tech :</strong> L&apos;IA au service de l&apos;agriculture.</span></li>
-                <li className="flex items-start gap-2"><span className="material-symbols-outlined text-[#9e001f] text-[20px]">check_circle</span><span><strong>Focus :</strong> Portrait de 10 leaders tech africains.</span></li>
-              </ul>
-            </section>
+            {(() => {
+              const rawSommaire: string[] = Array.isArray(magazine.sommaire) && magazine.sommaire.length > 0
+                ? magazine.sommaire
+                : typeof magazine.sommaire === "string" && (magazine.sommaire as string).trim()
+                ? (magazine.sommaire as string).split("\n").map((s) => s.trim()).filter(Boolean)
+                : [
+                    `Dossier Spécial : Grandes analyses et enquêtes exclusives du N° ${magazine.numero || ""}`,
+                    "Économie & Marchés : Tendances sectorielles et opportunités d'affaires panafricaines",
+                    "Entreprises : Stratégies de développement, industrie et transformation locale",
+                    "Décideurs : Interviews exclusives des acteurs qui transforment le continent",
+                  ];
+
+              return (
+                <section className="p-6 bg-[#f0eded] rounded-xl">
+                  <h3 className="text-[14px] font-bold uppercase tracking-widest mb-4">
+                    Au sommaire de ce numéro {magazine.numero ? `(N° ${magazine.numero})` : ""}
+                  </h3>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[#5c403f] text-[14px]">
+                    {rawSommaire.map((item, idx) => {
+                      const separatorIndex = item.indexOf(":");
+                      if (separatorIndex > 0) {
+                        const title = item.slice(0, separatorIndex).trim();
+                        const content = item.slice(separatorIndex + 1).trim();
+                        return (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-[#9e001f] text-[20px] mt-0.5 shrink-0">
+                              check_circle
+                            </span>
+                            <span>
+                              <strong>{title} :</strong> {content}
+                            </span>
+                          </li>
+                        );
+                      }
+                      return (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="material-symbols-outlined text-[#9e001f] text-[20px] mt-0.5 shrink-0">
+                            check_circle
+                          </span>
+                          <span>{item}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              );
+            })()}
 
             <section className="rounded-xl border border-[#e5bdbb] bg-white p-4 sm:p-6" aria-labelledby="purchase-options-title">
               <p className="mb-4 text-right text-[11px] text-[#746665]">Pays détecté : {countryCode} · Devise : {currency}</p>
@@ -227,28 +289,6 @@ export default function MagazineDetailPage({ initialMagazine }: { initialMagazin
                   <button onClick={addToCart} disabled={adding} className="flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-[#9e001f] px-8 py-4 text-[15px] font-bold text-white shadow-lg shadow-[#9e001f]/20 transition hover:brightness-110 active:scale-[.98] disabled:opacity-60 sm:w-auto">
                     <span className="material-symbols-outlined">shopping_cart</span> {adding ? "Ajout..." : "AJOUTER AU PANIER"}
                   </button>
-
-                  {(() => {
-                    const selFormat = selections[0]?.format || "numerique";
-                    const chariowUrl = getChariowMagazineUrl(selFormat);
-                    const chariowLabel =
-                      selFormat === "papier"
-                        ? "Acheter la version papier sur Chariow ↗"
-                        : selFormat === "cd_audio"
-                        ? "Acheter la version audio sur Chariow ↗"
-                        : "Acheter la version numérique sur Chariow ↗";
-                    return (
-                      <a
-                        href={chariowUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#f0b27e] bg-[#fffaf5] px-6 py-3 text-[13px] font-bold text-[#944400] shadow-sm hover:bg-[#f0b27e]/20 transition active:scale-[.98] sm:w-auto"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">bolt</span>
-                        <span>{chariowLabel}</span>
-                      </a>
-                    );
-                  })()}
 
                   <p className="mt-1 text-center text-[11px] text-[#5f5e5e]">Livraison offerte Papier en zone CEDEAO • Lien numérique immédiat</p>
                 </div>

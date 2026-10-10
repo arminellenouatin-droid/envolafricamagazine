@@ -33,8 +33,6 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
     numerique: 10000,
     papier: 16000,
     cd_audio: 5000,
-    audio_pdf: 12000,
-    audio_papier: 18000
   });
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
@@ -130,7 +128,7 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
         prices: Object.fromEntries(Object.entries(prices).map(([key, value]) => [key, Number(value || 0)])),
         sommaire: form.sommaire.split("\n").filter((s:string)=>s.trim()),
         featured: form.featured,
-        formats: ["numerique","papier","cd_audio","audio_pdf","audio_papier"],
+        formats: ["numerique", "papier", "cd_audio"],
         languages: ["fr","en","es"],
       };
 
@@ -255,8 +253,6 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
                 {id:"numerique", label:"Numérique (PDF)"},
                 {id:"papier", label:"Papier"},
                 {id:"cd_audio", label:"CD Audio"},
-                {id:"audio_pdf", label:"Audio + PDF"},
-                {id:"audio_papier", label:"Audio + Papier"},
               ].map(f=>(
                 <div key={f.id}><label className="text-[10px] font-bold uppercase">{f.label}</label><div className="flex items-center gap-1 mt-1"><input type="number" min="0" value={prices[f.id] ?? ""} onChange={e=>{ const raw = e.target.value; setPrices({...prices, [f.id]: raw === "" ? "" : Math.max(0, Number(raw))}); }} className="w-full h-9 rounded-full border bg-white px-3 text-[13px]" /><span className="text-[11px]">F CFA</span></div></div>
               ))}

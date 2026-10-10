@@ -48,8 +48,8 @@ export async function POST(req: NextRequest) {
       description: description || "",
       previewPages: previewImages?.length || 5,
       previewImages: previewImages || [],
-      formats: formats || ["numerique","papier","cd_audio","audio_pdf","audio_papier"],
-      languages: languages || ["fr","en","es"],
+      formats: formats || ["numerique", "papier", "cd_audio"],
+      languages: languages || ["fr", "en", "es"],
       featured: featured || false,
       pdfs: pdfs || {}, // { fr: "/uploads/...", en: "...", es: "..." }
       audios: audios || {}, // 12 langues
@@ -57,8 +57,6 @@ export async function POST(req: NextRequest) {
         numerique: 10000,
         papier: 16000,
         cd_audio: 5000,
-        audio_pdf: 12000,
-        audio_papier: 18000
       },
       sommaire: sommaire || ["Dossier Spécial Fintech", "Interview : Patrice Motsepe", "Bourse : Le rallye de la BRVM", "Énergie : L'hydrogène vert"],
     };
