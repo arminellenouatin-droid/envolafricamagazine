@@ -5,6 +5,8 @@ import Link from "next/link";
 import { MIN_PAYMENT_AMOUNT_XOF } from "@/lib/payment-policy";
 import { useLocale } from "@/components/LocaleProvider";
 import { CHARIOW_PRODUCT_URLS } from "@/lib/chariow";
+import PaymentMethodSelector from "@/components/payment/PaymentMethodSelector";
+import { PaymentGateway } from "@/lib/payment-config";
 
 const amounts = [5000, 10000, 25000, 50000, 100000];
 
@@ -52,6 +54,7 @@ export default function DonClient() {
   const [custom, setCustom] = useState<string>("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [selectedGateway, setSelectedGateway] = useState<PaymentGateway>("moneroo");
   const [loading, setLoading] = useState(false);
   const { formatPrice } = useLocale();
 
@@ -64,6 +67,11 @@ export default function DonClient() {
     }
     setLoading(true);
     try {
+      if (selectedGateway === "chariow") {
+        window.location.href = CHARIOW_PRODUCT_URLS.don;
+        return;
+      }
+
       const res = await fetch("/api/payment/init", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -192,7 +200,13 @@ export default function DonClient() {
               />
             </div>
 
-            <div className="mt-8 space-y-3">
+            <div className="mt-8 space-y-4">
+              <PaymentMethodSelector
+                selectedGateway={selectedGateway}
+                onSelectGateway={setSelectedGateway}
+                disabled={loading}
+              />
+
               <button
                 onClick={handleDon}
                 disabled={loading}
@@ -202,32 +216,10 @@ export default function DonClient() {
                   "Redirection sécurisée..."
                 ) : (
                   <>
-                    <span>Faire un don de {formatPrice(Number(finalAmount || 0))}</span>
-                    <span className="text-[11px] bg-white/20 rounded-full px-2.5 py-0.5 font-bold uppercase tracking-wider">
-                      via Moneroo (Mobile Money)
-                    </span>
+                    <span>PAYER LE DON DE {formatPrice(Number(finalAmount || 0))}</span>
                   </>
                 )}
               </button>
-
-              <div className="relative flex py-1 items-center">
-                <div className="flex-grow border-t border-[#eadad8]"></div>
-                <span className="flex-shrink mx-3 text-[11px] font-bold uppercase tracking-wider text-[#746665]">ou passer par la boutique Chariow</span>
-                <div className="flex-grow border-t border-[#eadad8]"></div>
-              </div>
-
-              <a
-                href={CHARIOW_PRODUCT_URLS.don}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full h-14 rounded-full bg-[#1b1c1c] text-white font-bold text-[14px] hover:bg-[#9e001f] shadow-md hover:shadow-lg transition active:scale-95 flex items-center justify-center gap-2.5 border border-[#4d4444]"
-              >
-                <span className="material-symbols-outlined text-lg text-[#f0b27e]">volunteer_activism</span>
-                <span>Faire un don direct sur Chariow (Paiement International & Diaspora)</span>
-                <span className="text-[11px] bg-[#f0b27e]/20 text-[#f0b27e] rounded-full px-2 py-0.5 font-bold">
-                  Boutique Officielle ↗
-                </span>
-              </a>
             </div>
 
             <div className="mt-4 text-center text-[12px] text-[#746665]">

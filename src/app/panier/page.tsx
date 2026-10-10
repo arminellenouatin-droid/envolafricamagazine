@@ -3,10 +3,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SHIPPING_RATES } from "@/lib/constants";
 import { useLocale } from "@/components/LocaleProvider";
+import PaymentMethodSelector from "@/components/payment/PaymentMethodSelector";
+import { CHARIOW_PRODUCT_URLS } from "@/lib/chariow";
+import { PaymentGateway, isMonerooSupportedCountry } from "@/lib/payment-config";
 
 export default function PanierPage() {
   const [cart, setCart] = useState<any[]>([]);
   const [country, setCountry] = useState<string>("BJ");
+  const [selectedGateway, setSelectedGateway] = useState<PaymentGateway>("moneroo");
   const [loading, setLoading] = useState(false);
   const [affiliate, setAffiliate] = useState<string>("");
   const [paymentMessage, setPaymentMessage] = useState<string>("");
@@ -51,18 +55,27 @@ export default function PanierPage() {
   };
 
   const checkout = async () => {
-    if (cart.length===0) return;
+    if (cart.length === 0) return;
     setLoading(true);
     try {
+      if (selectedGateway === "chariow") {
+        const hasSubscription = cart.some((i) => i.type === "subscription");
+        const targetUrl = hasSubscription
+          ? CHARIOW_PRODUCT_URLS.abonnementChefEntreprise
+          : CHARIOW_PRODUCT_URLS.magazineNumerique;
+        window.location.href = targetUrl;
+        return;
+      }
+
       const res = await fetch("/api/payment/init", {
         method: "POST",
-        headers: { "Content-Type":"application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items: cart, currency: "XOF", shippingCountry: country, affiliateCode: affiliate }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erreur paiement");
       window.location.href = data.checkout_url;
-    } catch (e:any) {
+    } catch (e: any) {
       alert(e.message);
     } finally {
       setLoading(false);
@@ -143,10 +156,22 @@ export default function PanierPage() {
                 <div className="pt-2 border-t border-[#e5bdbb] flex justify-between font-bold text-[18px]"><span>NET À PAYER</span><span className="text-[#9e001f]">{formatPrice(total)}</span></div>
               </div>
 
-              <button onClick={checkout} disabled={loading || cart.length===0} className="w-full bg-[#9e001f] text-white py-4 rounded-lg font-bold text-[16px] hover:brightness-90 transition-all shadow-md active:scale-95 disabled:opacity-50">
-                {loading?"Redirection...":"VALIDER MA COMMANDE"}
+              <PaymentMethodSelector
+                selectedGateway={selectedGateway}
+                onSelectGateway={setSelectedGateway}
+                detectedCountryCode={country}
+                disabled={loading || cart.length === 0}
+                className="my-4"
+              />
+
+              <button
+                onClick={checkout}
+                disabled={loading || cart.length === 0}
+                className="w-full bg-[#9e001f] hover:bg-[#b00023] text-white py-4 rounded-xl font-bold text-[16px] transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <span>{loading ? "Redirection sécurisée..." : `PAYER ${formatPrice(total)}`}</span>
               </button>
-              <p className="text-center text-[12px] text-[#5c403f] mt-4">Paiement 100% sécurisé via passerelle cryptée. Aucune donnée bancaire stockée.</p>
+              <p className="text-center text-[12px] text-[#5c403f] mt-3">Paiement 100% sécurisé via passerelle cryptée. Aucune donnée bancaire stockée.</p>
             </div>
 
             <div className="bg-[#f6f3f2] p-4 rounded-xl border border-[#e5bdbb] flex gap-3 items-start">

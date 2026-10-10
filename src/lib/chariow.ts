@@ -51,22 +51,14 @@ export function isChariowConfigured(): boolean {
   return Boolean(process.env.CHARIOW_SECRET_KEY);
 }
 
-/**
- * Pays disposant d'un support Mobile Money natif via Moneroo.
- * Tous les autres pays (Centrafrique, Tchad, Madagascar, Gambie, RDC, International...) sont routés vers Chariow.
- */
-const MONEROO_NATIVE_COUNTRIES = new Set(["BJ", "TG", "CI", "SN", "CM", "ML", "BF"]);
+import { isMonerooSupportedCountry, getRecommendedGateway } from "./payment-config";
 
 export function isMonerooNativeCountry(countryCode?: string): boolean {
-  if (!countryCode) return false;
-  return MONEROO_NATIVE_COUNTRIES.has(countryCode.toUpperCase().trim());
+  return isMonerooSupportedCountry(countryCode);
 }
 
 export function getRecommendedPaymentGateway(countryCode?: string): "moneroo" | "chariow" {
-  if (countryCode && isMonerooNativeCountry(countryCode)) {
-    return "moneroo";
-  }
-  return "chariow";
+  return getRecommendedGateway(countryCode);
 }
 
 /**

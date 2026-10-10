@@ -5,10 +5,13 @@ import Link from "next/link";
 import { SUBSCRIPTION_PLANS } from "@/lib/constants";
 import { useLocale } from "@/components/LocaleProvider";
 import { CHARIOW_PRODUCT_URLS } from "@/lib/chariow";
+import PaymentMethodSelector from "@/components/payment/PaymentMethodSelector";
+import { PaymentGateway } from "@/lib/payment-config";
 
 export default function AbonnementClient() {
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
   const [selected, setSelected] = useState<string>("annuel");
+  const [selectedGateway, setSelectedGateway] = useState<PaymentGateway>("moneroo");
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [plans, setPlans] = useState<any[]>(SUBSCRIPTION_PLANS);
@@ -30,6 +33,11 @@ export default function AbonnementClient() {
     setLoadingPlan(planId);
     setCheckoutError(null);
     try {
+      if (selectedGateway === "chariow") {
+        window.location.assign(CHARIOW_PRODUCT_URLS.abonnementChefEntreprise);
+        return;
+      }
+
       const response = await fetch("/api/payment/init", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -44,7 +52,7 @@ export default function AbonnementClient() {
       window.location.assign(data.checkout_url);
     } catch (error) {
       setLoadingPlan(null);
-      setCheckoutError(error instanceof Error ? error.message : "Impossible d’ouvrir le paiement Moneroo");
+      setCheckoutError(error instanceof Error ? error.message : "Impossible d’ouvrir le paiement");
     }
   };
 
@@ -88,6 +96,15 @@ export default function AbonnementClient() {
                 POPULAIRE
               </span>
             </button>
+          </div>
+
+          {/* Sélecteur de méthode de paiement (Moneroo vs Chariow) */}
+          <div className="mt-8 max-w-[560px] mx-auto text-left">
+            <PaymentMethodSelector
+              selectedGateway={selectedGateway}
+              onSelectGateway={setSelectedGateway}
+              disabled={loadingPlan !== null}
+            />
           </div>
         </div>
 
@@ -188,23 +205,13 @@ export default function AbonnementClient() {
                         : "bg-[#1b1c1c] hover:bg-[#9e001f] text-white"
                     }`}
                   >
-                    {loadingPlan === plan.id ? "Ouverture de Moneroo…" : `Choisir ${plan.name} (Moneroo) →`}
+                    {loadingPlan === plan.id
+                      ? "Redirection sécurisée…"
+                      : `PAYER ${formatPrice(Number(price || 0))}`}
                   </button>
 
-                  {plan.id === "entreprise" && (
-                    <a
-                      href={CHARIOW_PRODUCT_URLS.abonnementChefEntreprise}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-2.5 w-full h-11 rounded-full border border-[#f0b27e] bg-[#fffaf5] hover:bg-[#f0b27e]/20 text-[#944400] font-bold text-[12px] flex items-center justify-center gap-1.5 transition shadow-sm"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">credit_card</span>
-                      <span>Souscrire via Chariow (Boutique Officielle) ↗</span>
-                    </a>
-                  )}
-
-                  <div className="mt-2 text-center text-[10px] text-[#8e7474]">
-                    Paiement sécurisé Moneroo (Mobile Money) & Chariow (CB / International)
+                  <div className="mt-2.5 text-center text-[10px] text-[#8e7474]">
+                    Paiement 100% sécurisé via {selectedGateway === "moneroo" ? "Moneroo (Mobile Money)" : "Chariow (International)"}
                   </div>
                 </div>
               </div>
