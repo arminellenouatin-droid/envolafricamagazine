@@ -92,11 +92,12 @@ function normalizeProduct(product: ApiProduct): ProductWithMeta {
   const leadTime = product.lead_time || "3 - 7 jours";
   const isVerified = Boolean(supplier?.certification_status === "certified" || product.certified);
 
-  const wholesaleTiers: WholesaleTier[] = [
-    { range: `1 - ${Math.max(1, moq - 1)}`, price: basePrice, discountLabel: "Base", minQty: 1 },
-    { range: `${moq} - 49`, price: Math.round(basePrice * 0.88), discountLabel: "-12%", minQty: moq },
-    { range: "50+", price: Math.round(basePrice * 0.78), discountLabel: "-22%", minQty: 50 },
-  ];
+  // Phase 0 : Seuls les paliers réels définis par le vendeur sont affichés (aucun palier artificiel inventé)
+  const wholesaleTiers: WholesaleTier[] = Array.isArray((product as any).wholesale_tiers)
+    ? (product as any).wholesale_tiers
+    : Array.isArray((product as any).wholesaleTiers)
+    ? (product as any).wholesaleTiers
+    : [];
 
   return {
     id: product.id,
@@ -118,7 +119,7 @@ function normalizeProduct(product: ApiProduct): ProductWithMeta {
     months: product.installment_months_max ?? product.months ?? 0,
     moq,
     leadTime,
-    isTradeAssurance: true,
+    isTradeAssurance: false,
     isVerifiedSupplier: isVerified,
     wholesaleTiers,
     ...(product.product_video_url
@@ -208,7 +209,7 @@ function RfqModal({ product, onClose }: { product: ProductWithMeta; onClose: () 
               Votre appel d&apos;offres (Réf: <strong className="text-[#a36300]">RFQ-EAM-{Math.floor(100000 + Math.random() * 900000)}</strong>) pour <strong>{qty} unités</strong> a été envoyé au fournisseur <strong>{product.supplier}</strong>.
             </p>
             <div className="mt-6 rounded-2xl bg-[#fffaf3] p-4 text-left border border-[#eadfce]">
-              <p className="text-[11px] font-bold text-[#806c58]">Estimation préliminaire Trade Assurance :</p>
+              <p className="text-[11px] font-bold text-[#806c58]">Estimation préliminaire du devis :</p>
               <p className="font-display text-xl font-black text-[#9e001f]">{formatPrice(totalEstimated)}</p>
               <p className="text-[10px] text-[#806c58] mt-1">Fournisseur engagé à répondre sous 24h ouvrées avec proforma officiel.</p>
             </div>
@@ -245,7 +246,6 @@ function RfqModal({ product, onClose }: { product: ProductWithMeta; onClose: () 
                 <p className="text-[11px] text-[#806c58]">Vendeur : {product.supplier}</p>
                 <div className="mt-1 flex items-center gap-2">
                   <span className="rounded-full bg-[#fff4e0] px-2 py-0.5 text-[9px] font-black uppercase text-[#a36300]">MOQ: {minQty} pcs</span>
-                  <span className="rounded-full bg-[#e9f7f5] px-2 py-0.5 text-[9px] font-black uppercase text-[#087e8b]">Trade Assurance</span>
                 </div>
               </div>
             </div>
@@ -478,10 +478,10 @@ function ProductDetailModal({
         <div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-t-[28px] bg-[#fffdfb] shadow-2xl sm:rounded-[28px]">
           <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#eadfce] bg-[#fffdfb]/95 px-5 py-4 backdrop-blur">
             <div className="flex items-center gap-2">
-              <span className="rounded-full bg-[#e9f7f5] px-2.5 py-1 text-[10px] font-black uppercase text-[#087e8b]">
-                Trade Assurance EAM
+              <span className="rounded-full bg-[#fff4e0] px-2.5 py-1 text-[10px] font-black uppercase text-[#a36300]">
+                Catalogue B2B
               </span>
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#a36300]">Fiche Produit B2B</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#a36300]">Fiche Produit</p>
             </div>
             <button
               type="button"
@@ -599,30 +599,31 @@ function ProductDetailModal({
                 {product.title}
               </h2>
 
-              {/* Wholesale Tier Pricing Table style Alibaba */}
+              {/* Tarification B2B */}
               <div className="mt-4 rounded-2xl bg-[#fff8eb] p-4 border border-[#fed7aa]">
-                <p className="text-[11px] font-black uppercase tracking-wider text-[#a36300]">Paliers de Prix de Gros (B2B)</p>
-                <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                  <div className="rounded-xl bg-white p-2.5 shadow-sm border border-[#f0e7dc]">
-                    <span className="block text-[11px] font-bold text-[#806c58]">1 - 9 pièces</span>
-                    <strong className="mt-1 block text-sm font-black text-[#2a211a]">{formatPrice(product.priceXof)}</strong>
-                    <span className="text-[10px] text-[#806c58]">Prix unitaire</span>
+                <p className="text-[11px] font-black uppercase tracking-wider text-[#a36300]">Prix B2B & Conditions Grossiste</p>
+                {product.wholesaleTiers && product.wholesaleTiers.length > 0 ? (
+                  <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                    {product.wholesaleTiers.map((tier, idx) => (
+                      <div key={idx} className="rounded-xl bg-white p-2.5 shadow-sm border border-[#f0e7dc]">
+                        <span className="block text-[11px] font-bold text-[#806c58]">{tier.range}</span>
+                        <strong className="mt-1 block text-sm font-black text-[#9e001f]">{formatPrice(tier.price)}</strong>
+                        <span className="rounded-full bg-[#ffdad8] px-1.5 py-0.5 text-[9px] font-black text-[#9e001f]">{tier.discountLabel}</span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="rounded-xl bg-white p-2.5 shadow-sm border border-[#f0e7dc]">
-                    <span className="block text-[11px] font-bold text-[#806c58]">10 - 49 pièces</span>
-                    <strong className="mt-1 block text-sm font-black text-[#9e001f]">
-                      {formatPrice(Math.round(product.priceXof * 0.88))}
-                    </strong>
-                    <span className="rounded-full bg-[#ffdad8] px-1.5 py-0.5 text-[9px] font-black text-[#9e001f]">-12%</span>
+                ) : (
+                  <div className="mt-3 flex items-center justify-between rounded-xl bg-white p-3 shadow-sm border border-[#f0e7dc]">
+                    <div>
+                      <span className="text-[11px] font-bold text-[#806c58]">Prix unitaire de référence :</span>
+                      <strong className="block text-lg font-black text-[#9e001f]">{formatPrice(product.priceXof)}</strong>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[11px] font-bold text-[#806c58]">Quantité min. (MOQ) :</span>
+                      <span className="block text-sm font-black text-[#a36300]">{product.moq || 1} unité{(product.moq || 1) > 1 ? "s" : ""}</span>
+                    </div>
                   </div>
-                  <div className="rounded-xl bg-white p-2.5 shadow-sm border border-[#f0e7dc]">
-                    <span className="block text-[11px] font-bold text-[#806c58]">50+ pièces</span>
-                    <strong className="mt-1 block text-sm font-black text-[#9e001f]">
-                      {formatPrice(Math.round(product.priceXof * 0.78))}
-                    </strong>
-                    <span className="rounded-full bg-[#ffdad8] px-1.5 py-0.5 text-[9px] font-black text-[#9e001f]">-22%</span>
-                  </div>
-                </div>
+                )}
               </div>
 
               <div className="mt-3 flex flex-wrap gap-2">
@@ -796,9 +797,6 @@ function ProductCard({
                 <span className="material-symbols-outlined text-[12px]">verified</span> Vérifié
               </span>
             )}
-            <span className="rounded-full bg-[#e9f7f5] px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-[#087e8b] shadow-sm">
-              Trade Assurance
-            </span>
           </div>
           <button
             type="button"
@@ -829,14 +827,23 @@ function ProductCard({
           <div className="mt-2.5 flex items-baseline justify-between gap-1">
             <div>
               <span className="font-display text-[16px] font-black text-[#9e001f]">{formatPrice(product.priceXof)}</span>
-              <span className="block text-[10px] text-[#806c58]">1-9 pcs</span>
+              <span className="block text-[10px] text-[#806c58]">Prix unitaire</span>
             </div>
-            <div className="text-right">
-              <span className="font-display text-[14px] font-bold text-[#a36300]">
-                {formatPrice(Math.round(product.priceXof * 0.78))}
-              </span>
-              <span className="block text-[10px] font-bold text-[#087e8b]">dès 50 pcs (-22%)</span>
-            </div>
+            {product.wholesaleTiers && product.wholesaleTiers.length > 1 ? (
+              <div className="text-right">
+                <span className="font-display text-[14px] font-bold text-[#a36300]">
+                  {formatPrice(product.wholesaleTiers[product.wholesaleTiers.length - 1].price)}
+                </span>
+                <span className="block text-[10px] font-bold text-[#087e8b]">
+                  {product.wholesaleTiers[product.wholesaleTiers.length - 1].range} ({product.wholesaleTiers[product.wholesaleTiers.length - 1].discountLabel})
+                </span>
+              </div>
+            ) : (
+              <div className="text-right">
+                <span className="block text-[11px] font-bold text-[#806c58]">Quantité min.</span>
+                <span className="block text-[11px] font-black text-[#a36300]">{product.moq || 1} pcs</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -885,7 +892,7 @@ function VendorProductCarousel({
         <div className="grid min-w-[220px] max-w-[220px] shrink-0 snap-start place-items-center rounded-[18px] border border-dashed border-[#cdbb9f] bg-[#fffaf3] p-5 text-center">
           <span className="material-symbols-outlined text-3xl text-[#a36300]">storefront</span>
           <p className="mt-2 text-xs font-bold text-[#725f4d]">Catalogue B2B de ce fournisseur</p>
-          <p className="mt-1 text-[11px] text-[#806c58]">Commandes en gros avec Trade Assurance.</p>
+          <p className="mt-1 text-[11px] text-[#806c58]">Commandes en gros et relation directe producteur.</p>
         </div>
         {products.map((product) => (
           <div key={product.id} className="w-[230px] shrink-0 snap-start">
@@ -1064,13 +1071,13 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
           </div>
           <div className="flex items-center gap-4 text-[10px]">
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px] text-[#087e8b]">verified_user</span> Trade Assurance EAM
+              <span className="material-symbols-outlined text-[14px] text-[#087e8b]">security</span> Paiement Sécurisé Moneroo
             </span>
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px] text-[#a36300]">request_quote</span> Devis RFQ sous 24h
+              <span className="material-symbols-outlined text-[14px] text-[#a36300]">request_quote</span> Devis RFQ Direct
             </span>
             <Link href="/marketplace/vendre" className="font-black text-[#9e001f] hover:underline">
-              Devenir Fournisseur Vérifié →
+              Devenir Fournisseur →
             </Link>
           </div>
         </div>
@@ -1094,7 +1101,7 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
                 Le Sourcing Africain, <span className="text-[#9e001f]">façon B2B d&apos;Élite.</span>
               </h1>
               <p className="mt-6 max-w-[590px] text-[16px] leading-7 text-[#725f4d] lg:mt-3 lg:text-[14px] lg:leading-6">
-                Connectez-vous directement aux fabricants et producteurs africains. Négociez vos devis en gros (RFQ), sécurisez vos paiements par séquestre bancaire Trade Assurance et organisez vos expéditions.
+                Connectez-vous directement aux fabricants et producteurs africains. Négociez vos devis en gros (RFQ), sécurisez vos transactions et développez vos approvisionnements.
               </p>
               <div className="mt-8 flex flex-wrap gap-3 lg:mt-4">
                 <a
@@ -1107,21 +1114,21 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
                   href="/marketplace/vendre"
                   className="rounded-full border border-[#bca486] bg-white/60 px-6 py-3 text-[12px] font-black text-[#5c3d19] hover:bg-white transition"
                 >
-                  Devenir Fournisseur Vérifié B2B
+                  Devenir Fournisseur B2B
                 </Link>
               </div>
               <div className="mt-9 grid max-w-[560px] grid-cols-3 gap-3 lg:mt-4">
                 <div>
-                  <p className="font-display text-2xl font-black text-[#9e001f]">54</p>
-                  <p className="text-[11px] text-[#806c58]">pays connectés</p>
+                  <p className="font-display text-2xl font-black text-[#9e001f]">B2B</p>
+                  <p className="text-[11px] text-[#806c58]">Sourcing direct</p>
                 </div>
                 <div>
                   <p className="font-display text-2xl font-black text-[#9e001f]">100%</p>
-                  <p className="text-[11px] text-[#806c58]">Trade Assurance</p>
+                  <p className="text-[11px] text-[#806c58]">Moneroo sécurisé</p>
                 </div>
                 <div>
-                  <p className="font-display text-2xl font-black text-[#9e001f]">24h</p>
-                  <p className="text-[11px] text-[#806c58]">délai réponse RFQ</p>
+                  <p className="font-display text-2xl font-black text-[#9e001f]">RFQ</p>
+                  <p className="text-[11px] text-[#806c58]">Devis direct usines</p>
                 </div>
               </div>
             </div>
@@ -1137,16 +1144,16 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
               <div className="relative flex h-full flex-col justify-between">
                 <div className="flex items-center justify-between">
                   <span className="rounded-full bg-white/15 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-white">
-                    Trade Assurance Garanti
+                    Commerce B2B Panafricain
                   </span>
-                  <span className="material-symbols-outlined text-[38px] text-[#ffca63]">verified_user</span>
+                  <span className="material-symbols-outlined text-[38px] text-[#ffca63]">storefront</span>
                 </div>
                 <div>
                   <p className="max-w-[330px] font-display text-3xl font-black leading-tight text-white lg:text-2xl">
-                    Protection totale de l&apos;Acheteur & du Vendeur.
+                    Le Réseau des Producteurs & Acheteurs.
                   </p>
                   <p className="mt-3 max-w-[350px] text-xs leading-5 text-white/75">
-                    Fonds bloqués sur compte séquestre jusqu&apos;à inspection et confirmation de livraison au port de destination.
+                    Commandes directes auprès des usines et producteurs avec paiements protégés en monnaies locales et Mobile Money.
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -1154,7 +1161,7 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
                     Paiement Sécurisé Moneroo
                   </span>
                   <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-black text-white">
-                    Litiges Pris en Charge
+                    Devis sur mesure
                   </span>
                 </div>
               </div>
@@ -1425,8 +1432,28 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
               />
             ))}
             {!filteredProducts.length && (
-              <div className="col-span-full rounded-[24px] border border-dashed border-[#cdbb9f] bg-white p-12 text-center text-sm text-[#806c58]">
-                Aucun produit ne correspond aux filtres actuels.
+              <div className="col-span-full rounded-[28px] border border-dashed border-[#cdbb9f] bg-[#fffaf3] p-12 text-center">
+                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#fff4e0] text-[#a36300]">
+                  <span className="material-symbols-outlined text-3xl">storefront</span>
+                </div>
+                <h3 className="mt-4 font-display text-xl font-black text-[#2a211a]">Le catalogue grossiste est en cours d’ouverture</h3>
+                <p className="mx-auto mt-2 max-w-md text-xs leading-5 text-[#806c58]">
+                  Vous êtes producteur, fabricant ou grossiste africain ? Rejoignez les premiers fournisseurs officiels d’Envol Africa et exposez vos produits auprès de milliers d’acheteurs.
+                </p>
+                <div className="mt-6 flex flex-wrap justify-center gap-3">
+                  <Link
+                    href="/marketplace/vendre"
+                    className="rounded-full bg-[#9e001f] px-6 py-3 text-xs font-black text-white shadow-md hover:bg-[#800019] transition"
+                  >
+                    Devenir Fournisseur Officiel →
+                  </Link>
+                  <Link
+                    href="/service"
+                    className="rounded-full border border-[#eadfce] bg-white px-6 py-3 text-xs font-bold text-[#725f4d] hover:bg-[#f8f3ed] transition"
+                  >
+                    Contacter le service sourcing
+                  </Link>
+                </div>
               </div>
             )}
           </div>
@@ -1493,45 +1520,45 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
       {/* RFQ / Devis B2B Modal */}
       {rfqProduct && <RfqModal product={rfqProduct} onClose={() => setRfqProduct(null)} />}
 
-      {/* Alibaba Style Trust & Guarantees */}
+      {/* Garanties & Sécurité B2B */}
       <section className="border-y border-[#eadfce] bg-[#f5eee5]">
         <div className="mx-auto grid max-w-[1280px] gap-4 px-5 py-10 md:grid-cols-3 md:px-10 lg:px-16">
           <div className="rounded-[24px] bg-white p-6">
-            <span className="material-symbols-outlined text-3xl text-[#087e8b]">verified_user</span>
-            <h3 className="mt-4 font-display text-lg font-black">Trade Assurance EAM</h3>
+            <span className="material-symbols-outlined text-3xl text-[#087e8b]">security</span>
+            <h3 className="mt-4 font-display text-lg font-black">Paiements Sécurisés Moneroo</h3>
             <p className="mt-2 text-sm leading-6 text-[#725f4d]">
-              Vos fonds sont sécurisés jusqu&apos;à confirmation de la livraison au port désigné et conformité du contrôle qualité.
+              Réglez vos commandes en toute sérénité par Mobile Money et Carte Bancaire avec traçabilité complète de chaque transaction.
             </p>
           </div>
           <div className="rounded-[24px] bg-[#2a211a] p-6 text-white">
             <span className="material-symbols-outlined text-3xl text-[#ffca63]">request_quote</span>
-            <h3 className="mt-4 font-display text-lg font-black">Devis B2B & Paliers de Gros</h3>
+            <h3 className="mt-4 font-display text-lg font-black">Devis B2B & Négociation Directe</h3>
             <p className="mt-2 text-sm leading-6 text-white/70">
-              Négociez directement les MOQ, les remises de volume (jusqu&apos;à -25%) et la personnalisation OEM de packaging.
+              Échangez directement avec les fabricants pour négocier vos volumes (MOQ), délais et conditionnements sur mesure.
             </p>
           </div>
           <div className="rounded-[24px] bg-[#9e001f] p-6 text-white">
             <span className="material-symbols-outlined text-3xl text-[#ffca63]">local_shipping</span>
-            <h3 className="mt-4 font-display text-lg font-black">Logistique & Dédouanement</h3>
+            <h3 className="mt-4 font-display text-lg font-black">Expédition & Logistique</h3>
             <p className="mt-2 text-sm leading-6 text-white/75">
-              Expédition fluide sur les principaux ports (Cotonou, Abidjan, Douala, Dakar) avec transporteurs partenaires vérifiés.
+              Coordination logistique directe avec les fournisseurs vers les grands pôles économiques et ports d&apos;Afrique.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Parcours Vendeur B2B Moderne, Simple & Passionnant style Alibaba */}
+      {/* Parcours Vendeur B2B */}
       <section id="publier" className="bg-[#2a211a] text-white py-16 px-5 md:px-10 lg:px-16">
         <div className="mx-auto max-w-[1280px]">
           <div className="text-center max-w-2xl mx-auto">
             <span className="rounded-full bg-[#ffca63]/20 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#ffca63]">
-              Rejoignez les Fabricants d&apos;Élite
+              Rejoignez les Fournisseurs Partenaires
             </span>
             <h2 className="mt-3 font-display text-3xl md:text-4xl font-black">
-              Devenez Fournisseur Vérifié B2B
+              Ouvrez votre Boutique Grossiste B2B
             </h2>
             <p className="mt-3 text-sm leading-6 text-white/70">
-              Vendez en gros à des milliers d&apos;acheteurs, distributeurs et entreprises à travers les 54 pays africains et la diaspora.
+              Vendez en gros à des acheteurs, commerçants et entreprises à travers le continent africain et la diaspora.
             </p>
           </div>
 
@@ -1540,9 +1567,9 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#ffca63] text-xl font-black text-[#513000]">
                 1
               </span>
-              <h3 className="mt-5 font-display text-lg font-black text-white">Validation RCCM & Identité</h3>
+              <h3 className="mt-5 font-display text-lg font-black text-white">Profil Entreprise & Boutique</h3>
               <p className="mt-2 text-xs leading-5 text-white/70">
-                Audit de conformité de votre entreprise pour obtenir le label de confiance <strong className="text-[#ffca63]">Fournisseur Vérifié Pro</strong> et la couverture Trade Assurance.
+                Créez votre boutique B2B avec votre raison sociale, pays d&apos;implantation et coordonnées d&apos;entreprise vérifiées.
               </p>
             </div>
 
@@ -1550,9 +1577,9 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#ffca63] text-xl font-black text-[#513000]">
                 2
               </span>
-              <h3 className="mt-5 font-display text-lg font-black text-white">Catalogue & Barèmes Dégressifs</h3>
+              <h3 className="mt-5 font-display text-lg font-black text-white">Catalogue & Conditions de Gros</h3>
               <p className="mt-2 text-xs leading-5 text-white/70">
-                Publiez vos fiches produits avec vos quantités minimales (MOQ), délais de production, options de marquage logo et grilles de remises.
+                Publiez vos fiches produits avec vos quantités minimales (MOQ), délais de préparation et options de livraison.
               </p>
             </div>
 
@@ -1560,9 +1587,9 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#ffca63] text-xl font-black text-[#513000]">
                 3
               </span>
-              <h3 className="mt-5 font-display text-lg font-black text-white">Appels d&apos;Offres & Ventes Sécurisées</h3>
+              <h3 className="mt-5 font-display text-lg font-black text-white">Demandes de Devis & Ventes Directes</h3>
               <p className="mt-2 text-xs leading-5 text-white/70">
-                Recevez les devis RFQ, négociez en direct et recevez vos paiements garantis sans risque d&apos;impayé grâce au séquestre EAM.
+                Recevez les demandes RFQ, négociez en direct avec vos clients et développez votre chiffre d&apos;affaires B2B.
               </p>
             </div>
           </div>

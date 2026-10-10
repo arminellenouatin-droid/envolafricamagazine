@@ -1,5 +1,6 @@
 # Envol Africa Magazine - Robots.txt
-# Domaine de production officiel : https://envolafrica.site
+# Domaine de production officiel : https://www.envolafrica.site
+Host: https://www.envolafrica.site
 
 User-agent: *
 Allow: /
@@ -82,4 +83,4 @@ Allow: /
 User-agent: cohere-ai
 Allow: /
 
-Sitemap: https://envolafrica.site/sitemap.xml
+Sitemap: https://www.envolafrica.site/sitemap.xml

@@ -2021,7 +2021,7 @@ export default function MarketplaceMessagesClient() {
                 {[
                   { title: "Disponibilité immédiate", content: "Bonjour, ce produit est actuellement en stock et prêt pour expédition sous 48h.", shortcut: "/stock" },
                   { title: "Devis & MOQ", content: "Bonjour, notre quantité minimale de commande (MOQ) est flexible selon vos volumes. Souhaitez-vous un devis chiffré incluant le fret ?", shortcut: "/moq" },
-                  { title: "Garantie Trade Assurance", content: "Toutes nos transactions sont couvertes par la Trade Assurance Envol Africa pour sécuriser 100% de vos acomptes.", shortcut: "/securite" },
+                  { title: "Paiement sécurisé", content: "Nos transactions sont traitées de manière sécurisée via la passerelle officielle de paiement Envol Africa.", shortcut: "/securite" },
                 ].map((sug, idx) => (
                   <button
                     key={idx}

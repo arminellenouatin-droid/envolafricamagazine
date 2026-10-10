@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-import { marketplaceSeed } from "@/lib/marketplace-seed";
 import { listMagazines } from "@/lib/core-db";
 import { MAGAZINE_MARKETPLACE_CATEGORY, toMagazineMarketplaceProduct } from "@/lib/magazine-republication";
 
@@ -150,17 +149,15 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const filtered = marketplaceSeed.filter((product) => {
-    if (category === MAGAZINE_MARKETPLACE_CATEGORY) return false;
-    const matchesId = !productId || product.id === productId;
-    const matchesQuery = !query || `${product.title} ${product.description} ${product.supplier}`.toLowerCase().includes(query.toLowerCase());
-    const matchesCategory = category === "Toutes les catégories" || product.category === category;
-    const matchesCountry = !country || product.country === country;
-    return matchesId && matchesQuery && matchesCategory && matchesCountry;
-  });
+  // Phase 0 : Zéro faux produit public. En l'absence de produits Supabase, ne renvoyer que les magazines ou une liste vide.
+  const fallbackProducts = category === MAGAZINE_MARKETPLACE_CATEGORY || category === "Toutes les catégories" ? magazineProducts : [];
   const start = page * PAGE_SIZE;
-  const fallbackProducts = category === MAGAZINE_MARKETPLACE_CATEGORY ? magazineProducts : [...(page === 0 ? magazineProducts : []), ...filtered];
-  return NextResponse.json({ products: fallbackProducts.slice(start, start + PAGE_SIZE), page, hasMore: start + PAGE_SIZE < fallbackProducts.length, source: "seed" });
+  return NextResponse.json({
+    products: fallbackProducts.slice(start, start + PAGE_SIZE),
+    page,
+    hasMore: start + PAGE_SIZE < fallbackProducts.length,
+    source: fallbackProducts.length > 0 ? "magazines" : "empty",
+  });
 }
 
 export async function PATCH(request: NextRequest) {
