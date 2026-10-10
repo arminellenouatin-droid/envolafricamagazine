@@ -271,8 +271,8 @@ export default function MagazineDetailPage({ initialMagazine }: { initialMagazin
         </section>}
       </main>
       {previewOpen && (() => {
-        const selectedPdf = magazine.pdfs?.[localeLanguage] || magazine.pdfs?.fr || (magazine.id === "23" ? "/magazines/23/numero-23.pdf" : "");
-        const protectedPdf = selectedPdf?.startsWith("private-pdf://")
+        const selectedPdf = magazine.pdfs?.[localeLanguage] || magazine.pdfs?.fr || (magazine.id === "23" || magazine.numero === 23 ? "/magazines/23/numero-23.pdf" : "");
+        const protectedPdf = selectedPdf
           ? `/api/magazines/${encodeURIComponent(id)}/preview?lang=${encodeURIComponent(localeLanguage)}`
           : undefined;
         const previewPages = (magazine.previewImages && magazine.previewImages.length > 0)

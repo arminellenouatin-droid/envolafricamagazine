@@ -1985,73 +1985,170 @@ export default function MarketplaceMessagesClient() {
       {/* MODAL: QUICK REPLIES MANAGER                             */}
       {/* ======================================================== */}
       {showQuickRepliesModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
-            <h3 className="font-display text-lg font-black text-[#2a211a]">Modèles de réponses rapides</h3>
-            <p className="mt-1 text-xs text-[#725f4d]">
-              Créez des messages types pour répondre rapidement aux questions fréquentes de vos clients.
-            </p>
-
-            <form onSubmit={handleSaveQuickReply} className="mt-4 space-y-3 rounded-xl bg-gray-50 p-3">
-              <input
-                type="text"
-                placeholder="Titre du modèle (ex: Demande de brief)"
-                value={newQuickTitle}
-                onChange={(e) => setNewQuickTitle(e.target.value)}
-                className="w-full rounded-lg border border-[#eadfce] bg-white p-2 text-xs"
-                required
-              />
-              <textarea
-                placeholder="Contenu du message..."
-                value={newQuickContent}
-                onChange={(e) => setNewQuickContent(e.target.value)}
-                rows={3}
-                className="w-full rounded-lg border border-[#eadfce] bg-white p-2 text-xs"
-                required
-              />
-              <div className="flex items-center justify-between">
-                <input
-                  type="text"
-                  placeholder="Raccourci optionnel (ex: /brief)"
-                  value={newQuickShortcut}
-                  onChange={(e) => setNewQuickShortcut(e.target.value)}
-                  className="rounded-lg border border-[#eadfce] bg-white p-2 text-xs"
-                />
-                <button
-                  type="submit"
-                  className="rounded-full bg-[#9e001f] px-4 py-1.5 text-xs font-black text-white hover:bg-[#7e0019]"
-                >
-                  Ajouter
-                </button>
-              </div>
-            </form>
-
-            <div className="mt-4 max-h-60 overflow-y-auto space-y-2">
-              {quickReplies.map((qr) => (
-                <div
-                  key={qr.id}
-                  className="flex items-start justify-between rounded-xl border border-[#eadfce] p-3 text-xs"
-                >
-                  <div>
-                    <h5 className="font-black text-[#2a211a]">{qr.title}</h5>
-                    <p className="mt-1 text-[#725f4d]">{qr.content}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteQuickReply(qr.id)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">delete</span>
-                  </button>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="flex max-h-[90vh] w-full max-w-xl flex-col rounded-t-3xl sm:rounded-3xl border border-[#ead8d5] bg-white p-5 sm:p-7 shadow-2xl animate-in slide-in-from-bottom duration-300">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-[#f0dedd] pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#fff4e0] text-amber-700">
+                  <span className="material-symbols-outlined text-[22px]">bolt</span>
                 </div>
-              ))}
-            </div>
-
-            <div className="mt-6 flex justify-end">
+                <div>
+                  <h3 className="font-display text-base sm:text-lg font-black text-[#2a211a]">
+                    Modèles de Réponses Rapides
+                  </h3>
+                  <p className="text-[11px] text-[#725f4d]">
+                    Accélérez vos négociations et conversions commerciales B2B
+                  </p>
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowQuickRepliesModal(false)}
-                className="rounded-full border border-[#eadfce] px-5 py-2 text-xs font-bold text-[#725f4d]"
+                className="grid h-8 w-8 place-items-center rounded-full bg-[#f6f3f2] text-sm font-bold text-[#746665] hover:bg-[#ead8d5]"
+                aria-label="Fermer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Suggestions prédéfinies à insérer en un clic */}
+            <div className="mt-4 border-b border-[#f0dedd] pb-3">
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#8a7b7a]">
+                Suggestions B2B prêtes à l&apos;emploi :
+              </span>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {[
+                  { title: "Disponibilité immédiate", content: "Bonjour, ce produit est actuellement en stock et prêt pour expédition sous 48h.", shortcut: "/stock" },
+                  { title: "Devis & MOQ", content: "Bonjour, notre quantité minimale de commande (MOQ) est flexible selon vos volumes. Souhaitez-vous un devis chiffré incluant le fret ?", shortcut: "/moq" },
+                  { title: "Garantie Trade Assurance", content: "Toutes nos transactions sont couvertes par la Trade Assurance Envol Africa pour sécuriser 100% de vos acomptes.", shortcut: "/securite" },
+                ].map((sug, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setNewQuickTitle(sug.title);
+                      setNewQuickContent(sug.content);
+                      setNewQuickShortcut(sug.shortcut);
+                    }}
+                    className="rounded-full border border-[#e5bdbb] bg-[#fffbfb] px-2.5 py-1 text-[10px] font-bold text-[#9e001f] transition hover:bg-[#9e001f] hover:text-white"
+                  >
+                    + {sug.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Corps scrollable */}
+            <div className="mt-3.5 space-y-4 overflow-y-auto pr-1">
+              {/* Formulaire de création */}
+              <form onSubmit={handleSaveQuickReply} className="space-y-3 rounded-2xl border border-[#eedfdc] bg-[#fffaf9] p-4 shadow-2xs">
+                <span className="block text-[11px] font-black uppercase tracking-wider text-[#9e001f]">
+                  Créer un nouveau modèle
+                </span>
+                <input
+                  type="text"
+                  placeholder="Intitulé (ex : Confirmation des délais de fret)"
+                  value={newQuickTitle}
+                  onChange={(e) => setNewQuickTitle(e.target.value)}
+                  className="w-full rounded-xl border border-[#d8c3c1] bg-white p-2.5 font-sans text-xs outline-none focus:border-[#9e001f]"
+                  required
+                />
+                <textarea
+                  placeholder="Contenu du modèle de message..."
+                  value={newQuickContent}
+                  onChange={(e) => setNewQuickContent(e.target.value)}
+                  rows={3}
+                  className="w-full rounded-xl border border-[#d8c3c1] bg-white p-2.5 font-sans text-xs leading-relaxed outline-none focus:border-[#9e001f]"
+                  required
+                />
+                <div className="flex items-center justify-between gap-3">
+                  <div className="relative flex-1 max-w-[200px]">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">/</span>
+                    <input
+                      type="text"
+                      placeholder="raccourci (ex : delai)"
+                      value={newQuickShortcut.replace(/^\//, "")}
+                      onChange={(e) => setNewQuickShortcut(e.target.value ? `/${e.target.value.replace(/^\//, "")}` : "")}
+                      className="w-full rounded-xl border border-[#d8c3c1] bg-white pl-6 pr-3 py-1.5 font-sans text-xs outline-none focus:border-[#9e001f]"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#9e001f] px-5 py-2 text-xs font-black text-white shadow-xs transition hover:bg-[#c8102e]"
+                  >
+                    <span>Enregistrer</span>
+                    <span>→</span>
+                  </button>
+                </div>
+              </form>
+
+              {/* Liste des modèles enregistrés */}
+              <div>
+                <span className="block text-[11px] font-black uppercase tracking-wider text-[#725f4d]">
+                  Vos modèles actifs ({quickReplies.length})
+                </span>
+                {quickReplies.length === 0 ? (
+                  <p className="mt-2 text-center text-xs text-[#a08f8d] py-4">
+                    Aucun modèle personnalisé enregistré pour le moment.
+                  </p>
+                ) : (
+                  <div className="mt-2 space-y-2 max-h-52 overflow-y-auto pr-1">
+                    {quickReplies.map((qr) => (
+                      <div
+                        key={qr.id}
+                        className="group flex items-start justify-between gap-3 rounded-2xl border border-[#eadfce] bg-white p-3.5 shadow-2xs transition hover:border-[#9e001f]"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <h5 className="font-display text-xs font-black text-[#2a211a]">
+                              {qr.title}
+                            </h5>
+                            {qr.shortcut && (
+                              <span className="rounded-md bg-[#f6f3f2] px-1.5 py-0.5 text-[10px] font-mono font-bold text-[#9e001f]">
+                                {qr.shortcut}
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-[11px] leading-relaxed text-[#725f4d] line-clamp-3">
+                            {qr.content}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setInputText(qr.content);
+                              setShowQuickRepliesModal(false);
+                            }}
+                            className="rounded-lg bg-[#fff5f3] px-2.5 py-1 text-[10px] font-black text-[#9e001f] hover:bg-[#9e001f] hover:text-white transition"
+                            title="Insérer dans la zone de texte"
+                          >
+                            Insérer
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteQuickReply(qr.id)}
+                            className="grid h-7 w-7 place-items-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+                            title="Supprimer ce modèle"
+                            aria-label="Supprimer le modèle"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-4 flex justify-end border-t border-[#f0dedd] pt-3">
+              <button
+                type="button"
+                onClick={() => setShowQuickRepliesModal(false)}
+                className="h-10 rounded-xl border border-[#eadfce] bg-[#faf7f6] px-5 text-xs font-bold text-[#725f4d] hover:bg-[#f0ebe8]"
               >
                 Fermer
               </button>

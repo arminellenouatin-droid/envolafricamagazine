@@ -145,5 +145,6 @@ export interface MarketplaceQuickReply {
   supplier_id: string;
   title: string;
   content: string;
+  shortcut?: string;
   created_at: string;
 }

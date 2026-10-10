@@ -2,12 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { findMagazineById } from "@/lib/core-db";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { createCanvas } from "@napi-rs/canvas";
+import fs from "fs";
+import path from "path";
 
 const MAX_PREVIEW_PAGE = 7;
+const MAGAZINE_PRIVATE_BUCKET = process.env.MAGAZINE_PRIVATE_BUCKET || "magazine-pdfs-private";
 
 function parsePrivateRef(value: string) {
   const match = /^private-pdf:\/\/([^/]+)\/(.+)$/.exec(value);
-  return match ? { bucket: match[1], path: match[2] } : null;
+  if (match) return { bucket: match[1], path: match[2] };
+  const shortMatch = /^private-pdf:\/\/(.+)$/.exec(value);
+  if (shortMatch) return { bucket: MAGAZINE_PRIVATE_BUCKET, path: shortMatch[1] };
+  return null;
 }
 
 // In-memory cache for rendered WebP pages and downloaded PDF buffers to ensure ultra-fast loading (< 50ms)
@@ -40,21 +46,51 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     }
 
     const magazine = await findMagazineById(id);
-    const ref = magazine?.pdfs?.[language] || magazine?.pdfs?.fr;
-    const parsed = ref ? parsePrivateRef(ref) : null;
-    const client = getSupabaseAdmin();
-    if (!parsed || !client) return NextResponse.json({ error: "Aperçu PDF protégé indisponible." }, { status: 404 });
+    const ref = magazine?.pdfs?.[language] || magazine?.pdfs?.fr || (magazine?.numero === 23 || id === "23" ? "/magazines/23/numero-23.pdf" : "");
+    if (!ref) {
+      return NextResponse.json({ error: "Aucun PDF associé à cette édition." }, { status: 404 });
+    }
 
-    const pdfKey = `${parsed.bucket}/${parsed.path}`;
-    let pdfBytes: Uint8Array;
-    const cachedPdf = pdfBufferCache.get(pdfKey);
-    if (cachedPdf && cachedPdf.expiresAt > now) {
-      pdfBytes = cachedPdf.data;
-    } else {
-      const downloaded = await client.storage.from(parsed.bucket).download(parsed.path);
-      if (downloaded.error || !downloaded.data) return NextResponse.json({ error: "PDF indisponible." }, { status: 404 });
-      pdfBytes = new Uint8Array(await downloaded.data.arrayBuffer());
-      pdfBufferCache.set(pdfKey, { data: pdfBytes, expiresAt: now + CACHE_TTL });
+    let pdfBytes: Uint8Array | null = null;
+    const client = getSupabaseAdmin();
+
+    if (ref.startsWith("private-pdf://")) {
+      const parsed = parsePrivateRef(ref);
+      if (parsed && client) {
+        const pdfKey = `${parsed.bucket}/${parsed.path}`;
+        const cachedPdf = pdfBufferCache.get(pdfKey);
+        if (cachedPdf && cachedPdf.expiresAt > now) {
+          pdfBytes = cachedPdf.data;
+        } else {
+          const downloaded = await client.storage.from(parsed.bucket).download(parsed.path);
+          if (downloaded.data) {
+            pdfBytes = new Uint8Array(await downloaded.data.arrayBuffer());
+            pdfBufferCache.set(pdfKey, { data: pdfBytes, expiresAt: now + CACHE_TTL });
+          }
+        }
+      }
+    } else if (ref.startsWith("http://") || ref.startsWith("https://")) {
+      const cachedPdf = pdfBufferCache.get(ref);
+      if (cachedPdf && cachedPdf.expiresAt > now) {
+        pdfBytes = cachedPdf.data;
+      } else {
+        const res = await fetch(ref, { cache: "force-cache" });
+        if (res.ok) {
+          pdfBytes = new Uint8Array(await res.arrayBuffer());
+          pdfBufferCache.set(ref, { data: pdfBytes, expiresAt: now + CACHE_TTL });
+        }
+      }
+    } else if (ref.startsWith("/")) {
+      const cleanPath = ref.replace(/^\/+/, "");
+      const fullPath = path.join(process.cwd(), "public", cleanPath);
+      if (fs.existsSync(fullPath)) {
+        const buf = await fs.promises.readFile(fullPath);
+        pdfBytes = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+      }
+    }
+
+    if (!pdfBytes) {
+      return NextResponse.json({ error: "Fichier PDF source introuvable." }, { status: 404 });
     }
 
     const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");

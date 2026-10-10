@@ -30,6 +30,17 @@ export default function SearchClient({ initialArticles, initialQuery = "" }: Sea
   const [selectedAuthor, setSelectedAuthor] = useState("all");
   const [datePeriod, setDatePeriod] = useState<"all" | "7d" | "30d" | "year">("all");
   const [sortBy, setSortBy] = useState<"recent" | "oldest" | "views" | "likes">("recent");
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
+  // Nombre de filtres actifs pour badge mobile
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (selectedCategory !== "all") count++;
+    if (selectedAuthor !== "all") count++;
+    if (datePeriod !== "all") count++;
+    if (sortBy !== "recent") count++;
+    return count;
+  }, [selectedCategory, selectedAuthor, datePeriod, sortBy]);
 
   // State pour la modale de partage
   const [shareData, setShareData] = useState<{ url: string; title: string; summary?: string } | null>(null);
@@ -132,12 +143,72 @@ export default function SearchClient({ initialArticles, initialQuery = "" }: Sea
         </p>
       </div>
 
-      {/* Barre de recherche */}
-      <div className="mt-6 flex max-w-3xl gap-2">
+      {/* Barre de recherche & Filtre Mobile 1-Ligne (md:hidden) */}
+      <div className="mt-6 flex items-center gap-2 md:hidden">
+        {/* Bouton Filtres à gauche */}
+        <button
+          type="button"
+          onClick={() => setMobileFilterOpen(true)}
+          className={`relative flex h-11 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition shadow-xs ${
+            activeFiltersCount > 0
+              ? "border-[#9e001f] bg-[#fff5f3] text-[#9e001f]"
+              : "border-[#d8c3c1] bg-white text-[#292323] hover:bg-[#faf7f6]"
+          }`}
+          aria-label="Ouvrir les filtres et le tri"
+        >
+          {/* SVG net sans FOIT */}
+          <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="4" y1="21" x2="4" y2="14" />
+            <line x1="4" y1="10" x2="4" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12" y2="3" />
+            <line x1="20" y1="21" x2="20" y2="16" />
+            <line x1="20" y1="12" x2="20" y2="3" />
+            <line x1="1" y1="14" x2="7" y2="14" />
+            <line x1="9" y1="8" x2="15" y2="8" />
+            <line x1="17" y1="16" x2="23" y2="16" />
+          </svg>
+          <span>Filtres</span>
+          {activeFiltersCount > 0 && (
+            <span className="grid h-4.5 min-w-[18px] place-items-center rounded-full bg-[#9e001f] px-1 text-[10px] font-black text-white">
+              {activeFiltersCount}
+            </span>
+          )}
+        </button>
+
+        {/* Barre de recherche flex-1 */}
         <div className="relative flex-1">
-          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[20px] text-[#746665]">
-            search
-          </span>
+          <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#746665]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Rechercher…"
+            className="h-11 w-full rounded-xl border border-[#d8c3c1] bg-white pl-9 pr-8 font-sans text-xs outline-none transition focus:border-[#9e001f] focus:ring-2 focus:ring-[#9e001f]/10 shadow-xs"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-slate-700"
+              aria-label="Effacer la recherche"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Barre de recherche Desktop (hidden md:flex) */}
+      <div className="mt-6 hidden md:flex max-w-3xl gap-2">
+        <div className="relative flex-1">
+          <svg className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#746665]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
           <input
             type="text"
             value={query}
@@ -150,6 +221,7 @@ export default function SearchClient({ initialArticles, initialQuery = "" }: Sea
               type="button"
               onClick={() => setQuery("")}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 hover:text-slate-700"
+              aria-label="Effacer la recherche"
             >
               ✕
             </button>
@@ -157,8 +229,8 @@ export default function SearchClient({ initialArticles, initialQuery = "" }: Sea
         </div>
       </div>
 
-      {/* Barre des filtres avancés */}
-      <div className="mt-6 rounded-2xl border border-[#ead8d5] bg-white p-4 shadow-xs">
+      {/* Barre des filtres avancés Desktop (hidden md:block) */}
+      <div className="mt-6 hidden md:block rounded-2xl border border-[#ead8d5] bg-white p-4 shadow-xs">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Filtre Catégorie */}
           <div>
@@ -233,7 +305,7 @@ export default function SearchClient({ initialArticles, initialQuery = "" }: Sea
           </div>
         </div>
 
-        {/* Pilules de catégories rapides */}
+        {/* Pilules de catégories rapides Desktop */}
         <div className="mt-3.5 flex flex-wrap items-center gap-1.5 border-t border-[#f0dedd] pt-3">
           <span className="text-[10px] font-bold text-[#8a7b7a]">Accès rapide :</span>
           <button
@@ -277,6 +349,186 @@ export default function SearchClient({ initialArticles, initialQuery = "" }: Sea
           )}
         </div>
       </div>
+
+      {/* Modale Drawer Coulissant pour Filtres Mobiles */}
+      {mobileFilterOpen && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-xs transition-opacity md:hidden animate-in fade-in duration-200">
+          <div
+            className="flex max-h-[85vh] w-full flex-col rounded-t-3xl border-t border-[#e5bdbb] bg-white p-5 shadow-2xl animate-in slide-in-from-bottom duration-300"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Filtres de recherche"
+          >
+            {/* Header du volet */}
+            <div className="flex items-center justify-between border-b border-[#f0dedd] pb-3.5">
+              <div className="flex items-center gap-2">
+                <h3 className="font-display text-base font-black text-[#292323]">
+                  Filtres & Options de Tri
+                </h3>
+                {activeFiltersCount > 0 && (
+                  <span className="grid h-5 w-5 place-items-center rounded-full bg-[#9e001f] text-[10px] font-black text-white">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileFilterOpen(false)}
+                className="grid h-8 w-8 place-items-center rounded-full bg-[#f6f3f2] text-sm font-bold text-[#746665] hover:bg-[#ead8d5]"
+                aria-label="Fermer les filtres"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Corps du volet scrollable */}
+            <div className="mt-4 space-y-4 overflow-y-auto pr-1">
+              {/* Catégories */}
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-[#746665]">
+                  Catégorie
+                </label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="mt-1.5 h-11 w-full rounded-xl border border-[#d8c3c1] bg-[#fdfbfb] px-3 text-xs font-semibold text-[#292323] outline-none focus:border-[#9e001f]"
+                >
+                  <option value="all">Toutes les catégories ({categories.length})</option>
+                  {categories.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Auteur */}
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-[#746665]">
+                  Auteur
+                </label>
+                <select
+                  value={selectedAuthor}
+                  onChange={(e) => setSelectedAuthor(e.target.value)}
+                  className="mt-1.5 h-11 w-full rounded-xl border border-[#d8c3c1] bg-[#fdfbfb] px-3 text-xs font-semibold text-[#292323] outline-none focus:border-[#9e001f]"
+                >
+                  <option value="all">Tous les auteurs ({authors.length})</option>
+                  {authors.map((a) => (
+                    <option key={a} value={a}>
+                      {a}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Période */}
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-[#746665]">
+                  Période
+                </label>
+                <div className="mt-1.5 grid grid-cols-2 gap-2">
+                  {[
+                    { id: "all", label: "Toutes dates" },
+                    { id: "7d", label: "7 derniers jours" },
+                    { id: "30d", label: "30 jours" },
+                    { id: "year", label: "Cette année" },
+                  ].map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setDatePeriod(p.id as any)}
+                      className={`h-9 rounded-xl border text-xs font-bold transition ${
+                        datePeriod === p.id
+                          ? "border-[#9e001f] bg-[#9e001f] text-white"
+                          : "border-[#d8c3c1] bg-[#fdfbfb] text-[#5c403f] hover:bg-[#f6f3f2]"
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Trier par */}
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-[#746665]">
+                  Trier par
+                </label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                  className="mt-1.5 h-11 w-full rounded-xl border border-[#d8c3c1] bg-[#fdfbfb] px-3 text-xs font-semibold text-[#292323] outline-none focus:border-[#9e001f]"
+                >
+                  <option value="recent">Plus récents d’abord</option>
+                  <option value="oldest">Plus anciens d’abord</option>
+                  <option value="views">Plus lus (Popularité)</option>
+                  <option value="likes">Plus aimés</option>
+                </select>
+              </div>
+
+              {/* Accès rapide */}
+              <div>
+                <span className="block text-[11px] font-black uppercase tracking-wider text-[#746665]">
+                  Accès rapide
+                </span>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategory("all")}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition ${
+                      selectedCategory === "all"
+                        ? "bg-[#9e001f] text-white"
+                        : "bg-[#f6f3f2] text-[#5c403f]"
+                    }`}
+                  >
+                    Tous
+                  </button>
+                  {categories.slice(0, 6).map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setSelectedCategory(c)}
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition ${
+                        selectedCategory === c
+                          ? "bg-[#9e001f] text-white"
+                          : "bg-[#f6f3f2] text-[#5c403f]"
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Pied du volet avec actions */}
+            <div className="mt-5 flex items-center gap-3 border-t border-[#f0dedd] pt-3.5">
+              {activeFiltersCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory("all");
+                    setSelectedAuthor("all");
+                    setDatePeriod("all");
+                    setSortBy("recent");
+                    setQuery("");
+                  }}
+                  className="h-12 rounded-xl border border-[#d8c3c1] px-4 text-xs font-bold text-[#9e001f] hover:bg-[#fff5f3]"
+                >
+                  Réinitialiser
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setMobileFilterOpen(false)}
+                className="flex-1 h-12 rounded-xl bg-[#9e001f] font-sans text-xs font-black text-white shadow-md transition hover:bg-[#c8102e]"
+              >
+                Appliquer ({filteredArticles.length} article{filteredArticles.length > 1 ? "s" : ""})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Compteur de résultats */}
       <div className="mt-6 flex items-center justify-between font-sans text-xs text-[#746665]">

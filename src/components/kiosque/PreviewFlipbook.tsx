@@ -43,6 +43,8 @@ export default function PreviewFlipbook({
   const [turning, setTurning] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [touchStartCoords, setTouchStartCoords] = useState<{ x: number; y: number } | null>(null);
+  const [loadedPages, setLoadedPages] = useState<Record<number, boolean>>({});
+  const [failedPages, setFailedPages] = useState<Record<number, boolean>>({});
 
   const canvasLeftRef = useRef<HTMLCanvasElement>(null);
   const canvasRightRef = useRef<HTMLCanvasElement>(null);
@@ -480,12 +482,33 @@ export default function PreviewFlipbook({
 
               {/* Affichage instantané haute performance si images pré-générées disponibles */}
               {hasImagePages && pages[page - 1] && !isBlocked(page) ? (
-                <img
-                  src={pages[page - 1]}
-                  alt={`${title}, page ${page}`}
-                  className="h-full w-full object-contain bg-white"
-                  loading="eager"
-                />
+                <div className="relative h-full w-full bg-[#fdfbfb]">
+                  {!loadedPages[page] && !failedPages[page] && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#fcf9f8] p-6 text-center text-[#746665]">
+                      <div className="h-8 w-8 animate-spin rounded-full border-3 border-[#e5bdbb] border-t-[#9e001f]" />
+                      <p className="mt-3 text-xs font-semibold">Chargement de la page {page}…</p>
+                    </div>
+                  )}
+                  {failedPages[page] ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#fcf9f8] p-6 text-center text-[#746665]">
+                      <span className="material-symbols-outlined text-4xl text-[#9e001f]">menu_book</span>
+                      <p className="mt-2 text-xs font-bold text-[#242020]">{title}</p>
+                      <p className="mt-1 text-[11px] text-[#9c8e8d]">Édition N°{numero || "actuelle"} — Page {page}</p>
+                      <p className="mt-1 text-[10px] text-[#baa4a2]">Numérisation haute fidélité en cours de synchronisation.</p>
+                    </div>
+                  ) : (
+                    <img
+                      src={pages[page - 1]}
+                      alt={`${title}, page ${page}`}
+                      className={`h-full w-full object-contain bg-white transition-opacity duration-200 ${
+                        loadedPages[page] ? "opacity-100" : "opacity-0"
+                      }`}
+                      loading="eager"
+                      onLoad={() => setLoadedPages((prev) => ({ ...prev, [page]: true }))}
+                      onError={() => setFailedPages((prev) => ({ ...prev, [page]: true }))}
+                    />
+                  )}
+                </div>
               ) : (
                 <>
                   {/* PDF Canvas for Left Page */}
@@ -537,12 +560,33 @@ export default function PreviewFlipbook({
 
                 {/* Affichage instantané haute performance si images pré-générées disponibles */}
                 {hasImagePages && pages[rightPage - 1] && !isBlocked(rightPage) ? (
-                  <img
-                    src={pages[rightPage - 1]}
-                    alt={`${title}, page ${rightPage}`}
-                    className="h-full w-full object-contain bg-white"
-                    loading="eager"
-                  />
+                  <div className="relative h-full w-full bg-[#fdfbfb]">
+                    {!loadedPages[rightPage] && !failedPages[rightPage] && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#fcf9f8] p-6 text-center text-[#746665]">
+                        <div className="h-8 w-8 animate-spin rounded-full border-3 border-[#e5bdbb] border-t-[#9e001f]" />
+                        <p className="mt-3 text-xs font-semibold">Chargement de la page {rightPage}…</p>
+                      </div>
+                    )}
+                    {failedPages[rightPage] ? (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#fcf9f8] p-6 text-center text-[#746665]">
+                        <span className="material-symbols-outlined text-4xl text-[#9e001f]">menu_book</span>
+                        <p className="mt-2 text-xs font-bold text-[#242020]">{title}</p>
+                        <p className="mt-1 text-[11px] text-[#9c8e8d]">Édition N°{numero || "actuelle"} — Page {rightPage}</p>
+                        <p className="mt-1 text-[10px] text-[#baa4a2]">Numérisation haute fidélité en cours de synchronisation.</p>
+                      </div>
+                    ) : (
+                      <img
+                        src={pages[rightPage - 1]}
+                        alt={`${title}, page ${rightPage}`}
+                        className={`h-full w-full object-contain bg-white transition-opacity duration-200 ${
+                          loadedPages[rightPage] ? "opacity-100" : "opacity-0"
+                        }`}
+                        loading="eager"
+                        onLoad={() => setLoadedPages((prev) => ({ ...prev, [rightPage]: true }))}
+                        onError={() => setFailedPages((prev) => ({ ...prev, [rightPage]: true }))}
+                      />
+                    )}
+                  </div>
                 ) : (
                   <>
                     {/* PDF Canvas for Right Page */}

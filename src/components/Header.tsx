@@ -436,9 +436,15 @@ export default function Header({ user }: { user?: { id: string; nom?: string; pr
 
     const fetchWeather = async () => {
       try {
-        const response = await fetch("https://ipapi.co/json/", { cache: "no-store" });
+        const response = await fetch("/api/weather", { cache: "no-store" });
         const data = await response.json();
-        if (data?.city) setCityWeather({ city: data.city, temp: "28°C", icon: "⛅" });
+        if (data?.city) {
+          setCityWeather({
+            city: data.city,
+            temp: data.temp || "28°C",
+            icon: data.icon || "⛅",
+          });
+        }
       } catch { /* La météo reste sur Cotonou en cas d’échec. */ }
     };
     fetchWeather();

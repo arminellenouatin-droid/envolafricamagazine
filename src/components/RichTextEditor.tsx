@@ -171,8 +171,8 @@ export default function RichTextEditor({ name, value, defaultValue = "", onChang
       onBlur={emit}
       onKeyUp={emit}
       onPaste={handlePaste}
-      className="min-h-[var(--editor-min-height)] w-full whitespace-normal p-4 text-sm leading-7 outline-none empty:before:pointer-events-none empty:before:text-[#7b8588] empty:before:content-[attr(data-placeholder)] font-['Arial_Black',sans-serif]"
-      style={{ "--editor-min-height": `${minHeight}px`, fontFamily: "'Arial Black', 'Arial Bold', Gadget, sans-serif" } as React.CSSProperties}
+      className="min-h-[var(--editor-min-height)] w-full whitespace-normal p-4 text-sm leading-7 outline-none empty:before:pointer-events-none empty:before:text-[#7b8588] empty:before:content-[attr(data-placeholder)] font-sans"
+      style={{ "--editor-min-height": `${minHeight}px` } as React.CSSProperties}
     />
     {name && <input ref={hiddenRef} type="hidden" name={name} defaultValue={initial} />}
   </div>;

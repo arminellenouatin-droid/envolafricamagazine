@@ -89,8 +89,8 @@ export default function KiosquePage({ initialMagazines = [] }: { initialMagazine
       {previewOpen && (previewMagazine || featured) && (() => {
         const currentMagazine = previewMagazine || featured;
         const language = locale.language || "fr";
-        const selectedPdf = currentMagazine.pdfs?.[language] || currentMagazine.pdfs?.fr || "/magazines/23/numero-23.pdf";
-        const protectedPdf = selectedPdf?.startsWith("private-pdf://")
+        const selectedPdf = currentMagazine.pdfs?.[language] || currentMagazine.pdfs?.fr || (currentMagazine.numero === 23 || currentMagazine.id === "23" ? "/magazines/23/numero-23.pdf" : "");
+        const protectedPdf = selectedPdf
           ? `/api/magazines/${encodeURIComponent(currentMagazine.id)}/preview?lang=${encodeURIComponent(language)}`
           : undefined;
         const previewPages = (currentMagazine.previewImages && currentMagazine.previewImages.length > 0)
