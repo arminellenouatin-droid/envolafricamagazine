@@ -6,16 +6,55 @@ const CHARIOW_API_BASE = "https://api.chariow.com/v1";
  * URLs et IDs des produits créés directement dans la boutique Chariow par le propriétaire
  */
 export const CHARIOW_PRODUCT_URLS = {
+  // Kiosque Magazines
   magazineNumerique: "https://toerbwke.mychariow.shop/prd_ac3bruo2",
+  magazinePapier: "https://toerbwke.mychariow.shop/prd_4x3iyvnk",
+  magazineAudio: "https://toerbwke.mychariow.shop/prd_xo2ui9rr",
+
+  // Abonnements Magazine
+  abonnementMensuelLecteur: "https://toerbwke.mychariow.shop/prd_5acrvnze",
+  abonnementAnnuelLecteur: "https://toerbwke.mychariow.shop/prd_94zp94e0",
   abonnementChefEntreprise: "https://toerbwke.mychariow.shop/prd_g8iz7mej",
+  abonnementAnnuelChefEntreprise: "https://toerbwke.mychariow.shop/prd_0lpe86o1",
+
+  // Don
   don: "https://toerbwke.mychariow.shop/prd_d1v11apk",
 } as const;
 
 export const CHARIOW_PRODUCT_IDS = {
   magazineNumerique: "prd_ac3bruo2",
+  magazinePapier: "prd_4x3iyvnk",
+  magazineAudio: "prd_xo2ui9rr",
+  abonnementMensuelLecteur: "prd_5acrvnze",
+  abonnementAnnuelLecteur: "prd_94zp94e0",
   abonnementChefEntreprise: "prd_g8iz7mej",
+  abonnementAnnuelChefEntreprise: "prd_0lpe86o1",
   don: "prd_d1v11apk",
 } as const;
+
+export function getChariowSubscriptionUrl(planId?: string, billing?: "monthly" | "yearly"): string {
+  if (planId === "entreprise" || planId === "chef-entreprise") {
+    return billing === "yearly"
+      ? CHARIOW_PRODUCT_URLS.abonnementAnnuelChefEntreprise
+      : CHARIOW_PRODUCT_URLS.abonnementChefEntreprise;
+  }
+  if (planId === "annuel") {
+    return CHARIOW_PRODUCT_URLS.abonnementAnnuelLecteur;
+  }
+  if (planId === "mensuel") {
+    return CHARIOW_PRODUCT_URLS.abonnementMensuelLecteur;
+  }
+  if (planId === "soutien") {
+    return CHARIOW_PRODUCT_URLS.don;
+  }
+  return CHARIOW_PRODUCT_URLS.abonnementChefEntreprise;
+}
+
+export function getChariowMagazineUrl(format?: string): string {
+  if (format === "papier") return CHARIOW_PRODUCT_URLS.magazinePapier;
+  if (format === "cd_audio" || format === "audio") return CHARIOW_PRODUCT_URLS.magazineAudio;
+  return CHARIOW_PRODUCT_URLS.magazineNumerique;
+}
 
 export interface ChariowPhone {
   number: string;

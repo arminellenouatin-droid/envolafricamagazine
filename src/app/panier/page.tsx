@@ -4,7 +4,7 @@ import Link from "next/link";
 import { SHIPPING_RATES } from "@/lib/constants";
 import { useLocale } from "@/components/LocaleProvider";
 import PaymentMethodSelector from "@/components/payment/PaymentMethodSelector";
-import { CHARIOW_PRODUCT_URLS } from "@/lib/chariow";
+import { CHARIOW_PRODUCT_URLS, getChariowSubscriptionUrl, getChariowMagazineUrl } from "@/lib/chariow";
 import { PaymentGateway, isMonerooSupportedCountry } from "@/lib/payment-config";
 
 export default function PanierPage() {
@@ -59,11 +59,17 @@ export default function PanierPage() {
     setLoading(true);
     try {
       if (selectedGateway === "chariow") {
-        const hasSubscription = cart.some((i) => i.type === "subscription");
-        const targetUrl = hasSubscription
-          ? CHARIOW_PRODUCT_URLS.abonnementChefEntreprise
-          : CHARIOW_PRODUCT_URLS.magazineNumerique;
-        window.location.href = targetUrl;
+        const subItem = cart.find((i) => i.type === "subscription");
+        if (subItem) {
+          window.location.href = getChariowSubscriptionUrl(subItem.planId, subItem.billing);
+          return;
+        }
+        const magItem = cart.find((i) => i.type === "magazine" || i.format);
+        if (magItem) {
+          window.location.href = getChariowMagazineUrl(magItem.format);
+          return;
+        }
+        window.location.href = CHARIOW_PRODUCT_URLS.magazineNumerique;
         return;
       }
 

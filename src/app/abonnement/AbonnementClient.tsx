@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SUBSCRIPTION_PLANS } from "@/lib/constants";
 import { useLocale } from "@/components/LocaleProvider";
-import { CHARIOW_PRODUCT_URLS } from "@/lib/chariow";
+import { CHARIOW_PRODUCT_URLS, getChariowSubscriptionUrl } from "@/lib/chariow";
 import PaymentMethodSelector from "@/components/payment/PaymentMethodSelector";
 import { PaymentGateway } from "@/lib/payment-config";
 
@@ -34,7 +34,8 @@ export default function AbonnementClient() {
     setCheckoutError(null);
     try {
       if (selectedGateway === "chariow") {
-        window.location.assign(CHARIOW_PRODUCT_URLS.abonnementChefEntreprise);
+        const targetUrl = getChariowSubscriptionUrl(planId, billing);
+        window.location.assign(targetUrl);
         return;
       }
 

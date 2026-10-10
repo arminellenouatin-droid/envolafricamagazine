@@ -7,7 +7,7 @@ import { getAvailablePaymentMethods } from "@/lib/payment-methods";
 import PreviewFlipbook from "@/components/kiosque/PreviewFlipbook";
 import RichTextContent from "@/components/RichTextContent";
 import { useLocale } from "@/components/LocaleProvider";
-import { CHARIOW_PRODUCT_URLS } from "@/lib/chariow";
+import { CHARIOW_PRODUCT_URLS, getChariowMagazineUrl } from "@/lib/chariow";
 
 type Magazine = {
   id: string;
@@ -228,15 +228,27 @@ export default function MagazineDetailPage({ initialMagazine }: { initialMagazin
                     <span className="material-symbols-outlined">shopping_cart</span> {adding ? "Ajout..." : "AJOUTER AU PANIER"}
                   </button>
 
-                  <a
-                    href={CHARIOW_PRODUCT_URLS.magazineNumerique}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#f0b27e] bg-[#fffaf5] px-6 py-3 text-[13px] font-bold text-[#944400] shadow-sm hover:bg-[#f0b27e]/20 transition active:scale-[.98] sm:w-auto"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">bolt</span>
-                    <span>Acheter la version numérique sur Chariow ↗</span>
-                  </a>
+                  {(() => {
+                    const selFormat = selections[0]?.format || "numerique";
+                    const chariowUrl = getChariowMagazineUrl(selFormat);
+                    const chariowLabel =
+                      selFormat === "papier"
+                        ? "Acheter la version papier sur Chariow ↗"
+                        : selFormat === "cd_audio"
+                        ? "Acheter la version audio sur Chariow ↗"
+                        : "Acheter la version numérique sur Chariow ↗";
+                    return (
+                      <a
+                        href={chariowUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#f0b27e] bg-[#fffaf5] px-6 py-3 text-[13px] font-bold text-[#944400] shadow-sm hover:bg-[#f0b27e]/20 transition active:scale-[.98] sm:w-auto"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">bolt</span>
+                        <span>{chariowLabel}</span>
+                      </a>
+                    );
+                  })()}
 
                   <p className="mt-1 text-center text-[11px] text-[#5f5e5e]">Livraison offerte Papier en zone CEDEAO • Lien numérique immédiat</p>
                 </div>
