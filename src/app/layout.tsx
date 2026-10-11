@@ -14,6 +14,7 @@ import InAppNotificationBanner from "@/components/InAppNotificationBanner";
 import AssistanceChatWidget from "@/components/AssistanceChatWidget";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import { PromptProvider } from "@/lib/prompt-orchestrator";
+import FavoriteBadgeSynchronizer from "@/components/FavoriteBadgeSynchronizer";
 
 export const dynamic = "force-dynamic";
 
@@ -201,6 +202,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <LocaleProvider>
           <PromptProvider initialUser={user ? { id: user.id, email: user.email, nom: user.nom, prenom: user.prenom } : null}>
             <AutoTranslator />
+            <FavoriteBadgeSynchronizer />
             <Header user={user ? { id: user.id, nom: user.nom, prenom: user.prenom, email: user.email, role: user.role, avatar: user.avatar } : undefined} />
             <PromoPopup />
             <CookieConsentBanner />

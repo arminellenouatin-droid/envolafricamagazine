@@ -58,7 +58,28 @@ export default function ProductDetailClient({
       const isAdding = !favorites.includes(id);
       const next = isAdding ? [...favorites, id] : favorites.filter((f) => f !== id);
       localStorage.setItem("eam_marketplace_favorites", JSON.stringify(next));
+
+      try {
+        const savedMeta = JSON.parse(localStorage.getItem("eam_saved_products_meta") || "{}");
+        if (isAdding && product) {
+          savedMeta[id] = {
+            id,
+            title: product.title,
+            price: product.price_xof ?? product.priceXof ?? 0,
+            image: product.image || (Array.isArray(product.media) ? product.media[0] : ""),
+            category: product.category || "Marketplace",
+            type: "product"
+          };
+        } else {
+          delete savedMeta[id];
+        }
+        localStorage.setItem("eam_saved_products_meta", JSON.stringify(savedMeta));
+      } catch {}
+
       setFavorite(isAdding);
+      window.dispatchEvent(new Event("eam-favorites-updated"));
+      window.dispatchEvent(new Event("storage"));
+
       if (isAdding) {
         fetch("/api/favorites", {
           method: "POST",

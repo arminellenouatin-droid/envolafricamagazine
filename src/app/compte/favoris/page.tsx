@@ -21,6 +21,11 @@ export default function FavorisPage() {
           if (localMarketFavs.length > 0) {
             ids = Array.from(new Set([...ids, ...localMarketFavs]));
           }
+          const localArtFavs = JSON.parse(localStorage.getItem("eam_favorites") || "[]");
+          const localArtIds = localArtFavs.map((item: any) => (typeof item === "string" ? item : item.id)).filter(Boolean);
+          if (localArtIds.length > 0) {
+            ids = Array.from(new Set([...ids, ...localArtIds]));
+          }
         } catch {}
 
         setFavs(ids);
@@ -45,8 +50,18 @@ export default function FavorisPage() {
   const removeFav = async (id: string, type: "article" | "product") => {
     await fetch(`/api/favorites?id=${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => {});
     try {
-      const local = JSON.parse(localStorage.getItem("eam_marketplace_favorites") || "[]") as string[];
-      localStorage.setItem("eam_marketplace_favorites", JSON.stringify(local.filter((f) => f !== id)));
+      if (type === "article") {
+        const local = JSON.parse(localStorage.getItem("eam_favorites") || "[]");
+        localStorage.setItem("eam_favorites", JSON.stringify(local.filter((f: any) => (typeof f === "string" ? f !== id : f.id !== id))));
+      } else {
+        const local = JSON.parse(localStorage.getItem("eam_marketplace_favorites") || "[]") as string[];
+        localStorage.setItem("eam_marketplace_favorites", JSON.stringify(local.filter((f) => f !== id)));
+        const meta = JSON.parse(localStorage.getItem("eam_saved_products_meta") || "{}");
+        delete meta[id];
+        localStorage.setItem("eam_saved_products_meta", JSON.stringify(meta));
+      }
+      window.dispatchEvent(new Event("eam-favorites-updated"));
+      window.dispatchEvent(new Event("storage"));
     } catch {}
 
     setFavs((prev) => prev.filter((f) => f !== id));

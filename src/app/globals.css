@@ -300,18 +300,18 @@ h1, h2, h3, h4, .font-display {
   .magazine-home .magazine-mobile-overlay-story h3 { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; text-overflow: ellipsis; }
   .magazine-home .magazine-mobile-overlay-story h2 { font-size: 1.35rem; line-height: 1.05; }
   .magazine-home .magazine-mobile-overlay-story h3 { font-size: 1.15rem; line-height: 1.08; }
-  .editorial-carousel__track { gap: .8rem; }
-  .editorial-carousel__item { flex-basis: calc((100% - .8rem) / 2); }
+  .editorial-carousel__track { gap: .8rem; touch-action: pan-y; }
+  .editorial-carousel__item { flex: 0 0 calc((100% - .8rem) / 2); max-width: calc((100% - .8rem) / 2); }
   .editorial-carousel__copy { min-height: 118px; padding: .8rem; }
   .editorial-carousel__copy h3 { font-size: 1.1rem; }
   .editorial-carousel__copy p { font-size: .62rem; }
 }
-@media (max-width: 480px) {
+@media (max-width: 639px) {
   .magazine-home .magazine-mobile-overlay-story .relative.flex.h-full { padding: 1rem; }
   .magazine-home .magazine-mobile-overlay-story h2 { font-size: 1.18rem; }
   .magazine-home .magazine-mobile-overlay-story h3 { font-size: 1rem; }
-  .editorial-carousel__item { flex-basis: 82%; }
-  .editorial-carousel__track { gap: .7rem; }
+  .editorial-carousel__item { flex: 0 0 100% !important; max-width: 100% !important; }
+  .editorial-carousel__track { gap: .8rem; touch-action: pan-y; }
 }
 @media (prefers-reduced-motion: reduce) {
   .editorial-carousel__track, .editorial-carousel__item, .editorial-carousel__image img, .editorial-round-image img { transition-duration: .01ms !important; }

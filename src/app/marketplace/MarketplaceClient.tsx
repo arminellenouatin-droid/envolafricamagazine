@@ -416,7 +416,28 @@ function ProductDetailModal({
     const isAdding = !favorites.includes(product.id);
     const next = isAdding ? [...favorites, product.id] : favorites.filter((id) => id !== product.id);
     localStorage.setItem("eam_marketplace_favorites", JSON.stringify(next));
+
+    try {
+      const savedMeta = JSON.parse(localStorage.getItem("eam_saved_products_meta") || "{}");
+      if (isAdding) {
+        savedMeta[product.id] = {
+          id: product.id,
+          title: product.title,
+          price: (product as any).price_xof ?? product.priceXof ?? 0,
+          image: product.image || (Array.isArray(product.media) ? product.media[0] : ""),
+          category: product.category || "Marketplace",
+          type: "product"
+        };
+      } else {
+        delete savedMeta[product.id];
+      }
+      localStorage.setItem("eam_saved_products_meta", JSON.stringify(savedMeta));
+    } catch {}
+
     setFavorite(isAdding);
+    window.dispatchEvent(new Event("eam-favorites-updated"));
+    window.dispatchEvent(new Event("storage"));
+
     if (isAdding) {
       fetch("/api/favorites", {
         method: "POST",
@@ -770,7 +791,28 @@ function ProductCard({
     const isAdding = !favorites.includes(product.id);
     const next = isAdding ? [...favorites, product.id] : favorites.filter((id) => id !== product.id);
     localStorage.setItem("eam_marketplace_favorites", JSON.stringify(next));
+
+    try {
+      const savedMeta = JSON.parse(localStorage.getItem("eam_saved_products_meta") || "{}");
+      if (isAdding) {
+        savedMeta[product.id] = {
+          id: product.id,
+          title: product.title,
+          price: (product as any).price_xof ?? product.priceXof ?? 0,
+          image: product.image || (Array.isArray(product.media) ? product.media[0] : ""),
+          category: product.category || "Marketplace",
+          type: "product"
+        };
+      } else {
+        delete savedMeta[product.id];
+      }
+      localStorage.setItem("eam_saved_products_meta", JSON.stringify(savedMeta));
+    } catch {}
+
     setFavorite(isAdding);
+    window.dispatchEvent(new Event("eam-favorites-updated"));
+    window.dispatchEvent(new Event("storage"));
+
     if (isAdding) {
       fetch("/api/favorites", {
         method: "POST",
