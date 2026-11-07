@@ -1,5 +1,6 @@
-import { SvgIcon } from "@/components/ui/Icon";
 "use client";
+
+import { SvgIcon } from "@/components/ui/Icon";
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
