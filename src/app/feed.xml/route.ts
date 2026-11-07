@@ -44,7 +44,7 @@ export async function GET() {
   <channel>
     <title>Envol Africa Magazine</title>
     <link>${baseUrl}</link>
-    <description>Le magazine économique panafricain de référence : analyses, enquêtes, opportunités d'affaires en Afrique.</description>
+    <description>Le guide des dirigeants, chefs et jeunes créateurs d'entreprise : plus qu'un magazine, un puissant outil de décision et de gestion : analyses, enquêtes, opportunités d'affaires en Afrique.</description>
     <language>fr</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
     <atom:link href="${baseUrl}/feed.xml" rel="self" type="application/rss+xml" />

@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Envol Africa",
     short_name: "Envol Africa",
-    description: "Le magazine économique panafricain de référence — Kiosque, Emploi, Réseau WAB, Marketplace et Financement.",
+    description: "Le guide des dirigeants, chefs et jeunes créateurs d'entreprise : plus qu'un magazine, un puissant outil de décision et de gestion — Kiosque, Emploi, Réseau WAB, Marketplace et Financement.",
     start_url: "/",
     display: "standalone",
     orientation: "portrait",

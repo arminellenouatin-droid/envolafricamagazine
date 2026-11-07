@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   title: {
-    default: "Envol Africa Magazine | Le magazine économique panafricain de référence",
+    default: "Envol Africa Magazine | Le guide des dirigeants, chefs et jeunes créateurs d'entreprise : plus qu'un magazine, un puissant outil de décision et de gestion",
     template: "%s | Envol Africa",
   },
   description: "Envol Africa Magazine est la plateforme de référence consacrée à l'économie et aux opportunités en Afrique : actualités, analyses exclusives, Kiosque numérique, Marketplace panafricaine, emploi et financement.",
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     locale: "fr_FR",
     url: "/",
     siteName: "Envol Africa",
-    title: "Envol Africa Magazine | Le magazine économique panafricain de référence",
+    title: "Envol Africa Magazine | Le guide des dirigeants, chefs et jeunes créateurs d'entreprise : plus qu'un magazine, un puissant outil de décision et de gestion",
     description: "Analyses exclusives, enquêtes économiques, Kiosque numérique, Marketplace et opportunités panafricaines.",
     images: [
       {
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Envol Africa Magazine",
-    description: "Le magazine économique panafricain de référence.",
+    description: "Le guide des dirigeants, chefs et jeunes créateurs d'entreprise : plus qu'un magazine, un puissant outil de décision et de gestion.",
     images: [
       {
         url: `${SITE_URL}/logo-couleur-entete-new.png`,

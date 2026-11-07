@@ -18,7 +18,7 @@ export function getOrganizationSchema() {
       width: 512,
       height: 512,
     },
-    description: "Le magazine économique panafricain de référence : actualités, analyses exclusives, Kiosque numérique, Marketplace panafricaine, emploi et financement.",
+    description: "Le guide des dirigeants, chefs et jeunes créateurs d'entreprise : plus qu'un magazine, un puissant outil de décision et de gestion : actualités, analyses exclusives, Kiosque numérique, Marketplace panafricaine, emploi et financement.",
     foundingDate: "2024",
     areaServed: {
       "@type": "Continent",
