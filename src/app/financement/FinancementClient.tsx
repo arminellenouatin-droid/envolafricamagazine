@@ -212,6 +212,7 @@ function CrowdfundingRoiSimulator() {
           </div>
         </div>
       </div>
+      </div>
     </section>
   );
 }

@@ -104,10 +104,6 @@ export default async function AfricaAwardsLanding() {
                   <span>Regarder le Live</span>
                 </Link>
               </div>
-                  <span className="material-symbols-outlined text-[20px] text-[#D4AF37]">play_circle</span>
-                  <span>Regarder le Live</span>
-                </Link>
-              </div>
 
               {/* Live Counters */}
               <div className="mt-12 grid grid-cols-2 gap-4 border-t border-[#D4AF37]/20 pt-8 sm:grid-cols-4">
