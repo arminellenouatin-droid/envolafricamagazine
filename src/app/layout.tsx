@@ -4,6 +4,7 @@ import "./globals.css";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import Header from "@/components/HeaderShell";
 import Footer from "@/components/FooterShell";
+import BottomNav from "@/components/BottomNav";
 import PromoPopup from "@/components/PromoPopup";
 import { LocaleProvider } from "@/components/LocaleProvider";
 import AutoTranslator from "@/components/AutoTranslator";
@@ -139,8 +140,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" rel="stylesheet" />
-        <script
+                <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
@@ -208,6 +208,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <CookieConsentBanner />
             <main className="flex-1">{children}</main>
             <Footer />
+            <BottomNav />
             <GoogleOneTapPrompt user={user ? { id: user.id } : null} />
             <InAppNotificationBanner />
             <AssistanceChatWidget />

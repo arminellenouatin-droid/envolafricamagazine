@@ -1,3 +1,4 @@
+import { SvgIcon } from "@/components/ui/Icon";
 "use client";
 
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
@@ -111,11 +112,11 @@ function LocalAttachmentPreview({ file }: { file: File }) {
     setUrl(objectUrl);
     return () => URL.revokeObjectURL(objectUrl);
   }, [file]);
-  if (!url) return <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#eefcfa] text-[#006874]"><span className="material-symbols-outlined text-[18px]">attach_file</span></span>;
+  if (!url) return <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#eefcfa] text-[#9e001f]"><SvgIcon name="attach_file" className="h-4 w-4 inline-block align-middle" /></span>;
   if (file.type.startsWith("image/")) return <img src={url} alt={`Aperçu de ${file.name}`} className="h-10 w-10 shrink-0 rounded-lg object-cover" />;
   if (file.type.startsWith("video/")) return <video src={url} muted playsInline className="h-10 w-10 shrink-0 rounded-lg bg-black object-cover" />;
-  if (file.type.startsWith("audio/")) return <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#eefcfa] text-[#006874]"><span className="material-symbols-outlined text-[18px]">audio_file</span></span>;
-  return <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#eefcfa] text-[#006874]"><span className="material-symbols-outlined text-[18px]">description</span></span>;
+  if (file.type.startsWith("audio/")) return <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#eefcfa] text-[#9e001f]"><SvgIcon name="audio_file" className="h-4 w-4 inline-block align-middle" /></span>;
+  return <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#eefcfa] text-[#9e001f]"><SvgIcon name="description" className="h-4 w-4 inline-block align-middle" /></span>;
 }
 
 function SubscriptionMessage({ message }: { message: string }) {
@@ -727,7 +728,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
             type="button"
             onClick={revealNewPosts}
             aria-live="polite"
-            className="fixed left-1/2 top-20 z-[60] -translate-x-1/2 rounded-full border border-[#006874] bg-[#006874] px-4 py-2 text-xs font-bold text-white shadow-xl transition hover:bg-[#004e58] focus-visible:outline focus-visible:outline-2"
+            className="fixed left-1/2 top-20 z-[60] -translate-x-1/2 rounded-full border border-[#1b4d3e] bg-[#9e001f] px-4 py-2 text-xs font-bold text-white shadow-xl transition hover:bg-[#004e58] focus-visible:outline focus-visible:outline-2"
           >
             ↑ {newPostCount} nouvelle{newPostCount > 1 ? "s" : ""} publication{newPostCount > 1 ? "s" : ""}
           </button>
@@ -757,7 +758,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
             {notificationPermission === "default" && (
               <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/90 px-4 py-2.5 text-xs text-emerald-950 shadow-sm backdrop-blur-sm">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="material-symbols-outlined text-emerald-700 text-xl shrink-0">notifications_active</span>
+                  <SvgIcon name="notifications_active" className="h-4 w-4 inline-block align-middle" />
                   <p className="truncate font-medium">
                     Soyez alerté en direct des nouvelles publications et actions de vos amis.
                   </p>
@@ -776,7 +777,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                     className="text-gray-400 hover:text-gray-600 p-0.5 rounded-full"
                     title="Masquer"
                   >
-                    <span className="material-symbols-outlined text-base">close</span>
+                    <SvgIcon name="close" className="h-4 w-4 inline-block align-middle" />
                   </button>
                 </div>
               </div>
@@ -801,7 +802,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                       className="text-[11px] font-bold text-amber-300 hover:text-amber-200 flex items-center gap-1 transition-colors"
                     >
                       <span>Tous les salons ({liveSalons.length})</span>
-                      <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                      <SvgIcon name="arrow_forward" className="h-4 w-4 inline-block align-middle" />
                     </Link>
                   </div>
 
@@ -826,7 +827,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                           <div className="flex items-center justify-between text-[10px] text-white/70 mb-0.5">
                             <span className="font-bold text-white truncate max-w-[110px]">{salon.host}</span>
                             <span className="inline-flex items-center gap-0.5 text-red-400 font-bold shrink-0">
-                              <span className="material-symbols-outlined text-[10px]">visibility</span>
+                              <SvgIcon name="visibility" className="h-4 w-4 inline-block align-middle" />
                               {salon.participants || 1}
                             </span>
                           </div>
@@ -858,13 +859,13 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                     {currentUser?.avatar ? (
                       <img src={currentUser.avatar} alt="Votre photo de profil" className="h-full w-full object-cover" />
                     ) : (
-                      <span className="grid h-full w-full place-items-center text-sm font-bold text-[#006874]">{userInitials}</span>
+                      <span className="grid h-full w-full place-items-center text-sm font-bold text-[#9e001f]">{userInitials}</span>
                     )}
                   </div>
                   <button
                     type="button"
                     onClick={() => setPublishOpen(true)}
-                    className="flex min-h-[44px] min-w-0 flex-1 items-center rounded-full border border-[#c5d0d4] bg-[#f8fafb] px-5 text-left text-xs sm:text-sm font-medium text-[#5f6368] transition hover:border-[#006874] hover:bg-[#eefcfa] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006874]"
+                    className="flex min-h-[44px] min-w-0 flex-1 items-center rounded-full border border-[#c5d0d4] bg-[#f8fafb] px-5 text-left text-xs sm:text-sm font-medium text-[#5f6368] transition hover:border-[#1b4d3e] hover:bg-[#eefcfa] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006874]"
                   >
                     Commencer un post, partager une opportunité...
                   </button>
@@ -877,7 +878,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                     onClick={() => triggerComposerWithKind("photo")}
                     className="flex min-h-[42px] flex-1 items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[#43474d] transition hover:bg-[#f3f7f6] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0284c7]"
                   >
-                    <span className="material-symbols-outlined text-[20px] text-[#0284c7]">photo_library</span>
+                    <SvgIcon name="photo_library" className="h-4 w-4 inline-block align-middle" />
                     <span className="hidden sm:inline">Photo</span>
                   </button>
                   <button
@@ -885,7 +886,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                     onClick={() => triggerComposerWithKind("video")}
                     className="flex min-h-[42px] flex-1 items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[#43474d] transition hover:bg-[#f3f7f6] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16a34a]"
                   >
-                    <span className="material-symbols-outlined text-[20px] text-[#16a34a]">smart_display</span>
+                    <SvgIcon name="smart_display" className="h-4 w-4 inline-block align-middle" />
                     <span className="hidden sm:inline">Vidéo</span>
                   </button>
                   <button
@@ -893,7 +894,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                     onClick={() => triggerComposerWithKind("document")}
                     className="flex min-h-[42px] flex-1 items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[#43474d] transition hover:bg-[#f3f7f6] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97706]"
                   >
-                    <span className="material-symbols-outlined text-[20px] text-[#d97706]">description</span>
+                    <SvgIcon name="description" className="h-4 w-4 inline-block align-middle" />
                     <span className="hidden sm:inline">Document</span>
                   </button>
                   <button
@@ -901,7 +902,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                     onClick={() => triggerComposerWithKind("article")}
                     className="flex min-h-[42px] flex-1 items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[#43474d] transition hover:bg-[#f3f7f6] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9333ea]"
                   >
-                    <span className="material-symbols-outlined text-[20px] text-[#9333ea]">article</span>
+                    <SvgIcon name="article" className="h-4 w-4 inline-block align-middle" />
                     <span className="hidden sm:inline">Article</span>
                   </button>
                   <button
@@ -912,7 +913,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                     }}
                     className="flex min-h-[42px] flex-1 items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[#43474d] transition hover:bg-[#f3f7f6] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006874]"
                   >
-                    <span className="material-symbols-outlined text-[20px] text-[#006874]">poll</span>
+                    <SvgIcon name="poll" className="h-4 w-4 inline-block align-middle" />
                     <span className="hidden sm:inline">Sondage</span>
                   </button>
                 </div>
@@ -944,13 +945,13 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                         {currentUser?.avatar ? (
                           <img src={currentUser.avatar} alt="Profil" className="h-full w-full object-cover" />
                         ) : (
-                          <span className="grid h-full w-full place-items-center text-xs font-bold text-[#006874]">{userInitials}</span>
+                          <span className="grid h-full w-full place-items-center text-xs font-bold text-[#9e001f]">{userInitials}</span>
                         )}
                       </div>
                       <div>
                         <h2 className="font-display text-base font-bold text-[#082843]">{userDisplayName}</h2>
                         <div className="flex items-center gap-1.5 text-xs text-[#5f6368]">
-                          <span className="material-symbols-outlined text-[14px]">public</span>
+                          <SvgIcon name="public" className="h-4 w-4 inline-block align-middle" />
                           <span>Publier sur WAB</span>
                         </div>
                       </div>
@@ -958,10 +959,10 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                     <button
                       type="button"
                       onClick={() => setPublishOpen(false)}
-                      className="grid h-9 w-9 place-items-center rounded-full bg-[#f3f7f6] text-[#43474d] hover:bg-[#eefcfa] hover:text-[#006874]"
+                      className="grid h-9 w-9 place-items-center rounded-full bg-[#f3f7f6] text-[#43474d] hover:bg-[#eefcfa] hover:text-[#9e001f]"
                       aria-label="Fermer"
                     >
-                      <span className="material-symbols-outlined text-[20px]">close</span>
+                      <SvgIcon name="close" className="h-4 w-4 inline-block align-middle" />
                     </button>
                   </div>
 
@@ -977,10 +978,10 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
 
                   {/* LinkedIn Poll Creator */}
                   {pollMode ? (
-                    <div className="mt-3 rounded-2xl border-2 border-[#006874]/30 bg-[#f4fbfa] p-4">
+                    <div className="mt-3 rounded-2xl border-2 border-[#1b4d3e]/30 bg-[#f4fbfa] p-4">
                       <div className="flex items-center justify-between pb-2 border-b border-[#d1e9e6]">
-                        <div className="flex items-center gap-2 text-[#006874]">
-                          <span className="material-symbols-outlined text-[20px]">poll</span>
+                        <div className="flex items-center gap-2 text-[#9e001f]">
+                          <SvgIcon name="poll" className="h-4 w-4 inline-block align-middle" />
                           <span className="text-xs font-black uppercase tracking-wider">Créer un sondage B2B</span>
                         </div>
                         <button
@@ -1005,7 +1006,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                             value={pollQuestion}
                             onChange={(e) => setPollQuestion(e.target.value)}
                             placeholder="Ex : Quel secteur portera la croissance africaine en 2026 ?"
-                            className="w-full rounded-xl border border-[#cbe4e1] bg-white px-3 py-2 text-xs font-semibold text-[#082843] focus:border-[#006874] focus:outline-none focus:ring-1 focus:ring-[#006874]"
+                            className="w-full rounded-xl border border-[#cbe4e1] bg-white px-3 py-2 text-xs font-semibold text-[#082843] focus:border-[#1b4d3e] focus:outline-none focus:ring-1 focus:ring-[#006874]"
                           />
                         </div>
                         <div className="space-y-2">
@@ -1014,7 +1015,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                           </label>
                           {pollOptions.map((opt, idx) => (
                             <div key={idx} className="flex items-center gap-2">
-                              <span className="grid h-6 w-6 place-items-center rounded-full bg-[#006874]/10 text-[10px] font-extrabold text-[#006874] shrink-0">
+                              <span className="grid h-6 w-6 place-items-center rounded-full bg-[#9e001f]/10 text-[10px] font-extrabold text-[#9e001f] shrink-0">
                                 {idx + 1}
                               </span>
                               <input
@@ -1026,7 +1027,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                                   setPollOptions(updated);
                                 }}
                                 placeholder={`Option ${idx + 1}`}
-                                className="w-full rounded-lg border border-[#cbe4e1] bg-white px-3 py-1.5 text-xs text-[#082843] focus:border-[#006874] focus:outline-none"
+                                className="w-full rounded-lg border border-[#cbe4e1] bg-white px-3 py-1.5 text-xs text-[#082843] focus:border-[#1b4d3e] focus:outline-none"
                               />
                               {pollOptions.length > 2 && (
                                 <button
@@ -1035,7 +1036,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                                   className="text-gray-400 hover:text-red-500 p-1"
                                   title="Supprimer cette option"
                                 >
-                                  <span className="material-symbols-outlined text-[16px]">close</span>
+                                  <SvgIcon name="close" className="h-4 w-4 inline-block align-middle" />
                                 </button>
                               )}
                             </div>
@@ -1044,9 +1045,9 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                             <button
                               type="button"
                               onClick={() => setPollOptions([...pollOptions, ""])}
-                              className="mt-1 flex items-center gap-1 rounded-lg border border-dashed border-[#006874] px-3 py-1 text-[11px] font-bold text-[#006874] hover:bg-[#eefcfa]"
+                              className="mt-1 flex items-center gap-1 rounded-lg border border-dashed border-[#1b4d3e] px-3 py-1 text-[11px] font-bold text-[#9e001f] hover:bg-[#eefcfa]"
                             >
-                              <span className="material-symbols-outlined text-[16px]">add</span>
+                              <SvgIcon name="add" className="h-4 w-4 inline-block align-middle" />
                               <span>Ajouter une option (max 4)</span>
                             </button>
                           )}
@@ -1058,9 +1059,9 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                       <button
                         type="button"
                         onClick={() => setPollMode(true)}
-                        className="flex items-center gap-1.5 text-xs font-bold text-[#006874] hover:underline"
+                        className="flex items-center gap-1.5 text-xs font-bold text-[#9e001f] hover:underline"
                       >
-                        <span className="material-symbols-outlined text-[16px]">poll</span>
+                        <SvgIcon name="poll" className="h-4 w-4 inline-block align-middle" />
                         <span>+ Créer un sondage avec ce post</span>
                       </button>
                     </div>
@@ -1074,7 +1075,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                         key={tag}
                         type="button"
                         onClick={() => setContent((prev) => (prev ? `${prev} ${tag} ` : `${tag} `))}
-                        className="rounded-full bg-[#eefcfa] border border-[#b9ebe6] px-2.5 py-1 text-[11px] font-extrabold text-[#006874] transition hover:bg-[#d0f5ee]"
+                        className="rounded-full bg-[#eefcfa] border border-[#b9ebe6] px-2.5 py-1 text-[11px] font-extrabold text-[#9e001f] transition hover:bg-[#d0f5ee]"
                       >
                         {tag}
                       </button>
@@ -1086,7 +1087,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                     <div className="mt-3 rounded-2xl border border-[#d8e2e6] bg-[#f8fafb] p-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5">
-                          <span className="material-symbols-outlined text-[18px] text-[#006874]">palette</span>
+                          <SvgIcon name="palette" className="h-4 w-4 inline-block align-middle" />
                           <span className="text-xs font-bold text-[#082843]">Couleur d’arrière-plan (Texte seul)</span>
                         </div>
                         {selectedBg && (
@@ -1107,7 +1108,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                           onClick={() => setSelectedBg(null)}
                           title="Texte standard sans fond"
                           className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-transform hover:scale-105 ${
-                            !selectedBg ? "border-[#006874] ring-2 ring-[#006874]/30" : "border-gray-300 bg-white"
+                            !selectedBg ? "border-[#1b4d3e] ring-2 ring-[#006874]/30" : "border-gray-300 bg-white"
                           }`}
                         >
                           <span className="text-[10px] font-black text-gray-500">Aa</span>
@@ -1208,8 +1209,8 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                   {/* Attachment Manager */}
                   <div className="mt-4 rounded-xl border border-[#d8e2e6] bg-[#f8fafb] p-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-white border border-[#d1e9e6] px-4 py-2 text-xs font-bold text-[#006874] shadow-sm transition hover:bg-[#eefcfa]">
-                        <span className="material-symbols-outlined text-[18px]">add_photo_alternate</span>
+                      <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-white border border-[#d1e9e6] px-4 py-2 text-xs font-bold text-[#9e001f] shadow-sm transition hover:bg-[#eefcfa]">
+                        <SvgIcon name="add_photo_alternate" className="h-4 w-4 inline-block align-middle" />
                         <span>Ajouter des fichiers</span>
                         <input
                           type="file"
@@ -1234,7 +1235,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                               onClick={() => removeFile(idx)}
                               className="grid h-7 w-7 place-items-center rounded-full text-[#5f6368] hover:bg-red-50 hover:text-red-600"
                             >
-                              <span className="material-symbols-outlined text-[16px]">close</span>
+                              <SvgIcon name="close" className="h-4 w-4 inline-block align-middle" />
                             </button>
                           </div>
                         ))}
@@ -1255,7 +1256,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                       type="button"
                       disabled={busy || !content.trim() || (publishTarget === "page" && !selectedPageId) || (publishTarget === "group" && !selectedGroupId)}
                       onClick={publish}
-                      className="rounded-xl bg-[#006874] px-6 py-2.5 text-xs font-bold text-white transition hover:bg-[#004e58] disabled:opacity-40"
+                      className="rounded-xl bg-[#9e001f] px-6 py-2.5 text-xs font-bold text-white transition hover:bg-[#004e58] disabled:opacity-40"
                     >
                       {busy ? "Publication en cours…" : "Publier"}
                     </button>
@@ -1273,7 +1274,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                   <div className="flex items-center justify-between border-b border-[#edf2f4] pb-3">
                     <h2 id="edit-wab-post-title" className="font-display text-lg font-extrabold text-[#082843]">Modifier la publication</h2>
                     <button type="button" onClick={() => setEditingPost(null)} aria-label="Fermer" className="grid h-8 w-8 place-items-center rounded-full bg-[#f3f7f6] text-[#43474d]">
-                      <span className="material-symbols-outlined text-[18px]">close</span>
+                      <SvgIcon name="close" className="h-4 w-4 inline-block align-middle" />
                     </button>
                   </div>
                   <div className="mt-3">
@@ -1281,7 +1282,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                   </div>
                   <div className="mt-4 flex justify-end gap-2 border-t border-[#edf2f4] pt-3">
                     <button type="button" onClick={() => setEditingPost(null)} className="rounded-xl border border-[#c3c6ce] px-4 py-2 text-xs font-bold text-[#43474d]">Annuler</button>
-                    <button type="button" onClick={() => void saveEditedPost()} disabled={postActionBusy || editContent.trim().length < 2} className="rounded-xl bg-[#006874] px-5 py-2 text-xs font-bold text-white disabled:opacity-50">
+                    <button type="button" onClick={() => void saveEditedPost()} disabled={postActionBusy || editContent.trim().length < 2} className="rounded-xl bg-[#9e001f] px-5 py-2 text-xs font-bold text-white disabled:opacity-50">
                       {postActionBusy ? "Enregistrement…" : "Enregistrer"}
                     </button>
                   </div>
@@ -1295,7 +1296,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
               <div className="fixed inset-0 z-[80] grid place-items-center bg-[#001325]/70 p-4" role="dialog" aria-modal="true" aria-labelledby="wab-upgrade-title">
                 <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff3dc] text-[#a36300]">
-                    <span className="material-symbols-outlined">workspace_premium</span>
+                    <SvgIcon name="workspace_premium" className="h-4 w-4 inline-block align-middle" />
                   </div>
                   <h2 id="wab-upgrade-title" className="mt-4 font-display text-xl font-extrabold text-[#082843]">Compte Entreprise WAB requis</h2>
                   <p className="mt-3 text-sm leading-6 text-[#43474d]">
@@ -1303,12 +1304,12 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                       ? "Pour publier une vidéo sur le réseau WAB, activez votre abonnement Entreprise."
                       : "Pour publier un média lourd de plus de 10 Mo, l’abonnement Entreprise WAB est requis."}
                   </p>
-                  <p className="mt-3 rounded-xl bg-[#eefcfa] p-3 text-xs leading-5 text-[#006874]">
+                  <p className="mt-3 rounded-xl bg-[#eefcfa] p-3 text-xs leading-5 text-[#9e001f]">
                     L’abonnement Entreprise coûte {formatPrice(WAB_BUSINESS_MONTHLY_PRICE)} par mois via Mobile Money ou Carte bancaire.
                   </p>
                   <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                     <button type="button" onClick={() => setUpgradeRequired(null)} className="rounded-xl border border-[#c3c6ce] px-4 py-2.5 text-xs font-bold text-[#43474d]">Continuer sans publier</button>
-                    <button type="button" disabled={wabSubscriptionLoading} onClick={startWabSubscription} className="rounded-xl bg-[#006874] px-5 py-2.5 text-xs font-bold text-white disabled:opacity-50">
+                    <button type="button" disabled={wabSubscriptionLoading} onClick={startWabSubscription} className="rounded-xl bg-[#9e001f] px-5 py-2.5 text-xs font-bold text-white disabled:opacity-50">
                       {wabSubscriptionLoading ? "Ouverture du paiement…" : "Activer mon compte Entreprise"}
                     </button>
                   </div>
@@ -1323,7 +1324,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
               <div className="mx-3 flex items-center gap-1 font-medium">
                 <span>Trier par :</span>
                 <span className="font-bold text-[#001325]">Plus récents</span>
-                <span className="material-symbols-outlined text-[16px]">expand_more</span>
+                <SvgIcon name="expand_more" className="h-4 w-4 inline-block align-middle" />
               </div>
               <div className="h-px flex-1 bg-[#d8e2e6]" />
             </div>
@@ -1336,7 +1337,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                     id={`post-${post.id}`}
                     className={`relative flex flex-col gap-3.5 overflow-hidden rounded-2xl border bg-white p-4 shadow-sm transition-all duration-500 sm:p-5 ${
                       highlightedPostId === post.id
-                        ? "border-[#006874] ring-4 ring-[#006874]/30 shadow-lg scale-[1.01]"
+                        ? "border-[#1b4d3e] ring-4 ring-[#006874]/30 shadow-lg scale-[1.01]"
                         : "border-[#d8e2e6] hover:shadow-md"
                     }`}
                   >
@@ -1383,12 +1384,12 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                           <div className="flex items-center gap-2 truncate">
                             <a
                               href={post.pageId ? `/wab/pages/${post.pageId}` : `/wab/profil?author=${encodeURIComponent(post.author)}`}
-                              className="truncate text-sm font-bold text-[#001325] hover:text-[#006874] hover:underline"
+                              className="truncate text-sm font-bold text-[#001325] hover:text-[#9e001f] hover:underline"
                             >
                               {post.pageName || post.author}
                             </a>
                             {post.pageId && (
-                              <span className="rounded-full bg-[#eefcfa] px-2 py-0.5 text-[10px] font-bold text-[#006874] border border-[#d1e9e6]">
+                              <span className="rounded-full bg-[#eefcfa] px-2 py-0.5 text-[10px] font-bold text-[#9e001f] border border-[#d1e9e6]">
                                 Page
                               </span>
                             )}
@@ -1411,7 +1412,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                                 window.history.replaceState(null, "", `#post-${post.id}`);
                                 scrollToTargetPost(post.id);
                               }}
-                              className="hover:underline hover:text-[#006874] transition-colors"
+                              className="hover:underline hover:text-[#9e001f] transition-colors"
                               title="Lien direct vers cette publication"
                             >
                               {formatPostTime(post.createdAt)}
@@ -1438,7 +1439,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                             onClick={() => setPostMenuId((curr) => curr === post.id ? null : post.id)}
                             className="grid h-8 w-8 place-items-center rounded-full text-[#5f6368] hover:bg-[#f3f7f6] hover:text-[#001325]"
                           >
-                            <span className="material-symbols-outlined text-[20px]">more_horiz</span>
+                            <SvgIcon name="more_horiz" className="h-4 w-4 inline-block align-middle" />
                           </button>
                           {postMenuId === post.id && (
                             <div className="absolute right-0 top-9 z-20 w-44 rounded-xl border border-[#d8e2e6] bg-white p-1 shadow-xl">
@@ -1447,7 +1448,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                                 onClick={() => administerPost("edit", post)}
                                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#43474d] hover:bg-[#f3f7f6]"
                               >
-                                <span className="material-symbols-outlined text-[16px]">edit</span>Modifier
+                                <SvgIcon name="edit" className="h-4 w-4 inline-block align-middle" />Modifier
                               </button>
                               <button
                                 type="button"
@@ -1455,7 +1456,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                                 disabled={postActionBusy}
                                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
                               >
-                                <span className="material-symbols-outlined text-[16px]">delete</span>Supprimer
+                                <SvgIcon name="delete" className="h-4 w-4 inline-block align-middle" />Supprimer
                               </button>
                             </div>
                           )}
@@ -1506,15 +1507,15 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                                 className="mt-3 flex items-center justify-between rounded-xl border border-[#d1e9e6] bg-[#f7fcfb] p-3 transition hover:bg-[#eefcfa] group"
                               >
                                 <div className="flex items-center gap-2.5">
-                                  <span className="material-symbols-outlined text-[22px] text-[#006874]">menu_book</span>
+                                  <SvgIcon name="menu_book" className="h-4 w-4 inline-block align-middle" />
                                   <div>
-                                    <p className="text-xs font-bold text-[#006874] group-hover:underline">
+                                    <p className="text-xs font-bold text-[#9e001f] group-hover:underline">
                                       {post.sourceTitle ? post.sourceTitle : "Lire le numéro dans le Kiosque Envol Africa"}
                                     </p>
                                     <p className="text-[10px] text-[#5f6368]">Édition officielle Envol Africa Magazine</p>
                                   </div>
                                 </div>
-                                <span className="material-symbols-outlined text-[18px] text-[#006874] group-hover:translate-x-1 transition-transform">
+                                <span className="material-symbols-outlined text-[18px] text-[#9e001f] group-hover:translate-x-1 transition-transform">
                                   arrow_forward
                                 </span>
                               </a>
@@ -1536,15 +1537,15 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                             className="mt-3 flex items-center justify-between rounded-xl border border-[#d1e9e6] bg-[#f7fcfb] p-3 transition hover:bg-[#eefcfa] group"
                           >
                             <div className="flex items-center gap-2.5">
-                              <span className="material-symbols-outlined text-[22px] text-[#006874]">menu_book</span>
+                              <SvgIcon name="menu_book" className="h-4 w-4 inline-block align-middle" />
                               <div>
-                                <p className="text-xs font-bold text-[#006874] group-hover:underline">
+                                <p className="text-xs font-bold text-[#9e001f] group-hover:underline">
                                   {post.sourceTitle ? post.sourceTitle : "Lire le numéro dans le Kiosque Envol Africa"}
                                 </p>
                                 <p className="text-[10px] text-[#5f6368]">Édition officielle Envol Africa Magazine</p>
                               </div>
                             </div>
-                            <span className="material-symbols-outlined text-[18px] text-[#006874] group-hover:translate-x-1 transition-transform">
+                            <span className="material-symbols-outlined text-[18px] text-[#9e001f] group-hover:translate-x-1 transition-transform">
                               arrow_forward
                             </span>
                           </a>
@@ -1554,7 +1555,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                         {post.tags && post.tags.length > 0 && (
                           <div className="mt-2.5 flex flex-wrap gap-1.5">
                             {post.tags.map((tag) => (
-                              <span key={tag} className="rounded-full bg-[#f0f4f6] px-2.5 py-0.5 text-[11px] font-semibold text-[#006874]">
+                              <span key={tag} className="rounded-full bg-[#f0f4f6] px-2.5 py-0.5 text-[11px] font-semibold text-[#9e001f]">
                                 #{tag}
                               </span>
                             ))}
@@ -1600,7 +1601,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                         <span className="inline-flex items-center -space-x-1">
                           <span className="grid h-4 w-4 place-items-center rounded-full bg-[#0a66c2] text-[9px] text-white">👍</span>
                           <span className="grid h-4 w-4 place-items-center rounded-full bg-[#df704d] text-[9px] text-white">❤️</span>
-                          <span className="grid h-4 w-4 place-items-center rounded-full bg-[#006874] text-[9px] text-white">💡</span>
+                          <span className="grid h-4 w-4 place-items-center rounded-full bg-[#9e001f] text-[9px] text-white">💡</span>
                         </span>
                         <span>{post.likes || 0}</span>
                       </div>
@@ -1665,14 +1666,14 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
 
               {loadingFeed && (
                 <div className="flex items-center justify-center gap-2 py-8 text-xs font-semibold text-[#5f6368]">
-                  <span className="material-symbols-outlined animate-spin text-[18px] text-[#006874]">progress_activity</span>
+                  <SvgIcon name="progress_activity" className="h-4 w-4 inline-block align-middle" />
                   <span>Chargement des publications…</span>
                 </div>
               )}
 
               {!loadingFeed && posts.length === 0 && (
                 <div className="rounded-2xl border border-dashed border-[#c3c6ce] bg-white p-8 text-center">
-                  <span className="material-symbols-outlined text-4xl text-[#006874]">forum</span>
+                  <SvgIcon name="forum" className="h-4 w-4 inline-block align-middle" />
                   <h2 className="mt-2 font-display text-base font-bold text-[#001325]">Aucune publication pour le moment</h2>
                   <p className="mt-1 text-xs text-[#5f6368]">Soyez le premier à partager une opportunité avec la communauté Envol Africa.</p>
                 </div>
@@ -1680,7 +1681,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
 
               {hasMore ? (
                 <div ref={marker} className="flex justify-center py-6">
-                  <span className="material-symbols-outlined animate-spin text-2xl text-[#006874]">progress_activity</span>
+                  <SvgIcon name="progress_activity" className="h-4 w-4 inline-block align-middle" />
                 </div>
               ) : posts.length > 0 ? (
                 <div className="py-6 text-center text-xs font-semibold text-[#82888e]">
@@ -1702,43 +1703,43 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
             <div className="rounded-2xl border border-[#d8e2e6] bg-white p-4 shadow-sm">
               <div className="flex items-center justify-between pb-3 border-b border-[#edf2f4]">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[20px] text-[#006874]">trending_up</span>
+                  <SvgIcon name="trending_up" className="h-4 w-4 inline-block align-middle" />
                   <h3 className="font-display text-sm font-bold text-[#001325]">WAB Tendances</h3>
                 </div>
-                <span className="rounded bg-[#eefcfa] px-1.5 py-0.5 text-[9px] font-bold text-[#006874] uppercase">Live</span>
+                <span className="rounded bg-[#eefcfa] px-1.5 py-0.5 text-[9px] font-bold text-[#9e001f] uppercase">Live</span>
               </div>
 
               <div className="mt-3 flex flex-col gap-3 text-xs">
                 <a href="/kiosque" className="group block">
-                  <p className="font-bold text-[#001325] group-hover:text-[#006874] group-hover:underline">
+                  <p className="font-bold text-[#001325] group-hover:text-[#9e001f] group-hover:underline">
                     • Tech africaine : levée record de 2,4 Mds $
                   </p>
                   <p className="text-[11px] text-[#82888e] pl-2.5">il y a 2 h · 1 842 lecteurs</p>
                 </a>
 
                 <a href="/kiosque" className="group block">
-                  <p className="font-bold text-[#001325] group-hover:text-[#006874] group-hover:underline">
+                  <p className="font-bold text-[#001325] group-hover:text-[#9e001f] group-hover:underline">
                     • ZLECAf : nouveaux corridors logistiques
                   </p>
                   <p className="text-[11px] text-[#82888e] pl-2.5">il y a 4 h · 1 205 lecteurs</p>
                 </a>
 
                 <a href="/kiosque" className="group block">
-                  <p className="font-bold text-[#001325] group-hover:text-[#006874] group-hover:underline">
+                  <p className="font-bold text-[#001325] group-hover:text-[#9e001f] group-hover:underline">
                     • Magazine Envol Africa : Édition Spéciale
                   </p>
                   <p className="text-[11px] text-[#82888e] pl-2.5">il y a 6 h · 3 410 lecteurs</p>
                 </a>
 
                 <a href="/financement" className="group block">
-                  <p className="font-bold text-[#001325] group-hover:text-[#006874] group-hover:underline">
+                  <p className="font-bold text-[#001325] group-hover:text-[#9e001f] group-hover:underline">
                     • Agrobusiness : 15 pôles régionaux financés
                   </p>
                   <p className="text-[11px] text-[#82888e] pl-2.5">hier · 950 lecteurs</p>
                 </a>
 
                 <a href="/emploi" className="group block">
-                  <p className="font-bold text-[#001325] group-hover:text-[#006874] group-hover:underline">
+                  <p className="font-bold text-[#001325] group-hover:text-[#9e001f] group-hover:underline">
                     • Emploi & Cadres : +30% de recrutements
                   </p>
                   <p className="text-[11px] text-[#82888e] pl-2.5">il y a 2 j · 1 540 lecteurs</p>
@@ -1750,10 +1751,10 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
             <div className="rounded-2xl border border-[#d8e2e6] bg-white p-4 shadow-sm">
               <div className="flex items-center justify-between pb-3 border-b border-[#edf2f4]">
                 <div className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[18px] text-[#006874]">verified</span>
+                  <SvgIcon name="verified" className="h-4 w-4 inline-block align-middle" />
                   <h3 className="font-display text-sm font-bold text-[#001325]">Décideurs à connaître</h3>
                 </div>
-                <a href="/wab/profil" className="text-[11px] font-bold text-[#006874] hover:underline">Explorer</a>
+                <a href="/wab/profil" className="text-[11px] font-bold text-[#9e001f] hover:underline">Explorer</a>
               </div>
 
               <div className="mt-3 flex flex-col gap-3.5">
@@ -1771,13 +1772,13 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                         <div className="relative shrink-0">
                           <img src={person.avatar} alt={person.name} className="h-9 w-9 rounded-full object-cover border border-[#d1e9e6]" />
                           {person.verified && (
-                            <span className="absolute -bottom-0.5 -right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-[#006874] text-[8px] text-white ring-1 ring-white">
+                            <span className="absolute -bottom-0.5 -right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-[#9e001f] text-[8px] text-white ring-1 ring-white">
                               ✓
                             </span>
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate text-xs font-bold text-[#001325] hover:text-[#006874] transition-colors">{person.name}</p>
+                          <p className="truncate text-xs font-bold text-[#001325] hover:text-[#9e001f] transition-colors">{person.name}</p>
                           <p className="truncate text-[10px] text-[#5f6368]">{person.role}</p>
                           <p className="text-[9px] font-medium text-[#82888e]">{person.country}</p>
                         </div>
@@ -1788,7 +1789,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                         className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-bold transition ${
                           isFollowed
                             ? "bg-[#edf2f4] text-[#5f6368]"
-                            : "border border-[#006874] text-[#006874] hover:bg-[#eefcfa]"
+                            : "border border-[#1b4d3e] text-[#9e001f] hover:bg-[#eefcfa]"
                         }`}
                       >
                         {isFollowed ? "✓ Connecté" : "+ Suivre"}
@@ -1802,7 +1803,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
             {/* WAB Entreprise promo card */}
             <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-[#fffdfa] to-[#fff8ec] p-4 shadow-sm">
               <div className="flex items-center gap-2 text-amber-900">
-                <span className="material-symbols-outlined text-[22px] text-amber-700">workspace_premium</span>
+                <SvgIcon name="workspace_premium" className="h-4 w-4 inline-block align-middle" />
                 <h4 className="font-display text-xs font-bold uppercase tracking-wider">WAB Entreprise</h4>
               </div>
               <p className="mt-2 text-xs leading-relaxed text-amber-950">
@@ -1854,7 +1855,7 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
           )}
         </div>
         <div className="text-left leading-tight hidden xs:block">
-          <span className="block text-xs font-black text-[#001325] group-hover:text-[#006874] transition-colors">
+          <span className="block text-xs font-black text-[#001325] group-hover:text-[#9e001f] transition-colors">
             Messagerie
           </span>
           <span className="block text-[10px] font-semibold text-emerald-600">

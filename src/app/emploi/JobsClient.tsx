@@ -157,7 +157,7 @@ export default function JobsClient() {
   return (
     <div className="min-h-screen bg-[#fcf9f8] pb-24 text-slate-900 sm:pb-12">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#071b36] via-[#0b2447] to-[#071b36] text-white">
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#1a1213] via-[#241a1c] to-[#1a1213] text-white">
         {/* Glow Effects */}
         <div
           aria-hidden="true"
@@ -165,7 +165,7 @@ export default function JobsClient() {
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute top-10 right-0 h-[400px] w-[400px] rounded-full bg-[#087e8b]/20 blur-[110px]"
+          className="pointer-events-none absolute top-10 right-0 h-[400px] w-[400px] rounded-full bg-[#9e001f]/20 blur-[110px]"
         />
 
         <div className="relative z-10 mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16 lg:py-20">
@@ -201,7 +201,7 @@ export default function JobsClient() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Poste, compétence, mot-clé..."
-                  className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm font-medium text-slate-900 outline-none transition focus:border-[#087e8b] focus:ring-2 focus:ring-[#087e8b]/20"
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm font-medium text-slate-900 outline-none transition focus:border-[#9e001f] focus:ring-2 focus:ring-[#9e001f]/20"
                 />
               </div>
 
@@ -213,7 +213,7 @@ export default function JobsClient() {
                     setCountry(newCountry);
                     setCity("");
                   }}
-                  className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-[#087e8b] focus:ring-2 focus:ring-[#087e8b]/20"
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-[#9e001f] focus:ring-2 focus:ring-[#9e001f]/20"
                 >
                   <option value="">Tous les pays d&apos;Afrique</option>
                   {countries.map((item) => (
@@ -229,7 +229,7 @@ export default function JobsClient() {
                   value={city}
                   onChange={(event) => setCity(event.target.value)}
                   disabled={!country}
-                  className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-[#087e8b] focus:ring-2 focus:ring-[#087e8b]/20 disabled:bg-slate-100 disabled:text-slate-400"
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-[#9e001f] focus:ring-2 focus:ring-[#9e001f]/20 disabled:bg-slate-100 disabled:text-slate-400"
                 >
                   <option value="">{country ? "Toutes les villes" : "Ville (sélectionner un pays)"}</option>
                   {availableCities.map((item) => (
@@ -244,7 +244,7 @@ export default function JobsClient() {
                 <select
                   value={sector}
                   onChange={(event) => setSector(event.target.value)}
-                  className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-[#087e8b] focus:ring-2 focus:ring-[#087e8b]/20"
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-[#9e001f] focus:ring-2 focus:ring-[#9e001f]/20"
                 >
                   <option value="">Tous les secteurs</option>
                   {sectors.map((item) => (
@@ -307,12 +307,12 @@ export default function JobsClient() {
         <div className="mb-8 flex flex-col justify-between gap-4 border-b border-[#e5bdbb]/40 pb-5 sm:flex-row sm:items-center">
           <div>
             <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#087e8b]" />
-              <p className="text-xs font-extrabold uppercase tracking-widest text-[#087e8b]">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#9e001f]" />
+              <p className="text-xs font-extrabold uppercase tracking-widest text-[#9e001f]">
                 Opportunités Vérifiées
               </p>
             </div>
-            <h2 className="mt-1 font-display text-2xl font-black text-[#082843] sm:text-3xl">
+            <h2 className="mt-1 font-display text-2xl font-black text-[#2b2525] sm:text-3xl">
               Offres d&apos;emploi sélectionnées
             </h2>
             <p className="text-xs text-[#5c403f] sm:text-sm">
@@ -327,15 +327,15 @@ export default function JobsClient() {
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href="/emploi/publier-candidature"
-              className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-800 shadow-xs transition hover:border-[#087e8b] hover:text-[#087e8b] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087e8b]"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-800 shadow-xs transition hover:border-[#9e001f] hover:text-[#9e001f] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087e8b]"
             >
-              Déposer mon CV
+              Déposer votre candidature
             </Link>
             <Link
               href="/emploi/publier-offre"
-              className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-[#087e8b] px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-[#087e8b]/20 transition hover:bg-[#066c77] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087e8b]"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-[#9e001f] px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-[#087e8b]/20 transition hover:bg-[#066c77] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087e8b]"
             >
-              + Publier une offre
+              Publier une offre de recrutement
             </Link>
           </div>
         </div>
@@ -358,7 +358,7 @@ export default function JobsClient() {
                   key={pIdx}
                   type="button"
                   onClick={pill.filter}
-                  className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-[#087e8b] hover:bg-[#e9f7f5] hover:text-[#087e8b]"
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-[#9e001f] hover:bg-[#e9f7f5] hover:text-[#9e001f]"
                 >
                   {pill.label}
                 </button>
@@ -379,7 +379,7 @@ export default function JobsClient() {
 
                 <div className="flex flex-col gap-2 pr-0 sm:pr-28">
                   <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <span className="rounded-full bg-[#087e8b]/10 px-2.5 py-1 font-bold text-[#087e8b]">
+                    <span className="rounded-full bg-[#9e001f]/10 px-2.5 py-1 font-bold text-[#9e001f]">
                       {offer.sector}
                     </span>
                     <span className="rounded-full bg-slate-100 px-2.5 py-1 font-bold text-slate-700">
@@ -405,7 +405,7 @@ export default function JobsClient() {
                     </span>
                   </div>
 
-                  <h3 className="mt-1 font-display text-lg font-black text-[#082843] transition group-hover:text-[#9e001f] sm:text-xl">
+                  <h3 className="mt-1 font-display text-lg font-black text-[#2b2525] transition group-hover:text-[#9e001f] sm:text-xl">
                     {offer.title}
                   </h3>
 
@@ -433,7 +433,7 @@ export default function JobsClient() {
                   {offer.skills.slice(0, 4).map((skill) => (
                     <span
                       key={skill}
-                      className="rounded-full border border-[#087e8b]/20 bg-[#e9f7f5] px-2.5 py-0.5 text-[11px] font-bold text-[#087e8b]"
+                      className="rounded-full border border-[#9e001f]/20 bg-[#e9f7f5] px-2.5 py-0.5 text-[11px] font-bold text-[#9e001f]"
                     >
                       {skill}
                     </span>
@@ -463,7 +463,7 @@ export default function JobsClient() {
 
             {loading && (
               <div className="rounded-2xl border border-slate-200 bg-white py-12 text-center shadow-sm">
-                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#087e8b] border-t-transparent" />
+                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#9e001f] border-t-transparent" />
                 <p className="mt-3 text-sm font-bold text-slate-600">Chargement des opportunités en cours…</p>
               </div>
             )}
@@ -473,7 +473,7 @@ export default function JobsClient() {
                 <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#ffdad8] text-2xl text-[#9e001f]">
                   🔍
                 </div>
-                <h3 className="font-display text-lg font-bold text-[#082843]">
+                <h3 className="font-display text-lg font-bold text-[#2b2525]">
                   Aucune offre ne correspond actuellement à vos filtres
                 </h3>
                 <p className="mt-2 text-xs text-[#5c403f]">
@@ -486,7 +486,7 @@ export default function JobsClient() {
                     setCountry("");
                     setSector("");
                   }}
-                  className="mt-4 rounded-full bg-[#087e8b] px-5 py-2 text-xs font-bold text-white shadow"
+                  className="mt-4 rounded-full bg-[#9e001f] px-5 py-2 text-xs font-bold text-white shadow"
                 >
                   Réinitialiser les filtres
                 </button>
@@ -499,12 +499,12 @@ export default function JobsClient() {
           {/* Sidebar Desktop */}
           <aside className="space-y-5">
             {/* Carte Candidat */}
-            <div className="overflow-hidden rounded-2xl border border-[#087e8b]/20 bg-gradient-to-br from-[#e9f7f5] to-white p-6 shadow-sm">
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#087e8b]">
+            <div className="overflow-hidden rounded-2xl border border-[#9e001f]/20 bg-gradient-to-br from-[#e9f7f5] to-white p-6 shadow-sm">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#9e001f]">
                 <span>🎓</span>
                 <span>Espace Candidat</span>
               </div>
-              <h3 className="mt-2 font-display text-xl font-black text-[#082843]">
+              <h3 className="mt-2 font-display text-xl font-black text-[#2b2525]">
                 Multipliez vos opportunités
               </h3>
               <p className="mt-2 text-xs leading-relaxed text-slate-600">
@@ -513,13 +513,13 @@ export default function JobsClient() {
               <div className="mt-4 flex flex-col gap-2">
                 <Link
                   href="/emploi/abonnements"
-                  className="inline-flex items-center justify-center rounded-xl bg-[#087e8b] px-4 py-2.5 text-xs font-bold text-white shadow transition hover:bg-[#066c77]"
+                  className="inline-flex items-center justify-center rounded-xl bg-[#9e001f] px-4 py-2.5 text-xs font-bold text-white shadow transition hover:bg-[#066c77]"
                 >
                   Découvrir les pass illimités →
                 </Link>
                 <Link
                   href="/emploi/publier-candidature"
-                  className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:border-[#087e8b]"
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:border-[#9e001f]"
                 >
                   Déposer mon profil dans la CVthèque
                 </Link>
@@ -532,7 +532,7 @@ export default function JobsClient() {
                 <span>🏢</span>
                 <span>Espace Recruteur</span>
               </div>
-              <h3 className="mt-2 font-display text-xl font-black text-[#082843]">
+              <h3 className="mt-2 font-display text-xl font-black text-[#2b2525]">
                 Recrutez les meilleurs talents
               </h3>
               <p className="mt-2 text-xs leading-relaxed text-slate-600">
@@ -569,7 +569,7 @@ export default function JobsClient() {
 
             {/* Carte Confiance & Sécurité */}
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h4 className="font-display text-sm font-extrabold text-[#082843]">
+              <h4 className="font-display text-sm font-extrabold text-[#2b2525]">
                 Pourquoi Envol Africa Jobs ?
               </h4>
               <ul className="mt-3 space-y-2 text-xs text-[#5c403f]">
@@ -605,7 +605,7 @@ export default function JobsClient() {
         </Link>
         <Link
           href="/emploi/candidats"
-          className="flex flex-col items-center gap-0.5 text-[10px] font-bold text-slate-600 hover:text-[#087e8b]"
+          className="flex flex-col items-center gap-0.5 text-[10px] font-bold text-slate-600 hover:text-[#9e001f]"
         >
           <span className="text-base">👥</span>
           <span>Candidats</span>
@@ -619,14 +619,14 @@ export default function JobsClient() {
         </Link>
         <Link
           href="/emploi/abonnements"
-          className="flex flex-col items-center gap-0.5 text-[10px] font-bold text-slate-600 hover:text-[#087e8b]"
+          className="flex flex-col items-center gap-0.5 text-[10px] font-bold text-slate-600 hover:text-[#9e001f]"
         >
           <span className="text-base">⭐</span>
           <span>Accès</span>
         </Link>
         <Link
           href="/compte"
-          className="flex flex-col items-center gap-0.5 text-[10px] font-bold text-slate-600 hover:text-[#087e8b]"
+          className="flex flex-col items-center gap-0.5 text-[10px] font-bold text-slate-600 hover:text-[#9e001f]"
         >
           <span className="text-base">👤</span>
           <span>Compte</span>

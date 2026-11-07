@@ -1,3 +1,4 @@
+import { SvgIcon } from "@/components/ui/Icon";
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -45,15 +46,15 @@ function CrowdfundingRoiSimulator() {
   return (
     <section className="relative mx-auto -mt-10 mb-12 max-w-7xl px-5 sm:px-8 z-20">
       {/* Double-Bezel Outer Shell */}
-      <div className="rounded-[2.4rem] border border-[#eadfce] bg-gradient-to-b from-white via-[#fcfaf7] to-[#f7f2eb] p-2 shadow-2xl">
+      <div className="rounded-[2.4rem] border border-[#ead8d5] bg-gradient-to-b from-white via-[#fcfaf7] to-[#f7f2eb] p-2 shadow-2xl">
         {/* Inner Core */}
         <div className="overflow-hidden rounded-[calc(2.4rem-0.5rem)] bg-white p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] lg:p-8">
-          <div className="flex flex-col justify-between gap-4 border-b border-[#f0e7dc] pb-5 md:flex-row md:items-center">
+          <div className="flex flex-col justify-between gap-4 border-b border-[#ead8d5] pb-5 md:flex-row md:items-center">
             <div>
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fff4e0] px-3.5 py-1 text-[10px] font-black uppercase text-[#a36300]">
-                <span className="material-symbols-outlined text-[15px]">calculate</span> Simulateur de Rendement & ROI
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fdf2f4] px-3.5 py-1 text-[10px] font-black uppercase text-[#9e001f]">
+                <SvgIcon name="calculate" className="h-4 w-4 inline-block align-middle" /> Simulateur de Rendement & ROI
               </div>
-              <h3 className="mt-2 font-display text-2xl font-black text-[#082843]">
+              <h3 className="mt-2 font-display text-2xl font-black text-[#2b2525]">
                 Estimez l&apos;impact et les gains de votre investissement
               </h3>
               <p className="mt-1 text-xs text-[#5c403f]">
@@ -321,7 +322,7 @@ export default function FinancementClient() {
   return (
     <div className="min-h-screen bg-[#fcf9f8] pb-24 text-slate-900 sm:pb-12">
       {/* Hero Section Fintech Prestige */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#10141d] via-[#1a1f2c] to-[#0f131a] text-white">
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#1a1213] via-[#241a1c] to-[#1a1213] text-white">
         {/* Glow & Ambient Lighting */}
         <div
           aria-hidden="true"
@@ -358,7 +359,7 @@ export default function FinancementClient() {
                 href="/financement/dashboard/porteur"
                 className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-[#9e001f] px-7 py-3 text-sm font-extrabold text-white shadow-xl shadow-[#9e001f]/40 transition hover:bg-[#b80024] hover:shadow-2xl active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f6c453]"
               >
-                <span>Déposer mon projet</span>
+                <span>Déposer votre projet</span>
                 <span>→</span>
               </Link>
               <button
@@ -475,7 +476,7 @@ export default function FinancementClient() {
                   : "border-white/10 bg-white/5 hover:border-white/25 hover:bg-white/10"
               }`}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#fff3dc] to-[#ffe082] text-xl font-bold text-[#a36300] shadow-inner">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#fff3dc] to-[#ffe082] text-xl font-bold text-[#9e001f] shadow-inner">
                 %
               </div>
               <h3 className="mt-4 font-display text-lg font-black text-white group-hover:text-[#f6c453]">
@@ -630,7 +631,7 @@ export default function FinancementClient() {
                 Collectes en direct
               </p>
             </div>
-            <h2 className="mt-1 font-display text-2xl font-black text-[#082843] sm:text-3xl">
+            <h2 className="mt-1 font-display text-2xl font-black text-[#2b2525] sm:text-3xl">
               Campagnes ouvertes au financement
             </h2>
           </div>
@@ -705,7 +706,7 @@ export default function FinancementClient() {
 
                 {/* Contenu de la carte */}
                 <div className="flex flex-1 flex-col p-5">
-                  <h3 className="font-display text-lg font-black leading-snug text-[#082843] transition group-hover:text-[#9e001f]">
+                  <h3 className="font-display text-lg font-black leading-snug text-[#2b2525] transition group-hover:text-[#9e001f]">
                     {p.nom}
                   </h3>
                   <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-[#5c403f]">
@@ -788,7 +789,7 @@ export default function FinancementClient() {
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#ffdad8] text-2xl text-[#9e001f]">
               🚀
             </div>
-            <h3 className="font-display text-lg font-bold text-[#082843]">
+            <h3 className="font-display text-lg font-bold text-[#2b2525]">
               Aucune campagne active trouvée pour ces filtres
             </h3>
             <p className="mt-2 text-xs text-[#5c403f]">
@@ -813,7 +814,7 @@ export default function FinancementClient() {
                 <span>❤️</span>
                 <span>Initiatives Citoyennes</span>
               </div>
-              <h2 className="mt-1 font-display text-2xl font-black text-[#082843] sm:text-3xl">
+              <h2 className="mt-1 font-display text-2xl font-black text-[#2b2525] sm:text-3xl">
                 Cagnottes & Causes Solidaires
               </h2>
               <p className="mt-1 text-xs text-[#5c403f] sm:text-sm">
@@ -870,7 +871,7 @@ export default function FinancementClient() {
                     </span>
                   </div>
 
-                  <h3 className="mt-4 font-display text-base font-bold text-[#082843]">
+                  <h3 className="mt-4 font-display text-base font-bold text-[#2b2525]">
                     {c.titre}
                   </h3>
 
@@ -904,7 +905,7 @@ export default function FinancementClient() {
       </section>
 
       {/* Pactes d'Investisseurs & Sécurité Juridique Fintech */}
-      <section className="border-t border-[#eadfce] bg-[#10141d] text-white py-16 px-5 sm:px-8">
+      <section className="border-t border-[#ead8d5] bg-[#10141d] text-white py-16 px-5 sm:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="max-w-3xl">
             <span className="rounded-full bg-[#f6c453]/20 px-3.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#f6c453]">

@@ -1,3 +1,4 @@
+import { SvgIcon } from "@/components/ui/Icon";
 "use client";
 
 import Link from "next/link";
@@ -179,14 +180,14 @@ function RfqModal({ product, onClose }: { product: ProductWithMeta; onClose: () 
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[28px] bg-white p-6 shadow-2xl border border-[#eadfce]">
-        <div className="flex items-center justify-between border-b border-[#f0e7dc] pb-4">
+      <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[28px] bg-white p-6 shadow-2xl border border-[#ead8d5]">
+        <div className="flex items-center justify-between border-b border-[#ead8d5] pb-4">
           <div className="flex items-center gap-2">
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-[#fff4e0] text-[#a36300]">
-              <span className="material-symbols-outlined text-[20px]">request_quote</span>
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-[#fff4e0] text-[#9e001f]">
+              <SvgIcon name="request_quote" className="h-4 w-4 inline-block align-middle" />
             </span>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#a36300]">Appel d&apos;offres B2B · RFQ</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#9e001f]">Appel d&apos;offres B2B · RFQ</p>
               <h3 id="rfq-modal-title" className="font-display text-lg font-black text-[#2a211a]">Demander un devis grossiste</h3>
             </div>
           </div>
@@ -195,23 +196,23 @@ function RfqModal({ product, onClose }: { product: ProductWithMeta; onClose: () 
             onClick={onClose}
             className="grid h-9 w-9 place-items-center rounded-full bg-[#f8f3ed] text-[#9e001f] hover:bg-[#ffdad8]"
           >
-            <span className="material-symbols-outlined">close</span>
+            <SvgIcon name="close" className="h-4 w-4 inline-block align-middle" />
           </button>
         </div>
 
         {submitted ? (
           <div className="py-8 text-center">
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#e9f7f5] text-[#087e8b]">
-              <span className="material-symbols-outlined text-4xl">check_circle</span>
+              <SvgIcon name="check_circle" className="h-4 w-4 inline-block align-middle" />
             </div>
             <h4 className="mt-4 font-display text-xl font-black text-[#2a211a]">Devis RFQ transmis avec succès !</h4>
-            <p className="mt-2 text-xs leading-5 text-[#725f4d]">
-              Votre appel d&apos;offres (Réf: <strong className="text-[#a36300]">RFQ-EAM-{Math.floor(100000 + Math.random() * 900000)}</strong>) pour <strong>{qty} unités</strong> a été envoyé au fournisseur <strong>{product.supplier}</strong>.
+            <p className="mt-2 text-xs leading-5 text-[#2b2525]">
+              Votre appel d&apos;offres (Réf: <strong className="text-[#9e001f]">RFQ-EAM-{Math.floor(100000 + Math.random() * 900000)}</strong>) pour <strong>{qty} unités</strong> a été envoyé au fournisseur <strong>{product.supplier}</strong>.
             </p>
-            <div className="mt-6 rounded-2xl bg-[#fffaf3] p-4 text-left border border-[#eadfce]">
-              <p className="text-[11px] font-bold text-[#806c58]">Estimation préliminaire du devis :</p>
+            <div className="mt-6 rounded-2xl bg-[#fffaf3] p-4 text-left border border-[#ead8d5]">
+              <p className="text-[11px] font-bold text-[#5a4d4c]">Estimation préliminaire du devis :</p>
               <p className="font-display text-xl font-black text-[#9e001f]">{formatPrice(totalEstimated)}</p>
-              <p className="text-[10px] text-[#806c58] mt-1">Fournisseur engagé à répondre sous 24h ouvrées avec proforma officiel.</p>
+              <p className="text-[10px] text-[#5a4d4c] mt-1">Fournisseur engagé à répondre sous 24h ouvrées avec proforma officiel.</p>
             </div>
             <div className="mt-6 flex flex-col gap-2 sm:flex-row">
               <button
@@ -227,7 +228,7 @@ function RfqModal({ product, onClose }: { product: ProductWithMeta; onClose: () 
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-full border border-[#eadfce] px-5 py-3 text-xs font-bold text-[#725f4d]"
+                className="rounded-full border border-[#ead8d5] px-5 py-3 text-xs font-bold text-[#2b2525]"
               >
                 Fermer
               </button>
@@ -235,7 +236,7 @@ function RfqModal({ product, onClose }: { product: ProductWithMeta; onClose: () 
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-            <div className="flex items-center gap-3 rounded-2xl bg-[#fbf8f5] p-3 border border-[#f0e7dc]">
+            <div className="flex items-center gap-3 rounded-2xl bg-[#fffdfd] p-3 border border-[#ead8d5]">
               {product.image ? (
                 <img src={product.image} alt="" className="h-14 w-14 rounded-xl object-cover" />
               ) : (
@@ -243,31 +244,31 @@ function RfqModal({ product, onClose }: { product: ProductWithMeta; onClose: () 
               )}
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-bold text-[#2a211a]">{product.title}</p>
-                <p className="text-[11px] text-[#806c58]">Vendeur : {product.supplier}</p>
+                <p className="text-[11px] text-[#5a4d4c]">Vendeur : {product.supplier}</p>
                 <div className="mt-1 flex items-center gap-2">
-                  <span className="rounded-full bg-[#fff4e0] px-2 py-0.5 text-[9px] font-black uppercase text-[#a36300]">MOQ: {minQty} pcs</span>
+                  <span className="rounded-full bg-[#fff4e0] px-2 py-0.5 text-[9px] font-black uppercase text-[#9e001f]">MOQ: {minQty} pcs</span>
                 </div>
               </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <label className="text-[11px] font-black uppercase tracking-wider text-[#806c58]">Quantité souhaitée (Min: {minQty})</label>
+                <label className="text-[11px] font-black uppercase tracking-wider text-[#5a4d4c]">Quantité souhaitée (Min: {minQty})</label>
                 <input
                   type="number"
                   min={minQty}
                   value={qty}
                   onChange={(e) => setQty(Math.max(minQty, Number(e.target.value) || minQty))}
                   required
-                  className="mt-1 h-11 w-full rounded-xl border border-[#eadfce] px-3 text-sm font-bold text-[#2a211a] outline-none focus:border-[#9e001f]"
+                  className="mt-1 h-11 w-full rounded-xl border border-[#ead8d5] px-3 text-sm font-bold text-[#2a211a] outline-none focus:border-[#9e001f]"
                 />
               </div>
               <div>
-                <label className="text-[11px] font-black uppercase tracking-wider text-[#806c58]">Port / Ville de livraison</label>
+                <label className="text-[11px] font-black uppercase tracking-wider text-[#5a4d4c]">Port / Ville de livraison</label>
                 <select
                   value={port}
                   onChange={(e) => setPort(e.target.value)}
-                  className="mt-1 h-11 w-full rounded-xl border border-[#eadfce] bg-white px-3 text-xs font-bold text-[#2a211a] outline-none focus:border-[#9e001f]"
+                  className="mt-1 h-11 w-full rounded-xl border border-[#ead8d5] bg-white px-3 text-xs font-bold text-[#2a211a] outline-none focus:border-[#9e001f]"
                 >
                   <option value="Port de Cotonou (Bénin)">Port autonome de Cotonou (Bénin)</option>
                   <option value="Port d'Abidjan (Côte d'Ivoire)">Port autonome d&apos;Abidjan (Côte d&apos;Ivoire)</option>
@@ -281,19 +282,19 @@ function RfqModal({ product, onClose }: { product: ProductWithMeta; onClose: () 
             </div>
 
             <div>
-              <p className="text-[11px] font-black uppercase tracking-wider text-[#806c58]">Options de personnalisation B2B</p>
+              <p className="text-[11px] font-black uppercase tracking-wider text-[#5a4d4c]">Options de personnalisation B2B</p>
               <div className="mt-2 flex flex-wrap gap-2">
-                <label className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition ${customLogo ? "border-[#9e001f] bg-[#fff4f3] text-[#9e001f]" : "border-[#eadfce] text-[#725f4d]"}`}>
+                <label className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition ${customLogo ? "border-[#9e001f] bg-[#fff4f3] text-[#9e001f]" : "border-[#ead8d5] text-[#2b2525]"}`}>
                   <input type="checkbox" checked={customLogo} onChange={(e) => setCustomLogo(e.target.checked)} className="sr-only" />
                   <span className="material-symbols-outlined text-[16px]">{customLogo ? "check_box" : "check_box_outline_blank"}</span>
                   Logo personnalisé (OEM)
                 </label>
-                <label className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition ${customPackaging ? "border-[#9e001f] bg-[#fff4f3] text-[#9e001f]" : "border-[#eadfce] text-[#725f4d]"}`}>
+                <label className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition ${customPackaging ? "border-[#9e001f] bg-[#fff4f3] text-[#9e001f]" : "border-[#ead8d5] text-[#2b2525]"}`}>
                   <input type="checkbox" checked={customPackaging} onChange={(e) => setCustomPackaging(e.target.checked)} className="sr-only" />
                   <span className="material-symbols-outlined text-[16px]">{customPackaging ? "check_box" : "check_box_outline_blank"}</span>
                   Packaging sur-mesure
                 </label>
-                <label className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition ${sampleRequested ? "border-[#9e001f] bg-[#fff4f3] text-[#9e001f]" : "border-[#eadfce] text-[#725f4d]"}`}>
+                <label className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition ${sampleRequested ? "border-[#9e001f] bg-[#fff4f3] text-[#9e001f]" : "border-[#ead8d5] text-[#2b2525]"}`}>
                   <input type="checkbox" checked={sampleRequested} onChange={(e) => setSampleRequested(e.target.checked)} className="sr-only" />
                   <span className="material-symbols-outlined text-[16px]">{sampleRequested ? "check_box" : "check_box_outline_blank"}</span>
                   Demande d&apos;échantillon préalable
@@ -302,45 +303,45 @@ function RfqModal({ product, onClose }: { product: ProductWithMeta; onClose: () 
             </div>
 
             <div>
-              <label className="text-[11px] font-black uppercase tracking-wider text-[#806c58]">Spécifications techniques & exigences</label>
+              <label className="text-[11px] font-black uppercase tracking-wider text-[#5a4d4c]">Spécifications techniques & exigences</label>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Ex : Nous recherchons 50 pièces avec certification sanitaire et livraison avant le 15 du mois prochain..."
                 rows={3}
-                className="mt-1 w-full rounded-xl border border-[#eadfce] p-3 text-xs leading-5 text-[#2a211a] outline-none focus:border-[#9e001f]"
+                className="mt-1 w-full rounded-xl border border-[#ead8d5] p-3 text-xs leading-5 text-[#2a211a] outline-none focus:border-[#9e001f]"
               />
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <label className="text-[11px] font-black uppercase tracking-wider text-[#806c58]">Entreprise / Société acheteuse</label>
+                <label className="text-[11px] font-black uppercase tracking-wider text-[#5a4d4c]">Entreprise / Société acheteuse</label>
                 <input
                   type="text"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   placeholder="Ex : Africa Trading SARL"
                   required
-                  className="mt-1 h-11 w-full rounded-xl border border-[#eadfce] px-3 text-xs text-[#2a211a] outline-none focus:border-[#9e001f]"
+                  className="mt-1 h-11 w-full rounded-xl border border-[#ead8d5] px-3 text-xs text-[#2a211a] outline-none focus:border-[#9e001f]"
                 />
               </div>
               <div>
-                <label className="text-[11px] font-black uppercase tracking-wider text-[#806c58]">Téléphone WhatsApp professionnel</label>
+                <label className="text-[11px] font-black uppercase tracking-wider text-[#5a4d4c]">Téléphone WhatsApp professionnel</label>
                 <input
                   type="tel"
                   value={contactPhone}
                   onChange={(e) => setContactPhone(e.target.value)}
                   placeholder="+229 / +225..."
                   required
-                  className="mt-1 h-11 w-full rounded-xl border border-[#eadfce] px-3 text-xs text-[#2a211a] outline-none focus:border-[#9e001f]"
+                  className="mt-1 h-11 w-full rounded-xl border border-[#ead8d5] px-3 text-xs text-[#2a211a] outline-none focus:border-[#9e001f]"
                 />
               </div>
             </div>
 
             <div className="rounded-2xl bg-[#fff8eb] p-3.5 border border-[#fed7aa] flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-black uppercase text-[#a36300]">Prix de gros estimé</p>
-                <p className="text-xs text-[#806c58]">
+                <p className="text-[10px] font-black uppercase text-[#9e001f]">Prix de gros estimé</p>
+                <p className="text-xs text-[#5a4d4c]">
                   {formatPrice(unitPrice)} / unité · Total: <strong className="text-[#9e001f] text-sm">{formatPrice(totalEstimated)}</strong>
                 </p>
               </div>
@@ -360,7 +361,7 @@ function RfqModal({ product, onClose }: { product: ProductWithMeta; onClose: () 
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-full border border-[#eadfce] px-5 py-3.5 text-xs font-bold text-[#725f4d]"
+                className="rounded-full border border-[#ead8d5] px-5 py-3.5 text-xs font-bold text-[#2b2525]"
               >
                 Annuler
               </button>
@@ -509,12 +510,12 @@ function ProductDetailModal({
         }}
       >
         <div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-t-[28px] bg-[#fffdfb] shadow-2xl sm:rounded-[28px]">
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#eadfce] bg-[#fffdfb]/95 px-5 py-4 backdrop-blur">
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#ead8d5] bg-[#fffdfb]/95 px-5 py-4 backdrop-blur">
             <div className="flex items-center gap-2">
-              <span className="rounded-full bg-[#fff4e0] px-2.5 py-1 text-[10px] font-black uppercase text-[#a36300]">
+              <span className="rounded-full bg-[#fff4e0] px-2.5 py-1 text-[10px] font-black uppercase text-[#9e001f]">
                 Catalogue B2B
               </span>
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#a36300]">Fiche Produit</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#9e001f]">Fiche Produit</p>
             </div>
             <button
               type="button"
@@ -522,7 +523,7 @@ function ProductDetailModal({
               aria-label="Fermer la fiche produit"
               className="grid h-10 w-10 place-items-center rounded-full bg-[#f8f3ed] text-[#9e001f]"
             >
-              <span className="material-symbols-outlined">close</span>
+              <SvgIcon name="close" className="h-4 w-4 inline-block align-middle" />
             </button>
           </div>
 
@@ -555,7 +556,7 @@ function ProductDetailModal({
                       aria-label="Média précédente"
                       className="absolute left-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-[#9e001f] shadow-lg"
                     >
-                      <span className="material-symbols-outlined">chevron_left</span>
+                      <SvgIcon name="chevron_left" className="h-4 w-4 inline-block align-middle" />
                     </button>
                     <button
                       type="button"
@@ -563,7 +564,7 @@ function ProductDetailModal({
                       aria-label="Média suivant"
                       className="absolute right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-[#9e001f] shadow-lg"
                     >
-                      <span className="material-symbols-outlined">chevron_right</span>
+                      <SvgIcon name="chevron_right" className="h-4 w-4 inline-block align-middle" />
                     </button>
                     <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/45 px-2 py-1">
                       {mediaItems.map((item, index) => (
@@ -599,7 +600,7 @@ function ProductDetailModal({
                       <>
                         <video src={item.url} muted playsInline className="h-full w-full object-cover" />
                         <span className="absolute inset-0 grid place-items-center text-white">
-                          <span className="material-symbols-outlined text-[18px]">play_circle</span>
+                          <SvgIcon name="play_circle" className="h-4 w-4 inline-block align-middle" />
                         </span>
                       </>
                     ) : (
@@ -615,7 +616,7 @@ function ProductDetailModal({
               <div className="flex flex-wrap gap-2">
                 {product.certified && (
                   <span className="rounded-full bg-[#fef3c7] px-3 py-1 text-[10px] font-black uppercase text-[#92400e] flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[14px]">verified</span> Fournisseur Vérifié Pro
+                    <SvgIcon name="verified" className="h-4 w-4 inline-block align-middle" /> Fournisseur Vérifié Pro
                   </span>
                 )}
                 {product.boosted && (
@@ -634,26 +635,26 @@ function ProductDetailModal({
 
               {/* Tarification B2B */}
               <div className="mt-4 rounded-2xl bg-[#fff8eb] p-4 border border-[#fed7aa]">
-                <p className="text-[11px] font-black uppercase tracking-wider text-[#a36300]">Prix B2B & Conditions Grossiste</p>
+                <p className="text-[11px] font-black uppercase tracking-wider text-[#9e001f]">Prix B2B & Conditions Grossiste</p>
                 {product.wholesaleTiers && product.wholesaleTiers.length > 0 ? (
                   <div className="mt-3 grid grid-cols-3 gap-2 text-center">
                     {product.wholesaleTiers.map((tier, idx) => (
-                      <div key={idx} className="rounded-xl bg-white p-2.5 shadow-sm border border-[#f0e7dc]">
-                        <span className="block text-[11px] font-bold text-[#806c58]">{tier.range}</span>
+                      <div key={idx} className="rounded-xl bg-white p-2.5 shadow-sm border border-[#ead8d5]">
+                        <span className="block text-[11px] font-bold text-[#5a4d4c]">{tier.range}</span>
                         <strong className="mt-1 block text-sm font-black text-[#9e001f]">{formatPrice(tier.price)}</strong>
                         <span className="rounded-full bg-[#ffdad8] px-1.5 py-0.5 text-[9px] font-black text-[#9e001f]">{tier.discountLabel}</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="mt-3 flex items-center justify-between rounded-xl bg-white p-3 shadow-sm border border-[#f0e7dc]">
+                  <div className="mt-3 flex items-center justify-between rounded-xl bg-white p-3 shadow-sm border border-[#ead8d5]">
                     <div>
-                      <span className="text-[11px] font-bold text-[#806c58]">Prix unitaire de référence :</span>
+                      <span className="text-[11px] font-bold text-[#5a4d4c]">Prix unitaire de référence :</span>
                       <strong className="block text-lg font-black text-[#9e001f]">{formatPrice(product.priceXof)}</strong>
                     </div>
                     <div className="text-right">
-                      <span className="text-[11px] font-bold text-[#806c58]">Quantité min. (MOQ) :</span>
-                      <span className="block text-sm font-black text-[#a36300]">{product.moq || 1} unité{(product.moq || 1) > 1 ? "s" : ""}</span>
+                      <span className="text-[11px] font-bold text-[#5a4d4c]">Quantité min. (MOQ) :</span>
+                      <span className="block text-sm font-black text-[#9e001f]">{product.moq || 1} unité{(product.moq || 1) > 1 ? "s" : ""}</span>
                     </div>
                   </div>
                 )}
@@ -674,7 +675,7 @@ function ProductDetailModal({
                 </p>
               )}
 
-              <div className="mt-5 space-y-2 border-y border-[#eadfce] py-4 text-sm text-[#725f4d]">
+              <div className="mt-5 space-y-2 border-y border-[#ead8d5] py-4 text-sm text-[#2b2525]">
                 <p>
                   <strong className="text-[#2a211a]">Vendeur :</strong> {product.supplier}{" "}
                   {product.certified && <span className="text-[#087e8b] font-bold">✓ Entreprise vérifiée</span>}
@@ -693,7 +694,7 @@ function ProductDetailModal({
                 )}
               </div>
 
-              <p className="mt-5 whitespace-pre-line text-sm leading-6 text-[#725f4d]">
+              <p className="mt-5 whitespace-pre-line text-sm leading-6 text-[#2b2525]">
                 {product.description || "Ce fournisseur présente ses produits certifiés sur la marketplace Envol Africa."}
               </p>
 
@@ -707,7 +708,7 @@ function ProductDetailModal({
                   }}
                   className="rounded-full bg-[#a36300] px-5 py-3.5 text-xs font-black text-white shadow-lg hover:bg-[#855100] transition flex items-center justify-center gap-1.5"
                 >
-                  <span className="material-symbols-outlined text-[18px]">request_quote</span>
+                  <SvgIcon name="request_quote" className="h-4 w-4 inline-block align-middle" />
                   Demander un devis (RFQ)
                 </button>
                 <button
@@ -723,7 +724,7 @@ function ProductDetailModal({
                     onClick={openMagazinePreview}
                     className="rounded-full border border-[#9e001f] bg-[#fff6f5] px-5 py-3 text-sm font-black text-[#9e001f]"
                   >
-                    <span className="material-symbols-outlined mr-1 align-middle text-[18px]">menu_book</span>
+                    <SvgIcon name="menu_book" className="h-4 w-4 inline-block align-middle" />
                     Aperçu
                   </button>
                 )}
@@ -731,7 +732,7 @@ function ProductDetailModal({
                   type="button"
                   onClick={toggleFavorite}
                   aria-pressed={favorite}
-                  className="rounded-full border border-[#eadfce] bg-white px-5 py-3 text-xs font-black text-[#5c3d19]"
+                  className="rounded-full border border-[#ead8d5] bg-white px-5 py-3 text-xs font-black text-[#2b2525]"
                 >
                   <span className="material-symbols-outlined mr-1 align-middle text-[18px]">
                     {favorite ? "favorite" : "favorite_border"}
@@ -743,14 +744,14 @@ function ProductDetailModal({
                   onClick={() => {
                     window.location.assign(`/marketplace/messages?productId=${encodeURIComponent(product.id)}`);
                   }}
-                  className="rounded-full border border-[#eadfce] bg-[#fffaf3] px-5 py-3 text-xs font-black text-[#5c3d19]"
+                  className="rounded-full border border-[#ead8d5] bg-[#fffaf3] px-5 py-3 text-xs font-black text-[#2b2525]"
                 >
                   Contacter le fournisseur
                 </button>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="rounded-full border border-[#eadfce] bg-white px-5 py-3 text-xs font-black text-[#725f4d]"
+                  className="rounded-full border border-[#ead8d5] bg-white px-5 py-3 text-xs font-black text-[#2b2525]"
                 >
                   Fermer
                 </button>
@@ -839,7 +840,7 @@ function ProductCard({
           openProduct();
         }
       }}
-      className="group cursor-pointer overflow-hidden rounded-[22px] border border-[#eadfce] bg-white shadow-[0_12px_34px_rgba(74,48,18,0.06)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(74,48,18,0.13)] flex flex-col justify-between"
+      className="group cursor-pointer overflow-hidden rounded-[22px] border border-[#ead8d5] bg-white shadow-[0_12px_34px_rgba(74,48,18,0.06)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(74,48,18,0.13)] flex flex-col justify-between"
     >
       <div>
         <div
@@ -860,7 +861,7 @@ function ProductCard({
           <div className="absolute left-2.5 top-2.5 flex flex-wrap gap-1.5">
             {product.certified && (
               <span className="rounded-full bg-[#fef3c7] px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-[#92400e] shadow-sm flex items-center gap-0.5">
-                <span className="material-symbols-outlined text-[12px]">verified</span> Vérifié
+                <SvgIcon name="verified" className="h-4 w-4 inline-block align-middle" /> Vérifié
               </span>
             )}
           </div>
@@ -881,9 +882,9 @@ function ProductCard({
         </div>
 
         <div className="p-3.5">
-          <div className="flex items-center justify-between text-[11px] text-[#806c58]">
+          <div className="flex items-center justify-between text-[11px] text-[#5a4d4c]">
             <span className="font-semibold truncate max-w-[140px]">{product.supplier}</span>
-            <span className="font-bold text-[#a36300]">MOQ: {product.moq || 10} pcs</span>
+            <span className="font-bold text-[#9e001f]">MOQ: {product.moq || 10} pcs</span>
           </div>
 
           <h3 className="mt-1 line-clamp-2 min-h-[40px] font-display text-[14px] font-extrabold leading-5 text-[#2a211a]">
@@ -893,11 +894,11 @@ function ProductCard({
           <div className="mt-2.5 flex items-baseline justify-between gap-1">
             <div>
               <span className="font-display text-[16px] font-black text-[#9e001f]">{formatPrice(product.priceXof)}</span>
-              <span className="block text-[10px] text-[#806c58]">Prix unitaire</span>
+              <span className="block text-[10px] text-[#5a4d4c]">Prix unitaire</span>
             </div>
             {product.wholesaleTiers && product.wholesaleTiers.length > 1 ? (
               <div className="text-right">
-                <span className="font-display text-[14px] font-bold text-[#a36300]">
+                <span className="font-display text-[14px] font-bold text-[#9e001f]">
                   {formatPrice(product.wholesaleTiers[product.wholesaleTiers.length - 1].price)}
                 </span>
                 <span className="block text-[10px] font-bold text-[#087e8b]">
@@ -906,15 +907,15 @@ function ProductCard({
               </div>
             ) : (
               <div className="text-right">
-                <span className="block text-[11px] font-bold text-[#806c58]">Quantité min.</span>
-                <span className="block text-[11px] font-black text-[#a36300]">{product.moq || 1} pcs</span>
+                <span className="block text-[11px] font-bold text-[#5a4d4c]">Quantité min.</span>
+                <span className="block text-[11px] font-black text-[#9e001f]">{product.moq || 1} pcs</span>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      <div className="border-t border-[#f0e7dc] bg-[#fffaf3] p-2.5 flex items-center gap-2">
+      <div className="border-t border-[#ead8d5] bg-[#fffaf3] p-2.5 flex items-center gap-2">
         <button
           type="button"
           onClick={(e) => {
@@ -923,7 +924,7 @@ function ProductCard({
           }}
           className="flex-1 rounded-full bg-[#a36300] py-1.5 px-3 text-[11px] font-black text-white shadow-sm hover:bg-[#855100] transition flex items-center justify-center gap-1"
         >
-          <span className="material-symbols-outlined text-[14px]">request_quote</span> Devis RFQ
+          <SvgIcon name="request_quote" className="h-4 w-4 inline-block align-middle" /> Devis RFQ
         </button>
         <button
           type="button"
@@ -931,7 +932,7 @@ function ProductCard({
             e.stopPropagation();
             openProduct();
           }}
-          className="rounded-full border border-[#eadfce] bg-white py-1.5 px-3 text-[11px] font-bold text-[#725f4d] hover:bg-[#f8f3ed] transition"
+          className="rounded-full border border-[#ead8d5] bg-white py-1.5 px-3 text-[11px] font-bold text-[#2b2525] hover:bg-[#f8f3ed] transition"
         >
           Détails
         </button>
@@ -956,9 +957,9 @@ function VendorProductCarousel({
     <div className="relative mt-4">
       <div ref={rowRef} className="flex snap-x gap-4 overflow-x-auto pb-3 [scrollbar-width:thin]">
         <div className="grid min-w-[220px] max-w-[220px] shrink-0 snap-start place-items-center rounded-[18px] border border-dashed border-[#cdbb9f] bg-[#fffaf3] p-5 text-center">
-          <span className="material-symbols-outlined text-3xl text-[#a36300]">storefront</span>
-          <p className="mt-2 text-xs font-bold text-[#725f4d]">Catalogue B2B de ce fournisseur</p>
-          <p className="mt-1 text-[11px] text-[#806c58]">Commandes en gros et relation directe producteur.</p>
+          <SvgIcon name="storefront" className="h-4 w-4 inline-block align-middle" />
+          <p className="mt-2 text-xs font-bold text-[#2b2525]">Catalogue B2B de ce fournisseur</p>
+          <p className="mt-1 text-[11px] text-[#5a4d4c]">Commandes en gros et relation directe producteur.</p>
         </div>
         {products.map((product) => (
           <div key={product.id} className="w-[230px] shrink-0 snap-start">
@@ -972,7 +973,7 @@ function VendorProductCarousel({
         aria-label="Produits précédents"
         className="absolute left-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-[#9e001f] shadow-lg"
       >
-        <span className="material-symbols-outlined">chevron_left</span>
+        <SvgIcon name="chevron_left" className="h-4 w-4 inline-block align-middle" />
       </button>
       <button
         type="button"
@@ -980,7 +981,7 @@ function VendorProductCarousel({
         aria-label="Produits suivants"
         className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-[#9e001f] shadow-lg"
       >
-        <span className="material-symbols-outlined">chevron_right</span>
+        <SvgIcon name="chevron_right" className="h-4 w-4 inline-block align-middle" />
       </button>
     </div>
   );
@@ -1129,18 +1130,18 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
   return (
     <div className="min-h-screen bg-[#fcf9f8] pb-24 text-[#2a211a]">
       {/* Alibaba Style Top B2B Announcement Ribbon */}
-      <div className="border-b border-[#fed7aa] bg-[#fffaf0] py-2 px-4 text-center text-[11px] font-bold text-[#8a5700]">
+      <div className="border-b border-[#ead8d5] bg-[#fffdfd] py-2.5 px-4 text-center text-[11px] font-bold text-[#2b2525]">
         <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-2 px-2">
           <div className="flex items-center gap-2">
-            <span className="rounded-full bg-[#f59e0b] px-2 py-0.5 text-[9px] font-black uppercase text-white">B2B Pro</span>
+            <span className="rounded-full bg-[#9e001f] px-2.5 py-0.5 text-[9px] font-black uppercase text-white shadow-xs">B2B Pro</span>
             <span>Place de marché grossiste pan-africaine · Commandes directes d&apos;usines & producteurs</span>
           </div>
           <div className="flex items-center gap-4 text-[10px]">
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px] text-[#087e8b]">security</span> Paiement Sécurisé Moneroo
+              <SvgIcon name="security" className="h-4 w-4 inline-block align-middle" /> Paiement Sécurisé Moneroo
             </span>
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px] text-[#a36300]">request_quote</span> Devis RFQ Direct
+              <SvgIcon name="request_quote" className="h-4 w-4 inline-block align-middle" /> Devis RFQ Direct
             </span>
             <Link href="/marketplace/vendre" className="font-black text-[#9e001f] hover:underline">
               Devenir Fournisseur →
@@ -1150,23 +1151,23 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
       </div>
 
       {showIntro && (
-        <section className="relative overflow-hidden bg-gradient-to-b from-[#f5ede2] via-[#f0e4d4] to-[#ebe0ce] border-b border-[#e2d2bd]">
-          <div className="absolute -right-32 -top-32 h-80 w-80 rounded-full bg-[#ffca63]/30 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-40 left-1/3 h-80 w-80 rounded-full bg-[#9e001f]/10 blur-3xl pointer-events-none" />
+        <section className="relative overflow-hidden bg-gradient-to-b from-[#fcf9f8] via-[#f4ecea] to-[#fcf9f8] border-b border-[#ead8d5]">
+          <div className="absolute -right-32 -top-32 h-80 w-80 rounded-full bg-[#d4af37]/15 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-40 left-1/3 h-80 w-80 rounded-full bg-[#9e001f]/15 blur-3xl pointer-events-none" />
           <div className="relative mx-auto grid max-w-[1280px] gap-8 px-5 pb-12 pt-10 md:grid-cols-[1.05fr_.95fr] md:gap-10 md:px-10 md:pb-16 md:pt-14 lg:gap-6 lg:px-16 lg:pb-10 lg:pt-8">
             <div>
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#80654b]">
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#5a4d4c]">
                 <Link href="/">Accueil</Link>
                 <span>›</span>
                 <span className="text-[#9e001f]">Marketplace B2B</span>
               </div>
-              <p className="mt-4 md:mt-6 font-display text-[11px] font-black uppercase tracking-[0.22em] text-[#a36300]">
+              <p className="mt-4 md:mt-6 font-display text-[11px] font-black uppercase tracking-[0.22em] text-[#9e001f]">
                 Sourcing Pan-Africain · Vente en gros · Usines directes
               </p>
               <h1 className="mt-2.5 max-w-[650px] font-display text-[clamp(32px,5.5vw,58px)] font-black leading-[1.02] tracking-[-0.04em] text-[#2a211a]">
                 Le Sourcing Africain, <span className="text-[#9e001f]">façon B2B d&apos;Élite.</span>
               </h1>
-              <p className="mt-4 max-w-[590px] text-[15px] sm:text-[16px] leading-7 text-[#725f4d]">
+              <p className="mt-4 max-w-[590px] text-[15px] sm:text-[16px] leading-7 text-[#2b2525]">
                 Connectez-vous directement aux fabricants et producteurs africains. Négociez vos devis en gros (RFQ), sécurisez vos paiements par séquestre bancaire Trade Assurance et organisez vos expéditions.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
@@ -1178,7 +1179,7 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
                 </a>
                 <Link
                   href="/marketplace/vendre"
-                  className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-[#bca486] bg-white/80 px-6 py-3 text-[13px] font-black text-[#5c3d19] shadow-xs transition-all hover:bg-white active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#bca486]"
+                  className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-[#d8c3c1] bg-white/80 px-6 py-3 text-[13px] font-black text-[#2b2525] shadow-xs transition-all hover:bg-white active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#bca486]"
                 >
                   Devenir Fournisseur B2B
                 </Link>
@@ -1186,15 +1187,15 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
               <div className="mt-8 grid max-w-[560px] grid-cols-3 gap-3 border-t border-[#e2d2bd]/60 pt-6">
                 <div>
                   <p className="font-display text-2xl font-black text-[#9e001f]">B2B</p>
-                  <p className="text-[11px] text-[#806c58]">Sourcing direct</p>
+                  <p className="text-[11px] text-[#5a4d4c]">Sourcing direct</p>
                 </div>
                 <div>
                   <p className="font-display text-2xl font-black text-[#9e001f]">100%</p>
-                  <p className="text-[11px] text-[#806c58]">Moneroo sécurisé</p>
+                  <p className="text-[11px] text-[#5a4d4c]">Moneroo sécurisé</p>
                 </div>
                 <div>
                   <p className="font-display text-2xl font-black text-[#9e001f]">RFQ</p>
-                  <p className="text-[11px] text-[#806c58]">Devis direct usines</p>
+                  <p className="text-[11px] text-[#5a4d4c]">Devis direct usines</p>
                 </div>
               </div>
             </div>
@@ -1215,7 +1216,7 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
                     <span className="rounded-full bg-white/15 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-white">
                       Trade Assurance Garanti
                     </span>
-                    <span className="material-symbols-outlined text-[38px] text-[#ffca63]">verified_user</span>
+                    <SvgIcon name="verified_user" className="h-4 w-4 inline-block align-middle" />
                   </div>
                   <div>
                     <p className="max-w-[340px] font-display text-2xl sm:text-3xl font-black leading-tight text-white">
@@ -1244,19 +1245,19 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
       <section id="catalogue" className="mx-auto max-w-[1280px] px-5 py-10 md:px-10 lg:px-16">
         <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
           <div>
-            <p className="font-display text-[11px] font-black uppercase tracking-[0.2em] text-[#a36300]">Le Catalogue B2B</p>
+            <p className="font-display text-[11px] font-black uppercase tracking-[0.2em] text-[#9e001f]">Le Catalogue B2B</p>
             <h2 className="mt-2 font-display text-3xl font-black tracking-[-0.04em]">Fournisseurs, Usines & Produits</h2>
-            <p className="mt-2 text-sm text-[#806c58]">
+            <p className="mt-2 text-sm text-[#5a4d4c]">
               Comparez les MOQ, les tarifs de gros dégressifs et envoyez vos appels d&apos;offres en un clic.
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex rounded-full border border-[#eadfce] bg-white p-1 shadow-sm">
+            <div className="flex rounded-full border border-[#ead8d5] bg-white p-1 shadow-sm">
               <button
                 type="button"
                 onClick={() => setViewMode("products")}
                 className={`rounded-full px-4 py-2 text-[11px] font-black transition ${
-                  viewMode === "products" ? "bg-[#9e001f] text-white" : "text-[#725f4d] hover:bg-[#f8f3ed]"
+                  viewMode === "products" ? "bg-[#9e001f] text-white" : "text-[#2b2525] hover:bg-[#f8f3ed]"
                 }`}
               >
                 Produits
@@ -1265,7 +1266,7 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
                 type="button"
                 onClick={() => setViewMode("vendors")}
                 className={`rounded-full px-4 py-2 text-[11px] font-black transition ${
-                  viewMode === "vendors" ? "bg-[#9e001f] text-white" : "text-[#725f4d] hover:bg-[#f8f3ed]"
+                  viewMode === "vendors" ? "bg-[#9e001f] text-white" : "text-[#2b2525] hover:bg-[#f8f3ed]"
                 }`}
               >
                 Fournisseurs
@@ -1274,7 +1275,7 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
                 type="button"
                 onClick={() => setViewMode("certified")}
                 className={`rounded-full px-4 py-2 text-[11px] font-black transition ${
-                  viewMode === "certified" ? "bg-[#9e001f] text-white" : "text-[#725f4d] hover:bg-[#f8f3ed]"
+                  viewMode === "certified" ? "bg-[#9e001f] text-white" : "text-[#2b2525] hover:bg-[#f8f3ed]"
                 }`}
               >
                 Vérifiés Pro
@@ -1284,7 +1285,7 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
                 onClick={() => setToolsOpen((open) => !open)}
                 aria-expanded={toolsOpen}
                 className={`rounded-full px-4 py-2 text-[11px] font-black transition ${
-                  toolsOpen ? "bg-[#9e001f] text-white" : "text-[#725f4d] hover:bg-[#f8f3ed]"
+                  toolsOpen ? "bg-[#9e001f] text-white" : "text-[#2b2525] hover:bg-[#f8f3ed]"
                 }`}
               >
                 Boîte à outils
@@ -1294,22 +1295,22 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
               href="/marketplace/vendre"
               className="rounded-full bg-[#ffca63] px-4 py-2.5 text-[11px] font-black text-[#513000] shadow-sm hover:bg-[#ffd685] transition inline-flex items-center gap-1.5"
             >
-              <span className="material-symbols-outlined text-[15px]">add_business</span>Vendre
+              <SvgIcon name="add_business" className="h-4 w-4 inline-block align-middle" />Vendre
             </Link>
           </div>
         </div>
 
         {/* Search & B2B Filter Bar */}
-        <div className="mt-7 rounded-[22px] border border-[#eadfce] bg-white p-3 md:p-4">
+        <div className="mt-7 rounded-[22px] border border-[#ead8d5] bg-white p-3 md:p-4">
           <div className="grid gap-3 md:grid-cols-[1.6fr_1fr_1fr]">
             <div className="flex items-center gap-2">
               <div className="flex h-12 min-w-0 flex-1 items-center gap-2 rounded-full bg-[#f8f3ed] px-4">
                 <label
-                  className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-full text-[#a36300] transition hover:bg-[#fff8ed]"
+                  className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-full text-[#9e001f] transition hover:bg-[#fff8ed]"
                   title="Rechercher par image"
                   aria-label="Rechercher par image"
                 >
-                  <span className="material-symbols-outlined text-[20px]">image_search</span>
+                  <SvgIcon name="image_search" className="h-4 w-4 inline-block align-middle" />
                   <input
                     type="file"
                     accept="image/*"
@@ -1324,7 +1325,7 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
                   placeholder="Rechercher un produit, matière première, fournisseur..."
                   className="min-w-0 flex-1 bg-transparent text-[13px] outline-none"
                 />
-                <span className="material-symbols-outlined text-[20px] text-[#a36300]">search</span>
+                <SvgIcon name="search" className="h-4 w-4 inline-block align-middle" />
               </div>
               <button
                 type="button"
@@ -1333,7 +1334,7 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
                 aria-label="Ouvrir les filtres"
                 className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#f8f3ed] text-[#9e001f] md:hidden"
               >
-                <span className="material-symbols-outlined">filter_alt</span>
+                <SvgIcon name="filter_alt" className="h-4 w-4 inline-block align-middle" />
               </button>
             </div>
             <select
@@ -1359,8 +1360,8 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
           </div>
 
           {filtersOpen && (
-            <div className="grid gap-2 rounded-2xl border border-[#eadfce] bg-[#fffaf3] p-3 md:hidden mt-3">
-              <label className="text-[11px] font-black uppercase tracking-[0.12em] text-[#806c58]">
+            <div className="grid gap-2 rounded-2xl border border-[#ead8d5] bg-[#fffaf3] p-3 md:hidden mt-3">
+              <label className="text-[11px] font-black uppercase tracking-[0.12em] text-[#5a4d4c]">
                 Catégorie
                 <select
                   value={category}
@@ -1372,7 +1373,7 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
                   ))}
                 </select>
               </label>
-              <label className="text-[11px] font-black uppercase tracking-[0.12em] text-[#806c58]">
+              <label className="text-[11px] font-black uppercase tracking-[0.12em] text-[#5a4d4c]">
                 Pays
                 <select
                   value={country}
@@ -1390,13 +1391,13 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
           )}
 
           {/* Alibaba B2B Quick Filter Chips */}
-          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[#f0e7dc] pt-3">
-            <span className="text-[11px] font-bold text-[#806c58]">Filtres B2B rapides :</span>
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[#ead8d5] pt-3">
+            <span className="text-[11px] font-bold text-[#5a4d4c]">Filtres B2B rapides :</span>
             <button
               type="button"
               onClick={() => setB2bFilter("all")}
               className={`rounded-full px-3 py-1 text-[11px] font-bold transition ${
-                b2bFilter === "all" ? "bg-[#2a211a] text-white" : "bg-[#f8f3ed] text-[#725f4d] hover:bg-[#eadfce]"
+                b2bFilter === "all" ? "bg-[#2a211a] text-white" : "bg-[#f8f3ed] text-[#2b2525] hover:bg-[#eadfce]"
               }`}
             >
               Tous les produits
@@ -1408,7 +1409,7 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
                 b2bFilter === "verified" ? "bg-[#92400e] text-white" : "bg-[#fef3c7] text-[#92400e] hover:bg-[#fde68a]"
               }`}
             >
-              <span className="material-symbols-outlined text-[13px]">verified</span> Fournisseurs Vérifiés
+              <SvgIcon name="verified" className="h-4 w-4 inline-block align-middle" /> Fournisseurs Vérifiés
             </button>
             <button
               type="button"
@@ -1420,27 +1421,27 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
               MOQ faible (≤ 10 pcs)
             </button>
             {imageSearchLoading && (
-              <span className="text-[11px] font-semibold text-[#806c58]">Analyse de l’image en cours…</span>
+              <span className="text-[11px] font-semibold text-[#5a4d4c]">Analyse de l’image en cours…</span>
             )}
             {imageSearchPreview && (
               <img
                 src={imageSearchPreview}
                 alt="Image de recherche"
-                className="h-8 w-8 rounded-lg border border-[#eadfce] object-cover"
+                className="h-8 w-8 rounded-lg border border-[#ead8d5] object-cover"
               />
             )}
             {imageSearchMessage && (
-              <span className="text-[11px] font-semibold text-[#806c58]">{imageSearchMessage}</span>
+              <span className="text-[11px] font-semibold text-[#5a4d4c]">{imageSearchMessage}</span>
             )}
           </div>
         </div>
 
         {/* Tools Drawer */}
         {toolsOpen && (
-          <div className="mt-5 rounded-2xl border border-[#eadfce] bg-white p-4 shadow-lg">
+          <div className="mt-5 rounded-2xl border border-[#ead8d5] bg-white p-4 shadow-lg">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#a36300]">Espace Vendeur & Grossiste</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#9e001f]">Espace Vendeur & Grossiste</p>
                 <h3 className="font-display text-lg font-black">Boîte à outils Professionnelle</h3>
               </div>
               <button
@@ -1449,7 +1450,7 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
                 aria-label="Fermer la boîte à outils"
                 className="grid h-9 w-9 place-items-center rounded-full bg-[#f8f3ed] text-[#9e001f]"
               >
-                <span className="material-symbols-outlined">close</span>
+                <SvgIcon name="close" className="h-4 w-4 inline-block align-middle" />
               </button>
             </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
@@ -1458,29 +1459,29 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
                 className="rounded-xl border border-[#ffca63] bg-[#fffaf0] p-3 text-xs font-black text-[#8a5700] hover:bg-[#fff5e0] transition flex items-center justify-between"
               >
                 <span>+ Ouvrir ma boutique B2B</span>
-                <span className="material-symbols-outlined text-[16px]">add_business</span>
+                <SvgIcon name="add_business" className="h-4 w-4 inline-block align-middle" />
               </Link>
               <Link
                 href="/marketplace/boutique"
-                className="rounded-xl border border-[#eadfce] bg-[#fffaf3] p-3 text-xs font-bold text-[#5c3d19]"
+                className="rounded-xl border border-[#ead8d5] bg-[#fffaf3] p-3 text-xs font-bold text-[#2b2525]"
               >
                 Gérer mon catalogue
               </Link>
               <Link
                 href="/marketplace/commandes"
-                className="rounded-xl border border-[#eadfce] bg-[#fffaf3] p-3 text-xs font-bold text-[#5c3d19]"
+                className="rounded-xl border border-[#ead8d5] bg-[#fffaf3] p-3 text-xs font-bold text-[#2b2525]"
               >
                 Commandes & Livraisons
               </Link>
               <Link
                 href="/marketplace/messages"
-                className="rounded-xl border border-[#eadfce] bg-[#fffaf3] p-3 text-xs font-bold text-[#5c3d19]"
+                className="rounded-xl border border-[#ead8d5] bg-[#fffaf3] p-3 text-xs font-bold text-[#2b2525]"
               >
                 Négociations & Devis RFQ
               </Link>
               <Link
                 href="/marketplace/admin"
-                className="rounded-xl border border-[#eadfce] bg-[#fffaf3] p-3 text-xs font-bold text-[#5c3d19]"
+                className="rounded-xl border border-[#ead8d5] bg-[#fffaf3] p-3 text-xs font-bold text-[#2b2525]"
               >
                 Tableau de bord Vendeur
               </Link>
@@ -1503,11 +1504,11 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
             ))}
             {!filteredProducts.length && (
               <div className="col-span-full rounded-[28px] border border-dashed border-[#cdbb9f] bg-[#fffaf3] p-12 text-center">
-                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#fff4e0] text-[#a36300]">
-                  <span className="material-symbols-outlined text-3xl">storefront</span>
+                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#fff4e0] text-[#9e001f]">
+                  <SvgIcon name="storefront" className="h-4 w-4 inline-block align-middle" />
                 </div>
                 <h3 className="mt-4 font-display text-xl font-black text-[#2a211a]">Le catalogue grossiste est en cours d’ouverture</h3>
-                <p className="mx-auto mt-2 max-w-md text-xs leading-5 text-[#806c58]">
+                <p className="mx-auto mt-2 max-w-md text-xs leading-5 text-[#5a4d4c]">
                   Vous êtes producteur, fabricant ou grossiste africain ? Rejoignez les premiers fournisseurs officiels d’Envol Africa et exposez vos produits auprès de milliers d’acheteurs.
                 </p>
                 <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -1519,7 +1520,7 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
                   </Link>
                   <Link
                     href="/service"
-                    className="rounded-full border border-[#eadfce] bg-white px-6 py-3 text-xs font-bold text-[#725f4d] hover:bg-[#f8f3ed] transition"
+                    className="rounded-full border border-[#ead8d5] bg-white px-6 py-3 text-xs font-bold text-[#2b2525] hover:bg-[#f8f3ed] transition"
                   >
                     Contacter le service sourcing
                   </Link>
@@ -1530,19 +1531,19 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
         ) : (
           <div className="mt-7 space-y-8">
             {vendors.map((vendor) => (
-              <section key={vendor.supplier} className="rounded-[24px] border border-[#eadfce] bg-white p-5">
+              <section key={vendor.supplier} className="rounded-[24px] border border-[#ead8d5] bg-white p-5">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#a36300]">Fournisseur Certifié</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#9e001f]">Fournisseur Certifié</p>
                       <span className="text-[#087e8b] font-bold text-xs">✓ Vérifié</span>
                     </div>
                     <h3 className="mt-1 font-display text-xl font-black text-[#2a211a]">{vendor.supplier}</h3>
-                    <p className="mt-1 text-xs text-[#806c58]">
+                    <p className="mt-1 text-xs text-[#5a4d4c]">
                       {vendor.products.length} produit{vendor.products.length > 1 ? "s" : ""} disponible{vendor.products.length > 1 ? "s" : ""} avec tarifs de gros dégressifs
                     </p>
                   </div>
-                  <span className="material-symbols-outlined text-3xl text-[#087e8b]">storefront</span>
+                  <SvgIcon name="storefront" className="h-4 w-4 inline-block align-middle" />
                 </div>
                 <VendorProductCarousel
                   products={vendor.products}
@@ -1552,7 +1553,7 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
               </section>
             ))}
             {!vendors.length && (
-              <div className="rounded-[24px] border border-dashed border-[#cdbb9f] bg-white p-12 text-center text-sm text-[#806c58]">
+              <div className="rounded-[24px] border border-dashed border-[#cdbb9f] bg-white p-12 text-center text-sm text-[#5a4d4c]">
                 Aucun fournisseur ne correspond aux critères.
               </div>
             )}
@@ -1591,24 +1592,24 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
       {rfqProduct && <RfqModal product={rfqProduct} onClose={() => setRfqProduct(null)} />}
 
       {/* Garanties & Sécurité B2B */}
-      <section className="border-y border-[#eadfce] bg-[#f5eee5]">
+      <section className="border-y border-[#ead8d5] bg-[#f5eee5]">
         <div className="mx-auto grid max-w-[1280px] gap-4 px-5 py-10 md:grid-cols-3 md:px-10 lg:px-16">
           <div className="rounded-[24px] bg-white p-6">
-            <span className="material-symbols-outlined text-3xl text-[#087e8b]">security</span>
+            <SvgIcon name="security" className="h-4 w-4 inline-block align-middle" />
             <h3 className="mt-4 font-display text-lg font-black">Paiements Sécurisés Moneroo</h3>
-            <p className="mt-2 text-sm leading-6 text-[#725f4d]">
+            <p className="mt-2 text-sm leading-6 text-[#2b2525]">
               Réglez vos commandes en toute sérénité par Mobile Money et Carte Bancaire avec traçabilité complète de chaque transaction.
             </p>
           </div>
           <div className="rounded-[24px] bg-[#2a211a] p-6 text-white">
-            <span className="material-symbols-outlined text-3xl text-[#ffca63]">request_quote</span>
+            <SvgIcon name="request_quote" className="h-4 w-4 inline-block align-middle" />
             <h3 className="mt-4 font-display text-lg font-black">Devis B2B & Négociation Directe</h3>
             <p className="mt-2 text-sm leading-6 text-white/70">
               Échangez directement avec les fabricants pour négocier vos volumes (MOQ), délais et conditionnements sur mesure.
             </p>
           </div>
           <div className="rounded-[24px] bg-[#9e001f] p-6 text-white">
-            <span className="material-symbols-outlined text-3xl text-[#ffca63]">local_shipping</span>
+            <SvgIcon name="local_shipping" className="h-4 w-4 inline-block align-middle" />
             <h3 className="mt-4 font-display text-lg font-black">Expédition & Logistique</h3>
             <p className="mt-2 text-sm leading-6 text-white/75">
               Coordination logistique directe avec les fournisseurs vers les grands pôles économiques et ports d&apos;Afrique.
@@ -1669,7 +1670,7 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
               href="/marketplace/vendre"
               className="inline-flex items-center gap-2 rounded-full bg-[#ffca63] px-8 py-4 text-xs font-black text-[#513000] shadow-xl hover:bg-[#ffd685] transition"
             >
-              <span className="material-symbols-outlined text-[18px]">add_business</span>
+              <SvgIcon name="add_business" className="h-4 w-4 inline-block align-middle" />
               Ouvrir ma boutique Fournisseur Vérifié B2B
             </Link>
           </div>
