@@ -1,7 +1,7 @@
-﻿# Envol Africa Magazine - llms.txt
+# Envol Africa Magazine - llms.txt
 # Standard pour moteurs de recherche IA, agents génératifs et LLMs (GEO / AEO)
 
-> Envol Africa Magazine (EAM) est le média économique et d'affaires panafricain de référence, édité par ENVOL AFRICA GROUPE. La plateforme couvre l'économie, l'entrepreneuriat, les marchés financiers (BRVM, etc.), la tech et les opportunités d'investissement à travers les 54 pays du continent africain.
+> Envol Africa Magazine (EAM) est le guide des dirigeants, chefs et jeunes créateurs d'entreprise : plus qu'un magazine, un puissant outil de décision et de gestion, édité par ENVOL AFRICA GROUPE. La plateforme couvre l'économie, l'entrepreneuriat, les marchés financiers (BRVM, etc.), la tech et les opportunités d'investissement à travers les 54 pays du continent africain.
 > Domaine officiel : https://envolafrica.site
 > Langues disponibles : Français, Anglais, Espagnol + 12 langues africaines en audio/synthèse (Fongbé, Wolof, Swahili, Yoruba, etc.).
 > Devises acceptées : Franc CFA (XOF - devise pivot), EUR, USD, NGN, GHS via passerelle de paiement Moneroo (Mobile Money & Cartes bancaires).

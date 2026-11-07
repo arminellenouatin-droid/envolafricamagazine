@@ -32,6 +32,12 @@ export default function ArticleActions({ articleId, slug, initialLikes, initialV
       .then((response) => response.ok ? response.json() : null)
       .then((data) => { if (data?.views) setViews(Number(data.views)); })
       .catch(() => undefined);
+    try {
+      const local = JSON.parse(localStorage.getItem("eam_favorites") || "[]");
+      if (local.some((item: any) => (typeof item === "string" ? item === articleId : item.id === articleId))) {
+        setFavorited(true);
+      }
+    } catch {}
     void fetch(`/api/favorites`, { credentials: "include" }).then((response) => response.json()).then((data) => { if (data.favorites?.includes(articleId)) setFavorited(true); }).catch(() => undefined);
     void fetch(`/api/comments?articleId=${encodeURIComponent(articleId)}`).then((response) => response.json()).then((data) => setComments(Array.isArray(data.comments) ? data.comments : [])).catch(() => undefined);
   }, [articleId, slug]);
@@ -47,11 +53,49 @@ export default function ArticleActions({ articleId, slug, initialLikes, initialV
   };
 
   const handleFavorite = async () => {
-    const method = favorited ? "DELETE" : "POST";
-    const url = favorited ? `/api/favorites?articleId=${encodeURIComponent(articleId)}` : "/api/favorites";
-    const response = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: method === "POST" ? JSON.stringify({ articleId }) : undefined, credentials: "include" }).catch(() => null);
-    if (response?.ok) setFavorited((value) => !value);
-    else setMessage("Connectez-vous pour sauvegarder cet article.");
+    const isAdding = !favorited;
+    setFavorited(isAdding);
+
+    try {
+      const stored = JSON.parse(localStorage.getItem("eam_favorites") || "[]");
+      let nextStored;
+      if (isAdding) {
+        const articleTitle = typeof document !== "undefined"
+          ? document.title.replace(/\s*[|·-]\s*Envol Africa.*$/i, "").trim()
+          : slug;
+        const metaImg = typeof document !== "undefined"
+          ? (document.querySelector('meta[property="og:image"]')?.getAttribute("content") || "")
+          : "";
+        const articleMeta = {
+          id: articleId,
+          slug,
+          title: articleTitle || slug,
+          image: metaImg,
+          type: "article",
+          savedAt: new Date().toISOString(),
+        };
+        const exists = stored.some((s: any) => (typeof s === "string" ? s === articleId : s.id === articleId));
+        nextStored = exists ? stored : [...stored, articleMeta];
+      } else {
+        nextStored = stored.filter((s: any) => (typeof s === "string" ? s !== articleId : s.id !== articleId));
+      }
+      localStorage.setItem("eam_favorites", JSON.stringify(nextStored));
+      window.dispatchEvent(new Event("eam-favorites-updated"));
+      window.dispatchEvent(new Event("storage"));
+    } catch {}
+
+    try {
+      const method = isAdding ? "POST" : "DELETE";
+      const url = isAdding ? "/api/favorites" : `/api/favorites?articleId=${encodeURIComponent(articleId)}`;
+      await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: isAdding ? JSON.stringify({ articleId }) : undefined,
+        credentials: "include",
+      });
+    } catch {}
+
+    setMessage(isAdding ? "Article ajouté à vos favoris." : "Article retiré de vos favoris.");
   };
 
   const handleComment = async (event: React.FormEvent) => {

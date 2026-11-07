@@ -340,8 +340,8 @@ export function seedIfEmpty() {
         year,
         description: `Dans ce numéro ${n}, retrouvez notre grand dossier sur les transformations économiques du continent, des interviews exclusives et nos analyses pointues.`,
         previewPages: 5,
-        formats: ["numerique","papier","cd_audio","audio_pdf","audio_papier"],
-        languages: ["fr","en","es"],
+        formats: ["numerique", "papier", "cd_audio"],
+        languages: ["fr", "en", "es"],
         featured: n===25,
       });
     }

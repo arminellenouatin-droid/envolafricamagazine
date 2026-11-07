@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import { readWabDB, writeWabDB } from "@/lib/wab-db";
-import { marketplaceSeed } from "@/lib/marketplace-seed";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -35,22 +34,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     } catch {}
   }
 
-  // Fallback avec les produits Marketplace Seed
-  if (availableProducts.length === 0) {
-    availableProducts = marketplaceSeed.map((p) => ({
-      id: p.id,
-      title: p.title,
-      priceXof: p.priceXof,
-      image: p.image,
-      supplier: p.supplier,
-      installment: p.installment,
-      months: p.months,
-      stock: 25,
-      certified: p.certified,
-      boosted: p.boosted,
-    }));
-  }
-
   return NextResponse.json({
     pinnedProduct: salon.pinnedProduct || null,
     availableProducts,
@@ -74,18 +57,37 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const body = await request.json().catch(() => ({}));
   const { productId, isFlash, flashDiscountPercent, flashMinutes } = body;
 
-  if (!productId) {
-    return NextResponse.json({ error: "Identifiant de produit requis." }, { status: 400 });
+  if (!productId || typeof productId !== "string" || productId.startsWith("seed-")) {
+    return NextResponse.json({ error: "Identifiant de produit invalide." }, { status: 400 });
   }
 
-  // Trouver le produit dans les graines ou supabase
-  let found = marketplaceSeed.find((p) => p.id === productId);
-  let title = found?.title || "Produit Marketplace WAB";
-  let priceXof = found?.priceXof || 25000;
-  let image = found?.image || "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=600&q=80";
-  let supplier = found?.supplier || salon.host;
-  let installment = found?.installment || false;
-  let months = found?.months || 6;
+  let title = "Produit Marketplace WAB";
+  let priceXof = 25000;
+  let image = "";
+  let supplier = salon.host;
+  let installment = false;
+  let months = 6;
+
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const { data: prod } = await supabase
+      .from("marketplace_products")
+      .select("title,price_xof,media,installment_enabled,installment_months_max,marketplace_suppliers(business_name)")
+      .eq("id", productId)
+      .maybeSingle();
+    if (prod) {
+      title = prod.title;
+      priceXof = prod.price_xof || 25000;
+      image = Array.isArray(prod.media) && prod.media[0]?.path
+        ? prod.media[0].path
+        : Array.isArray(prod.media) && prod.media[0]?.url
+        ? prod.media[0].url
+        : "";
+      supplier = (prod.marketplace_suppliers as any)?.business_name || salon.host;
+      installment = Boolean(prod.installment_enabled);
+      months = prod.installment_months_max || 6;
+    }
+  }
 
   // Calcul offre flash si demandée
   let flashPriceXof = undefined;

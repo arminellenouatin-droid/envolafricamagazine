@@ -14,6 +14,7 @@ import InAppNotificationBanner from "@/components/InAppNotificationBanner";
 import AssistanceChatWidget from "@/components/AssistanceChatWidget";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import { PromptProvider } from "@/lib/prompt-orchestrator";
+import FavoriteBadgeSynchronizer from "@/components/FavoriteBadgeSynchronizer";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   title: {
-    default: "Envol Africa Magazine | Le magazine économique panafricain de référence",
+    default: "Envol Africa Magazine | Le guide des dirigeants, chefs et jeunes créateurs d'entreprise : plus qu'un magazine, un puissant outil de décision et de gestion",
     template: "%s | Envol Africa",
   },
   description: "Envol Africa Magazine est la plateforme de référence consacrée à l'économie et aux opportunités en Afrique : actualités, analyses exclusives, Kiosque numérique, Marketplace panafricaine, emploi et financement.",
@@ -35,7 +36,7 @@ export const metadata: Metadata = {
     locale: "fr_FR",
     url: "/",
     siteName: "Envol Africa",
-    title: "Envol Africa Magazine | Le magazine économique panafricain de référence",
+    title: "Envol Africa Magazine | Le guide des dirigeants, chefs et jeunes créateurs d'entreprise : plus qu'un magazine, un puissant outil de décision et de gestion",
     description: "Analyses exclusives, enquêtes économiques, Kiosque numérique, Marketplace et opportunités panafricaines.",
     images: [
       {
@@ -50,7 +51,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Envol Africa Magazine",
-    description: "Le magazine économique panafricain de référence.",
+    description: "Le guide des dirigeants, chefs et jeunes créateurs d'entreprise : plus qu'un magazine, un puissant outil de décision et de gestion.",
     images: [
       {
         url: `${SITE_URL}/logo-couleur-entete-new.png`,
@@ -201,6 +202,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <LocaleProvider>
           <PromptProvider initialUser={user ? { id: user.id, email: user.email, nom: user.nom, prenom: user.prenom } : null}>
             <AutoTranslator />
+            <FavoriteBadgeSynchronizer />
             <Header user={user ? { id: user.id, nom: user.nom, prenom: user.prenom, email: user.email, role: user.role, avatar: user.avatar } : undefined} />
             <PromoPopup />
             <CookieConsentBanner />

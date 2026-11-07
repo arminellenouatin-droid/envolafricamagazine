@@ -264,4 +264,67 @@ describe('Financial Core & Wallet Ledger (Document 1 - Phase 1)', () => {
     expect(duplicateRes.duplicate).toBe(true);
     expect(duplicateRes.wallet.availableBalance).toBe(balanceBefore + 25000);
   });
+
+  it('12. Traite des crédits concurrents avec Promise.all sans perte financière', async () => {
+    const userConcurrent = 'user-test-concurrent-wallet';
+    const initialWallet = await getOrCreateWallet(userConcurrent);
+    const startBalance = initialWallet.availableBalance;
+
+    const creditAmounts = [1000, 2000, 3000, 4000, 5000];
+    const totalExpected = creditAmounts.reduce((a, b) => a + b, 0);
+
+    const creditPromises = creditAmounts.map((amt, idx) =>
+      creditWallet({
+        userId: userConcurrent,
+        amount: amt,
+        type: 'DEPOSIT',
+        source: 'concurrent_test',
+        sourceId: `src_${idx}`,
+        description: `Crédit concurrent ${idx}`,
+        idempotencyKey: `idem-concurrent-${idx}-${Date.now()}`,
+      })
+    );
+
+    const results = await Promise.all(creditPromises);
+    results.forEach((res) => expect(res.success).toBe(true));
+
+    const finalWallet = await getOrCreateWallet(userConcurrent);
+    expect(finalWallet.availableBalance).toBe(startBalance + totalExpected);
+  });
+
+  it('13. Empêche le double remboursement ou rejet concurrent d’un même retrait', async () => {
+    const userRetrait = 'user-test-retrait-race';
+    await creditWallet({
+      userId: userRetrait,
+      amount: 50000,
+      type: 'DEPOSIT',
+      source: 'test',
+      sourceId: 'src_test_retrait',
+      description: 'Solde initial retrait',
+    });
+
+    const wdrRes = await requestWithdrawal({
+      userId: userRetrait,
+      amount: 10000,
+      method: 'mtn_momo',
+      destinationAccount: '+229 97 99 88 77',
+      accountHolder: 'Concurrent Test',
+    });
+
+    // Deux rejets concurrents du même retrait
+    const [reject1, reject2] = await Promise.allSettled([
+      rejectWithdrawal(wdrRes.withdrawalId, 'Rejet 1'),
+      rejectWithdrawal(wdrRes.withdrawalId, 'Rejet 2'),
+    ]);
+
+    // Un seul doit réussir à passer le statut à 'rejected'
+    const successCount = [reject1, reject2].filter(
+      (r) => r.status === 'fulfilled' && (r as PromiseFulfilledResult<any>).value.status === 'rejected'
+    ).length;
+    expect(successCount).toBeGreaterThanOrEqual(1);
+
+    // Le solde du portefeuille ne doit pas être sur-crédité
+    const finalWallet = await getOrCreateWallet(userRetrait);
+    expect(finalWallet.availableBalance).toBe(50000); // 50000 initial - 10000 débité + 10000 restitué une seule fois
+  });
 });

@@ -378,25 +378,30 @@ export async function holdWalletEscrow(params: HoldEscrowParams): Promise<{
 
   const supabase = getSupabaseAdmin();
   if (supabase) {
-    const { data, error } = await supabase.rpc('fn_hold_wallet_escrow', {
-      p_user_id: userId,
-      p_amount: amount,
-      p_reason: reason,
-      p_source: source,
-      p_source_id: sourceId,
-      p_reference: reference,
-      p_description: description,
-      p_metadata: metadata,
-    });
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(userId)) {
+      const { data, error } = await supabase.rpc('fn_hold_wallet_escrow', {
+        p_user_id: userId,
+        p_amount: amount,
+        p_reason: reason,
+        p_source: source,
+        p_source_id: sourceId,
+        p_reference: reference,
+        p_description: description,
+        p_metadata: metadata,
+      });
 
-    if (error) throw error;
-    const wallet = await getOrCreateWallet(userId);
-    return {
-      success: true,
-      holdId: data?.hold_id,
-      reference,
-      wallet,
-    };
+      if (error) throw error;
+      const wallet = await getOrCreateWallet(userId);
+      return {
+        success: true,
+        holdId: data?.hold_id,
+        reference,
+        wallet,
+      };
+    } else if (process.env.NODE_ENV !== 'test' && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error(`Identifiant utilisateur invalide (format UUID requis pour le séquestre): ${userId}`);
+    }
   }
 
   // Fallback local

@@ -9,6 +9,7 @@ import { validateMinimumPaymentAmount } from "@/lib/payment-policy";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { resolveCountry } from "@/lib/country-resolver";
+import { isMonerooSupportedCountry } from "@/lib/payment-config";
 
 const SUBSCRIPTION_PRICES: Record<string, { monthly: number; annual: number }> = {
   mensuel: { monthly: 5000, annual: 42000 },
@@ -64,7 +65,14 @@ export async function POST(req: NextRequest) {
       headers: req.headers,
       fallback: "BJ",
     });
-    // Omission de 'methods' par défaut : Moneroo affiche dynamiquement toutes ses méthodes actives (Celtiis, MTN, Moov, Cartes)
+
+    if (!isMonerooSupportedCountry(paymentCountry)) {
+      return NextResponse.json({
+        error: "Moneroo n'est pas disponible pour ce pays. Veuillez utiliser le Paiement Monde via Chariow.",
+        code: "MONEROO_COUNTRY_NOT_SUPPORTED",
+        recommendedGateway: "chariow",
+      }, { status: 400 });
+    }
     const requestedMethods = body.method ? [String(body.method)] : undefined;
     const magazines = await listMagazines();
 

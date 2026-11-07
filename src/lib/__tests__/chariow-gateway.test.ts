@@ -21,7 +21,9 @@ describe("Passerelle Internationale Chariow & Sécurité Pulse", () => {
       expect(isMonerooNativeCountry("ci")).toBe(true);
       expect(isMonerooNativeCountry("TG")).toBe(true);
       expect(isMonerooNativeCountry("SN")).toBe(true);
-      expect(isMonerooNativeCountry("CM")).toBe(true);
+      expect(isMonerooNativeCountry("BF")).toBe(true);
+      expect(isMonerooNativeCountry("ML")).toBe(true);
+      expect(isMonerooNativeCountry("CM")).toBe(false);
     });
 
     it("route automatiquement vers Chariow les pays non couverts par Moneroo (Centrafrique, Tchad, Madagascar, Gambie, Diaspora)", () => {

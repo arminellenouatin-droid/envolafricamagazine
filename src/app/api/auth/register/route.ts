@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     const email = normalizeEmail(body.email);
     if (!nom || !prenom || !email || !password) return NextResponse.json({ error: "Champs requis manquants" }, { status: 400 });
     if (!isPlausibleEmail(email)) return NextResponse.json({ error: "Veuillez saisir une adresse e-mail valide" }, { status: 400 });
-    if (String(password).length < 8) return NextResponse.json({ error: "Le mot de passe doit contenir au moins 8 caractères" }, { status: 400 });
+    if (String(password).length < 10) return NextResponse.json({ error: "Le mot de passe doit contenir au moins 10 caractères" }, { status: 400 });
     if (await findUserByEmail(email)) return NextResponse.json({ error: "Un compte existe déjà avec cet email" }, { status: 409 });
 
     const passwordHash = await hashPassword(password);

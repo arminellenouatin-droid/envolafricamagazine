@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserFromCookie, hashPassword, verifyPassword } from "@/lib/auth";
-import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { getSupabaseAdmin, isProductionRuntime } from "@/lib/supabase-admin";
 import { readDB, writeDB } from "@/lib/db";
 
 function isStrongPassword(password: string) {
@@ -25,6 +25,9 @@ export async function POST(request: NextRequest) {
     const { error } = await supabase.from("users").update({ password_hash: passwordHash }).eq("id", user.id);
     if (error) return NextResponse.json({ error: "Impossible d’enregistrer le nouveau mot de passe." }, { status: 502 });
   } else {
+    if (isProductionRuntime()) {
+      return NextResponse.json({ error: "Service de mise à jour du mot de passe temporairement indisponible." }, { status: 503 });
+    }
     const db = readDB();
     const localUser = db.users.find((candidate) => candidate.id === user.id);
     if (!localUser) return NextResponse.json({ error: "Utilisateur introuvable." }, { status: 404 });

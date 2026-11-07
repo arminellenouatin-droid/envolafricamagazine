@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import MarketplaceClient from "./MarketplaceClient";
-import { marketplaceSeed } from "@/lib/marketplace-seed";
 
 export const metadata: Metadata = {
   title: "Marketplace Envol Africa | Acheter et vendre en Afrique",
@@ -29,6 +28,6 @@ export const metadata: Metadata = {
 };
 
 export default function MarketplacePage() {
-  return <MarketplaceClient initialProducts={marketplaceSeed} />;
+  return <MarketplaceClient initialProducts={[]} />;
 }
 

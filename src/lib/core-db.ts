@@ -160,6 +160,11 @@ function mapMagazine(row: Record<string, unknown>): Magazine {
     languages: Array.isArray(row.languages) ? row.languages.map(String) : [],
     featured: Boolean(row.featured ?? false),
     priceOverrides: row.price_overrides && typeof row.price_overrides === "object" ? row.price_overrides as Record<string, number> : undefined,
+    sommaire: Array.isArray(row.sommaire)
+      ? (row.sommaire as unknown[]).map(String).filter((s) => s.trim().length > 0)
+      : typeof row.sommaire === "string"
+      ? (row.sommaire as string).split("\n").map((s) => s.trim()).filter((s) => s.length > 0)
+      : undefined,
   };
 }
 

@@ -45,9 +45,9 @@ export const SUBSCRIPTION_PLANS = [
     id: "entreprise",
     name: "Chef d'entreprise",
     slug: "chef-entreprise",
-    price: 20000,
+    price: 15000,
     firstMonthPrice: 15000,
-    monthlyPrice: 20000,
+    monthlyPrice: 15000,
     annualPrice: 168000,
     annualDiscountPercent: 30,
     currency: "XOF",
@@ -67,8 +67,8 @@ export const SUBSCRIPTION_PLANS = [
     id: "soutien",
     name: "Soutien",
     slug: "soutien",
-    price: 600000,
-    monthlyPrice: 50000,
+    price: 420000,
+    monthlyPrice: 35000,
     annualPrice: 420000,
     annualDiscountPercent: 30,
     currency: "XOF",
@@ -86,11 +86,9 @@ export const SUBSCRIPTION_PLANS = [
 ];
 
 export const KIOSQUE_FORMATS = [
-  { id: "cd_audio", label: "CD Audio", price: 5000, type: "audio", description: "Fichier audio à télécharger" },
-  { id: "numerique", label: "Numérique", price: 10000, type: "digital", description: "PDF haute résolution" },
-  { id: "papier", label: "Papier", price: 16000, type: "print", description: "Livraison postale" },
-  { id: "audio_pdf", label: "Audio + PDF", price: 12000, type: "bundle", description: "Le duo numérique complet" },
-  { id: "audio_papier", label: "Audio + Papier", price: 18000, type: "bundle", description: "Papier + fichier audio" },
+  { id: "cd_audio", label: "Version Audio", price: 4000, type: "audio", description: "Fichier audio complet à télécharger" },
+  { id: "numerique", label: "Version Numérique", price: 10000, type: "digital", description: "PDF haute résolution" },
+  { id: "papier", label: "Version Papier", price: 16000, type: "print", description: "Livraison postale" },
 ];
 
 export const LANGUAGES = {

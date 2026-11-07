@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-import { marketplaceSeed } from "@/lib/marketplace-seed";
 import { getMarketplaceProductSchema, getBreadcrumbSchema } from "@/lib/schema-org";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 import ProductDetailClient from "./ProductDetailClient";
 
 async function getProduct(id: string) {
+  if (id.startsWith("seed-")) return null;
   const supabase = getSupabaseAdmin();
   let product: any = null;
 
@@ -28,10 +29,6 @@ async function getProduct(id: string) {
         product.product_affiliations = [];
       }
     }
-  }
-
-  if (!product) {
-    product = marketplaceSeed.find((item) => item.id === id);
   }
 
   return product;
@@ -91,7 +88,11 @@ export default async function ProductDetailPage({
     getCurrentUserFromCookie(),
   ]);
 
-  const productSchema = product ? getMarketplaceProductSchema(product) : null;
+  if (!product) {
+    notFound();
+  }
+
+  const productSchema = getMarketplaceProductSchema(product);
   const breadcrumbSchema = getBreadcrumbSchema([
     { name: "Accueil", url: "/" },
     { name: "Marketplace", url: "/marketplace" },
