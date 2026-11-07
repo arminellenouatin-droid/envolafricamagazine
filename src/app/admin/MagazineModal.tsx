@@ -42,6 +42,18 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
 
   useEffect(() => { fetch("/api/admin/magazine-categories", { credentials: "include" }).then((response) => response.json()).then((data) => { if (Array.isArray(data.categories) && data.categories.length) setMagazineCategories(data.categories); }).catch(() => undefined); }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
+
   const readResponse = async (res: Response) => {
     const raw = await res.text();
     if (!raw) return {};
@@ -156,29 +168,44 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <form onSubmit={handleSubmit} className="bg-white rounded-[20px] p-6 w-full max-w-[900px] max-h-[95vh] overflow-y-auto">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3 mb-4">
+    <div
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="magazine-modal-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <form onSubmit={handleSubmit} className="bg-white rounded-2xl sm:rounded-[20px] p-5 sm:p-6 w-full max-w-[900px] max-h-[92vh] overflow-y-auto shadow-2xl">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 pb-3 mb-4">
           <div>
-            <h3 className="font-bold text-[18px] text-[#0A1931]">{editingMag ? "Modifier le magazine" : "Nouveau magazine"}</h3>
+            <h3 id="magazine-modal-title" className="font-bold text-[18px] text-[#0A1931]">{editingMag ? "Modifier le magazine" : "Nouveau magazine"}</h3>
             <p className="mt-0.5 text-[11px] text-zinc-500">Numéro, couverture, preview flipbook, fichiers PDF & audios, tarification par format.</p>
           </div>
           <div className="flex items-center gap-2">
             {editingMag && (
               <>
-                <a href={`/kiosque/${encodeURIComponent(editingMag.id)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-full hover:bg-blue-100">
+                <a href={`/kiosque/${encodeURIComponent(editingMag.id)}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[36px] items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-full hover:bg-blue-100">
                   <span>Voir dans le Kiosque</span><span>↗</span>
                 </a>
                 <button type="button" onClick={() => {
                   const url = `${window.location.origin}/kiosque/${editingMag.id}`;
                   navigator.clipboard.writeText(url);
                   setMessage("Lien copié dans le presse-papier ! ✅");
-                }} className="text-[11px] font-bold text-zinc-700 bg-zinc-100 border border-zinc-200 px-3 py-1.5 rounded-full hover:bg-zinc-200">
+                }} className="min-h-[36px] text-[11px] font-bold text-zinc-700 bg-zinc-100 border border-zinc-200 px-3 py-1.5 rounded-full hover:bg-zinc-200">
                   Copier le lien
                 </button>
               </>
             )}
-            <button type="button" onClick={onClose} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center font-bold">×</button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Fermer la boîte de dialogue"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-100 text-zinc-700 transition hover:bg-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A1931]"
+            >
+              <span className="material-symbols-outlined text-[18px]">close</span>
+            </button>
           </div>
         </div>
 
@@ -258,7 +285,7 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
                 {id:"audio_pdf", label:"Audio + PDF"},
                 {id:"audio_papier", label:"Audio + Papier"},
               ].map(f=>(
-                <div key={f.id}><label className="text-[10px] font-bold uppercase">{f.label}</label><div className="flex items-center gap-1 mt-1"><input type="number" min="0" value={prices[f.id] ?? ""} onChange={e=>{ const raw = e.target.value; setPrices({...prices, [f.id]: raw === "" ? "" : Math.max(0, Number(raw))}); }} className="w-full h-9 rounded-full border bg-white px-3 text-[13px]" /><span className="text-[11px]">F CFA</span></div></div>
+                <div key={f.id}><label className="text-[10px] font-bold uppercase">{f.label}</label><div className="flex items-center gap-1.5 mt-1"><input type="number" min="0" value={prices[f.id] ?? ""} onChange={e=>{ const raw = e.target.value; setPrices({...prices, [f.id]: raw === "" ? "" : Math.max(0, Number(raw))}); }} className="w-full h-9 rounded-full border border-zinc-200 bg-white px-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0A1931]/20" /><span className="text-[11px] font-semibold text-zinc-600">XOF</span></div></div>
               ))}
             </div>
           </div>
@@ -266,9 +293,29 @@ export default function MagazineModal({ editingMag, onClose, onSaved }: { editin
           <label className="flex items-center gap-2 text-[12px]"><input type="checkbox" checked={form.featured} onChange={e=>setForm({...form, featured:e.target.checked})}/> À la une (featured)</label>
         </div>
 
-        <div className="mt-6 flex gap-2">
-          <button type="submit" disabled={uploading} className="h-11 px-6 rounded-full bg-[#0A1931] text-white text-[13px] font-bold disabled:opacity-60">{uploading?"Upload & Enregistrement...":editingMag?"Enregistrer les modifications":"Créer le magazine"}</button>
-          <button type="button" onClick={onClose} className="h-11 px-6 rounded-full border text-[13px]">Annuler</button>
+        <div className="mt-6 flex flex-wrap gap-2.5">
+          <button
+            type="submit"
+            disabled={uploading}
+            className="flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-[#0A1931] px-6 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#132c54] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A1931]"
+          >
+            {uploading ? (
+              <>
+                <svg className="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+                <span>Upload & Enregistrement...</span>
+              </>
+            ) : editingMag ? "Enregistrer les modifications" : "Créer le magazine"}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex min-h-[44px] items-center justify-center rounded-full border border-zinc-300 bg-white px-6 text-[13px] font-semibold text-zinc-700 transition hover:bg-zinc-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
+          >
+            Annuler
+          </button>
         </div>
         <p className="text-[10px] text-zinc-500 mt-3">Le flipbook utilise en priorité le PDF de la langue détectée du visiteur, puis le PDF français en secours. Les pages 1 à 7 sont accessibles en aperçu et la page 8 est protégée. Les images restent facultatives. Les audios dans 12 langues restent disponibles selon la version achetée.</p>
       </form>

@@ -200,6 +200,19 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
     return () => window.removeEventListener("wab_open_tiktok_feed", onOpenTikTok);
   }, []);
 
+  useEffect(() => {
+    if (!publishOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPublishOpen(false);
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [publishOpen]);
+
   const videoPosts: VideoPostItem[] = posts
     .filter((p) => p.media && p.media.some((m) => m.mimeType?.startsWith("video/") || /\.(mp4|webm|mov|m4v)$/i.test(m.path)))
     .map((p) => {
@@ -769,64 +782,66 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
               </div>
             )}
 
-            {/* Salons en Direct WAB (PRD Section 3.4 & 7.1) */}
+            {/* Salons en Direct WAB avec Double-Bezel */}
             {liveSalons.length > 0 && (
-              <div className="rounded-2xl border border-red-200/80 bg-gradient-to-r from-red-950 via-[#3d0810] to-[#082843] p-3.5 text-white shadow-md">
-                <div className="flex items-center justify-between gap-3 mb-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className="relative flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-                    </span>
-                    <span className="text-[11px] font-black uppercase tracking-wider text-red-300">
-                      En direct sur WAB
-                    </span>
-                  </div>
-                  <Link
-                    href="/salons"
-                    className="text-[11px] font-bold text-amber-300 hover:text-amber-200 flex items-center gap-1 transition-colors"
-                  >
-                    <span>Tous les salons ({liveSalons.length})</span>
-                    <span className="material-symbols-outlined text-xs">arrow_forward</span>
-                  </Link>
-                </div>
-
-                <div className="flex gap-2.5 overflow-x-auto pb-1">
-                  {liveSalons.map((salon) => (
+              <div className="rounded-[2rem] border border-red-500/30 bg-gradient-to-r from-red-950 via-[#3d0810] to-[#082843] p-1.5 shadow-lg">
+                <div className="rounded-[calc(2rem-0.375rem)] bg-black/40 p-3.5 text-white backdrop-blur-md">
+                  <div className="flex items-center justify-between gap-3 mb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                      </span>
+                      <span className="text-[11px] font-black uppercase tracking-wider text-red-300">
+                        En direct sur WAB
+                      </span>
+                    </div>
                     <Link
-                      key={salon.id}
-                      href={`/wab/salons/${salon.id}`}
-                      className="group shrink-0 w-64 rounded-xl border border-white/10 bg-black/40 backdrop-blur-sm p-2.5 hover:bg-black/60 transition-all flex items-center gap-3"
+                      href="/salons"
+                      className="text-[11px] font-bold text-amber-300 hover:text-amber-200 flex items-center gap-1 transition-colors"
                     >
-                      <div className="relative w-11 h-11 rounded-full overflow-hidden ring-2 ring-red-500 shrink-0">
-                        {salon.hostAvatarUrl ? (
-                          <img src={salon.hostAvatarUrl} alt={salon.host} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full bg-red-800 flex items-center justify-center font-black text-xs text-white">
-                            {salon.host?.[0] || "L"}
-                          </div>
-                        )}
-                        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-black" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between text-[10px] text-white/70 mb-0.5">
-                          <span className="font-bold text-white truncate max-w-[110px]">{salon.host}</span>
-                          <span className="inline-flex items-center gap-0.5 text-red-400 font-bold shrink-0">
-                            <span className="material-symbols-outlined text-[10px]">visibility</span>
-                            {salon.participants || 1}
-                          </span>
-                        </div>
-                        <p className="text-[11px] font-bold text-white/95 truncate group-hover:text-amber-300 transition-colors">
-                          {salon.title}
-                        </p>
-                        {salon.salesModeEnabled && (
-                          <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded bg-amber-500/20 text-[9px] text-amber-300 font-semibold">
-                            🛍️ Live Shopping
-                          </span>
-                        )}
-                      </div>
+                      <span>Tous les salons ({liveSalons.length})</span>
+                      <span className="material-symbols-outlined text-xs">arrow_forward</span>
                     </Link>
-                  ))}
+                  </div>
+
+                  <div className="flex gap-2.5 overflow-x-auto pb-1">
+                    {liveSalons.map((salon) => (
+                      <Link
+                        key={salon.id}
+                        href={`/wab/salons/${salon.id}`}
+                        className="group shrink-0 w-64 rounded-xl border border-white/10 bg-black/40 backdrop-blur-sm p-2.5 hover:bg-black/60 transition-all flex items-center gap-3 active:scale-[0.98]"
+                      >
+                        <div className="relative w-11 h-11 rounded-full overflow-hidden ring-2 ring-red-500 shrink-0">
+                          {salon.hostAvatarUrl ? (
+                            <img src={salon.hostAvatarUrl} alt={salon.host} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-red-800 flex items-center justify-center font-black text-xs text-white">
+                              {salon.host?.[0] || "L"}
+                            </div>
+                          )}
+                          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-black" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between text-[10px] text-white/70 mb-0.5">
+                            <span className="font-bold text-white truncate max-w-[110px]">{salon.host}</span>
+                            <span className="inline-flex items-center gap-0.5 text-red-400 font-bold shrink-0">
+                              <span className="material-symbols-outlined text-[10px]">visibility</span>
+                              {salon.participants || 1}
+                            </span>
+                          </div>
+                          <p className="text-[11px] font-bold text-white/95 truncate group-hover:text-amber-300 transition-colors">
+                            {salon.title}
+                          </p>
+                          {salon.salesModeEnabled && (
+                            <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded bg-amber-500/20 text-[9px] text-amber-300 font-semibold">
+                              🛍️ Live Shopping
+                            </span>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -834,71 +849,73 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
             {/* Stories & Reels Carousel */}
             <StoriesReelsCarousel />
 
-            {/* LinkedIn Post Composer Box */}
-            <div id="publier" className="rounded-2xl border border-[#d8e2e6] bg-white p-4 shadow-sm">
-              {/* Row 1: Avatar + Pill input trigger */}
-              <div className="flex items-center gap-3">
-                <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full border border-[#d1e9e6] bg-[#d7e5e3]">
-                  {currentUser?.avatar ? (
-                    <img src={currentUser.avatar} alt="Votre photo de profil" className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="grid h-full w-full place-items-center text-sm font-bold text-[#006874]">{userInitials}</span>
-                  )}
+            {/* LinkedIn Post Composer Box with Double-Bezel */}
+            <div id="publier" className="rounded-[2rem] border border-[#d8e2e6] bg-gradient-to-b from-white via-white to-[#f4f7f8] p-1.5 shadow-sm">
+              <div className="rounded-[calc(2rem-0.375rem)] bg-white p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]">
+                {/* Row 1: Avatar + Pill input trigger */}
+                <div className="flex items-center gap-3">
+                  <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full border border-[#d1e9e6] bg-[#d7e5e3]">
+                    {currentUser?.avatar ? (
+                      <img src={currentUser.avatar} alt="Votre photo de profil" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="grid h-full w-full place-items-center text-sm font-bold text-[#006874]">{userInitials}</span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPublishOpen(true)}
+                    className="flex min-h-[44px] min-w-0 flex-1 items-center rounded-full border border-[#c5d0d4] bg-[#f8fafb] px-5 text-left text-xs sm:text-sm font-medium text-[#5f6368] transition hover:border-[#006874] hover:bg-[#eefcfa] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006874]"
+                  >
+                    Commencer un post, partager une opportunité...
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setPublishOpen(true)}
-                  className="min-w-0 flex-1 rounded-full border border-[#c5d0d4] bg-[#f8fafb] px-5 py-3 text-left text-xs sm:text-sm font-medium text-[#5f6368] transition hover:border-[#006874] hover:bg-[#eefcfa]"
-                >
-                  Commencer un post, partager une opportunité...
-                </button>
-              </div>
 
-              {/* Row 2: 4 LinkedIn Quick Action Buttons */}
-              <div className="mt-3 flex items-center justify-between border-t border-[#edf2f4] pt-2">
-                <button
-                  type="button"
-                  onClick={() => triggerComposerWithKind("photo")}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[#43474d] transition hover:bg-[#f3f7f6]"
-                >
-                  <span className="material-symbols-outlined text-[20px] text-[#0284c7]">photo_library</span>
-                  <span className="hidden sm:inline">Photo</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => triggerComposerWithKind("video")}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[#43474d] transition hover:bg-[#f3f7f6]"
-                >
-                  <span className="material-symbols-outlined text-[20px] text-[#16a34a]">smart_display</span>
-                  <span className="hidden sm:inline">Vidéo</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => triggerComposerWithKind("document")}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[#43474d] transition hover:bg-[#f3f7f6]"
-                >
-                  <span className="material-symbols-outlined text-[20px] text-[#d97706]">description</span>
-                  <span className="hidden sm:inline">Document</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => triggerComposerWithKind("article")}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[#43474d] transition hover:bg-[#f3f7f6]"
-                >
-                  <span className="material-symbols-outlined text-[20px] text-[#9333ea]">article</span>
-                  <span className="hidden sm:inline">Article</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPollMode(true);
-                    setPublishOpen(true);
-                  }}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[#43474d] transition hover:bg-[#f3f7f6]"
-                >
-                  <span className="material-symbols-outlined text-[20px] text-[#006874]">poll</span>
-                  <span className="hidden sm:inline">Sondage</span>
-                </button>
+                {/* Row 2: 5 LinkedIn Quick Action Buttons */}
+                <div className="mt-3 flex items-center justify-between border-t border-[#edf2f4] pt-2.5">
+                  <button
+                    type="button"
+                    onClick={() => triggerComposerWithKind("photo")}
+                    className="flex min-h-[42px] flex-1 items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[#43474d] transition hover:bg-[#f3f7f6] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0284c7]"
+                  >
+                    <span className="material-symbols-outlined text-[20px] text-[#0284c7]">photo_library</span>
+                    <span className="hidden sm:inline">Photo</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => triggerComposerWithKind("video")}
+                    className="flex min-h-[42px] flex-1 items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[#43474d] transition hover:bg-[#f3f7f6] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16a34a]"
+                  >
+                    <span className="material-symbols-outlined text-[20px] text-[#16a34a]">smart_display</span>
+                    <span className="hidden sm:inline">Vidéo</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => triggerComposerWithKind("document")}
+                    className="flex min-h-[42px] flex-1 items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[#43474d] transition hover:bg-[#f3f7f6] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97706]"
+                  >
+                    <span className="material-symbols-outlined text-[20px] text-[#d97706]">description</span>
+                    <span className="hidden sm:inline">Document</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => triggerComposerWithKind("article")}
+                    className="flex min-h-[42px] flex-1 items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[#43474d] transition hover:bg-[#f3f7f6] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9333ea]"
+                  >
+                    <span className="material-symbols-outlined text-[20px] text-[#9333ea]">article</span>
+                    <span className="hidden sm:inline">Article</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPollMode(true);
+                      setPublishOpen(true);
+                    }}
+                    className="flex min-h-[42px] flex-1 items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[#43474d] transition hover:bg-[#f3f7f6] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006874]"
+                  >
+                    <span className="material-symbols-outlined text-[20px] text-[#006874]">poll</span>
+                    <span className="hidden sm:inline">Sondage</span>
+                  </button>
+                </div>
               </div>
             </div>
 

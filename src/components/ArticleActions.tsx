@@ -90,15 +90,64 @@ export default function ArticleActions({ articleId, slug, initialLikes, initialV
 
   return (
     <div className="mt-8 border-y border-[#e5bdbb] py-5" aria-label="Actions de l’article">
-      <div className="flex flex-wrap items-center gap-2">
-        <button type="button" onClick={handleLike} disabled={liked || busy} className={`inline-flex h-10 items-center gap-2 rounded-full px-4 text-[13px] font-semibold transition ${liked ? "bg-[#9e001f] text-white" : "bg-[#2b2525] text-white hover:bg-[#9e001f]"}`} aria-pressed={liked}>♥ {likes} J’aime</button>
-        <button type="button" onClick={() => setShowComments((value) => !value)} className="inline-flex h-10 items-center gap-2 rounded-full border border-[#d8c3c1] px-4 text-[13px] font-medium text-[#2b2525]">◌ {comments.length} Commentaires</button>
-        <span className="inline-flex h-10 items-center gap-2 rounded-full bg-[#f0e8e6] px-4 text-[13px] text-[#5f5352]" aria-label={`${views} vues`}>◉ {views.toLocaleString("fr-FR")} vues</span>
-        <button type="button" onClick={handleFavorite} className={`inline-flex h-10 items-center gap-2 rounded-full border px-4 text-[13px] font-medium ${favorited ? "border-amber-200 bg-amber-50 text-amber-900" : "border-[#d8c3c1] text-[#2b2525]"}`}>{favorited ? "✓ Sauvegardé" : "☆ Sauvegarder"}</button>
+      <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+        <button
+          type="button"
+          onClick={handleLike}
+          disabled={liked || busy}
+          className={`inline-flex min-h-[44px] items-center gap-2 rounded-full px-4 text-[13px] font-semibold transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e001f] ${
+            liked ? "bg-[#9e001f] text-white" : "bg-[#2b2525] text-white hover:bg-[#9e001f]"
+          }`}
+          aria-pressed={liked}
+        >
+          {busy ? (
+            <svg className="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            </svg>
+          ) : (
+            <span className="text-[14px]">♥</span>
+          )}
+          <span>{likes} J’aime</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowComments((value) => !value)}
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-[#d8c3c1] bg-white px-4 text-[13px] font-medium text-[#2b2525] transition hover:bg-[#faf6f5] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e001f]"
+          aria-expanded={showComments}
+        >
+          <span className="material-symbols-outlined text-[18px]">chat_bubble</span>
+          <span>{comments.length} Commentaires</span>
+        </button>
+
+        <span className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[#f0e8e6] px-4 text-[13px] font-medium text-[#5f5352]" aria-label={`${views} vues`}>
+          <span className="material-symbols-outlined text-[18px]">visibility</span>
+          <span>{views.toLocaleString("fr-FR")} vues</span>
+        </span>
+
+        <button
+          type="button"
+          onClick={handleFavorite}
+          className={`inline-flex min-h-[44px] items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e001f] ${
+            favorited
+              ? "border-amber-300 bg-amber-50 text-amber-900"
+              : "border-[#d8c3c1] bg-white text-[#2b2525] hover:bg-[#faf6f5]"
+          }`}
+          aria-pressed={favorited}
+        >
+          <span className="material-symbols-outlined text-[18px]">{favorited ? "bookmark_added" : "bookmark"}</span>
+          <span>{favorited ? "Sauvegardé" : "Sauvegarder"}</span>
+        </button>
+
         <div className="relative ml-auto">
-          <button type="button" onClick={() => setShareOpen(true)} className="inline-flex h-10 items-center gap-2 rounded-full border border-[#9e001f] px-4 text-[13px] font-bold text-[#9e001f] hover:bg-[#9e001f] hover:text-white transition">
+          <button
+            type="button"
+            onClick={() => setShareOpen(true)}
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-[#9e001f] bg-white px-4 text-[13px] font-bold text-[#9e001f] shadow-xs transition hover:bg-[#9e001f] hover:text-white active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e001f]"
+          >
             <span className="material-symbols-outlined text-[18px]">share</span>
-            Partager
+            <span>Partager</span>
           </button>
           <SocialShareModal
             isOpen={shareOpen}
@@ -109,7 +158,36 @@ export default function ArticleActions({ articleId, slug, initialLikes, initialV
         </div>
       </div>
       {message && <p role="status" className="mt-3 text-[12px] font-semibold text-[#9e001f]">{message}</p>}
-      {showComments && <div className="mt-6 rounded-xl border border-[#e5bdbb] bg-white p-5"><h4 className="font-bold text-[14px] text-[#2b2525]">Commentaires ({comments.length})</h4><form onSubmit={handleComment} className="mt-4 flex gap-2"><label htmlFor={`comment-${articleId}`} className="sr-only">Votre commentaire</label><input id={`comment-${articleId}`} value={newComment} onChange={(event) => setNewComment(event.target.value)} placeholder="Votre commentaire..." className="h-11 min-w-0 flex-1 rounded-full border border-[#d8c3c1] bg-[#fcf9f8] px-5 text-[13px]" /><button type="submit" className="h-11 rounded-full bg-[#2b2525] px-5 text-[13px] font-bold text-white">Envoyer</button></form><div className="mt-4 max-h-[360px] space-y-3 overflow-y-auto">{comments.filter((comment) => comment.content !== "LIKE_PLACEHOLDER").map((comment) => <div key={comment.id} className="rounded-lg border border-[#eee3e1] bg-[#fcf9f8] p-3"><div className="text-[12px] font-bold">{comment.userId?.slice(0, 8) || "Lecteur"} · {new Date(comment.createdAt).toLocaleDateString("fr-FR")}</div><div className="mt-1 text-[13px]">{comment.content}</div></div>)}{comments.length === 0 && <div className="py-6 text-center text-[13px] text-[#746665]">Aucun commentaire. Soyez le premier.</div>}</div></div>}
+      {showComments && (
+        <div className="mt-6 rounded-2xl border border-[#e5bdbb] bg-white p-5 shadow-xs">
+          <h4 className="font-bold text-[14px] text-[#2b2525]">Commentaires ({comments.length})</h4>
+          <form onSubmit={handleComment} className="mt-4 flex flex-wrap sm:flex-nowrap gap-2">
+            <label htmlFor={`comment-${articleId}`} className="sr-only">Votre commentaire</label>
+            <input
+              id={`comment-${articleId}`}
+              value={newComment}
+              onChange={(event) => setNewComment(event.target.value)}
+              placeholder="Votre commentaire..."
+              className="min-h-[44px] min-w-0 flex-1 rounded-full border border-[#d8c3c1] bg-[#fcf9f8] px-5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#9e001f]/30"
+            />
+            <button
+              type="submit"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-[#2b2525] px-6 text-[13px] font-bold text-white shadow-xs transition hover:bg-[#9e001f] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e001f]"
+            >
+              Envoyer
+            </button>
+          </form>
+          <div className="mt-4 max-h-[360px] space-y-3 overflow-y-auto">
+            {comments.filter((comment) => comment.content !== "LIKE_PLACEHOLDER").map((comment) => (
+              <div key={comment.id} className="rounded-xl border border-[#eee3e1] bg-[#fcf9f8] p-3.5">
+                <div className="text-[12px] font-bold text-zinc-900">{comment.userId?.slice(0, 8) || "Lecteur"} · {new Date(comment.createdAt).toLocaleDateString("fr-FR")}</div>
+                <div className="mt-1 text-[13px] text-zinc-700">{comment.content}</div>
+              </div>
+            ))}
+            {comments.length === 0 && <div className="py-6 text-center text-[13px] text-[#746665]">Aucun commentaire. Soyez le premier.</div>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

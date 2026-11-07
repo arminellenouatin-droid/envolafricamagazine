@@ -181,86 +181,88 @@ export default function JobsClient() {
             </p>
           </div>
 
-          {/* Formulaire de Recherche Unifié */}
-          <form
-            onSubmit={submitSearch}
-            className="mt-8 rounded-2xl border border-white/20 bg-white/95 p-3 shadow-2xl backdrop-blur-md md:grid md:grid-cols-[1.4fr_1fr_1fr_1fr_auto] md:gap-3"
-          >
-            <div className="relative mb-2 md:mb-0">
-              <label className="sr-only" htmlFor="job-search">
-                Métier, compétence ou mot-clé
-              </label>
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <input
-                id="job-search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Poste, compétence, mot-clé..."
-                className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm font-medium text-slate-900 outline-none transition focus:border-[#087e8b] focus:ring-2 focus:ring-[#087e8b]/20"
-              />
-            </div>
-
-            <div className="mb-2 md:mb-0">
-              <select
-                value={country}
-                onChange={(event) => {
-                  const newCountry = event.target.value;
-                  setCountry(newCountry);
-                  setCity("");
-                }}
-                className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-[#087e8b] focus:ring-2 focus:ring-[#087e8b]/20"
-              >
-                <option value="">Tous les pays d&apos;Afrique</option>
-                {countries.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="mb-2 md:mb-0">
-              <select
-                value={city}
-                onChange={(event) => setCity(event.target.value)}
-                disabled={!country}
-                className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-[#087e8b] focus:ring-2 focus:ring-[#087e8b]/20 disabled:bg-slate-100 disabled:text-slate-400"
-              >
-                <option value="">{country ? "Toutes les villes" : "Ville (sélectionner un pays)"}</option>
-                {availableCities.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="mb-3 md:mb-0">
-              <select
-                value={sector}
-                onChange={(event) => setSector(event.target.value)}
-                className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-[#087e8b] focus:ring-2 focus:ring-[#087e8b]/20"
-              >
-                <option value="">Tous les secteurs</option>
-                {sectors.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              className="h-12 w-full rounded-xl bg-[#9e001f] px-7 font-bold text-white shadow-lg shadow-[#9e001f]/30 transition hover:bg-[#800019] hover:shadow-xl active:scale-[0.98] md:w-auto"
+          {/* Formulaire de Recherche Unifié avec Double-Bezel */}
+          <div className="mt-8 rounded-[2rem] border border-white/20 bg-gradient-to-b from-white/20 via-white/10 to-transparent p-1.5 shadow-2xl backdrop-blur-xl">
+            <form
+              onSubmit={submitSearch}
+              className="rounded-[calc(2rem-0.375rem)] bg-white/95 p-3.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] md:grid md:grid-cols-[1.4fr_1fr_1fr_1fr_auto] md:gap-3"
             >
-              Rechercher
-            </button>
-          </form>
+              <div className="relative mb-2 md:mb-0">
+                <label className="sr-only" htmlFor="job-search">
+                  Métier, compétence ou mot-clé
+                </label>
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  id="job-search"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Poste, compétence, mot-clé..."
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm font-medium text-slate-900 outline-none transition focus:border-[#087e8b] focus:ring-2 focus:ring-[#087e8b]/20"
+                />
+              </div>
+
+              <div className="mb-2 md:mb-0">
+                <select
+                  value={country}
+                  onChange={(event) => {
+                    const newCountry = event.target.value;
+                    setCountry(newCountry);
+                    setCity("");
+                  }}
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-[#087e8b] focus:ring-2 focus:ring-[#087e8b]/20"
+                >
+                  <option value="">Tous les pays d&apos;Afrique</option>
+                  {countries.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mb-2 md:mb-0">
+                <select
+                  value={city}
+                  onChange={(event) => setCity(event.target.value)}
+                  disabled={!country}
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-[#087e8b] focus:ring-2 focus:ring-[#087e8b]/20 disabled:bg-slate-100 disabled:text-slate-400"
+                >
+                  <option value="">{country ? "Toutes les villes" : "Ville (sélectionner un pays)"}</option>
+                  {availableCities.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mb-3 md:mb-0">
+                <select
+                  value={sector}
+                  onChange={(event) => setSector(event.target.value)}
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-[#087e8b] focus:ring-2 focus:ring-[#087e8b]/20"
+                >
+                  <option value="">Tous les secteurs</option>
+                  {sectors.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                className="inline-flex min-h-[48px] w-full items-center justify-center rounded-xl bg-[#9e001f] px-7 font-bold text-white shadow-lg shadow-[#9e001f]/30 transition hover:bg-[#800019] hover:shadow-xl active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white md:w-auto"
+              >
+                Rechercher
+              </button>
+            </form>
+          </div>
 
           {/* Filtres Tactiles par Types de Contrat */}
           <div className="mt-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
@@ -325,13 +327,13 @@ export default function JobsClient() {
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href="/emploi/publier-candidature"
-              className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-800 shadow-sm transition hover:border-[#087e8b] hover:text-[#087e8b]"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-800 shadow-xs transition hover:border-[#087e8b] hover:text-[#087e8b] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087e8b]"
             >
               Déposer mon CV
             </Link>
             <Link
               href="/emploi/publier-offre"
-              className="rounded-full bg-[#087e8b] px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-[#087e8b]/20 transition hover:bg-[#066c77]"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-[#087e8b] px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-[#087e8b]/20 transition hover:bg-[#066c77] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087e8b]"
             >
               + Publier une offre
             </Link>
@@ -450,7 +452,7 @@ export default function JobsClient() {
 
                   <Link
                     href={`/emploi/offres/${offer.id}`}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#071b36] px-5 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#9e001f] active:scale-95"
+                    className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl bg-[#071b36] px-5 py-2.5 text-xs font-extrabold text-white shadow-xs transition hover:bg-[#9e001f] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e001f]"
                   >
                     <span>Voir l’offre & Décrypter</span>
                     <span>→</span>

@@ -88,16 +88,22 @@ export default async function AfricaAwardsLanding() {
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <Link
                   href="/africa-awards/competitions"
-                  className="inline-flex h-13 items-center gap-2.5 rounded-full bg-gradient-to-r from-[#F4D976] via-[#D4AF37] to-[#B38715] px-8 text-sm font-extrabold text-[#0B0B0F] transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] active:scale-95"
+                  className="group inline-flex min-h-[48px] items-center gap-3 rounded-full bg-gradient-to-r from-[#F4D976] via-[#D4AF37] to-[#B38715] pl-6 pr-2 text-sm font-extrabold text-[#0B0B0F] shadow-[0_0_25px_rgba(212,175,55,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D976]"
                 >
-                  <span className="material-symbols-outlined text-[20px]">how_to_vote</span>
                   <span>Voter pour un Candidat</span>
+                  <span className="grid h-9 w-9 place-items-center rounded-full bg-black/15 text-[#0B0B0F] transition-transform duration-300 group-hover:rotate-45 font-mono text-base">
+                    ↗
+                  </span>
                 </Link>
 
                 <Link
                   href="/africa-awards/competitions"
-                  className="inline-flex h-13 items-center gap-2.5 rounded-full border border-white/20 bg-white/5 px-7 text-sm font-bold text-white backdrop-blur transition-all hover:border-[#D4AF37]/50 hover:bg-white/10"
+                  className="inline-flex min-h-[48px] items-center gap-2.5 rounded-full border border-white/20 bg-white/5 px-6 text-sm font-bold text-white backdrop-blur-md transition-all hover:border-[#D4AF37]/50 hover:bg-white/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]"
                 >
+                  <span className="material-symbols-outlined text-[20px] text-[#D4AF37]">play_circle</span>
+                  <span>Regarder le Live</span>
+                </Link>
+              </div>
                   <span className="material-symbols-outlined text-[20px] text-[#D4AF37]">play_circle</span>
                   <span>Regarder le Live</span>
                 </Link>
@@ -126,63 +132,65 @@ export default async function AfricaAwardsLanding() {
 
             {/* Right Column: Gala Live Stream Card & Golden Trophy Aura */}
             <div className="relative">
-              
               {/* Trophy Glow Backdrop */}
-              <div className="absolute -inset-4 rounded-3xl bg-gradient-to-r from-[#D4AF37]/20 to-[#9e001f]/20 blur-xl" />
+              <div className="absolute -inset-4 rounded-[2.5rem] bg-gradient-to-r from-[#D4AF37]/25 to-[#9e001f]/25 blur-2xl" />
 
-              <div className="relative overflow-hidden rounded-3xl border border-[#D4AF37]/30 bg-[#121218]/90 p-5 shadow-2xl backdrop-blur-xl">
-                
-                {/* Live Stream Stage Preview */}
-                <div className="group relative aspect-[16/10] overflow-hidden rounded-2xl bg-[#1a1a24]">
-                  {/* Backdrop stage visual */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10" />
-                  <img
-                    src="https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80"
-                    alt="Scène officielle des Africa Awards"
-                    className="h-full w-full object-cover transition duration-700 group-hover:scale-105 opacity-80"
-                  />
+              {/* Double-Bezel Outer Shell */}
+              <div className="relative rounded-[2.2rem] border border-[#D4AF37]/30 bg-gradient-to-b from-[#D4AF37]/20 via-white/5 to-transparent p-2 shadow-2xl backdrop-blur-xl">
+                {/* Inner Core */}
+                <div className="overflow-hidden rounded-[calc(2.2rem-0.5rem)] border border-white/5 bg-[#101016]/95 p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
+                  {/* Live Stream Stage Preview */}
+                  <div className="group relative aspect-[16/10] overflow-hidden rounded-2xl bg-[#1a1a24]">
+                    {/* Backdrop stage visual */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10" />
+                    <img
+                      src="https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80"
+                      alt="Scène officielle des Africa Awards"
+                      className="h-full w-full object-cover transition duration-700 group-hover:scale-105 opacity-85"
+                    />
 
-                  {/* Pulsing Live Tag */}
-                  <div className="absolute left-3 top-3 z-20 flex items-center gap-1.5 rounded-full bg-red-600/90 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-white shadow-lg backdrop-blur">
-                    <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
-                    <span>Live en direct</span>
-                  </div>
-
-                  {/* Category Tag */}
-                  <div className="absolute right-3 top-3 z-20 rounded-full border border-[#D4AF37]/40 bg-black/60 px-3 py-1 text-[11px] font-bold text-[#D4AF37] backdrop-blur">
-                    Grande Soirée de Gala
-                  </div>
-
-                  {/* Play Button Trigger */}
-                  <Link
-                    href="/africa-awards/competitions"
-                    className="absolute inset-0 z-20 grid place-items-center"
-                    aria-label="Lancer la vidéo en direct"
-                  >
-                    <div className="grid h-16 w-16 place-items-center rounded-full bg-[#D4AF37] text-[#07070A] shadow-[0_0_30px_rgba(212,175,55,0.7)] transition group-hover:scale-110">
-                      <span className="material-symbols-outlined text-[36px] ml-1">play_arrow</span>
+                    {/* Pulsing Live Tag */}
+                    <div className="absolute left-3 top-3 z-20 flex items-center gap-1.5 rounded-full bg-red-600/90 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-white shadow-lg backdrop-blur">
+                      <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+                      <span>Live en direct</span>
                     </div>
-                  </Link>
 
-                  {/* Bottom title inside stage */}
-                  <div className="absolute bottom-3 left-3 right-3 z-20 text-white">
-                    <p className="text-xs uppercase tracking-widest text-[#D4AF37] font-bold">Envol Africa Awards 2025</p>
-                    <h3 className="text-base font-bold truncate">Cérémonie de Proclamation & Remise des Prix</h3>
-                  </div>
-                </div>
+                    {/* Category Tag */}
+                    <div className="absolute right-3 top-3 z-20 rounded-full border border-[#D4AF37]/40 bg-black/60 px-3 py-1 text-[11px] font-bold text-[#D4AF37] backdrop-blur">
+                      Grande Soirée de Gala
+                    </div>
 
-                {/* Sub-bar inside card: Stats & Quick Action */}
-                <div className="mt-4 flex items-center justify-between text-xs text-[#B5B3AD]">
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[18px] text-[#D4AF37]">emoji_events</span>
-                    <span>Grand Trophée Or + Dotations Financières</span>
+                    {/* Play Button Trigger */}
+                    <Link
+                      href="/africa-awards/competitions"
+                      className="absolute inset-0 z-20 grid place-items-center"
+                      aria-label="Lancer la vidéo en direct"
+                    >
+                      <div className="grid h-16 w-16 place-items-center rounded-full bg-[#D4AF37] text-[#07070A] shadow-[0_0_30px_rgba(212,175,55,0.7)] transition-all duration-300 group-hover:scale-110 active:scale-95">
+                        <span className="material-symbols-outlined text-[36px] ml-1">play_arrow</span>
+                      </div>
+                    </Link>
+
+                    {/* Bottom title inside stage */}
+                    <div className="absolute bottom-3 left-3 right-3 z-20 text-white">
+                      <p className="text-xs uppercase tracking-widest text-[#D4AF37] font-bold">Envol Africa Awards 2025</p>
+                      <h3 className="text-base font-bold truncate">Cérémonie de Proclamation & Remise des Prix</h3>
+                    </div>
                   </div>
-                  <Link
-                    href="/africa-awards/competitions"
-                    className="font-bold text-[#D4AF37] hover:underline"
-                  >
-                    Accéder au direct →
-                  </Link>
+
+                  {/* Sub-bar inside card: Stats & Quick Action */}
+                  <div className="mt-4 flex items-center justify-between text-xs text-[#B5B3AD]">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[18px] text-[#D4AF37]">emoji_events</span>
+                      <span>Grand Trophée Or + Dotations Financières</span>
+                    </div>
+                    <Link
+                      href="/africa-awards/competitions"
+                      className="font-bold text-[#D4AF37] hover:underline"
+                    >
+                      Accéder au direct →
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
@@ -275,56 +283,58 @@ export default async function AfricaAwardsLanding() {
             ).map((comp) => (
               <article
                 key={comp.id}
-                className="group relative flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#101016] transition-all hover:-translate-y-1 hover:border-[#D4AF37]/50 hover:shadow-[0_10px_30px_rgba(212,175,55,0.15)]"
+                className="group relative flex flex-col rounded-[2rem] border border-[#D4AF37]/20 bg-gradient-to-b from-[#D4AF37]/15 via-white/5 to-transparent p-1.5 transition-all duration-300 hover:-translate-y-1 hover:border-[#D4AF37]/50 hover:shadow-[0_12px_35px_rgba(212,175,55,0.2)]"
               >
-                {/* Card Cover Banner */}
-                <div className="relative aspect-[16/10] overflow-hidden bg-[#181822]">
-                  {comp.cover_image && (
-                    <img
-                      src={comp.cover_image}
-                      alt={comp.title}
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#101016] via-transparent to-transparent" />
+                <div className="flex flex-1 flex-col overflow-hidden rounded-[calc(2rem-0.375rem)] bg-[#101016] shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
+                  {/* Card Cover Banner */}
+                  <div className="relative aspect-[16/10] overflow-hidden bg-[#181822]">
+                    {comp.cover_image && (
+                      <img
+                        src={comp.cover_image}
+                        alt={comp.title}
+                        className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#101016] via-transparent to-transparent" />
 
-                  {/* Status Badge */}
-                  <div className="absolute left-3 top-3">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#D4AF37] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[#07070A]">
-                      {comp.status === "live" ? "🔴 En direct" : "⭐ Officiel"}
-                    </span>
+                    {/* Status Badge */}
+                    <div className="absolute left-3 top-3">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[#D4AF37] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[#07070A] shadow-md">
+                        {comp.status === "live" ? "🔴 En direct" : "⭐ Officiel"}
+                      </span>
+                    </div>
+
+                    {/* Category Badge */}
+                    <div className="absolute right-3 top-3 rounded-full bg-black/70 px-2.5 py-1 text-[10px] font-bold text-[#D4AF37] backdrop-blur-md border border-[#D4AF37]/20">
+                      {comp.category}
+                    </div>
+
+                    <div className="absolute bottom-3 left-3 text-xs font-bold text-white/90">
+                      Vote à partir de <VisitorPrice amountInXof={comp.vote_price_cents || 200} />
+                    </div>
                   </div>
 
-                  {/* Category Badge */}
-                  <div className="absolute right-3 top-3 rounded-full bg-black/70 px-2.5 py-1 text-[10px] font-bold text-[#D4AF37] backdrop-blur">
-                    {comp.category}
-                  </div>
+                  {/* Content */}
+                  <div className="flex flex-1 flex-col p-5">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#D4AF37]">
+                      {comp.category}
+                    </p>
+                    <h3 className="mt-1 font-serif text-lg font-bold leading-snug text-white group-hover:text-[#D4AF37] transition">
+                      {comp.title}
+                    </h3>
+                    <p className="mt-2 text-xs leading-relaxed text-[#8A8882]">
+                      Participez au vote officiel en direct, offrez des encouragements et couronnez le vainqueur de la saison.
+                    </p>
 
-                  <div className="absolute bottom-3 left-3 text-xs font-bold text-white/90">
-                    Vote à partir de <VisitorPrice amountInXof={comp.vote_price_cents || 200} />
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="flex flex-1 flex-col p-5">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#D4AF37]">
-                    {comp.category}
-                  </p>
-                  <h3 className="mt-1 font-serif text-lg font-bold leading-snug text-white group-hover:text-[#D4AF37] transition">
-                    {comp.title}
-                  </h3>
-                  <p className="mt-2 text-xs leading-relaxed text-[#8A8882]">
-                    Participez au vote officiel en direct, offrez des encouragements et couronnez le vainqueur de la saison.
-                  </p>
-
-                  <div className="mt-auto pt-5">
-                    <Link
-                      href={`/africa-awards/competitions/${comp.slug}`}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] py-2.5 text-xs font-extrabold text-[#07070A] transition hover:bg-[#F4D976]"
-                    >
-                      <span>Voter & Participer</span>
-                      <span className="material-symbols-outlined text-[16px]">how_to_vote</span>
-                    </Link>
+                    <div className="mt-auto pt-5">
+                      <Link
+                        href={`/africa-awards/competitions/${comp.slug}`}
+                        className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] py-2.5 text-xs font-extrabold text-[#07070A] shadow-xs transition hover:bg-[#F4D976] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D976]"
+                      >
+                        <span>Voter & Participer</span>
+                        <span className="material-symbols-outlined text-[16px]">how_to_vote</span>
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </article>

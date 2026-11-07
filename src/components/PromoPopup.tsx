@@ -100,30 +100,60 @@ export default function PromoPopup() {
   }, [currentPlatform, pathname]);
 
   const close = () => setShow(false);
+
+  useEffect(() => {
+    if (!show) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShow(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [show]);
+
   if (!show || !current) return null;
   const congratulations = visitCount <= 1 ? "Félicitations, vous commencez votre découverte de l’écosystème." : visitCount < 4 ? "Bravo, votre parcours Envol Africa prend forme." : "Félicitations, vous explorez déjà les différentes facettes d’Envol Africa.";
 
   return (
-    <div className="fixed bottom-20 left-3 right-3 z-[110] sm:left-auto sm:right-4 sm:w-[360px] md:bottom-5" role="status" aria-labelledby="ecosystem-popup-title">
-      <div className="relative overflow-hidden rounded-2xl border border-[#e6c9c7] bg-white shadow-[0_16px_40px_rgba(54,19,24,.18)]">
-        <div className="flex items-center justify-between border-b border-[#f0dedd] px-3.5 py-2.5" style={{ backgroundColor: current.soft }}>
-          <div className="flex items-center gap-2">
-            <div className="grid h-7 w-7 place-items-center rounded-lg bg-white shadow-xs" style={{ color: current.accent }}>
-              <span className="material-symbols-outlined text-[18px]">{current.icon}</span>
+    <div className="fixed bottom-24 left-3 right-3 z-[110] sm:left-auto sm:right-4 sm:w-[380px] md:bottom-6" role="dialog" aria-modal="false" aria-labelledby="ecosystem-popup-title">
+      <div className="relative overflow-hidden rounded-2xl border border-[#e6c9c7] bg-white shadow-[0_20px_45px_rgba(54,19,24,.22)] animate-in fade-in slide-in-from-bottom-3 duration-300">
+        <div className="flex items-center justify-between border-b border-[#f0dedd] px-4 py-3" style={{ backgroundColor: current.soft }}>
+          <div className="flex items-center gap-2.5">
+            <div className="grid h-8 w-8 place-items-center rounded-xl bg-white shadow-xs" style={{ color: current.accent }}>
+              <span className="material-symbols-outlined text-[20px]">{current.icon}</span>
             </div>
             <div>
-              <span className="block text-[9px] font-black uppercase tracking-wider" style={{ color: current.accent }}>Découverte Écosystème</span>
-              <span className="block font-sans text-[11px] font-bold text-[#302829]">{current.name}</span>
+              <span className="block text-[10px] font-black uppercase tracking-wider" style={{ color: current.accent }}>Découverte Écosystème</span>
+              <span className="block font-sans text-[12px] font-bold text-[#302829]">{current.name}</span>
             </div>
           </div>
-          <button type="button" onClick={close} aria-label="Fermer la suggestion" className="grid h-7 w-7 place-items-center rounded-full bg-white/90 text-[#4a3433] shadow-xs transition hover:bg-white hover:text-[#9e001f]"><span className="material-symbols-outlined text-[16px]">close</span></button>
+          <button
+            type="button"
+            onClick={close}
+            aria-label="Fermer la suggestion"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-[#4a3433] shadow-xs transition hover:bg-white hover:text-[#9e001f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e001f]"
+          >
+            <span className="material-symbols-outlined text-[18px]">close</span>
+          </button>
         </div>
-        <div className="p-3.5">
-          <h2 id="ecosystem-popup-title" className="font-display text-[13px] font-black leading-snug text-[#292323] line-clamp-1">{current.title}</h2>
-          <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[#635655]">{current.body}</p>
-          <div className="mt-3 flex items-center gap-2">
-            <Link href={current.href} onClick={close} className="flex h-8 flex-1 items-center justify-center gap-1 rounded-xl px-3 font-sans text-[11px] font-black text-white shadow-xs transition hover:brightness-105" style={{ backgroundColor: current.accent }}>Explorer {current.name} <span className="text-[12px]">→</span></Link>
-            <button type="button" onClick={close} className="h-8 rounded-xl border border-[#ead9d7] px-3 font-sans text-[11px] font-bold text-[#635655] transition hover:border-[#9e001f] hover:text-[#9e001f]">Plus tard</button>
+        <div className="p-4">
+          <h2 id="ecosystem-popup-title" className="font-display text-[14px] font-black leading-snug text-[#292323] line-clamp-1">{current.title}</h2>
+          <p className="mt-1 line-clamp-2 text-[12px] leading-relaxed text-[#635655]">{current.body}</p>
+          <div className="mt-3.5 flex items-center gap-2.5">
+            <Link
+              href={current.href}
+              onClick={close}
+              className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl px-3.5 font-sans text-[12px] font-black text-white shadow-xs transition hover:brightness-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              style={{ backgroundColor: current.accent }}
+            >
+              Explorer {current.name} <span className="text-[13px]">→</span>
+            </Link>
+            <button
+              type="button"
+              onClick={close}
+              className="min-h-[44px] rounded-xl border border-[#ead9d7] px-3.5 font-sans text-[12px] font-bold text-[#635655] transition hover:border-[#9e001f] hover:text-[#9e001f] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e001f]"
+            >
+              Plus tard
+            </button>
           </div>
         </div>
       </div>

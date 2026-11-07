@@ -8,6 +8,8 @@
   --primary: #9e001f;
   --primary-container: #c8102e;
   --primary-fixed: #ffdad8;
+  --primary-hover: #7f0019;
+  --primary-soft: #fff1f2;
   --on-primary: #ffffff;
   --on-primary-container: #ffdad8;
   --inverse-surface: #303030;
@@ -21,7 +23,7 @@
   --surface-bright: #fcf9f8;
   --surface-dim: #dcd9d9;
   --on-surface: #1b1c1c;
-  --on-surface-variant: #5c403f;
+  --on-surface-variant: #594c4a;
   --outline: #906f6e;
   --outline-variant: #e5bdbb;
   --secondary: #5f5e5e;
@@ -30,6 +32,44 @@
   --tertiary-container: #845e00;
   --error: #ba1a1a;
   --gold: #D4AF37;
+  --gold-soft: #fff9e6;
+
+  /* Accents Métier par Volet (Platform Accents) */
+  --accent-magazine: #9e001f;
+  --accent-wab: #006874;
+  --accent-awards: #a66b16;
+  --accent-jobs: #087e8b;
+  --accent-market: #b35309;
+  --accent-finance: #115e59;
+
+  /* Typographie & Contrastes (WCAG AA >= 4.5:1) */
+  --text-main: #2b2525;
+  --text-muted: #594c4a;
+  --text-inverse: #ffffff;
+
+  /* Statuts Sémantiques */
+  --status-success: #15803d;
+  --status-error: #b91c1c;
+  --status-warning: #b45309;
+  --status-info: #0369a1;
+
+  /* Échelle de Rayons (Border Radii) */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Ombres et Élévations */
+  --shadow-flat: 0 1px 3px rgba(43, 37, 37, 0.05);
+  --shadow-card: 0 4px 16px rgba(43, 37, 37, 0.08);
+  --shadow-dropdown: 0 12px 32px rgba(43, 37, 37, 0.12);
+  --shadow-modal: 0 24px 64px rgba(43, 37, 37, 0.20);
+
+  /* Motion & Courbes */
+  --motion-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-base: 250ms cubic-bezier(0.16, 1, 0.3, 1);
+
   color-scheme: light;
 }
 
@@ -101,7 +141,9 @@ h1, h2, h3, h4, .font-display {
   line-height: 1;
   letter-spacing: normal;
   text-transform: none;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   white-space: nowrap;
   word-wrap: normal;
   direction: ltr;
@@ -110,6 +152,21 @@ h1, h2, h3, h4, .font-display {
   text-rendering: optimizeLegibility;
   font-display: block;
   user-select: none;
+  vertical-align: middle;
+  width: 1em;
+  height: 1em;
+  overflow: hidden;
+  box-sizing: content-box;
+}
+
+/* Accessibilité & Préférence de mouvement réduit (WCAG 2.1 AA) */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Scrollbar */

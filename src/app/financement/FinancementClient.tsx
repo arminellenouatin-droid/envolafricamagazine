@@ -43,75 +43,78 @@ function CrowdfundingRoiSimulator() {
   const plusValueEstimee = valProjection - montant;
 
   return (
-    <section className="relative mx-auto -mt-8 mb-10 max-w-7xl px-5 sm:px-8 z-20">
-      <div className="overflow-hidden rounded-[28px] border border-[#eadfce] bg-white p-6 shadow-2xl lg:p-8">
-        <div className="flex flex-col justify-between gap-4 border-b border-[#f0e7dc] pb-5 md:flex-row md:items-center">
-          <div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fff4e0] px-3 py-1 text-[10px] font-black uppercase text-[#a36300]">
-              <span className="material-symbols-outlined text-[15px]">calculate</span> Simulateur de Rendement & ROI
-            </div>
-            <h3 className="mt-2 font-display text-2xl font-black text-[#082843]">
-              Estimez l&apos;impact et les gains de votre investissement
-            </h3>
-            <p className="mt-1 text-xs text-[#5c403f]">
-              Simulez vos retours financiers et dividendes selon le mode d&apos;engagement choisi.
-            </p>
-          </div>
-          <div className="flex rounded-full border border-slate-200 bg-slate-100 p-1 text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => setType("pret")}
-              className={`rounded-full px-4 py-2 transition ${
-                type === "pret" ? "bg-[#082843] text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              ↗ Prêt (9.5%)
-            </button>
-            <button
-              type="button"
-              onClick={() => setType("equity")}
-              className={`rounded-full px-4 py-2 transition ${
-                type === "equity" ? "bg-[#f59e0b] text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              % Parts / Equity
-            </button>
-            <button
-              type="button"
-              onClick={() => setType("don")}
-              className={`rounded-full px-4 py-2 transition ${
-                type === "don" ? "bg-[#9e001f] text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              ❤️ Don Solidaire
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-8 lg:grid-cols-12 lg:items-center">
-          <div className="lg:col-span-7 space-y-5">
+    <section className="relative mx-auto -mt-10 mb-12 max-w-7xl px-5 sm:px-8 z-20">
+      {/* Double-Bezel Outer Shell */}
+      <div className="rounded-[2.4rem] border border-[#eadfce] bg-gradient-to-b from-white via-[#fcfaf7] to-[#f7f2eb] p-2 shadow-2xl">
+        {/* Inner Core */}
+        <div className="overflow-hidden rounded-[calc(2.4rem-0.5rem)] bg-white p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] lg:p-8">
+          <div className="flex flex-col justify-between gap-4 border-b border-[#f0e7dc] pb-5 md:flex-row md:items-center">
             <div>
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-black uppercase tracking-wider text-slate-500">
-                  Montant engagé
-                </label>
-                <strong className="font-display text-2xl font-black text-[#9e001f]">{formatPrice(montant)}</strong>
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fff4e0] px-3.5 py-1 text-[10px] font-black uppercase text-[#a36300]">
+                <span className="material-symbols-outlined text-[15px]">calculate</span> Simulateur de Rendement & ROI
               </div>
-              <input
-                type="range"
-                min={25000}
-                max={10000000}
-                step={25000}
-                value={montant}
-                onChange={(e) => setMontant(Number(e.target.value))}
-                className="mt-3 h-2.5 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 accent-[#9e001f]"
-              />
-              <div className="mt-1 flex justify-between text-[10px] text-slate-400 font-bold">
-                <span>25 000 FCFA</span>
-                <span>5 000 000 FCFA</span>
-                <span>10 000 000 FCFA</span>
-              </div>
+              <h3 className="mt-2 font-display text-2xl font-black text-[#082843]">
+                Estimez l&apos;impact et les gains de votre investissement
+              </h3>
+              <p className="mt-1 text-xs text-[#5c403f]">
+                Simulez vos retours financiers et dividendes selon le mode d&apos;engagement choisi.
+              </p>
             </div>
+            <div className="flex flex-wrap rounded-full border border-slate-200 bg-slate-100 p-1 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setType("pret")}
+                className={`min-h-[36px] rounded-full px-4 py-1.5 transition active:scale-[0.98] ${
+                  type === "pret" ? "bg-[#082843] text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                ↗ Prêt (9.5%)
+              </button>
+              <button
+                type="button"
+                onClick={() => setType("equity")}
+                className={`min-h-[36px] rounded-full px-4 py-1.5 transition active:scale-[0.98] ${
+                  type === "equity" ? "bg-[#f59e0b] text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                % Parts / Equity
+              </button>
+              <button
+                type="button"
+                onClick={() => setType("don")}
+                className={`min-h-[36px] rounded-full px-4 py-1.5 transition active:scale-[0.98] ${
+                  type === "don" ? "bg-[#9e001f] text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                ❤️ Don Solidaire
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-8 lg:grid-cols-12 lg:items-center">
+            <div className="lg:col-span-7 space-y-5">
+              <div>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-500">
+                    Montant engagé
+                  </label>
+                  <strong className="font-display text-2xl font-black text-[#9e001f]">{formatPrice(montant)}</strong>
+                </div>
+                <input
+                  type="range"
+                  min={25000}
+                  max={10000000}
+                  step={25000}
+                  value={montant}
+                  onChange={(e) => setMontant(Number(e.target.value))}
+                  className="mt-3 h-2.5 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 accent-[#9e001f]"
+                />
+                <div className="mt-1 flex justify-between text-[10px] text-slate-400 font-bold">
+                  <span>25 000 XOF</span>
+                  <span>5 000 000 XOF</span>
+                  <span>10 000 000 XOF</span>
+                </div>
+              </div>
 
             {type === "pret" && (
               <div>
@@ -349,10 +352,10 @@ export default function FinancementClient() {
             </p>
 
             {/* CTAs Primaires */}
-            <div className="mt-7 flex flex-wrap gap-3.5">
+            <div className="mt-7 flex flex-wrap items-center gap-3.5">
               <Link
                 href="/financement/dashboard/porteur"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#9e001f] px-7 py-3.5 text-sm font-extrabold text-white shadow-xl shadow-[#9e001f]/40 transition hover:bg-[#800019] hover:shadow-2xl active:scale-95"
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-[#9e001f] px-7 py-3 text-sm font-extrabold text-white shadow-xl shadow-[#9e001f]/40 transition hover:bg-[#b80024] hover:shadow-2xl active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f6c453]"
               >
                 <span>Déposer mon projet</span>
                 <span>→</span>
@@ -363,14 +366,14 @@ export default function FinancementClient() {
                   const el = document.getElementById("projets");
                   if (el) el.scrollIntoView({ behavior: "smooth" });
                 }}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-7 py-3.5 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20"
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-7 py-3 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
                 <span>Explorer les campagnes</span>
                 <span>↓</span>
               </button>
               <Link
                 href="/financement/messages"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-amber-400/40 bg-amber-500/20 px-6 py-3.5 text-sm font-bold text-amber-300 backdrop-blur-sm transition hover:bg-amber-500/30"
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-amber-400/40 bg-amber-500/20 px-6 py-3 text-sm font-bold text-amber-300 backdrop-blur-sm transition hover:bg-amber-500/30 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
               >
                 <img src="/crowdfunding-message-icon.png" alt="" className="h-4 w-4 object-contain" />
                 <span>Espace Investisseurs</span>
@@ -662,9 +665,10 @@ export default function FinancementClient() {
               <Link
                 key={p.id}
                 href={`/financement/projets/${p.id}`}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#9e001f]/30 hover:shadow-xl"
+                className="group flex flex-col rounded-[2rem] border border-slate-200/90 bg-gradient-to-b from-white via-slate-50/60 to-slate-100/60 p-1.5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#9e001f]/35 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e001f]"
               >
-                {/* Image de couverture avec badges */}
+                <div className="flex flex-1 flex-col overflow-hidden rounded-[calc(2rem-0.375rem)] bg-white">
+                  {/* Image de couverture avec badges */}
                 <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100">
                   <img
                     src={p.images?.[0] || "/covers/envol-africa-cover-01.jpg"}
@@ -758,12 +762,13 @@ export default function FinancementClient() {
 
                   {/* CTA Card */}
                   <div className="mt-4">
-                    <span className="inline-flex w-full items-center justify-center rounded-xl bg-[#082843] py-2.5 text-xs font-bold text-white shadow-sm transition group-hover:bg-[#9e001f]">
+                    <span className="inline-flex min-h-[42px] w-full items-center justify-center rounded-xl bg-[#082843] py-2.5 text-xs font-bold text-white shadow-sm transition group-hover:bg-[#9e001f] active:scale-[0.98]">
                       Participer à ce projet →
                     </span>
                   </div>
                 </div>
-              </Link>
+              </div>
+            </Link>
             );
           })}
         </div>

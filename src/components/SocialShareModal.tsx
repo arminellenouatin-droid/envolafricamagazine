@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export type SocialNetwork = "whatsapp" | "facebook" | "linkedin" | "x" | "telegram" | "copy" | "native";
 
@@ -66,6 +66,19 @@ import { buildSocialShareLinks, resolveAbsoluteImageUrl } from "@/lib/share-meta
 export default function SocialShareModal({ url, title, summary, isOpen, onClose }: SocialShareModalProps) {
   const [copied, setCopied] = useState(false);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const fullUrl = resolveAbsoluteImageUrl(
@@ -118,16 +131,27 @@ export default function SocialShareModal({ url, title, summary, isOpen, onClose 
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="social-share-title"
+      onClick={onClose}
+    >
       <div className="w-full max-w-md overflow-hidden rounded-3xl border border-[#ead8d5] bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
         {/* En-tête */}
         <div className="flex items-center justify-between border-b border-[#f0dedd] pb-4">
           <div>
             <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#9e001f]">Partager l’article</span>
-            <h3 className="font-serif text-lg font-black text-[#2b2525]">Faire rayonner ce contenu</h3>
+            <h3 id="social-share-title" className="font-serif text-lg font-black text-[#2b2525]">Faire rayonner ce contenu</h3>
           </div>
-          <button type="button" onClick={onClose} aria-label="Fermer" className="grid h-8 w-8 place-items-center rounded-full bg-[#f6f3f2] text-[#746665] hover:text-[#9e001f] transition">
-            ×
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fermer la boîte de partage"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f6f3f2] text-[#746665] transition hover:bg-[#ebd7d5] hover:text-[#9e001f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e001f]"
+          >
+            <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
         </div>
 

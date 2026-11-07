@@ -925,7 +925,7 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
   const [imageSearchPreview, setImageSearchPreview] = useState("");
   const [imageSearchLoading, setImageSearchLoading] = useState(false);
   const [imageSearchMessage, setImageSearchMessage] = useState("");
-  const [showIntro, setShowIntro] = useState(false);
+  const [showIntro, setShowIntro] = useState(true);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState(marketplaceCategories[0]);
   const [country, setCountry] = useState("");
@@ -1077,40 +1077,40 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
       </div>
 
       {showIntro && (
-        <section className="relative hidden overflow-hidden bg-[#f2e7d8] md:block">
-          <div className="absolute -right-32 -top-32 h-80 w-80 rounded-full bg-[#ffca63]/30 blur-3xl" />
-          <div className="absolute -bottom-40 left-1/3 h-80 w-80 rounded-full bg-[#9e001f]/10 blur-3xl" />
-          <div className="relative mx-auto grid max-w-[1280px] gap-10 px-5 pb-12 pt-10 md:grid-cols-[1.05fr_.95fr] md:px-10 md:pb-16 md:pt-14 lg:gap-6 lg:px-16 lg:pb-7 lg:pt-6">
+        <section className="relative overflow-hidden bg-gradient-to-b from-[#f5ede2] via-[#f0e4d4] to-[#ebe0ce] border-b border-[#e2d2bd]">
+          <div className="absolute -right-32 -top-32 h-80 w-80 rounded-full bg-[#ffca63]/30 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-40 left-1/3 h-80 w-80 rounded-full bg-[#9e001f]/10 blur-3xl pointer-events-none" />
+          <div className="relative mx-auto grid max-w-[1280px] gap-8 px-5 pb-12 pt-10 md:grid-cols-[1.05fr_.95fr] md:gap-10 md:px-10 md:pb-16 md:pt-14 lg:gap-6 lg:px-16 lg:pb-10 lg:pt-8">
             <div>
               <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#80654b]">
                 <Link href="/">Accueil</Link>
                 <span>›</span>
                 <span className="text-[#9e001f]">Marketplace B2B</span>
               </div>
-              <p className="mt-9 font-display text-[11px] font-black uppercase tracking-[0.22em] text-[#a36300] lg:mt-3">
+              <p className="mt-4 md:mt-6 font-display text-[11px] font-black uppercase tracking-[0.22em] text-[#a36300]">
                 Sourcing Pan-Africain · Vente en gros · Usines directes
               </p>
-              <h1 className="mt-3 max-w-[650px] font-display text-[clamp(38px,6vw,64px)] font-black leading-[0.95] tracking-[-0.05em] text-[#2a211a] lg:text-[42px]">
+              <h1 className="mt-2.5 max-w-[650px] font-display text-[clamp(32px,5.5vw,58px)] font-black leading-[1.02] tracking-[-0.04em] text-[#2a211a]">
                 Le Sourcing Africain, <span className="text-[#9e001f]">façon B2B d&apos;Élite.</span>
               </h1>
-              <p className="mt-6 max-w-[590px] text-[16px] leading-7 text-[#725f4d] lg:mt-3 lg:text-[14px] lg:leading-6">
+              <p className="mt-4 max-w-[590px] text-[15px] sm:text-[16px] leading-7 text-[#725f4d]">
                 Connectez-vous directement aux fabricants et producteurs africains. Négociez vos devis en gros (RFQ), sécurisez vos paiements par séquestre bancaire Trade Assurance et organisez vos expéditions.
               </p>
-              <div className="mt-8 flex flex-wrap gap-3 lg:mt-4">
+              <div className="mt-7 flex flex-wrap gap-3">
                 <a
                   href="#catalogue"
-                  className="rounded-full bg-[#9e001f] px-6 py-3 text-[12px] font-black text-white shadow-lg shadow-[#9e001f]/15"
+                  className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-[#9e001f] px-6 py-3 text-[13px] font-black text-white shadow-lg shadow-[#9e001f]/20 transition-all hover:bg-[#b80024] hover:shadow-xl active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e001f]"
                 >
                   Explorer les offres grossistes
                 </a>
                 <Link
                   href="/marketplace/vendre"
-                  className="rounded-full border border-[#bca486] bg-white/60 px-6 py-3 text-[12px] font-black text-[#5c3d19] hover:bg-white transition"
+                  className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-[#bca486] bg-white/80 px-6 py-3 text-[13px] font-black text-[#5c3d19] shadow-xs transition-all hover:bg-white active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#bca486]"
                 >
                   Devenir Fournisseur Vérifié B2B
                 </Link>
               </div>
-              <div className="mt-9 grid max-w-[560px] grid-cols-3 gap-3 lg:mt-4">
+              <div className="mt-8 grid max-w-[560px] grid-cols-3 gap-3 border-t border-[#e2d2bd]/60 pt-6">
                 <div>
                   <p className="font-display text-2xl font-black text-[#9e001f]">54</p>
                   <p className="text-[11px] text-[#806c58]">pays connectés</p>
@@ -1125,37 +1125,41 @@ export default function MarketplaceClient({ initialProducts = [] }: { initialPro
                 </div>
               </div>
             </div>
-            <div className="relative min-h-[330px] overflow-hidden rounded-[30px] border border-white/60 bg-[#2a211a] p-6 shadow-2xl md:min-h-[420px] lg:min-h-[220px] lg:p-5 text-white">
-              <div
-                className="absolute inset-0 opacity-25"
-                style={{
-                  backgroundImage:
-                    "radial-gradient(circle at 20% 20%, #ffca63 0 2px, transparent 3px), radial-gradient(circle at 70% 65%, #fff 0 1px, transparent 2px)",
-                  backgroundSize: "42px 42px",
-                }}
-              />
-              <div className="relative flex h-full flex-col justify-between">
-                <div className="flex items-center justify-between">
-                  <span className="rounded-full bg-white/15 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-white">
-                    Trade Assurance Garanti
-                  </span>
-                  <span className="material-symbols-outlined text-[38px] text-[#ffca63]">verified_user</span>
-                </div>
-                <div>
-                  <p className="max-w-[330px] font-display text-3xl font-black leading-tight text-white lg:text-2xl">
-                    Protection totale de l&apos;Acheteur & du Vendeur.
-                  </p>
-                  <p className="mt-3 max-w-[350px] text-xs leading-5 text-white/75">
-                    Fonds bloqués sur compte séquestre jusqu&apos;à inspection et confirmation de livraison au port de destination.
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <span className="rounded-full bg-[#ffca63] px-3 py-1 text-[10px] font-black text-[#513000]">
-                    Paiement Sécurisé Moneroo
-                  </span>
-                  <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-black text-white">
-                    Litiges Pris en Charge
-                  </span>
+
+            {/* Double-Bezel Trade Assurance Card */}
+            <div className="relative rounded-[2.2rem] border border-[#ffca63]/30 bg-gradient-to-b from-[#ffca63]/25 via-white/10 to-transparent p-1.5 shadow-2xl">
+              <div className="relative flex h-full min-h-[300px] flex-col justify-between overflow-hidden rounded-[calc(2.2rem-0.375rem)] bg-[#2a211a] p-6 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)]">
+                <div
+                  className="pointer-events-none absolute inset-0 opacity-25"
+                  style={{
+                    backgroundImage:
+                      "radial-gradient(circle at 20% 20%, #ffca63 0 2px, transparent 3px), radial-gradient(circle at 70% 65%, #fff 0 1px, transparent 2px)",
+                    backgroundSize: "42px 42px",
+                  }}
+                />
+                <div className="relative flex h-full flex-col justify-between gap-6">
+                  <div className="flex items-center justify-between">
+                    <span className="rounded-full bg-white/15 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-white">
+                      Trade Assurance Garanti
+                    </span>
+                    <span className="material-symbols-outlined text-[38px] text-[#ffca63]">verified_user</span>
+                  </div>
+                  <div>
+                    <p className="max-w-[340px] font-display text-2xl sm:text-3xl font-black leading-tight text-white">
+                      Protection totale de l&apos;Acheteur & du Vendeur.
+                    </p>
+                    <p className="mt-3 max-w-[350px] text-xs leading-5 text-white/75">
+                      Fonds bloqués sur compte séquestre jusqu&apos;à inspection et confirmation de livraison au port de destination.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full bg-[#ffca63] px-3.5 py-1 text-[10px] font-black text-[#513000] shadow-xs">
+                      Paiement Sécurisé Moneroo
+                    </span>
+                    <span className="rounded-full bg-white/15 px-3.5 py-1 text-[10px] font-black text-white">
+                      Litiges Pris en Charge
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
