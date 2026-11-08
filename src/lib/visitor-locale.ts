@@ -58,7 +58,7 @@ export function normalizeVisitorLocale(
     // 1.A. L'utilisateur vient d'effectuer un choix manuel explicite de langue
     finalLanguage = normalizeLanguage(value.language);
     finalLanguageSource = "manual";
-  } else if (hasPriorManualLang && (!value?.languageSource || value.languageSource !== "manual")) {
+  } else if (hasPriorManualLang) {
     // 1.B. L'utilisateur a déjà une préférence manuelle enregistrée :
     // ELLE PREND LE DESSUS ABSOLU sur toute autodétection entrante (ex: /api/geo)
     const manualLangToKeep = (current?.languageSource === "manual" ? current.language : null) || storedManualLang || current?.language || value?.language;
@@ -88,7 +88,7 @@ export function normalizeVisitorLocale(
     // 2.A. Choix manuel explicite de devise
     finalCurrency = normalizeCurrency(value.currency);
     finalCurrencySource = "manual";
-  } else if (hasPriorManualCurr && (!value?.currencySource || value.currencySource !== "manual")) {
+  } else if (hasPriorManualCurr) {
     // 2.B. Préférence manuelle de devise antérieurement persistée : Prioritaire sur l'autodétection
     const manualCurrToKeep = (current?.currencySource === "manual" ? current.currency : null) || storedManualCurr || current?.currency || value?.currency;
     finalCurrency = normalizeCurrency(manualCurrToKeep);
