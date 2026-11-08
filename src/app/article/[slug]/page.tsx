@@ -31,16 +31,19 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     .slice(0, 180)
     .trim() || "Article publié sur Envol Africa Magazine.";
 
+  const isVideoArticle = Boolean(article.isVideo || article.videoUrl);
+
   return buildShareMetadata({
-    type: "article",
+    type: isVideoArticle ? "video" : "article",
     slug: article.slug,
     title: article.title,
     description: cleanDescription,
     imageUrl: article.image,
+    videoUrl: article.videoUrl,
     author: article.author || "Envol Africa",
     publishedTime: article.publishedAt || article.createdAt,
     section: article.category,
-    badge: article.category || "ARTICLE DE FOND",
+    badge: article.category || (isVideoArticle ? "VIDÉO EXCLUSIVE" : "ARTICLE DE FOND"),
   });
 }
 

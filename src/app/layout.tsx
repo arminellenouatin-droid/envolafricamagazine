@@ -19,7 +19,7 @@ import FavoriteBadgeSynchronizer from "@/components/FavoriteBadgeSynchronizer";
 
 export const dynamic = "force-dynamic";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://www.envolafrica.site";
+const SITE_URL = "https://www.envolafrica.site";
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-SPMNFS3PD4";
 
 export const metadata: Metadata = {
@@ -41,10 +41,17 @@ export const metadata: Metadata = {
     description: "Analyses exclusives, enquêtes économiques, Kiosque numérique, Marketplace et opportunités panafricaines.",
     images: [
       {
-        url: `${SITE_URL}/logo-couleur-entete-new.png`,
+        url: `${SITE_URL}/api/og/share?title=${encodeURIComponent("Envol Africa Magazine")}&type=default&badge=${encodeURIComponent("LE GUIDE DES DÉCIDEURS")}`,
         width: 1200,
         height: 630,
         alt: "Envol Africa Magazine",
+        type: "image/png",
+      },
+      {
+        url: `${SITE_URL}/logo-couleur-entete-new.png`,
+        width: 1200,
+        height: 630,
+        alt: "Envol Africa Magazine Logo",
         type: "image/png",
       },
     ],
@@ -54,12 +61,7 @@ export const metadata: Metadata = {
     title: "Envol Africa Magazine",
     description: "Le guide des dirigeants, chefs et jeunes créateurs d'entreprise : plus qu'un magazine, un puissant outil de décision et de gestion.",
     images: [
-      {
-        url: `${SITE_URL}/logo-couleur-entete-new.png`,
-        width: 1200,
-        height: 630,
-        alt: "Envol Africa Magazine",
-      },
+      `${SITE_URL}/api/og/share?title=${encodeURIComponent("Envol Africa Magazine")}&type=default&badge=${encodeURIComponent("LE GUIDE DES DÉCIDEURS")}`,
     ],
   },
   icons: {

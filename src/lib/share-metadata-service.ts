@@ -16,11 +16,7 @@
 
 import type { Metadata } from "next";
 
-export const CANONICAL_SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  process.env.NEXT_PUBLIC_BASE_URL ||
-  "https://www.envolafrica.site"
-).replace(/\/+$/, "");
+export const CANONICAL_SITE_URL = "https://www.envolafrica.site";
 
 export type ShareContentType =
   | "article"
@@ -155,6 +151,7 @@ export function buildDynamicOgImageUrl(options: {
   badge?: string | null;
   imageUrl?: string | null;
   isVideo?: boolean;
+  mode?: "card" | "photo";
 }): string {
   const params = new URLSearchParams();
   params.set("title", options.title.slice(0, 100));
@@ -163,6 +160,7 @@ export function buildDynamicOgImageUrl(options: {
   if (options.badge) params.set("badge", options.badge);
   if (options.imageUrl) params.set("img", options.imageUrl);
   if (options.isVideo) params.set("video", "1");
+  if (options.mode) params.set("mode", options.mode);
 
   return `${CANONICAL_SITE_URL}/api/og/share?${params.toString()}`;
 }
@@ -186,31 +184,70 @@ export function buildShareMetadata(target: ShareContentTarget): Metadata {
 
   // Choix de l'image Open Graph (1200x630)
   let ogImageUrl: string;
-  if (target.type === "magazine" && target.imageUrl && target.imageUrl.trim()) {
-    if (target.imageUrl.includes("/api/og/")) {
-      ogImageUrl = resolveAbsoluteImageUrl(target.imageUrl);
+  let secondaryOgImageUrl: string | undefined;
+
+  const resolvedTargetImage = target.imageUrl && target.imageUrl.trim()
+    ? resolveAbsoluteImageUrl(target.imageUrl)
+    : undefined;
+
+  if (target.type === "magazine" && resolvedTargetImage) {
+    if (resolvedTargetImage.includes("/api/og/")) {
+      ogImageUrl = resolvedTargetImage;
     } else {
-      const absCover = resolveAbsoluteImageUrl(target.imageUrl);
       ogImageUrl = buildDynamicOgImageUrl({
         title: cleanTitle,
         type: "magazine",
         badge: target.badge || "ÉDITION KIOSQUE",
-        imageUrl: absCover,
+        imageUrl: resolvedTargetImage,
       });
     }
   } else if (isVideo && target.id && (target.type === "video" || target.type === "post")) {
-    // Pour une vidéo WAB : privilégier l'image avec bouton de lecture Play central
+    // Vidéo WAB : Aperçu dynamique 1200x630 avec bouton Play central
     ogImageUrl = `${CANONICAL_SITE_URL}/api/og/wab-post?id=${encodeURIComponent(target.id)}`;
-  } else if (target.imageUrl && target.imageUrl.trim()) {
-    ogImageUrl = resolveAbsoluteImageUrl(target.imageUrl);
+    if (resolvedTargetImage) {
+      secondaryOgImageUrl = buildDynamicOgImageUrl({
+        title: cleanTitle,
+        type: "video",
+        badge: "VIDÉO EXCLUSIVE",
+        imageUrl: resolvedTargetImage,
+        isVideo: true,
+        mode: "photo",
+      });
+    }
+  } else if (resolvedTargetImage) {
+    // CONTENU AVEC IMAGE PRINCIPALE (Article, Produit, Projet, Candidat, etc.)
+    // Toujours générer le format 1200x630 grand format via /api/og/share pour garantir :
+    // 1. Conversion WebP/AVIF -> PNG certifié (élimine le rejet Facebook/WhatsApp)
+    // 2. Ratio 1.91:1 (1200x630) pour affichage GRAND FORMAT (bannière pleine largeur)
+    // 3. Bouton Play central si c'est une vidéo
+    ogImageUrl = buildDynamicOgImageUrl({
+      title: cleanTitle,
+      type: target.type,
+      author: target.author,
+      badge: target.badge,
+      imageUrl: resolvedTargetImage,
+      isVideo,
+      mode: "photo",
+    });
+
+    secondaryOgImageUrl = buildDynamicOgImageUrl({
+      title: cleanTitle,
+      type: target.type,
+      author: target.author,
+      badge: target.badge,
+      imageUrl: resolvedTargetImage,
+      isVideo,
+      mode: "card",
+    });
   } else if (isVideo) {
-    // Si c'est une vidéo sans thumbnail, utiliser l'image dynamique avec bouton Play
+    // Vidéo sans image : template vidéo dynamique avec bouton Play
     ogImageUrl = buildDynamicOgImageUrl({
       title: cleanTitle,
       type: "video",
       author: target.author,
-      badge: "VIDÉO EXCLUSIVE",
+      badge: target.badge || "VIDÉO EXCLUSIVE",
       isVideo: true,
+      mode: "card",
     });
   } else {
     // Fallback dynamique brandé avec typographie et logo
@@ -219,6 +256,7 @@ export function buildShareMetadata(target: ShareContentTarget): Metadata {
       type: target.type,
       author: target.author,
       badge: target.badge,
+      mode: "card",
     });
   }
 
@@ -264,21 +302,31 @@ export function buildShareMetadata(target: ShareContentTarget): Metadata {
       images: [
         {
           url: ogImageUrl,
-          secureUrl: ogImageUrl.startsWith("https://") ? ogImageUrl : undefined,
+          secureUrl: ogImageUrl,
           width: 1200,
           height: 630,
           alt: cleanTitle,
-          type: ogImageUrl.includes(".png") || ogImageUrl.includes("/api/og/") ? "image/png" : "image/jpeg",
+          type: "image/png",
         },
-        ...(target.type === "magazine" && target.imageUrl && !target.imageUrl.includes("/api/og/")
+        ...(secondaryOgImageUrl
           ? [
               {
-                url: resolveAbsoluteImageUrl(target.imageUrl),
-                secureUrl: resolveAbsoluteImageUrl(target.imageUrl).startsWith("https://")
-                  ? resolveAbsoluteImageUrl(target.imageUrl)
-                  : undefined,
-                alt: `Couverture ${cleanTitle}`,
-                type: "image/jpeg",
+                url: secondaryOgImageUrl,
+                secureUrl: secondaryOgImageUrl,
+                width: 1200,
+                height: 630,
+                alt: cleanTitle,
+                type: "image/png",
+              },
+            ]
+          : []),
+        ...(resolvedTargetImage && !resolvedTargetImage.toLowerCase().includes(".webp")
+          ? [
+              {
+                url: resolvedTargetImage,
+                secureUrl: resolvedTargetImage.startsWith("https://") ? resolvedTargetImage : undefined,
+                alt: cleanTitle,
+                type: resolvedTargetImage.endsWith(".png") ? "image/png" : "image/jpeg",
               },
             ]
           : []),
@@ -289,10 +337,22 @@ export function buildShareMetadata(target: ShareContentTarget): Metadata {
       ...(target.section ? { section: target.section } : {}),
     },
     twitter: {
-      card: "summary_large_image",
+      card: isVideo ? "player" : "summary_large_image",
       title: cleanTitle,
       description: cleanDesc,
       images: [ogImageUrl],
+      ...(isVideo && target.videoUrl
+        ? {
+            players: [
+              {
+                playerUrl: canonicalUrl,
+                streamUrl: resolveAbsoluteImageUrl(target.videoUrl),
+                width: target.videoWidth || 1280,
+                height: target.videoHeight || 720,
+              },
+            ],
+          }
+        : {}),
     },
   };
 

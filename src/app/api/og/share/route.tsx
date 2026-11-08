@@ -4,11 +4,7 @@ import sharp from "sharp";
 
 export const runtime = "nodejs";
 
-const CANONICAL_BASE = (
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  process.env.NEXT_PUBLIC_BASE_URL ||
-  "https://www.envolafrica.site"
-).replace(/\/+$/, "");
+const CANONICAL_BASE = "https://www.envolafrica.site";
 
 async function fetchImageAsBase64(url?: string | null): Promise<string> {
   if (!url) return "";
@@ -20,8 +16,8 @@ async function fetchImageAsBase64(url?: string | null): Promise<string> {
       targetUrl = `${CANONICAL_BASE}/${targetUrl}`;
     }
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3500);
-    const res = await fetch(targetUrl, { signal: controller.signal });
+    const timeout = setTimeout(() => controller.abort(), 6000);
+    const res = await fetch(targetUrl, { signal: controller.signal, headers: { "User-Agent": "EnvolAfrica-OG-Bot/1.0", "Accept": "image/*,*/*" } });
     clearTimeout(timeout);
     if (!res.ok) return "";
     const arrayBuffer = await res.arrayBuffer();
@@ -52,6 +48,7 @@ export async function GET(request: NextRequest) {
   const customBadge = searchParams.get("badge") || "";
   const rawImg = searchParams.get("img") || "";
   const isVideo = searchParams.get("video") === "1" || type === "video";
+  const mode = searchParams.get("mode") || "photo";
 
   let badge = customBadge;
   let accentColor = "#9e001f"; // Envol Burgundy default
@@ -323,6 +320,149 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Template "photo" : Affiche l'image principale en grand format 1200x630 sans texte intrusif
+  // Idéal pour Facebook, WhatsApp, LinkedIn et Twitter : l'image est 100% visible et nette
+  // Si c'est une vidéo : superpose le bouton Play grand format au centre
+  if (mode === "photo" && hasBackground) {
+    return new ImageResponse(
+      (
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "#030c17",
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <img
+            src={backgroundBase64}
+            alt="Visuel principal"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "1200px",
+              height: "630px",
+              objectFit: "cover",
+            }}
+          />
+
+          {/* Bouton de lecture vidéo Play central grand format (si vidéo) */}
+          {isVideo && (
+            <div
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                width: "112px",
+                height: "112px",
+                borderRadius: "50%",
+                backgroundColor: "rgba(158, 0, 31, 0.94)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 14px 50px rgba(0,0,0,0.85), 0 0 35px rgba(158,0,31,0.6)",
+                border: "4px solid rgba(255,255,255,0.9)",
+              }}
+            >
+              <div
+                style={{
+                  width: 0,
+                  height: 0,
+                  borderTop: "20px solid transparent",
+                  borderBottom: "20px solid transparent",
+                  borderLeft: "32px solid #ffffff",
+                  marginLeft: "8px",
+                }}
+              />
+            </div>
+          )}
+
+          {/* Subtile signature de marque en haut à droite */}
+          <div
+            style={{
+              position: "absolute",
+              top: "28px",
+              right: "32px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "8px 18px",
+              backgroundColor: "rgba(3, 12, 23, 0.78)",
+              borderRadius: "999px",
+              border: "1px solid rgba(255, 255, 255, 0.3)",
+              boxShadow: "0 4px 15px rgba(0,0,0,0.5)",
+            }}
+          >
+            <div
+              style={{
+                width: "10px",
+                height: "10px",
+                borderRadius: "50%",
+                backgroundColor: "#f2b84b",
+              }}
+            />
+            <span
+              style={{
+                fontSize: "14px",
+                fontWeight: 900,
+                letterSpacing: "0.1em",
+                color: "#ffffff",
+                fontFamily: "system-ui, -apple-system, sans-serif",
+              }}
+            >
+              ENVOL AFRICA
+            </span>
+          </div>
+
+          {/* Si badge disponible, badge en haut à gauche */}
+          {badge && (
+            <div
+              style={{
+                position: "absolute",
+                top: "28px",
+                left: "32px",
+                display: "flex",
+                alignItems: "center",
+                padding: "8px 18px",
+                backgroundColor: accentColor,
+                borderRadius: "999px",
+                boxShadow: "0 4px 15px rgba(0,0,0,0.5)",
+                border: "1px solid rgba(255, 255, 255, 0.25)",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "13px",
+                  fontWeight: 900,
+                  letterSpacing: "0.08em",
+                  color: "#ffffff",
+                  textTransform: "uppercase",
+                  fontFamily: "system-ui, -apple-system, sans-serif",
+                }}
+              >
+                {badge}
+              </span>
+            </div>
+          )}
+        </div>
+      ),
+      {
+        width: 1200,
+        height: 630,
+        headers: {
+          "Content-Type": "image/png",
+          "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000",
+        },
+      }
+    );
+  }
+
   return new ImageResponse(
     (
       <div
@@ -383,7 +523,7 @@ export async function GET(request: NextRequest) {
             right: 0,
             bottom: 0,
             background: hasBackground
-              ? "linear-gradient(180deg, rgba(3,12,23,0.55) 0%, rgba(3,12,23,0.7) 45%, rgba(3,12,23,0.95) 100%)"
+              ? "linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.0) 30%, rgba(3,12,23,0.7) 65%, rgba(3,12,23,0.95) 100%)"
               : "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 100%)",
           }}
         />
@@ -538,6 +678,10 @@ export async function GET(request: NextRequest) {
     {
       width: 1200,
       height: 630,
+      headers: {
+        "Content-Type": "image/png",
+        "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000",
+      },
     }
   );
 }
