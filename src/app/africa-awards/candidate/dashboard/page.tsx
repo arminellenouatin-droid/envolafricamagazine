@@ -1,7 +1,16 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import dynamic from "next/dynamic";
+
+const VotesBarChart = dynamic(() => import("@/components/africa-awards/VotesBarChart"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[200px] w-full flex items-center justify-center bg-white/5 rounded-lg animate-pulse text-xs text-[#A8A6A0]">
+      Chargement du graphique...
+    </div>
+  ),
+});
 
 export default function CandidateDashboard() {
   const [stats] = useState([
@@ -70,16 +79,8 @@ export default function CandidateDashboard() {
             <div className="bg-[#16161D] border border-white/10 rounded-xl p-6">
               <h3 className="font-bold">Statistiques avancées - Graphiques Recharts</h3>
               <p className="text-[11px] text-[#A8A6A0] mt-1">Votes, évolution, visiteurs page, cadeaux/dons reçus, revenus générés - Graphiques temporels</p>
-              <div className="mt-6 h-[200px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-                    <XAxis dataKey="name" stroke="#A8A6A0" fontSize={11} />
-                    <YAxis stroke="#A8A6A0" fontSize={11} />
-                    <Tooltip contentStyle={{ backgroundColor:"#16161D", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"8px" }} />
-                    <Bar dataKey="votes" fill="#D4AF37" radius={[4,4,0,0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+              <div className="mt-6 min-h-[200px]">
+                <VotesBarChart stats={stats} />
               </div>
             </div>
 

@@ -107,9 +107,18 @@ export default function LoginPage() {
       setSocialLoading(null);
       return;
     }
+    const canonicalOrigin = typeof window !== "undefined"
+      ? (window.location.hostname === "envolafrica.site" || window.location.hostname === "www.envolafrica.site"
+          ? "https://www.envolafrica.site"
+          : window.location.origin)
+      : "https://www.envolafrica.site";
+
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback`, queryParams: { prompt: "select_account" } },
+      options: {
+        redirectTo: `${canonicalOrigin}/auth/callback`,
+        queryParams: { prompt: "select_account" },
+      },
     });
     if (oauthError) {
       setError(`Connexion ${provider} indisponible : ${oauthError.message}`);

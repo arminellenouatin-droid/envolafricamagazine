@@ -1012,7 +1012,7 @@ export default function SalonClient({ id }: { id: string }) {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] w-screen h-[100dvh] bg-black text-white overflow-hidden select-none flex flex-col"
+      className="fixed inset-0 z-[9999] w-full h-[100dvh] bg-black text-white overflow-hidden select-none flex flex-col"
       onClick={(e) => {
         // Taper sur l'écran génère un cœur (sauf si clic sur formulaire/boutons)
         const target = e.target as HTMLElement;

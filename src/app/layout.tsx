@@ -206,7 +206,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Header user={user ? { id: user.id, nom: user.nom, prenom: user.prenom, email: user.email, role: user.role, avatar: user.avatar } : undefined} />
             <PromoPopup />
             <CookieConsentBanner />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 pb-16 md:pb-0">{children}</main>
             <Footer />
             <BottomNav />
             <GoogleOneTapPrompt user={user ? { id: user.id } : null} />

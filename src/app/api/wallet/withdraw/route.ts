@@ -35,8 +35,8 @@ export async function POST(req: NextRequest) {
     const destinationAccount = String(body.destinationAccount || '').trim();
     const accountHolder = String(body.accountHolder || '').trim();
 
-    if (!Number.isFinite(rawAmount) || rawAmount < 1000) {
-      return NextResponse.json({ error: 'Le montant minimum de retrait est de 1 000 XOF.' }, { status: 400 });
+    if (!Number.isFinite(rawAmount) || rawAmount < 10_000) {
+      return NextResponse.json({ error: 'Le montant minimum de retrait est de 10 000 XOF.' }, { status: 400 });
     }
 
     if (!ALLOWED_METHODS.includes(method)) {

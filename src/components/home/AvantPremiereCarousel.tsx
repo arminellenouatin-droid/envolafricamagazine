@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function AvantPremiereCarousel({ articles }: { articles: any[] }) {
   const avantPremiere = articles.filter((article: any) => {
@@ -26,7 +27,7 @@ export default function AvantPremiereCarousel({ articles }: { articles: any[] })
         const categories = Array.from(new Set([...(article.categories || []), article.category].filter(Boolean))).slice(0, 2);
         return <Link key={article.id} href={`/article/${article.slug}`} className={`absolute inset-0 h-full w-full transition-all duration-700 ease-in-out ${index === current ? "z-10 translate-x-0 opacity-100" : index < current ? "-translate-x-full opacity-0" : "translate-x-full opacity-0"}`}>
           <div className="absolute inset-0 z-10 bg-gradient-to-t from-black via-black/40 to-transparent" />
-          <img src={article.image} alt={article.title} className="absolute inset-0 h-full w-full object-cover" />
+          <Image src={article.image} alt={article.title} fill priority={index === 0} sizes="(max-width: 1024px) 100vw, 60vw" className="object-cover" />
           <div className="magazine-mobile-overlay-copy absolute bottom-0 z-20 w-full p-6 text-white md:p-8">
             <div className="magazine-mobile-overlay-categories mb-3 flex flex-wrap gap-2">{categories.map((category: string) => <span key={category} className="inline-block rounded-full bg-[#9e001f] px-3 py-1 text-[10px] font-bold uppercase tracking-wider">{category}</span>)}</div>
             <h2 className="magazine-mobile-overlay-title mb-2 line-clamp-2 text-[22px] font-bold leading-tight md:text-[28px]" style={{ fontFamily: "Montserrat" }}>{article.title}</h2>

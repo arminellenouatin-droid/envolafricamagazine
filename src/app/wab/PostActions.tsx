@@ -28,10 +28,35 @@ export default function PostActions({ postId, initialLikes, initialComments, ini
   const [boosting, setBoosting] = useState(false);
 
   async function react() {
-    const response = await fetch(`/api/wab/posts/${postId}/reaction`, { method: "POST" });
-    const data = await readJson(response);
-    if (response.status === 401) { window.location.assign(`/auth/login?next=${encodeURIComponent("/wab")}`); return; }
-    if (response.ok) { setLiked(Boolean(data.liked)); setLikes(Number(data.likes ?? likes)); }
+    const prevLiked = liked;
+    const prevLikes = likes;
+    const nextLiked = !liked;
+    const nextLikes = nextLiked ? likes + 1 : Math.max(0, likes - 1);
+
+    // Mise à jour optimiste instantanée pour une réactivité mobile immédiate
+    setLiked(nextLiked);
+    setLikes(nextLikes);
+
+    try {
+      const response = await fetch(`/api/wab/posts/${postId}/reaction`, { method: "POST" });
+      if (response.status === 401) {
+        setLiked(prevLiked);
+        setLikes(prevLikes);
+        window.location.assign(`/auth/login?next=${encodeURIComponent("/wab")}`);
+        return;
+      }
+      const data = await readJson(response);
+      if (response.ok) {
+        setLiked(Boolean(data.liked));
+        setLikes(Number(data.likes ?? nextLikes));
+      } else {
+        setLiked(prevLiked);
+        setLikes(prevLikes);
+      }
+    } catch {
+      setLiked(prevLiked);
+      setLikes(prevLikes);
+    }
   }
 
   async function shareTo(destination: string) {

@@ -1902,7 +1902,7 @@ function AttachmentCard({
   if (type === "video") {
     return (
       <div className="overflow-hidden rounded-xl border border-white/15 bg-black">
-        <video controls src={url} className="max-h-64 w-full" />
+        <video controls preload="none" src={url} className="max-h-64 w-full" />
       </div>
     );
   }

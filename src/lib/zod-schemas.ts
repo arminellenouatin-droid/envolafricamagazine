@@ -6,7 +6,7 @@ export const signupSchema = z.object({
   nom: z.string().min(2),
   prenom: z.string().min(2),
   email: z.string().email(),
-  password: z.string().min(8),
+  password: z.string().min(10, { message: "Le mot de passe doit contenir au moins 10 caractères." }),
   affiliateRef: z.string().optional(),
 });
 

@@ -1103,7 +1103,7 @@ function MessagesContent() {
   });
 
   return (
-    <div className="fixed inset-0 z-[9999] w-screen h-[100dvh] bg-[#f0f2f5] flex flex-col overflow-hidden select-none">
+    <div className="fixed inset-0 z-[9999] w-full h-[100dvh] bg-[#f0f2f5] flex flex-col overflow-hidden select-none">
       {/* Top Application Header */}
       <div className="h-12 md:h-14 px-3 sm:px-4 bg-[#082843] text-white flex items-center justify-between shrink-0 shadow-md z-30 pt-[env(safe-area-inset-top,0px)]">
         <div className="flex items-center gap-2.5">

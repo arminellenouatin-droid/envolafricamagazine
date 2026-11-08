@@ -1295,7 +1295,7 @@ export default function JobsMessagesClient() {
                                       className="max-h-64 w-full cursor-pointer object-cover rounded-xl transition hover:opacity-95"
                                     />
                                   ) : att.type === "video" ? (
-                                    <video src={att.url} controls className="max-h-64 w-full rounded-xl" />
+                                    <video src={att.url} controls preload="none" className="max-h-64 w-full rounded-xl" />
                                   ) : att.type === "voice" ? (
                                     <div className="flex items-center gap-2 rounded-xl bg-black/30 p-2.5">
                                       <audio src={att.url} controls className="h-8 w-full" />

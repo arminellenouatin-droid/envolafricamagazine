@@ -135,11 +135,7 @@ export default function TrackedVideo({
 
   return (
     <div ref={containerRef} className="relative w-full overflow-hidden rounded-xl bg-black group">
-      <video
-        ref={videoRef}
-        src={src}
-        controls
-        playsInline
+      <video ref={videoRef} src={src} controls playsInline preload="none"
         muted={isMuted}
         aria-label={name}
         className="w-full max-h-[560px] object-contain mx-auto"

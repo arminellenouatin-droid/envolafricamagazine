@@ -11,15 +11,15 @@ import {
 } from "firebase/messaging";
 
 export const firebaseConfig = {
-  apiKey: "AIzaSyD023bnEtT_jF75sPQoGSCaSBRjWJpObUE",
-  authDomain: "envolafrica-8d361.firebaseapp.com",
-  projectId: "envolafrica-8d361",
-  storageBucket: "envolafrica-8d361.firebasestorage.app",
-  messagingSenderId: "121742686844",
-  appId: "1:121742686844:web:2007007104e6b25833a7f9",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyD023bnEtT_jF75sPQoGSCaSBRjWJpObUE",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "envolafrica-8d361.firebaseapp.com",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "envolafrica-8d361",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "envolafrica-8d361.firebasestorage.app",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "121742686844",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:121742686844:web:2007007104e6b25833a7f9",
 };
 
-export const firebaseVapidKey = "BLCthIe3tBR_JtKlC7KoExakvM8ZiB9L1gL0EAljuJgi6KhrslKwmIQa-sKirJHeTVHq2ff6HEAsH87TpeMfBME";
+export const firebaseVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "BLCthIe3tBR_JtKlC7KoExakvM8ZiB9L1gL0EAljuJgi6KhrslKwmIQa-sKirJHeTVHq2ff6HEAsH87TpeMfBME";
 
 function getClientMessagingApp() {
   return getApps().length ? getApp() : initializeApp(firebaseConfig);

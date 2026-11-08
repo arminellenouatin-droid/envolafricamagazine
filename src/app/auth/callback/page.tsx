@@ -21,9 +21,47 @@ export default function AuthCallbackPage() {
           return;
         }
 
-        // 1. Cas classique PKCE : code dans les searchParams
+        // 1. Cas classique PKCE : code dans les searchParams avec double résolution (serveur + fallback client)
         const code = searchParams.get("code");
         if (code) {
+          if (mounted) setStatusMessage("Validation de votre autorisation Google...");
+          try {
+            const testRes = await fetch(
+              `/api/auth/oauth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(safeNext)}`,
+              { method: "GET", redirect: "manual" }
+            );
+
+            if (testRes.status >= 300 && testRes.status < 400) {
+              const locationHeader = testRes.headers.get("location");
+              if (locationHeader && !locationHeader.includes("oauthError")) {
+                window.location.replace(locationHeader);
+                return;
+              }
+            }
+          } catch {
+            // Continuer vers la résolution locale
+          }
+
+          // Fallback : échange via le client navigateur Supabase (au cas où le verifier PKCE est local)
+          const supabase = getSupabaseBrowserClient();
+          if (supabase) {
+            const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+            if (!exchangeError && exchangeData?.session?.access_token) {
+              if (mounted) setStatusMessage("Finalisation de votre session sécurisée...");
+              const res = await fetch("/api/auth/oauth/session", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ accessToken: exchangeData.session.access_token }),
+              });
+
+              if (res.ok) {
+                window.location.replace(safeNext);
+                return;
+              }
+            }
+          }
+
+          // Si le fallback local n'a pas résolu, redirection finale vers la route serveur
           window.location.replace(
             `/api/auth/oauth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(safeNext)}`
           );

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { SvgIcon } from "@/components/ui/Icon";
 import { SHIPPING_RATES } from "@/lib/constants";
 import { useLocale } from "@/components/LocaleProvider";
 import PaymentMethodSelector from "@/components/payment/PaymentMethodSelector";
@@ -120,7 +121,7 @@ export default function PanierPage() {
                       <div className="space-y-1">
                         <div className="flex justify-between items-start">
                           <span className="text-[12px] text-[#9e001f] uppercase tracking-wider font-medium">{item.type==='magazine'?`Mensuel • N°${item.numero||''}`:item.type}</span>
-                          <button onClick={()=>removeItem(idx)} className="material-symbols-outlined text-[#5c403f] hover:text-[#9e001f]">delete</button>
+                          <button type="button" onClick={()=>removeItem(idx)} aria-label="Supprimer cet article" className="text-[#5c403f] hover:text-[#9e001f] transition-colors"><SvgIcon name="delete" className="w-5 h-5" /></button>
                         </div>
                         <h3 className="text-[20px] font-bold leading-tight" style={{ fontFamily: "Montserrat" }}>{item.title}</h3>
                         <p className="text-[14px] text-[#5c403f] italic">{item.type==="magazine"?`Format: ${item.format} • Langue: ${item.language?.toUpperCase()}`:`Plan: ${item.planId}`}</p>

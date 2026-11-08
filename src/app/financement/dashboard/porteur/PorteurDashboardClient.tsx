@@ -496,7 +496,7 @@ export default function PorteurDashboardClient({ user }: { user: UserProp }) {
               </div>
               <div className="mt-3 flex gap-2">
                 <input
-                  className="flex-1 h-10 border rounded-xl px-3 text-xs outline-none focus:border-[#9e001f]"
+                  className="flex-1 h-10 border rounded-xl px-3 text-base md:text-xs outline-none focus:border-[#9e001f]"
                   placeholder="Écrire un message aux investisseurs..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
@@ -528,12 +528,12 @@ export default function PorteurDashboardClient({ user }: { user: UserProp }) {
                 <div className="space-y-3">
                   <input
                     type="month"
-                    className="w-full h-10 border rounded-xl px-3 text-xs outline-none"
+                    className="w-full h-10 border rounded-xl px-3 text-base md:text-xs outline-none"
                     value={newRapport.periode}
                     onChange={(e) => setNewRapport({ ...newRapport, periode: e.target.value })}
                   />
                   <textarea
-                    className="w-full h-24 border rounded-xl p-3 text-xs outline-none"
+                    className="w-full h-24 border rounded-xl p-3 text-base md:text-xs outline-none"
                     placeholder="Résumé narratif de l'activité du mois..."
                     value={newRapport.contenu}
                     onChange={(e) => setNewRapport({ ...newRapport, contenu: e.target.value })}
@@ -543,7 +543,7 @@ export default function PorteurDashboardClient({ user }: { user: UserProp }) {
                   <input
                     type="number"
                     placeholder="Chiffre d'affaires"
-                    className="h-10 border rounded-xl px-3 text-xs outline-none"
+                    className="h-10 border rounded-xl px-3 text-base md:text-xs outline-none"
                     value={newRapport.kpis.chiffreAffaires}
                     onChange={(e) =>
                       setNewRapport({
@@ -555,7 +555,7 @@ export default function PorteurDashboardClient({ user }: { user: UserProp }) {
                   <input
                     type="number"
                     placeholder="Trésorerie de fin"
-                    className="h-10 border rounded-xl px-3 text-xs outline-none"
+                    className="h-10 border rounded-xl px-3 text-base md:text-xs outline-none"
                     value={newRapport.kpis.tresorerieFin}
                     onChange={(e) =>
                       setNewRapport({
@@ -567,7 +567,7 @@ export default function PorteurDashboardClient({ user }: { user: UserProp }) {
                   <input
                     type="number"
                     placeholder="Clients actifs"
-                    className="h-10 border rounded-xl px-3 text-xs outline-none"
+                    className="h-10 border rounded-xl px-3 text-base md:text-xs outline-none"
                     value={newRapport.kpis.clientsActifs}
                     onChange={(e) =>
                       setNewRapport({

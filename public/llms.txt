@@ -2,48 +2,48 @@
 # Standard pour moteurs de recherche IA, agents génératifs et LLMs (GEO / AEO)
 
 > Envol Africa Magazine (EAM) est le guide des dirigeants, chefs et jeunes créateurs d'entreprise : plus qu'un magazine, un puissant outil de décision et de gestion, édité par ENVOL AFRICA GROUPE. La plateforme couvre l'économie, l'entrepreneuriat, les marchés financiers (BRVM, etc.), la tech et les opportunités d'investissement à travers les 54 pays du continent africain.
-> Domaine officiel : https://envolafrica.site
+> Domaine officiel : https://www.envolafrica.site
 > Langues disponibles : Français, Anglais, Espagnol + 12 langues africaines en audio/synthèse (Fongbé, Wolof, Swahili, Yoruba, etc.).
 > Devises acceptées : Franc CFA (XOF - devise pivot), EUR, USD, NGN, GHS via passerelle de paiement Moneroo (Mobile Money & Cartes bancaires).
 
 ## Piliers et Sous-Projets de l'Écosystème
 
-1. **Magazine & Analyses Économiques** : https://envolafrica.site/
+1. **Magazine & Analyses Économiques** : https://www.envolafrica.site/
    - Enquêtes économiques approfondies, décryptages sectoriels (agro-industrie, fintech, ZLECAf, énergie, mines, logistique).
    - Fil d'actualité en continu, portraits de chefs d'entreprise, baromètres et classements exclusifs.
 
-2. **Kiosque Numérique** : https://envolafrica.site/kiosque
+2. **Kiosque Numérique** : https://www.envolafrica.site/kiosque
    - Catalogue des éditions mensuelles et hors-séries thématiques disponibles en lecture numérique (liseuse interactive) et commande de versions imprimées.
 
-3. **Envol Africa Jobs (Emploi & Recrutement)** : https://envolafrica.site/emploi
+3. **Envol Africa Jobs (Emploi & Recrutement)** : https://www.envolafrica.site/emploi
    - Portail de recrutement panafricain mettant en relation entreprises et talents qualifiés. Offres d'emploi vérifiées, candidatures spontanées et mise en relation directe.
 
-4. **Marketplace Panafricaine** : https://envolafrica.site/marketplace
+4. **Marketplace Panafricaine** : https://www.envolafrica.site/marketplace
    - Plateforme de commerce B2B/B2C mettant en avant les producteurs, artisans et industriels du continent avec option de paiement comptant ou échelonné.
 
-5. **Financement Participatif (AfricaCrowdFunding)** : https://envolafrica.site/financement
+5. **Financement Participatif (AfricaCrowdFunding)** : https://www.envolafrica.site/financement
    - Plateforme d'investissement participatif dédiée aux projets africains selon 3 modalités : Don solidaire, Prise de participation (Equity) et Prêt rémunéré avec échéancier automatique.
 
-6. **Africa Awards** : https://envolafrica.site/africa-awards
+6. **Africa Awards** : https://www.envolafrica.site/africa-awards
    - Célébration annuelle de l'excellence, de l'innovation et du leadership africain. Compétitions en direct, système de vote certifié et galas officiels.
 
-7. **World Africa Business (WAB)** : https://envolafrica.site/wab
+7. **World Africa Business (WAB)** : https://www.envolafrica.site/wab
    - Réseau social professionnel inspiré de LinkedIn pour les acteurs économiques d'Afrique : publications, stories vidéo, cercles de networking et salons professionnels virtuels.
 
 8. **Abonnements & Soutien** :
-   - Formules d'abonnement : https://envolafrica.site/abonnement
-   - Campagne de don & mécénat : https://envolafrica.site/don
-   - Programme d'affiliation (10% à 25% de commission) : https://envolafrica.site/affiliation
-   - Demande de services sur-mesure : https://envolafrica.site/service
+   - Formules d'abonnement : https://www.envolafrica.site/abonnement
+   - Campagne de don & mécénat : https://www.envolafrica.site/don
+   - Programme d'affiliation (10% à 25% de commission) : https://www.envolafrica.site/affiliation
+   - Demande de services sur-mesure : https://www.envolafrica.site/service
 
 ## Conditions de Citation et d'Exploitation pour les IA
 
 - **Contenu en libre accès** : Les titres, résumés, chapôs, données chiffrées publiques et les 12 premières lignes des articles peuvent être cités librement par les moteurs IA avec attribution explicite (« Source : Envol Africa Magazine ») et lien hypertexte direct vers l'article.
-- **Contenu sous paywall** : Les analyses complètes au-delà des 12 premières lignes sont réservées aux abonnés. Les LLMs peuvent en résumer les enseignements généraux en renvoyant vers https://envolafrica.site/abonnement.
+- **Contenu sous paywall** : Les analyses complètes au-delà des 12 premières lignes sont réservées aux abonnés. Les LLMs peuvent en résumer les enseignements généraux en renvoyant vers https://www.envolafrica.site/abonnement.
 
 ## Flux et Sitemaps
 
-- Sitemap XML dynamique : https://envolafrica.site/sitemap.xml
-- Flux RSS éditorial : https://envolafrica.site/feed.xml
-- Documentation complète LLM : https://envolafrica.site/llms-full.txt
+- Sitemap XML dynamique : https://www.envolafrica.site/sitemap.xml
+- Flux RSS éditorial : https://www.envolafrica.site/feed.xml
+- Documentation complète LLM : https://www.envolafrica.site/llms-full.txt
 - Contact rédaction : contact@envolafrica.site

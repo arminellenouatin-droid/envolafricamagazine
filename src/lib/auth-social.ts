@@ -84,5 +84,24 @@ export async function getOrCreateSocialUser(input: SocialProfileInput): Promise<
     downloads: [],
   });
 
+  // Provisionnement proactif du portefeuille central (solde 0 XOF, statut actif)
+  try {
+    const { getOrCreateWallet } = await import("@/lib/wallet/financial-core");
+    await getOrCreateWallet(newUser.id);
+  } catch (walletErr) {
+    console.error("[auth-social] Note: initialisation portefeuille différée:", walletErr);
+  }
+
+  // Provisionnement proactif du profil professionnel WAB
+  try {
+    const { upsertWabProfile } = await import("@/lib/wab-supabase");
+    await upsertWabProfile(newUser.id, {
+      avatarUrl: avatar,
+      countryCode: "BJ",
+    });
+  } catch (wabErr) {
+    console.error("[auth-social] Note: initialisation profil WAB différée:", wabErr);
+  }
+
   return newUser;
 }

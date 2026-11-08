@@ -3,7 +3,19 @@
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import PreviewFlipbook from "@/components/kiosque/PreviewFlipbook";
+import dynamic from "next/dynamic";
+
+const PreviewFlipbook = dynamic(() => import("@/components/kiosque/PreviewFlipbook"), {
+  ssr: false,
+  loading: () => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#9e001f] border-t-transparent" />
+        <span className="text-sm font-semibold text-white">Chargement du lecteur...</span>
+      </div>
+    </div>
+  ),
+});
 import { useLocale } from "@/components/LocaleProvider";
 
 const formatLabels: Record<string, string> = { numerique: "Numérique", papier: "Papier", cd_audio: "Audio" };
