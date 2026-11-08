@@ -151,7 +151,7 @@ export default function SocialShareModal({ url, title, summary, isOpen, onClose 
             aria-label="Fermer la boîte de partage"
             className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f6f3f2] text-[#746665] transition hover:bg-[#ebd7d5] hover:text-[#9e001f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e001f]"
           >
-            <span className="material-symbols-outlined text-[18px]">close</span>
+            <SvgIcon name="close" className="w-4 h-4" />
           </button>
         </div>
 
@@ -248,7 +248,7 @@ export default function SocialShareModal({ url, title, summary, isOpen, onClose 
             onClick={() => handleShare("native")}
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border border-[#d8c3c1] bg-white py-2.5 text-xs font-bold text-[#5c403f] hover:bg-[#faf6f5] transition"
           >
-            <span className="material-symbols-outlined text-[18px]">share</span>
+            <SvgIcon name="share" className="w-4 h-4" />
             Plus d’options (applications du téléphone)
           </button>
         )}

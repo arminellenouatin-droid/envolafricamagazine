@@ -22,7 +22,7 @@ export default function ArticlePaywall({
       <div className="prose prose-zinc mt-8 max-w-none prose-p:text-[17px] prose-p:leading-[1.8] prose-p:text-zinc-800 prose-headings:font-serif prose-headings:font-bold">
         <RichTextContent value={fullContent} />
         <div className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 text-[13px] font-medium text-emerald-900 shadow-sm flex items-center gap-2.5">
-          <span className="material-symbols-outlined text-emerald-600 text-lg">verified</span>
+          <SvgIcon name="verified" className="w-5 h-5 text-emerald-600 shrink-0" />
           <span>Article librement accessible — merci de soutenir le journalisme panafricain d&apos;investigation.</span>
         </div>
       </div>
@@ -35,7 +35,7 @@ export default function ArticlePaywall({
       <div className="prose prose-zinc mt-8 max-w-none prose-p:text-[17px] prose-p:leading-[1.8] prose-p:text-zinc-800 prose-headings:font-serif prose-headings:font-bold">
         <RichTextContent value={fullContent} />
         <div className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 text-[13px] font-medium text-emerald-900 shadow-sm flex items-center gap-2.5">
-          <span className="material-symbols-outlined text-emerald-600 text-lg">workspace_premium</span>
+          <SvgIcon name="workspace_premium" className="w-5 h-5 text-emerald-600 shrink-0" />
           <span>Vous lisez cet article en accès intégral en tant qu’abonné. Merci de soutenir l&apos;indépendance de notre rédaction.</span>
         </div>
       </div>
@@ -71,7 +71,7 @@ export default function ArticlePaywall({
 
         {/* Badge d'exclusivité */}
         <div className="relative inline-flex items-center gap-2 rounded-full border border-[#d4af37]/50 bg-black/35 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] text-[#f7d984] backdrop-blur-md">
-          <span className="material-symbols-outlined text-[15px] text-[#f7d984]">lock</span>
+          <SvgIcon name="lock" className="w-4 h-4 text-[#f7d984] shrink-0" />
           <span>Édition Réservée aux Abonnés</span>
         </div>
 
@@ -119,7 +119,7 @@ export default function ArticlePaywall({
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-[#e8c764] via-[#d4af37] to-[#be9322] px-8 py-4 text-base font-black text-[#261502] shadow-[0_10px_25px_rgba(212,175,55,0.45)] transition-all duration-200 hover:scale-[1.03] hover:shadow-[0_12px_30px_rgba(212,175,55,0.6)] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#f7d984] focus:ring-offset-2 focus:ring-offset-[#6d0015]"
           >
             <span>Découvrez nos abonnements</span>
-            <span className="material-symbols-outlined text-lg">arrow_forward</span>
+            <SvgIcon name="arrow_forward" className="w-5 h-5 shrink-0" />
           </Link>
 
           {/* Bouton secondaire : Se connecter pour abonnés existants */}

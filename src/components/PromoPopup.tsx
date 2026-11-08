@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import SvgIcon from "@/components/ui/Icon";
 import { usePathname } from "next/navigation";
 
 type EcosystemExperience = {
@@ -119,7 +120,7 @@ export default function PromoPopup() {
         <div className="flex items-center justify-between border-b border-[#f0dedd] px-4 py-3" style={{ backgroundColor: current.soft }}>
           <div className="flex items-center gap-2.5">
             <div className="grid h-8 w-8 place-items-center rounded-xl bg-white shadow-xs" style={{ color: current.accent }}>
-              <span className="material-symbols-outlined text-[20px]">{current.icon}</span>
+              <SvgIcon name={current.icon} className="w-5 h-5" />
             </div>
             <div>
               <span className="block text-[10px] font-black uppercase tracking-wider" style={{ color: current.accent }}>Découverte Écosystème</span>
@@ -132,7 +133,7 @@ export default function PromoPopup() {
             aria-label="Fermer la suggestion"
             className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-[#4a3433] shadow-xs transition hover:bg-white hover:text-[#9e001f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e001f]"
           >
-            <span className="material-symbols-outlined text-[18px]">close</span>
+            <SvgIcon name="close" className="w-4 h-4" />
           </button>
         </div>
         <div className="p-4">

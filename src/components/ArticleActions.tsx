@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import SocialShareModal from "@/components/SocialShareModal";
+import SvgIcon from "@/components/ui/Icon";
 import { buildSocialShareLinks, resolveAbsoluteImageUrl } from "@/lib/share-metadata-service";
 
 type CommentItem = { id: string; userId?: string; content: string; createdAt: string };
@@ -161,12 +162,12 @@ export default function ArticleActions({ articleId, slug, initialLikes, initialV
           className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-[#d8c3c1] bg-white px-4 text-[13px] font-medium text-[#2b2525] transition hover:bg-[#faf6f5] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e001f]"
           aria-expanded={showComments}
         >
-          <span className="material-symbols-outlined text-[18px]">chat_bubble</span>
+          <SvgIcon name="chat_bubble" className="w-4 h-4 text-[#9e001f]" />
           <span>{comments.length} Commentaires</span>
         </button>
 
         <span className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[#f0e8e6] px-4 text-[13px] font-medium text-[#5f5352]" aria-label={`${views} vues`}>
-          <span className="material-symbols-outlined text-[18px]">visibility</span>
+          <SvgIcon name="visibility" className="w-4 h-4 text-[#5f5352]" />
           <span>{views.toLocaleString("fr-FR")} vues</span>
         </span>
 
@@ -180,7 +181,7 @@ export default function ArticleActions({ articleId, slug, initialLikes, initialV
           }`}
           aria-pressed={favorited}
         >
-          <span className="material-symbols-outlined text-[18px]">{favorited ? "bookmark_added" : "bookmark"}</span>
+          <SvgIcon name={favorited ? "bookmark_added" : "bookmark"} className={`w-4 h-4 ${favorited ? "text-amber-700" : ""}`} />
           <span>{favorited ? "Sauvegardé" : "Sauvegarder"}</span>
         </button>
 
@@ -190,7 +191,7 @@ export default function ArticleActions({ articleId, slug, initialLikes, initialV
             onClick={() => setShareOpen(true)}
             className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-[#9e001f] bg-white px-4 text-[13px] font-bold text-[#9e001f] shadow-xs transition hover:bg-[#9e001f] hover:text-white active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e001f]"
           >
-            <span className="material-symbols-outlined text-[18px]">share</span>
+            <SvgIcon name="share" className="w-4 h-4" />
             <span>Partager</span>
           </button>
           <SocialShareModal

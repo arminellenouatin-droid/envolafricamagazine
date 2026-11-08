@@ -95,9 +95,7 @@ export default function AssistanceChatWidget() {
           aria-label="Contacter l'Assistance Envol Africa"
           className="relative flex items-center justify-center w-14 h-14 rounded-full bg-[#9e001f] text-white shadow-2xl hover:bg-[#c8102e] hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-[#9e001f]/30"
         >
-          <span className="material-symbols-outlined text-2xl">
-            {isOpen ? "close" : "support_agent"}
-          </span>
+          <SvgIcon name={isOpen ? "close" : "support_agent"} className="w-6 h-6 text-white" />
           {!isOpen && (
             <span className="absolute -top-1 -right-1 flex h-4 w-4">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -114,7 +112,7 @@ export default function AssistanceChatWidget() {
           <div className="bg-[#1b1c1c] text-white p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="relative w-10 h-10 rounded-full bg-[#9e001f] flex items-center justify-center text-white font-bold">
-                <span className="material-symbols-outlined text-xl">support_agent</span>
+                <SvgIcon name="support_agent" className="w-5 h-5 text-white" />
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-[#1b1c1c]" />
               </div>
               <div>
@@ -126,7 +124,7 @@ export default function AssistanceChatWidget() {
               onClick={() => setIsOpen(false)}
               className="text-gray-400 hover:text-white transition-colors"
             >
-              <span className="material-symbols-outlined">close</span>
+              <SvgIcon name="close" className="w-5 h-5" />
             </button>
           </div>
 
@@ -204,7 +202,7 @@ export default function AssistanceChatWidget() {
               disabled={!input.trim()}
               className="w-9 h-9 rounded-full bg-[#9e001f] text-white flex items-center justify-center hover:bg-[#c8102e] disabled:opacity-40 transition-colors shrink-0"
             >
-              <span className="material-symbols-outlined text-base">send</span>
+              <SvgIcon name="send" className="w-4 h-4 text-white" />
             </button>
           </div>
         </div>

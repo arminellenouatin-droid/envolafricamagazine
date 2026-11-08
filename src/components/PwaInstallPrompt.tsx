@@ -122,7 +122,7 @@ export default function PwaInstallPrompt() {
             aria-label="Fermer"
             className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition"
           >
-            <span className="material-symbols-outlined text-[18px]">close</span>
+            <SvgIcon name="close" className="w-4 h-4" />
           </button>
         </div>
 
@@ -135,7 +135,7 @@ export default function PwaInstallPrompt() {
         {showIosGuide && (
           <div className="mt-3.5 rounded-2xl border border-white/20 bg-white/10 p-3 text-xs text-white">
             <p className="font-bold text-[#8ee0c0] flex items-center gap-1.5 mb-2">
-              <span className="material-symbols-outlined text-[16px]">info</span>
+              <SvgIcon name="info" className="w-4 h-4 text-[#8ee0c0]" />
               Comment installer sur iPhone / iPad :
             </p>
             <ol className="space-y-1.5 pl-5 list-decimal text-white/90 text-[11px] leading-relaxed">
@@ -159,7 +159,7 @@ export default function PwaInstallPrompt() {
             onClick={handleInstallClick}
             className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#8ee0c0] to-[#00a896] px-4 py-2.5 text-xs sm:text-sm font-extrabold text-[#071b36] shadow-md transition hover:brightness-105 active:scale-[0.98]"
           >
-            <span className="material-symbols-outlined text-[18px]">download</span>
+            <SvgIcon name="download" className="w-4 h-4" />
             <span>Installer l&apos;application</span>
           </button>
 

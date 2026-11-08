@@ -149,14 +149,14 @@ export default function CreatorClient() {
             href="/salons"
             className="inline-flex items-center gap-2 self-start rounded-full bg-gradient-to-r from-red-600 to-[#9e001f] px-5 py-2.5 text-xs font-black text-white shadow-md hover:opacity-90 active:scale-95 transition"
           >
-            <span className="material-symbols-outlined text-base">podium</span>
+            <SvgIcon name="podium" className="w-4 h-4" />
             <span>Lancer un Salon Live</span>
           </Link>
         </div>
 
         {withdrawSuccess && (
           <div className="mt-5 rounded-2xl bg-emerald-500/10 border border-emerald-400 p-4 text-emerald-800 text-sm font-bold flex items-center gap-2">
-            <span className="material-symbols-outlined text-emerald-600">check_circle</span>
+            <SvgIcon name="check_circle" className="w-5 h-5 text-emerald-600" />
             <span>{withdrawSuccess}</span>
           </div>
         )}
@@ -212,7 +212,7 @@ export default function CreatorClient() {
                   disabled={!wallet || wallet.availableXof < minWithdrawalXof}
                   className="mt-3 w-full py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 disabled:opacity-40 text-white font-black text-xs shadow transition active:scale-95 flex items-center justify-center gap-1.5"
                 >
-                  <span className="material-symbols-outlined text-sm">payments</span>
+                  <SvgIcon name="payments" className="w-4 h-4" />
                   <span>Demander un retrait</span>
                 </button>
               </div>
@@ -258,14 +258,14 @@ export default function CreatorClient() {
             {/* Historique des Retraits */}
             <section className="rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
               <h2 className="font-display text-lg font-black text-[#082843] mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-emerald-600">receipt_long</span>
+                <SvgIcon name="receipt_long" className="w-5 h-5 text-emerald-600" />
                 <span>Historique des demandes de retrait</span>
               </h2>
 
               <div className="space-y-3">
                 {withdrawals.length === 0 ? (
                   <div className="py-8 text-center text-sm text-slate-400">
-                    <span className="material-symbols-outlined text-3xl mb-1 text-slate-300">account_balance_wallet</span>
+                    <SvgIcon name="account_balance_wallet" className="w-8 h-8 mb-1 text-slate-300 mx-auto" />
                     <p>Aucune demande de retrait effectuée pour le moment.</p>
                   </div>
                 ) : (
@@ -379,7 +379,7 @@ export default function CreatorClient() {
             <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl text-slate-800">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-emerald-600 text-2xl">account_balance_wallet</span>
+                  <SvgIcon name="account_balance_wallet" className="w-6 h-6 text-emerald-600" />
                   <h3 className="font-display font-black text-base text-[#082843]">
                     Demande de Retrait
                   </h3>
@@ -389,7 +389,7 @@ export default function CreatorClient() {
                   onClick={() => setShowWithdrawModal(false)}
                   className="text-slate-400 hover:text-slate-600"
                 >
-                  <span className="material-symbols-outlined">close</span>
+                  <SvgIcon name="close" className="w-5 h-5" />
                 </button>
               </div>
 

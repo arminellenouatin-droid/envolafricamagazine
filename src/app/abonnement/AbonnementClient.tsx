@@ -233,7 +233,7 @@ export default function AbonnementClient() {
         <div className="mt-16 max-w-[1020px] mx-auto grid md:grid-cols-3 gap-5">
           <div className="rounded-[20px] bg-white border border-[#e5bdbb]/80 p-5 flex items-start gap-3.5 shadow-sm">
             <div className="w-10 h-10 rounded-xl bg-[#f2e8e6] text-[#9e001f] flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-xl">lock</span>
+              <SvgIcon name="lock" className="w-5 h-5 text-[#9e001f]" />
             </div>
             <div>
               <div className="font-bold text-[13px] font-display text-[#1b1c1c]">
@@ -247,7 +247,7 @@ export default function AbonnementClient() {
 
           <div className="rounded-[20px] bg-white border border-[#e5bdbb]/80 p-5 flex items-start gap-3.5 shadow-sm">
             <div className="w-10 h-10 rounded-xl bg-[#f2e8e6] text-[#9e001f] flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-xl">bolt</span>
+              <SvgIcon name="bolt" className="w-5 h-5 text-[#9e001f]" />
             </div>
             <div>
               <div className="font-bold text-[13px] font-display text-[#1b1c1c]">
@@ -261,7 +261,7 @@ export default function AbonnementClient() {
 
           <div className="rounded-[20px] bg-white border border-[#e5bdbb]/80 p-5 flex items-start gap-3.5 shadow-sm">
             <div className="w-10 h-10 rounded-xl bg-[#f2e8e6] text-[#9e001f] flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-xl">payments</span>
+              <SvgIcon name="payments" className="w-5 h-5 text-[#9e001f]" />
             </div>
             <div>
               <div className="font-bold text-[13px] font-display text-[#1b1c1c]">

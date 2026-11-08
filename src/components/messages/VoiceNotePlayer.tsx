@@ -107,9 +107,7 @@ export default function VoiceNotePlayer({ url, duration = 0, isMe = false }: Voi
             : "bg-[#006874] hover:bg-[#00545e] text-white"
         }`}
       >
-        <span className="material-symbols-outlined text-2xl font-bold">
-          {isPlaying ? "pause" : "play_arrow"}
-        </span>
+        <SvgIcon name={isPlaying ? "pause" : "play_arrow"} className="w-6 h-6 text-white" />
       </button>
 
       {/* Forme d'onde et durée */}

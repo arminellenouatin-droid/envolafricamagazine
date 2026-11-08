@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import SvgIcon from "@/components/ui/Icon";
 import { CHARIOW_PRODUCT_URLS } from "@/lib/chariow";
 
 type FlipMode = "single" | "spread";
@@ -410,9 +411,7 @@ export default function PreviewFlipbook({
               aria-label={soundEnabled ? "Désactiver le son de tournage" : "Activer le son de tournage"}
               title={soundEnabled ? "Son activé" : "Son coupé"}
             >
-              <span className="material-symbols-outlined text-[20px]">
-                {soundEnabled ? "volume_up" : "volume_off"}
-              </span>
+              <SvgIcon name={soundEnabled ? "volume_up" : "volume_off"} className="w-5 h-5" />
             </button>
 
             {/* Direct purchase CTA in header */}
@@ -421,7 +420,7 @@ export default function PreviewFlipbook({
               onClick={onPurchase}
               className="hidden md:inline-flex items-center gap-1.5 rounded-full bg-[#9e001f] px-4 py-1.5 text-xs font-bold text-white shadow hover:bg-[#c8102e] transition"
             >
-              <span className="material-symbols-outlined text-[16px]">shopping_bag</span>
+              <SvgIcon name="shopping_bag" className="w-4 h-4" />
               <span>Choisir une version</span>
             </button>
 
@@ -432,7 +431,7 @@ export default function PreviewFlipbook({
               className="grid h-9 w-9 sm:h-10 sm:w-10 shrink-0 place-items-center rounded-full text-[#c2b4b3] hover:bg-white/10 hover:text-white transition"
               aria-label="Fermer l’aperçu"
             >
-              <span className="material-symbols-outlined text-[22px]">close</span>
+              <SvgIcon name="close" className="w-5 h-5" />
             </button>
           </div>
         </header>
@@ -451,7 +450,7 @@ export default function PreviewFlipbook({
             aria-label="Page précédente"
             className="hidden md:grid absolute left-4 top-1/2 -translate-y-1/2 z-20 h-12 w-12 place-items-center rounded-full bg-black/60 text-white shadow-xl hover:bg-[#9e001f] disabled:opacity-0 disabled:pointer-events-none transition"
           >
-            <span className="material-symbols-outlined text-2xl">chevron_left</span>
+            <SvgIcon name="chevron_left" className="w-6 h-6" />
           </button>
 
           <button
@@ -461,7 +460,7 @@ export default function PreviewFlipbook({
             aria-label="Page suivante"
             className="hidden md:grid absolute right-4 top-1/2 -translate-y-1/2 z-20 h-12 w-12 place-items-center rounded-full bg-black/60 text-white shadow-xl hover:bg-[#9e001f] disabled:opacity-0 disabled:pointer-events-none transition"
           >
-            <span className="material-symbols-outlined text-2xl">chevron_right</span>
+            <SvgIcon name="chevron_right" className="w-6 h-6" />
           </button>
 
           {/* Book Wrapper */}
@@ -492,7 +491,7 @@ export default function PreviewFlipbook({
                   )}
                   {failedPages[page] ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#fcf9f8] p-6 text-center text-[#746665]">
-                      <span className="material-symbols-outlined text-4xl text-[#9e001f]">menu_book</span>
+                      <SvgIcon name="menu_book" className="w-10 h-10 text-[#9e001f] mx-auto" />
                       <p className="mt-2 text-xs font-bold text-[#242020]">{title}</p>
                       <p className="mt-1 text-[11px] text-[#9c8e8d]">Édition N°{numero || "actuelle"} — Page {page}</p>
                       <p className="mt-1 text-[10px] text-[#baa4a2]">Numérisation haute fidélité en cours de synchronisation.</p>
@@ -541,7 +540,7 @@ export default function PreviewFlipbook({
                   {/* Error fallback if PDF cannot be loaded */}
                   {pdfError && !isBlocked(page) && page > 1 && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-white p-6 text-center text-[#746665]">
-                      <span className="material-symbols-outlined text-4xl text-[#9e001f]">menu_book</span>
+                      <SvgIcon name="menu_book" className="w-10 h-10 text-[#9e001f] mx-auto" />
                       <p className="mt-2 text-xs font-medium">Aperçu en cours d&apos;optimisation</p>
                       <p className="mt-1 text-[11px] text-[#9c8e8d]">La page {page} sera disponible sous peu.</p>
                     </div>
@@ -570,7 +569,7 @@ export default function PreviewFlipbook({
                     )}
                     {failedPages[rightPage] ? (
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#fcf9f8] p-6 text-center text-[#746665]">
-                        <span className="material-symbols-outlined text-4xl text-[#9e001f]">menu_book</span>
+                        <SvgIcon name="menu_book" className="w-10 h-10 text-[#9e001f] mx-auto" />
                         <p className="mt-2 text-xs font-bold text-[#242020]">{title}</p>
                         <p className="mt-1 text-[11px] text-[#9c8e8d]">Édition N°{numero || "actuelle"} — Page {rightPage}</p>
                         <p className="mt-1 text-[10px] text-[#baa4a2]">Numérisation haute fidélité en cours de synchronisation.</p>
@@ -631,7 +630,7 @@ export default function PreviewFlipbook({
             {/* Left Status */}
             <div className="flex items-center gap-2 min-w-0">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[#302b2b] px-3 py-1 text-[11px] font-bold text-[#e6dcdb]">
-                <span className="material-symbols-outlined text-[14px] text-[#ff8093]">auto_stories</span>
+                <SvgIcon name="auto_stories" className="w-3.5 h-3.5 text-[#ff8093]" />
                 <span>{pageLabel}</span>
               </span>
               <span className="hidden lg:inline text-[11px] text-[#9c8e8d] truncate">
@@ -672,7 +671,7 @@ export default function PreviewFlipbook({
                 className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-full border border-[#4d4444] bg-[#272323] text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-[#9e001f] hover:border-[#9e001f] transition active:scale-95"
                 aria-label="Page précédente"
               >
-                <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+                <SvgIcon name="chevron_left" className="w-5 h-5" />
               </button>
 
               <button
@@ -682,7 +681,7 @@ export default function PreviewFlipbook({
                 className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-full border border-[#4d4444] bg-[#272323] text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-[#9e001f] hover:border-[#9e001f] transition active:scale-95"
                 aria-label="Page suivante"
               >
-                <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+                <SvgIcon name="chevron_right" className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -712,7 +711,7 @@ function LockedPage({ onPurchase }: { onPurchase: () => void }) {
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-white px-6 text-center">
       <div className="grid h-16 w-16 place-items-center rounded-full bg-[#ffdad8] text-[#9e001f] shadow-sm">
-        <span className="material-symbols-outlined text-3xl">lock</span>
+        <SvgIcon name="lock" className="w-8 h-8 mx-auto" />
       </div>
       <h3 className="mt-4 font-serif text-xl sm:text-2xl font-bold text-[#2b2525]">
         Acheter pour lire tout le numéro
@@ -735,7 +734,7 @@ function LockedPage({ onPurchase }: { onPurchase: () => void }) {
           rel="noopener noreferrer"
           className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#f0b27e] bg-[#fffaf5] px-6 text-xs font-bold text-[#944400] shadow-sm hover:bg-[#f0b27e]/20 transition active:scale-95 gap-1.5"
         >
-          <span className="material-symbols-outlined text-[16px]">bolt</span>
+          <SvgIcon name="bolt" className="w-4 h-4 text-amber-300" />
           <span>Acheter directement sur Chariow ↗</span>
         </a>
       </div>

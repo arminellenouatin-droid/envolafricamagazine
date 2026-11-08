@@ -59,7 +59,7 @@ export default function WabPollWidget({
     <div className="mt-4 overflow-hidden rounded-2xl border border-[#d8e2e6] bg-[#fbfdfc] p-4 text-[#001325] shadow-sm">
       <div className="flex items-center justify-between text-xs text-[#5f6368] mb-2.5">
         <span className="inline-flex items-center gap-1 font-bold text-[#006874]">
-          <span className="material-symbols-outlined text-[16px]">poll</span> Sondage B2B
+          <SvgIcon name="poll" className="w-4 h-4" /> Sondage B2B
         </span>
         <span className="text-[11px] font-medium">{endsAtLabel}</span>
       </div>

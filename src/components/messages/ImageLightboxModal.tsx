@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import SvgIcon from "@/components/ui/Icon";
 
 interface ImageLightboxModalProps {
   isOpen: boolean;
@@ -51,7 +52,7 @@ export default function ImageLightboxModal({
             className="p-2 rounded-full bg-white/15 hover:bg-white/25 text-white transition flex items-center justify-center"
             title="Télécharger l'image"
           >
-            <span className="material-symbols-outlined text-lg">download</span>
+            <SvgIcon name="download" className="w-5 h-5 text-white" />
           </a>
           <button
             type="button"
@@ -59,7 +60,7 @@ export default function ImageLightboxModal({
             aria-label="Fermer la photo"
             className="p-2 rounded-full bg-white/15 hover:bg-white/25 text-white transition flex items-center justify-center cursor-pointer"
           >
-            <span className="material-symbols-outlined text-lg">close</span>
+            <SvgIcon name="close" className="w-5 h-5 text-white" />
           </button>
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import SvgIcon from "@/components/ui/Icon";
 
 type Tab = "notifications" | "messages" | "favorites";
 type InboxMessage = {
@@ -261,7 +262,7 @@ export default function InboxToolbox({
           aria-label="Fermer"
           className="grid h-8 w-8 place-items-center rounded-full bg-[#f6f3f2] text-[#9e001f]"
         >
-          <span className="material-symbols-outlined text-[18px]">close</span>
+          <SvgIcon name="close" className="w-4 h-4 text-[#9e001f]" />
         </button>
       </div>
 
@@ -389,7 +390,7 @@ export default function InboxToolbox({
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <span className="material-symbols-outlined">person</span>
+                  <SvgIcon name="person" className="w-5 h-5 text-gray-500" />
                 )}
               </span>
               <span className="min-w-0 flex-1">
@@ -416,7 +417,7 @@ export default function InboxToolbox({
               className="flex gap-3 py-3"
             >
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#f6f3f2] text-[#9e001f]">
-                <span className="material-symbols-outlined">notifications</span>
+                <SvgIcon name="notifications" className="w-5 h-5 text-[#9e001f]" />
               </span>
               <span className="min-w-0 flex-1">
                 <strong className="block truncate text-xs font-black">{item.title}</strong>
@@ -478,7 +479,7 @@ export default function InboxToolbox({
                     aria-label={`Retirer ${item.title} des favoris`}
                     className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[#a8928f] hover:bg-[#ffebee] hover:text-[#9e001f] transition"
                   >
-                    <span className="material-symbols-outlined text-[17px]">delete_outline</span>
+                    <SvgIcon name="delete_outline" className="w-4 h-4 text-[#a8928f]" />
                   </button>
                 </div>
               ))}

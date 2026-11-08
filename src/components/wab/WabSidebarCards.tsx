@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import SvgIcon from "@/components/ui/Icon";
 
 export type WabUser = {
   id: string;
@@ -59,7 +60,7 @@ export default function WabSidebarCards({
             </div>
             {isBusiness ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800 border border-amber-200">
-                <span className="material-symbols-outlined text-[14px]">verified</span> Pro
+                <SvgIcon name="verified" className="w-3.5 h-3.5" /> Pro
               </span>
             ) : (
               <button
@@ -67,7 +68,7 @@ export default function WabSidebarCards({
                 onClick={onUpgradeClick}
                 className="inline-flex items-center gap-1 rounded-full bg-[#eefcfa] px-2.5 py-1 text-[11px] font-bold text-[#006874] transition hover:bg-[#d7f2ee]"
               >
-                <span className="material-symbols-outlined text-[13px]">workspace_premium</span> Passer Pro
+                <SvgIcon name="workspace_premium" className="w-3.5 h-3.5" /> Passer Pro
               </button>
             )}
           </div>
@@ -111,7 +112,7 @@ export default function WabSidebarCards({
                 className="flex items-center justify-between py-1 text-[#5f6368] hover:text-[#006874] transition"
               >
                 <span className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[17px] text-[#006874]">visibility</span>
+                  <SvgIcon name="visibility" className="w-4 h-4 text-[#006874]" />
                   <span>Vues du profil</span>
                 </span>
                 <span className="font-bold text-[#006874]">142</span>
@@ -123,7 +124,7 @@ export default function WabSidebarCards({
                 className="flex items-center justify-between py-1 text-[#5f6368] hover:text-[#006874] transition"
               >
                 <span className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[17px] text-[#0284c7]">dynamic_feed</span>
+                  <SvgIcon name="dynamic_feed" className="w-4 h-4 text-[#0284c7]" />
                   <span>Impressions du réseau</span>
                 </span>
                 <span className="font-bold text-[#006874]">1,8k</span>
@@ -131,7 +132,7 @@ export default function WabSidebarCards({
 
               <div className="flex items-center justify-between py-1 text-[#5f6368]">
                 <span className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[17px] text-[#e11d48]">favorite</span>
+                  <SvgIcon name="favorite" className="w-4 h-4 text-[#e11d48]" />
                   <span>Mentions J'aime</span>
                 </span>
                 <span className="font-bold text-[#006874]">512</span>
@@ -139,7 +140,7 @@ export default function WabSidebarCards({
 
               <div className="flex items-center justify-between py-1 text-[#5f6368]">
                 <span className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[17px] text-[#16a34a]">article</span>
+                  <SvgIcon name="article" className="w-4 h-4 text-[#16a34a]" />
                   <span>Publications actives</span>
                 </span>
                 <span className="font-bold text-[#006874]">24</span>
@@ -156,7 +157,7 @@ export default function WabSidebarCards({
                 className="w-full text-left rounded-xl bg-amber-50/80 p-2.5 transition hover:bg-amber-100/80 border border-amber-200/60"
               >
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[18px] text-amber-700">stars</span>
+                  <SvgIcon name="stars" className="w-4 h-4 text-amber-700" />
                   <div className="min-w-0">
                     <p className="truncate text-xs font-bold text-amber-900">Accédez à WAB Entreprise</p>
                     <p className="text-[10px] text-amber-700">Vidéos illimitées & opportunités B2B</p>
@@ -190,9 +191,7 @@ export default function WabSidebarCards({
                 {item.customIcon ? (
                   <img src={item.customIcon} alt="" className="h-5 w-5 object-contain" />
                 ) : (
-                  <span className={`material-symbols-outlined text-[20px] ${isActive ? "text-[#006874]" : "text-[#5f6368]"}`}>
-                    {item.icon}
-                  </span>
+                  <SvgIcon name={item.icon || "explore"} className={`w-5 h-5 ${isActive ? "text-[#006874]" : "text-[#5f6368]"}`} />
                 )}
                 <span>{item.label}</span>
               </Link>
@@ -207,7 +206,7 @@ export default function WabSidebarCards({
               onClick={onLinkClick}
               className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-[#9e001f] transition hover:bg-red-50"
             >
-              <span className="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+              <SvgIcon name="admin_panel_settings" className="w-5 h-5 text-[#9e001f]" />
               <span>Administration WAB</span>
             </Link>
           </div>

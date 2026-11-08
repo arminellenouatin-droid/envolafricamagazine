@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { buildSocialShareLinks, buildShareUrl } from "@/lib/share-metadata-service";
+import SvgIcon from "@/components/ui/Icon";
 
 async function readJson(response: Response): Promise<Record<string, unknown>> {
   const raw = await response.text();
@@ -124,18 +125,18 @@ export default function PostActions({ postId, initialLikes, initialComments, ini
 
   return <>
     <div className="flex items-center gap-1 border-t border-[#001325]/10 pt-3" aria-label="Actions de la publication">
-      <button type="button" onClick={react} aria-label={`${liked ? "Retirer le j’aime" : "Aimer"}. ${formatCount(likes)} j’aime`} aria-pressed={liked} className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold transition active:scale-[.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006874] hover:bg-[#eefcfa] ${liked ? "text-[#006874]" : "text-[#43474d]"}`}><span className="material-symbols-outlined text-[20px]" aria-hidden="true">{liked ? "favorite" : "favorite_border"}</span><span>{formatCount(likes)}</span></button>
-      <button type="button" onClick={onComment} aria-label={`Commenter. ${formatCount(comments)} commentaires`} className="flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold text-[#43474d] transition active:scale-[.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006874] hover:bg-[#eefcfa]"><span className="material-symbols-outlined text-[20px]" aria-hidden="true">chat_bubble</span><span>{formatCount(comments)}</span></button>
-      <button type="button" onClick={() => setShareOpen((v) => !v)} aria-label={`Partager. ${formatCount(shares)} partages`} className="flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold text-[#43474d] transition active:scale-[.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006874] hover:bg-[#eefcfa]"><span className="material-symbols-outlined text-[20px]" aria-hidden="true">share</span><span>{formatCount(shares)}</span></button>
-      <span aria-label={`${formatCount(views)} vues`} className="flex min-h-11 flex-1 items-center justify-center gap-1.5 px-2 py-2 text-xs font-semibold text-[#43474d]"><span className="material-symbols-outlined text-[20px]" aria-hidden="true">visibility</span><span>{formatCount(views)}</span></span>
-      {canBoost && <button type="button" onClick={() => window.location.assign(`/wab/campagnes?postId=${encodeURIComponent(postId)}`)} aria-expanded={false} className="flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#a36300] px-3 py-2 text-xs font-bold text-white transition active:scale-[.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a36300] hover:bg-[#875600]"><span className="material-symbols-outlined text-[19px]" aria-hidden="true">campaign</span><span>Boost</span></button>}
+      <button type="button" onClick={react} aria-label={`${liked ? "Retirer le j’aime" : "Aimer"}. ${formatCount(likes)} j’aime`} aria-pressed={liked} className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold transition active:scale-[.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006874] hover:bg-[#eefcfa] ${liked ? "text-[#006874]" : "text-[#43474d]"}`}><SvgIcon name={liked ? "favorite" : "favorite_border"} className={`w-5 h-5 ${liked ? "fill-current text-[#006874]" : ""}`} /><span>{formatCount(likes)}</span></button>
+      <button type="button" onClick={onComment} aria-label={`Commenter. ${formatCount(comments)} commentaires`} className="flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold text-[#43474d] transition active:scale-[.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006874] hover:bg-[#eefcfa]"><SvgIcon name="chat_bubble" className="w-5 h-5" /><span>{formatCount(comments)}</span></button>
+      <button type="button" onClick={() => setShareOpen((v) => !v)} aria-label={`Partager. ${formatCount(shares)} partages`} className="flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold text-[#43474d] transition active:scale-[.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006874] hover:bg-[#eefcfa]"><SvgIcon name="share" className="w-5 h-5" /><span>{formatCount(shares)}</span></button>
+      <span aria-label={`${formatCount(views)} vues`} className="flex min-h-11 flex-1 items-center justify-center gap-1.5 px-2 py-2 text-xs font-semibold text-[#43474d]"><SvgIcon name="visibility" className="w-5 h-5" /><span>{formatCount(views)}</span></span>
+      {canBoost && <button type="button" onClick={() => window.location.assign(`/wab/campagnes?postId=${encodeURIComponent(postId)}`)} aria-expanded={false} className="flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#a36300] px-3 py-2 text-xs font-bold text-white transition active:scale-[.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a36300] hover:bg-[#875600]"><SvgIcon name="campaign" className="w-4 h-4" /><span>Boost</span></button>}
     </div>
 
     {shareOpen && (
       <div className="mt-3 rounded-2xl border border-[#d1e9e6] bg-white p-4 shadow-lg animate-in fade-in zoom-in-95 duration-150" role="dialog" aria-label="Partager cette publication">
         <div className="flex items-center justify-between border-b border-gray-100 pb-2.5 mb-3">
           <p className="text-xs font-extrabold text-[#082843] flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-[18px] text-[#006874]">share</span>
+            <SvgIcon name="share" className="w-4 h-4 text-[#006874]" />
             <span>Partager cette publication</span>
           </p>
           <button type="button" onClick={() => setShareOpen(false)} className="h-6 w-6 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 grid place-items-center text-xs">
@@ -229,7 +230,7 @@ export default function PostActions({ postId, initialLikes, initialComments, ini
             title="Ajouter à ma Story WAB"
           >
             <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#9e001f] to-[#006874] text-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-              <span className="material-symbols-outlined text-lg">auto_stories</span>
+              <SvgIcon name="auto_stories" className="w-5 h-5" />
             </div>
             <span className="text-[10px] font-bold text-gray-700">Story WAB</span>
           </button>
@@ -242,7 +243,7 @@ export default function PostActions({ postId, initialLikes, initialComments, ini
             title="Repartager dans le fil d'actualité WAB"
           >
             <div className="w-9 h-9 rounded-full bg-[#006874] text-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-              <span className="material-symbols-outlined text-lg">dynamic_feed</span>
+              <SvgIcon name="dynamic_feed" className="w-5 h-5" />
             </div>
             <span className="text-[10px] font-bold text-gray-700">Fil WAB</span>
           </button>
@@ -255,7 +256,7 @@ export default function PostActions({ postId, initialLikes, initialComments, ini
             title="Copier le lien"
           >
             <div className="w-9 h-9 rounded-full bg-[#082843] text-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-              <span className="material-symbols-outlined text-lg">link</span>
+              <SvgIcon name="link" className="w-5 h-5" />
             </div>
             <span className="text-[10px] font-bold text-gray-700">Copier</span>
           </button>

@@ -700,7 +700,7 @@ export default function AudioCallModal({
                 className="absolute bottom-2 left-2 p-1.5 rounded-full bg-black/60 hover:bg-black/80 text-white backdrop-blur border border-white/20 text-xs flex items-center gap-1"
                 title="Retourner la caméra"
               >
-                <span className="material-symbols-outlined text-sm">flip_camera_ios</span>
+                <SvgIcon name="flip_camera_ios" className="w-4 h-4 text-white" />
               </button>
             </div>
           ) : (
@@ -766,7 +766,7 @@ export default function AudioCallModal({
                 className="flex flex-col items-center gap-1.5 group cursor-pointer"
               >
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white shadow-lg transition-transform group-hover:scale-110 active:scale-95">
-                  <span className="material-symbols-outlined text-2xl">call_end</span>
+                  <SvgIcon name="call_end" className="w-6 h-6 text-white" />
                 </div>
                 <span className="text-xs font-bold text-gray-300">Refuser</span>
               </button>
@@ -779,9 +779,7 @@ export default function AudioCallModal({
                 className="flex flex-col items-center gap-1.5 group cursor-pointer"
               >
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 text-white shadow-xl shadow-emerald-500/40 transition-transform group-hover:scale-110 active:scale-95 animate-bounce">
-                  <span className="material-symbols-outlined text-3xl">
-                    {isVideo ? "videocam" : "call"}
-                  </span>
+                  <SvgIcon name={isVideo ? "videocam" : "call"} className="w-8 h-8 text-white" />
                 </div>
                 <span className="text-xs font-black text-emerald-300">Décrocher</span>
               </button>
@@ -803,9 +801,7 @@ export default function AudioCallModal({
                       : "bg-white/10 text-white hover:bg-white/20"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-xl">
-                    {isMuted ? "mic_off" : "mic"}
-                  </span>
+                  <SvgIcon name={isMuted ? "mic_off" : "mic"} className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-[10px] font-semibold text-gray-300">
                   {isMuted ? "Muet" : "Micro"}
@@ -826,9 +822,7 @@ export default function AudioCallModal({
                       : "bg-white/10 text-white hover:bg-white/20"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-xl">
-                    {isVideoEnabled ? "videocam" : "videocam_off"}
-                  </span>
+                  <SvgIcon name={isVideoEnabled ? "videocam" : "videocam_off"} className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-[10px] font-semibold text-gray-300">
                   {isVideoEnabled ? "Caméra ON" : "Caméra OFF"}
@@ -843,7 +837,7 @@ export default function AudioCallModal({
                 className="flex flex-col items-center gap-1 group cursor-pointer"
               >
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white shadow-xl shadow-red-600/40 transition-transform group-hover:scale-110 active:scale-95">
-                  <span className="material-symbols-outlined text-2xl">call_end</span>
+                  <SvgIcon name="call_end" className="w-6 h-6 text-white" />
                 </div>
                 <span className="text-[10px] font-bold text-gray-200">Raccrocher</span>
               </button>
@@ -862,9 +856,7 @@ export default function AudioCallModal({
                       : "bg-white/10 text-gray-400"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-xl">
-                    {isSpeakerOn ? "volume_up" : "volume_down"}
-                  </span>
+                  <SvgIcon name={isSpeakerOn ? "volume_up" : "volume_down"} className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-[10px] font-semibold text-gray-300">Audio</span>
               </button>

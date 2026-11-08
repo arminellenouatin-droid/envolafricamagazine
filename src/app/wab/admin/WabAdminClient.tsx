@@ -231,7 +231,7 @@ export default function WabAdminClient() {
               href="/salons"
               className="inline-flex items-center gap-1.5 rounded-full bg-white border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition"
             >
-              <span className="material-symbols-outlined text-base">visibility</span>
+              <SvgIcon name="visibility" className="w-4 h-4" />
               <span>Voir le Hub Salons</span>
             </Link>
             <Link
@@ -245,7 +245,7 @@ export default function WabAdminClient() {
 
         {success && (
           <div className="mt-5 rounded-2xl bg-emerald-500/10 border border-emerald-400 p-4 text-emerald-800 text-sm font-bold flex items-center gap-2">
-            <span className="material-symbols-outlined text-emerald-600">check_circle</span>
+            <SvgIcon name="check_circle" className="w-5 h-5 text-emerald-600" />
             <span>{success}</span>
           </div>
         )}
@@ -286,14 +286,14 @@ export default function WabAdminClient() {
                   onClick={loadData}
                   className="text-xs text-slate-500 hover:text-slate-800 font-bold flex items-center gap-1"
                 >
-                  <span className="material-symbols-outlined text-sm">refresh</span>
+                  <SvgIcon name="refresh" className="w-4 h-4" />
                   <span>Actualiser</span>
                 </button>
               </div>
 
               {liveSalons.length === 0 ? (
                 <div className="py-8 text-center text-xs text-slate-400">
-                  <span className="material-symbols-outlined text-3xl mb-1 text-slate-300">tv_off</span>
+                  <SvgIcon name="tv_off" className="w-8 h-8 mb-1 text-slate-300 mx-auto" />
                   <p>Aucun salon en direct n'est actif pour le moment.</p>
                 </div>
               ) : (
@@ -332,7 +332,7 @@ export default function WabAdminClient() {
                           onClick={() => handleForceStopLive(s.id)}
                           className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black shadow transition active:scale-95 flex items-center gap-1"
                         >
-                          <span className="material-symbols-outlined text-sm">stop_circle</span>
+                          <SvgIcon name="stop_circle" className="w-4 h-4 text-red-500" />
                           <span>Arrêt forcé</span>
                         </button>
                       </div>
@@ -345,7 +345,7 @@ export default function WabAdminClient() {
             {/* 2. File de Modération & Signalements Live */}
             <section className="rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
               <h2 className="font-display text-lg font-black text-[#082843] mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-amber-500">warning</span>
+                <SvgIcon name="warning" className="w-5 h-5 text-amber-500" />
                 <span>Signalements en Attente ({liveReports.filter((r) => r.status === "pending").length})</span>
               </h2>
 
@@ -401,7 +401,7 @@ export default function WabAdminClient() {
             {/* 3. Validation des Demandes de Retrait Créateurs */}
             <section className="rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
               <h2 className="font-display text-lg font-black text-[#082843] mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-emerald-600">account_balance_wallet</span>
+                <SvgIcon name="account_balance_wallet" className="w-5 h-5 text-emerald-600" />
                 <span>Demandes de Retrait Créateurs ({withdrawals.filter((w) => w.status === "pending").length})</span>
               </h2>
 
@@ -466,7 +466,7 @@ export default function WabAdminClient() {
             {/* 4. Configuration Globale des Salons WAB */}
             <section className="rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
               <h2 className="font-display text-lg font-black text-[#082843] mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-purple-600">tune</span>
+                <SvgIcon name="tune" className="w-5 h-5 text-purple-600" />
                 <span>Paramètres Économiques des Salons & Coins</span>
               </h2>
 
