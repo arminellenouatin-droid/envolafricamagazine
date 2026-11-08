@@ -2,11 +2,11 @@ import type { NextConfig } from "next";
 
 const contentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com https://download.agora.io",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "img-src 'self' blob: data: https://flagcdn.com https://*.flagcdn.com https://images.unsplash.com https://*.supabase.co https://*.r2.dev https://pub-df336181dd964534a4866a10762a3327.r2.dev https://*.cloudflarestorage.com https://*.googleusercontent.com https://lh3.googleusercontent.com https://i.ytimg.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com https://download.agora.io https://translate.google.com https://translate.googleapis.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://translate.googleapis.com",
+  "img-src 'self' blob: data: https://flagcdn.com https://*.flagcdn.com https://images.unsplash.com https://*.supabase.co https://*.r2.dev https://pub-df336181dd964534a4866a10762a3327.r2.dev https://*.cloudflarestorage.com https://*.googleusercontent.com https://lh3.googleusercontent.com https://i.ytimg.com https://translate.google.com https://translate.googleapis.com https://www.gstatic.com",
   "font-src 'self' data: https://fonts.gstatic.com",
-  "connect-src 'self' blob: data: https://api.open-meteo.com https://*.supabase.co wss://*.supabase.co https://*.moneroo.io https://api.moneroo.io https://*.agora.io wss://*.agora.io https://*.agoraio.cn wss://*.agoraio.cn https://*.sd-rtn.com https://*.edge.agora.io https://*.r2.dev https://pub-df336181dd964534a4866a10762a3327.r2.dev https://*.cloudflarestorage.com https://www.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://accounts.google.com",
+  "connect-src 'self' blob: data: https://api.open-meteo.com https://*.supabase.co wss://*.supabase.co https://*.moneroo.io https://api.moneroo.io https://*.agora.io wss://*.agora.io https://*.agoraio.cn wss://*.agoraio.cn https://*.sd-rtn.com https://*.edge.agora.io https://*.r2.dev https://pub-df336181dd964534a4866a10762a3327.r2.dev https://*.cloudflarestorage.com https://www.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://accounts.google.com https://translate.google.com https://translate.googleapis.com",
   "media-src 'self' blob: data: https://*.r2.dev https://pub-df336181dd964534a4866a10762a3327.r2.dev https://*.cloudflarestorage.com https://*.supabase.co",
   "frame-src 'self' https://accounts.google.com https://www.youtube.com https://www.youtube-nocookie.com https://checkout.moneroo.io https://*.moneroo.io",
   "frame-ancestors 'self'",

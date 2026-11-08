@@ -32,6 +32,8 @@ export const DEFAULT_VISITOR_LOCALE: VisitorLocale = {
  * Normalise l'état de localisation du visiteur selon la règle absolue :
  * CHOIX MANUEL UTILISATEUR > PRÉFÉRENCE PERSISTÉE > DÉTECTION AUTOMATIQUE > VALEUR PAR DÉFAUT
  * 
+ * RÈGLE D'OR : Dès qu'un utilisateur a fait un choix manuel de langue ou de devise,
+ * ce choix prend le dessus absolu et permanent sur toute autodétection (IP, pays, en-têtes).
  * L'indépendance Langue et Devise est strictement préservée :
  * Changer de langue ne modifie pas la devise, et inversement.
  */
@@ -45,19 +47,29 @@ export function normalizeVisitorLocale(
   let finalLanguage: SupportedLanguage;
   let finalLanguageSource: "auto" | "manual";
 
-  if (value?.languageSource === "manual" || (value?.isManual && value?.language)) {
-    // Choix manuel explicite dans cette opération
+  // Est-ce qu'une préférence manuelle antérieure existe ?
+  const storedManualLang = typeof window !== "undefined" ? localStorage.getItem("ea_manual_language") : null;
+  const hasPriorManualLang =
+    current?.languageSource === "manual" ||
+    Boolean(current?.isManual && current?.language && current?.languageSource !== "auto") ||
+    Boolean(storedManualLang);
+
+  if (value?.languageSource === "manual" || (value?.isManual && value?.language && (!current?.language || value.language !== current.language))) {
+    // 1.A. L'utilisateur vient d'effectuer un choix manuel explicite de langue
     finalLanguage = normalizeLanguage(value.language);
     finalLanguageSource = "manual";
-  } else if (current?.languageSource === "manual" || (current?.isManual && current?.language && (!value?.isManual || value?.language === current?.language))) {
-    // Préférence manuelle antérieurement persistée : Prioritaire sur l'autodétection
-    finalLanguage = normalizeLanguage(current.language);
+  } else if (hasPriorManualLang && (!value?.languageSource || value.languageSource !== "manual")) {
+    // 1.B. L'utilisateur a déjà une préférence manuelle enregistrée :
+    // ELLE PREND LE DESSUS ABSOLU sur toute autodétection entrante (ex: /api/geo)
+    const manualLangToKeep = (current?.languageSource === "manual" ? current.language : null) || storedManualLang || current?.language || value?.language;
+    finalLanguage = normalizeLanguage(manualLangToKeep);
     finalLanguageSource = "manual";
   } else if (value?.language) {
-    // Détection automatique entrante
+    // 1.C. Détection automatique entrante (nouveau visiteur sans choix manuel)
     finalLanguage = normalizeLanguage(value.language);
     finalLanguageSource = value.languageSource || "auto";
   } else {
+    // 1.D. Fallback par défaut
     finalLanguage = current?.language ? normalizeLanguage(current.language) : normalizeLanguage(DEFAULT_VISITOR_LOCALE.language);
     finalLanguageSource = current?.languageSource || "auto";
   }
@@ -66,19 +78,27 @@ export function normalizeVisitorLocale(
   let finalCurrency: string;
   let finalCurrencySource: "auto" | "manual";
 
-  if (value?.currencySource === "manual" || (value?.isManual && value?.currency)) {
-    // Choix manuel explicite de devise dans cette opération
+  const storedManualCurr = typeof window !== "undefined" ? localStorage.getItem("ea_manual_currency") : null;
+  const hasPriorManualCurr =
+    current?.currencySource === "manual" ||
+    Boolean(current?.isManual && current?.currency && current?.currencySource !== "auto") ||
+    Boolean(storedManualCurr);
+
+  if (value?.currencySource === "manual" || (value?.isManual && value?.currency && (!current?.currency || value.currency !== current.currency))) {
+    // 2.A. Choix manuel explicite de devise
     finalCurrency = normalizeCurrency(value.currency);
     finalCurrencySource = "manual";
-  } else if (current?.currencySource === "manual" || (current?.isManual && current?.currency && (!value?.isManual || value?.currency === current?.currency))) {
-    // Préférence manuelle de devise antérieurement persistée : Prioritaire sur l'autodétection
-    finalCurrency = normalizeCurrency(current.currency);
+  } else if (hasPriorManualCurr && (!value?.currencySource || value.currencySource !== "manual")) {
+    // 2.B. Préférence manuelle de devise antérieurement persistée : Prioritaire sur l'autodétection
+    const manualCurrToKeep = (current?.currencySource === "manual" ? current.currency : null) || storedManualCurr || current?.currency || value?.currency;
+    finalCurrency = normalizeCurrency(manualCurrToKeep);
     finalCurrencySource = "manual";
   } else if (value?.currency) {
-    // Détection automatique entrante
+    // 2.C. Détection automatique entrante
     finalCurrency = normalizeCurrency(value.currency);
     finalCurrencySource = value.currencySource || "auto";
   } else {
+    // 2.D. Fallback par défaut
     finalCurrency = current?.currency ? normalizeCurrency(current.currency) : DEFAULT_VISITOR_LOCALE.currency;
     finalCurrencySource = current?.currencySource || "auto";
   }
@@ -133,12 +153,24 @@ export function persistVisitorLocale(locale: VisitorLocale) {
 
   try {
     localStorage.setItem("ea_visitor_locale", JSON.stringify(normalized));
+    if (normalized.languageSource === "manual") {
+      localStorage.setItem("ea_manual_language", normalized.language);
+    }
+    if (normalized.currencySource === "manual") {
+      localStorage.setItem("ea_manual_currency", normalized.currency);
+    }
   } catch {}
 
   const cookieMaxAge = 60 * 60 * 24 * 365; // 1 an
   document.cookie = `ea_country=${encodeURIComponent(normalized.countryCode)}; path=/; max-age=${cookieMaxAge}; SameSite=Lax`;
   document.cookie = `ea_language=${encodeURIComponent(normalized.language)}; path=/; max-age=${cookieMaxAge}; SameSite=Lax`;
   document.cookie = `ea_currency=${encodeURIComponent(normalized.currency)}; path=/; max-age=${cookieMaxAge}; SameSite=Lax`;
+  if (normalized.languageSource === "manual") {
+    document.cookie = `ea_manual_language=${encodeURIComponent(normalized.language)}; path=/; max-age=${cookieMaxAge}; SameSite=Lax`;
+  }
+  if (normalized.currencySource === "manual") {
+    document.cookie = `ea_manual_currency=${encodeURIComponent(normalized.currency)}; path=/; max-age=${cookieMaxAge}; SameSite=Lax`;
+  }
 
   try {
     document.documentElement.lang = normalized.language;
@@ -155,8 +187,19 @@ export function readPersistedVisitorLocale(): VisitorLocale {
 
   try {
     const saved = localStorage.getItem("ea_visitor_locale");
+    const manualLang = localStorage.getItem("ea_manual_language");
+    const manualCurr = localStorage.getItem("ea_manual_currency");
     if (saved) {
       const parsed = JSON.parse(saved);
+      if (manualLang) {
+        parsed.language = manualLang;
+        parsed.languageSource = "manual";
+        parsed.isManual = true;
+      }
+      if (manualCurr) {
+        parsed.currency = manualCurr;
+        parsed.currencySource = "manual";
+      }
       return normalizeVisitorLocale(parsed, null);
     }
   } catch {}
@@ -169,14 +212,22 @@ export function readPersistedVisitorLocale(): VisitorLocale {
       return acc;
     }, {} as Record<string, string>);
 
-    if (cookies.ea_language || cookies.ea_currency || cookies.ea_country) {
+    if (cookies.ea_manual_language || cookies.ea_language || cookies.ea_currency || cookies.ea_country) {
+      const manualLang = cookies.ea_manual_language;
+      const lang = manualLang || cookies.ea_language;
+      const isManualLang = Boolean(manualLang);
+      const manualCurr = cookies.ea_manual_currency;
+      const curr = manualCurr || cookies.ea_currency;
+      const isManualCurr = Boolean(manualCurr);
+
       return normalizeVisitorLocale({
         countryCode: cookies.ea_country,
-        language: cookies.ea_language as SupportedLanguage,
-        currency: cookies.ea_currency,
-        languageSource: cookies.ea_language ? "manual" : "auto",
-        currencySource: cookies.ea_currency ? "manual" : "auto",
-        countrySource: cookies.ea_country ? "manual" : "auto",
+        language: (lang || DEFAULT_VISITOR_LOCALE.language) as SupportedLanguage,
+        currency: curr || DEFAULT_VISITOR_LOCALE.currency,
+        languageSource: isManualLang ? "manual" : "auto",
+        currencySource: isManualCurr ? "manual" : "auto",
+        countrySource: "auto",
+        isManual: isManualLang || isManualCurr,
       }, null);
     }
   } catch {}

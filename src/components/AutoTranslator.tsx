@@ -25,7 +25,6 @@ declare global {
 
 /**
  * Nettoyage total et déterministe de tous les cookies de Google Translate (`googtrans`).
- * Supprime les cookies sur le chemin `/`, sans chemin, sur le domaine actuel et les domaines racines.
  */
 function clearAllGoogleTranslateCookies() {
   if (typeof document === "undefined") return;
@@ -50,7 +49,7 @@ function clearAllGoogleTranslateCookies() {
 }
 
 /**
- * Écrit le cookie officiel attendu par Google Translate sur tous les chemins et domaines pertinents.
+ * Écrit le cookie officiel attendu par Google Translate.
  */
 function setGoogleTranslateCookie(lang: SupportedLanguage) {
   if (typeof document === "undefined") return;
@@ -75,20 +74,7 @@ function setGoogleTranslateCookie(lang: SupportedLanguage) {
 }
 
 /**
- * Vérifie si la page est actuellement altérée par Google Translate.
- */
-function isPageTranslated(): boolean {
-  if (typeof document === "undefined") return false;
-  return (
-    document.documentElement.classList.contains("translated-ltr") ||
-    document.documentElement.classList.contains("translated-rtl") ||
-    Boolean(document.querySelector(".goog-te-combo:not([value='fr'])")) ||
-    document.cookie.includes("googtrans=/fr/")
-  );
-}
-
-/**
- * Protège les éléments d'icônes contre la traduction intempestive sans observer tout le DOM.
+ * Protège les éléments d'icônes contre la traduction intempestive.
  */
 function protectIconsOnce() {
   if (typeof document === "undefined") return;
@@ -114,7 +100,7 @@ export default function AutoTranslator() {
   useEffect(() => {
     protectIconsOnce();
 
-    // Observation continue des nœuds ajoutés pour immuniser 100% des icônes (y compris lazy/dynamiques)
+    // Observation continue des nœuds ajoutés pour immuniser 100% des icônes
     let iconObserver: MutationObserver | null = null;
     if (typeof MutationObserver !== "undefined") {
       iconObserver = new MutationObserver((mutations) => {
@@ -128,80 +114,33 @@ export default function AutoTranslator() {
       iconObserver.observe(document.body, { childList: true, subtree: true });
     }
 
-    // Nettoyer l'indicateur de rechargement pour le français une fois la page stabilisée
-    const persisted = readPersistedVisitorLocale();
-    if (persisted.language === "fr") {
-      clearAllGoogleTranslateCookies();
-      try {
-        sessionStorage.removeItem("ea_fr_reloading");
-      } catch {}
-    }
+    const triggerComboChange = (combo: HTMLSelectElement, target: SupportedLanguage) => {
+      if (combo.value !== target) {
+        combo.value = target;
+        combo.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    };
 
-    /**
-     * Applique la langue souhaitée au moteur Google Translate avec protection contre les courses.
-     */
-    const applyLanguage = (requestedLang: string, fromUserAction = false) => {
-      const target = normalizeLanguage(requestedLang);
-      currentLangRef.current = target;
+    const ensureGoogleTranslateLoaded = (target: SupportedLanguage) => {
       pendingTargetRef.current = target;
 
-      // --- CAS PARTICULIER : RETOUR VERS LE FRANÇAIS (LANGUE SOURCE) ---
-      if (target === "fr") {
-        clearAllGoogleTranslateCookies();
-        const select = document.querySelector<HTMLSelectElement>(".goog-te-combo");
-        if (select && select.value !== "fr") {
-          select.value = "fr";
-          select.dispatchEvent(new Event("change", { bubbles: true }));
-        }
-
-        // Si la page a déjà été traduite dans le DOM (nœuds modifiés par Google Translate),
-        // un reload unique contrôlé garantit un retour à 100% au DOM original sans résidus.
-        if (fromUserAction && isPageTranslated()) {
-          const isReloading = sessionStorage.getItem("ea_fr_reloading");
-          if (!isReloading) {
-            sessionStorage.setItem("ea_fr_reloading", "true");
-            window.location.reload();
-            return;
-          }
+      if (isInitializedRef.current && window.google?.translate?.TranslateElement) {
+        const combo = document.querySelector<HTMLSelectElement>(".goog-te-combo");
+        if (combo) {
+          triggerComboChange(combo, target);
         }
         return;
       }
 
-      // --- CAS D'UNE LANGUE ÉTRANGÈRE (EN, ES, PT, AR, SW) ---
-      setGoogleTranslateCookie(target);
+      if (isScriptLoadingRef.current) return;
+      isScriptLoadingRef.current = true;
 
-      // Si l'utilisateur a explicitement cliqué pour changer de langue :
-      // On applique le cookie et on recharge immédiatement la page pour garantir
-      // que le moteur de traduction applique la langue à 100% du DOM sans conflits d'hydratation.
-      if (fromUserAction) {
-        const select = document.querySelector<HTMLSelectElement>(".goog-te-combo");
-        if (select && select.value !== target) {
-          select.value = target;
-          select.dispatchEvent(new Event("change", { bubbles: true }));
-        }
-        window.location.reload();
-        return;
-      }
+      window.googleTranslateElementInit = () => {
+        isInitializedRef.current = true;
+        isScriptLoadingRef.current = false;
 
-      // Si le select Google Translate est déjà dans le DOM
-      const select = document.querySelector<HTMLSelectElement>(".goog-te-combo");
-      if (select) {
-        if (select.value !== target) {
-          select.value = target;
-          select.dispatchEvent(new Event("change", { bubbles: true }));
-        }
-        return;
-      }
-
-      // Sinon, initialiser Google Translate si ce n'est pas déjà en cours
-      if (!isScriptLoadingRef.current && !isInitializedRef.current) {
-        isScriptLoadingRef.current = true;
-
-        window.googleTranslateElementInit = () => {
-          isInitializedRef.current = true;
-          isScriptLoadingRef.current = false;
-
-          if (window.google?.translate?.TranslateElement) {
+        if (window.google?.translate?.TranslateElement) {
+          try {
             new window.google.translate.TranslateElement(
               {
                 pageLanguage: "fr",
@@ -210,47 +149,85 @@ export default function AutoTranslator() {
               },
               "google_translate_element"
             );
-
-            // Attendre l'apparition du select pour appliquer la dernière cible demandée
-            let attempts = 0;
-            const checkTimer = window.setInterval(() => {
-              attempts++;
-              const el = document.querySelector<HTMLSelectElement>(".goog-te-combo");
-              if (el) {
-                window.clearInterval(checkTimer);
-                const activeTarget = pendingTargetRef.current;
-                if (activeTarget && activeTarget !== "fr") {
-                  el.value = activeTarget;
-                  el.dispatchEvent(new Event("change", { bubbles: true }));
-                }
-              } else if (attempts >= 40) {
-                window.clearInterval(checkTimer);
-              }
-            }, 100);
+          } catch (e) {
+            console.warn("Init TranslateElement warning:", e);
           }
-        };
 
-        if (!document.getElementById("google-translate-script")) {
-          const script = document.createElement("script");
-          script.id = "google-translate-script";
-          script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-          script.async = true;
-          script.defer = true;
-          document.body.appendChild(script);
+          let attempts = 0;
+          const checkTimer = window.setInterval(() => {
+            attempts++;
+            const combo = document.querySelector<HTMLSelectElement>(".goog-te-combo");
+            if (combo) {
+              window.clearInterval(checkTimer);
+              const activeTarget = pendingTargetRef.current;
+              if (activeTarget && activeTarget !== "fr") {
+                triggerComboChange(combo, activeTarget);
+              }
+            } else if (attempts >= 50) {
+              window.clearInterval(checkTimer);
+            }
+          }, 60);
         }
+      };
+
+      if (!document.getElementById("google-translate-script")) {
+        const script = document.createElement("script");
+        script.id = "google-translate-script";
+        script.src = "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+        script.async = true;
+        script.defer = true;
+        document.body.appendChild(script);
       }
     };
 
-    // Initialisation au chargement selon la langue persistée
+    /**
+     * Applique la langue souhaitée au moteur de traduction sans rechargement en boucle.
+     * La traduction s'opère en direct dans le DOM.
+     */
+    const applyLanguage = (requestedLang: string) => {
+      const target = normalizeLanguage(requestedLang);
+      if (currentLangRef.current === target && !pendingTargetRef.current) {
+        return;
+      }
+      currentLangRef.current = target;
+      pendingTargetRef.current = target;
+
+      // 1. RETOUR AU FRANÇAIS (Langue source du site)
+      if (target === "fr") {
+        clearAllGoogleTranslateCookies();
+        const combo = document.querySelector<HTMLSelectElement>(".goog-te-combo");
+        if (combo && combo.value !== "fr") {
+          triggerComboChange(combo, "fr");
+        }
+        document.documentElement.classList.remove("translated-ltr", "translated-rtl");
+        document.body.classList.remove("translated-ltr", "translated-rtl");
+        return;
+      }
+
+      // 2. LANGUE ÉTRANGÈRE (en, es, pt, ar, sw)
+      setGoogleTranslateCookie(target);
+
+      const combo = document.querySelector<HTMLSelectElement>(".goog-te-combo");
+      if (combo) {
+        triggerComboChange(combo, target);
+      } else {
+        ensureGoogleTranslateLoaded(target);
+      }
+    };
+
+    // Chargement initial selon la langue persistée
+    const persisted = readPersistedVisitorLocale();
     if (persisted.language && persisted.language !== "fr") {
-      applyLanguage(persisted.language, false);
+      applyLanguage(persisted.language);
+    } else {
+      clearAllGoogleTranslateCookies();
     }
 
-    // Réaction réactive à l'événement ea-locale-updated
+    // Réaction réactive aux changements (sélection manuelle ou auto-détection)
     const onLocaleUpdate = (event: Event) => {
       const detail = (event as CustomEvent<VisitorLocale>).detail;
       if (detail?.language) {
-        applyLanguage(detail.language, Boolean(detail.isManual || detail.languageSource === "manual"));
+        applyLanguage(detail.language);
       }
     };
 
