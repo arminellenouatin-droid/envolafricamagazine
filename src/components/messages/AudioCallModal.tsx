@@ -1,4 +1,5 @@
 "use client";
+import SvgIcon from "@/components/ui/Icon";
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { ActiveAudioCall } from "@/app/api/messages/call/route";

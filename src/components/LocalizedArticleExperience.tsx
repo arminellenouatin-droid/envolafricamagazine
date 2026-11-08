@@ -1,4 +1,5 @@
 "use client";
+import SvgIcon from "@/components/ui/Icon";
 
 import { useMemo, useState } from "react";
 import ArticlePaywall from "@/components/ArticlePaywall";

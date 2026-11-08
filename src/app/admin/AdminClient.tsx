@@ -1,4 +1,5 @@
 "use client";
+import SvgIcon from "@/components/ui/Icon";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { SUBSCRIPTION_PLANS } from "@/lib/constants";

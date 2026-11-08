@@ -1,4 +1,5 @@
 "use client";
+import SvgIcon from "@/components/ui/Icon";
 
 import Link from "next/link";
 import RichTextContent from "@/components/RichTextContent";

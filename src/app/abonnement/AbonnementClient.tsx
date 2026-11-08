@@ -1,4 +1,5 @@
 "use client";
+import SvgIcon from "@/components/ui/Icon";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
