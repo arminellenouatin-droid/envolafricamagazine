@@ -64,6 +64,17 @@ export default function SalonsClient() {
   const [creating, setCreating] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
+  useEffect(() => {
+    const handleHash = () => {
+      if (typeof window !== "undefined" && window.location.hash === "#creer") {
+        setShowLaunchModal(true);
+      }
+    };
+    handleHash();
+    window.addEventListener("hashchange", handleHash);
+    return () => window.removeEventListener("hashchange", handleHash);
+  }, []);
+
   const loadSalons = async () => {
     try {
       const res = await fetch("/api/wab/salons");

@@ -79,11 +79,14 @@ export default function StoriesReelsCarousel() {
   const [publishingText, setPublishingText] = useState(false);
 
   useEffect(() => {
+    const onOpenStory = () => setTextModalOpen(true);
+    window.addEventListener("wab-open-story-creator", onOpenStory);
     fetch("/api/wab/stories")
       .then((response) => response.json())
       .then((data) => setStories(data.stories ?? []))
       .catch(() => setStories([]))
       .finally(() => setLoading(false));
+    return () => window.removeEventListener("wab-open-story-creator", onOpenStory);
   }, []);
 
   async function handleStoryFile(file: File | undefined) {

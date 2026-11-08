@@ -199,7 +199,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           }
         `}</style>
       </head>
-      <body className="min-h-full flex flex-col bg-[#fcf9f8]" style={{ fontFamily: "Source Serif 4, Georgia, serif" }}>
+      <body className="min-h-full flex flex-col bg-[#fcf9f8] text-[#1b1c1c] antialiased" style={{ fontFamily: "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
         <LocaleProvider>
           <PromptProvider initialUser={user ? { id: user.id, email: user.email, nom: user.nom, prenom: user.prenom } : null}>
             <AutoTranslator />

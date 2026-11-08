@@ -6,6 +6,8 @@ import { SUBSCRIPTION_PLANS } from "@/lib/constants";
 import MagazineModal from "./MagazineModal";
 import RichTextEditor from "@/components/RichTextEditor";
 import AffiliateManager from "@/components/admin/AffiliateManager";
+import AdminSidebar from "@/components/admin/AdminSidebar";
+import AdminAnalyticsView from "@/components/admin/AdminAnalyticsView";
 
 async function readApiResponse(response: Response) {
   const raw = await response.text();
@@ -249,6 +251,7 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
   const [landingBlocks, setLandingBlocks] = useState<any[]>([]);
   const [savingLanding, setSavingLanding] = useState(false);
   const [landingSubTab, setLandingSubTab] = useState<"prochain_numero" | "ecosysteme" | "contenus_sponsorises" | "videos" | "formations_certifiees" | "recrutement" | "mega_menu">("prochain_numero");
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [copiedArticleId, setCopiedArticleId] = useState<string | null>(null);
   const [articleTitle, setArticleTitle] = useState("");
   const [articleSummary, setArticleSummary] = useState("");
@@ -768,61 +771,85 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
 
   return (
     <div className="bg-[#F8FAFC] min-h-screen pb-20">
-      <div className="bg-[#0A1931] text-white sticky top-0 z-30">
-        <div className="max-w-[1440px] mx-auto px-6 xl:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <img src="/logo-blanc-footer.png" alt="EAM" className="h-10 w-auto object-contain" />
-            <div><div className="font-bold text-[15px]">Envol Africa Admin</div><div className="text-[11px] text-zinc-400">Rédaction • {user.role} • {user.prenom} {user.nom} • {user.twoFactorEnabled ? "✓ 2FA" : "⚠ 2FA"}</div></div>
-          </div>
+      <header className="bg-[#0A1931] text-white sticky top-0 z-30 border-b border-white/10 shadow-md">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/compte" className="h-9 px-4 rounded-full bg-white/10 border border-white/15 text-[12px]">← Dashboard compte</Link>
-            <Link href="/" className="h-9 px-4 rounded-full bg-white/10 border border-white/15 text-[12px]">← Retour site</Link>
-            <div className="w-9 h-9 rounded-full bg-[#D4AF37] text-[#0A1931] flex items-center justify-center font-bold text-sm">{user.prenom[0]}</div>
+            {/* Mobile Hamburger Button */}
+            <button
+              type="button"
+              onClick={() => setMobileSidebarOpen(true)}
+              className="lg:hidden grid h-9 w-9 place-items-center rounded-xl bg-white/10 text-white hover:bg-white/15"
+              aria-label="Ouvrir le menu de navigation"
+            >
+              <SvgIcon name="menu" className="w-5 h-5" />
+            </button>
+            <Link href="/admin" className="flex items-center gap-3">
+              <img src="/logo-blanc-footer.png" alt="EAM" className="h-8 sm:h-9 w-auto object-contain" />
+              <div>
+                <div className="font-display font-black text-sm sm:text-base leading-tight">Envol Africa Admin</div>
+                <div className="text-[10px] text-[#D4AF37] font-semibold uppercase tracking-wider">
+                  Centre de Gouvernance Panafricain
+                </div>
+              </div>
+            </Link>
           </div>
-        </div>
-        <div className="border-t border-white/10 bg-black/10">
-          <div className="mx-auto flex max-w-[1440px] gap-1 overflow-x-auto px-6 py-2 xl:px-8">
-            <span className="mr-2 flex shrink-0 items-center text-[10px] font-black uppercase tracking-wider text-zinc-400">Projet :</span>
-            {adminPlatforms.map((item) => <button key={item.id} type="button" onClick={() => { setActivePlatform(item.id); setActiveTab("overview"); }} className={`shrink-0 rounded-full px-4 py-2 text-[11px] font-black transition ${activePlatform === item.id ? "text-white shadow-sm" : "text-zinc-400 hover:bg-white/10 hover:text-white"}`} style={activePlatform === item.id ? { backgroundColor: item.accent } : undefined}>{item.label}</button>)}
-          </div>
-        </div>
-        {activePlatform === "magazine" && <div className="max-w-[1440px] mx-auto px-6 xl:px-8 pb-0 flex gap-1 overflow-x-auto">
-          {[
-            { id:"overview", label:"KPIs" },
-            { id:"landing", label:"Landing Magazine" },
-            { id:"articles", label:`Articles (${articles.length})` },
-            { id:"redacteurs", label:`Rédacteurs (${authors.length})` },
-            { id:"categories", label:`Catégories (${categories.length})` },
-            { id:"magazines", label:`Magazines (${magazines.length})` },
-            { id:"users", label:`Utilisateurs (${users.length})` },
-            { id:"orders", label:`Commandes` },
-            { id:"abonnements", label:`Abonnements` },
-            { id:"tarifs", label:`Tarifs & Monétisation` },
-            { id:"kyc", label:`Conformité KYC & AML` },
-            { id:"commentaires", label:`Commentaires` },
-            { id:"affiliate", label:`Affiliation` },
-            { id:"service", label:"Services" },
-            { id:"settings", label:"Réglages" },
-          ].map(t=>(
-            <button key={t.id} onClick={()=>setActiveTab(t.id as any)} className={`px-3 py-3 text-[11px] font-bold uppercase tracking-wider border-b-2 whitespace-nowrap ${activeTab===t.id ? "border-[#D4AF37] text-white" : "border-transparent text-zinc-400 hover:text-white"}`}>{t.label}</button>
-          ))}
-        </div>}
-      </div>
 
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              href="/compte"
+              className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/10 border border-white/15 text-[11px] font-bold text-white hover:bg-white/15 transition"
+            >
+              <span>Mon Compte</span>
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-[#D4AF37] text-[#0A1931] text-[11px] font-black hover:bg-[#e5c04b] transition shadow-xs"
+            >
+              <SvgIcon name="storefront" className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Voir le site public</span>
+              <span className="sm:hidden">Site</span>
+            </Link>
+            <div className="w-8 h-8 rounded-full bg-[#D4AF37] text-[#0A1931] flex items-center justify-center font-black text-xs shadow-xs">
+              {user.prenom ? user.prenom[0] : "A"}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-[1600px] mx-auto flex w-full">
+        {/* Modern Sidebar with Tab Categories */}
+        <AdminSidebar
+          activeTab={activeTab}
+          setActiveTab={(t) => setActiveTab(t as any)}
+          activePlatform={activePlatform}
+          setActivePlatform={(p) => setActivePlatform(p)}
+          adminPlatforms={adminPlatforms}
+          user={user}
+          counts={{
+            articles: articles.length,
+            magazines: magazines.length,
+            users: users.length,
+            orders: orders.length,
+            categories: categories.length,
+            authors: authors.length,
+          }}
+          mobileOpen={mobileSidebarOpen}
+          setMobileOpen={setMobileSidebarOpen}
+        />
+
+        {/* Content Container */}
+        <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
       {message && <div className="max-w-[1440px] mx-auto px-6 xl:px-8 pt-4"><div className="bg-green-600 text-white text-sm rounded-full px-4 py-2 inline-block">{message} <button onClick={()=>setMessage("")} className="ml-2 font-bold">×</button></div></div>}
 
       <div className="max-w-[1440px] mx-auto px-6 xl:px-8 pt-6">
         {activePlatform !== "magazine" ? <PlatformAdminLanding platform={activePlatform} user={user} /> : <>
-        {activeTab==="overview" && (
-          <div className="space-y-7">
-            <section className="relative overflow-hidden rounded-[28px] bg-[#0A1931] p-7 text-white shadow-xl lg:p-10">
-              <div className="absolute -right-16 -top-24 h-72 w-72 rounded-full border border-[#D4AF37]/25" /><div className="absolute -bottom-36 right-24 h-72 w-72 rounded-full border border-[#D4AF37]/15" />
-              <div className="relative grid gap-8 lg:grid-cols-[1.35fr_.65fr] lg:items-end"><div><p className="text-[10px] font-black uppercase tracking-[.25em] text-[#f2b84b]">Magazine · centre de pilotage</p><h1 className="mt-3 max-w-2xl text-3xl font-black tracking-tight lg:text-5xl">Tout le contrôle éditorial, dans le bon ordre.</h1><p className="mt-4 max-w-2xl text-sm leading-6 text-white/70">Commencez par le contenu, structurez les éditions, puis contrôlez les revenus et la qualité de l’expérience lecteur. Chaque étape ouvre directement l’outil opérationnel existant.</p><button type="button" onClick={()=>setActiveTab("articles")} className="mt-6 inline-flex h-11 items-center gap-2 rounded-full bg-[#f2b84b] px-5 text-xs font-black text-[#0A1931]">Commencer par les articles <span aria-hidden="true">→</span></button></div><div className="grid grid-cols-2 gap-3"><div className="rounded-2xl border border-white/10 bg-white/10 p-4"><span className="text-[10px] uppercase tracking-wider text-white/55">Revenu encaissé</span><strong className="mt-2 block text-2xl font-black">{stats.totalRevenue.toLocaleString()} F</strong><span className="mt-1 block text-[10px] text-green-300">{stats.paidOrders}/{stats.orders} commandes payées</span></div><div className="rounded-2xl border border-white/10 bg-white/10 p-4"><span className="text-[10px] uppercase tracking-wider text-white/55">Éditions</span><strong className="mt-2 block text-2xl font-black">{stats.magazines}</strong><span className="mt-1 block text-[10px] text-white/55">{magazines.filter((m:any)=>m.featured).length} à la une</span></div><div className="rounded-2xl border border-white/10 bg-white/10 p-4"><span className="text-[10px] uppercase tracking-wider text-white/55">Abonnés</span><strong className="mt-2 block text-2xl font-black">{stats.subscribers}</strong><span className="mt-1 block text-[10px] text-white/55">actifs</span></div><div className="rounded-2xl border border-white/10 bg-white/10 p-4"><span className="text-[10px] uppercase tracking-wider text-white/55">À traiter</span><strong className="mt-2 block text-2xl font-black">{db.settings?.serviceRequests?.length||0}</strong><span className="mt-1 block text-[10px] text-white/55">demandes de service</span></div></div></div>
-            </section>
-            <section><div className="mb-4 flex items-end justify-between gap-4"><div><p className="text-[10px] font-black uppercase tracking-[.2em] text-[#9e001f]">Parcours recommandé</p><h2 className="mt-1 text-2xl font-black text-[#0A1931]">Les modules Magazine</h2></div><span className="hidden rounded-full bg-white px-3 py-2 text-[10px] font-bold text-zinc-500 shadow-sm md:inline-flex">6 espaces opérationnels</span></div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{magazineModules.map((module,index)=><button type="button" key={module.id} onClick={()=>setActiveTab(module.id as any)} className="group relative overflow-hidden rounded-[22px] border border-zinc-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl"><div className="flex items-start justify-between"><div className="grid h-11 w-11 place-items-center rounded-2xl text-white shadow-sm" style={{backgroundColor:module.tone}}><SvgIcon name={module.icon} className="w-6 h-6 text-white" /></div><span className="text-[10px] font-black tracking-wider text-zinc-400">{module.eyebrow}</span></div><h3 className="mt-5 text-lg font-black text-[#0A1931]">{module.title}</h3><p className="mt-2 min-h-[48px] text-xs leading-5 text-zinc-600">{module.description}</p><span className="mt-5 inline-flex items-center gap-2 text-[11px] font-black" style={{color:module.tone}}>{module.action} <span className="transition group-hover:translate-x-1">→</span></span></button>)}</div></section>
-            {liveKpis && <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><div className="rounded-[18px] border border-zinc-200 bg-white p-4 shadow-sm"><p className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Connectés maintenant</p><strong className="mt-2 block text-2xl font-black text-[#0A1931]">{liveKpis.users.activeNow}</strong><span className="text-[11px] text-zinc-500">{liveKpis.users.offline} hors ligne</span></div><div className="rounded-[18px] border border-zinc-200 bg-white p-4 shadow-sm"><p className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Achats confirmés</p><strong className="mt-2 block text-2xl font-black text-[#0A1931]">{liveKpis.commerce.ordersToday}</strong><span className="text-[11px] text-zinc-500">dernières 24 heures</span></div><div className="rounded-[18px] border border-zinc-200 bg-white p-4 shadow-sm"><p className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Paniers abandonnés</p><strong className="mt-2 block text-2xl font-black text-[#0A1931]">{liveKpis.commerce.abandonedCartsLast24h}</strong><span className="text-[11px] text-zinc-500">événements suivis</span></div><div className="rounded-[18px] border border-zinc-200 bg-white p-4 shadow-sm"><p className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Dons confirmés</p><strong className="mt-2 block text-2xl font-black text-[#0A1931]">{Number(liveKpis.donations.totalToday || 0).toLocaleString()} XOF</strong><span className="text-[11px] text-zinc-500">{liveKpis.donations.countToday} opération(s)</span></div></section>}
-            <section className="grid gap-6 lg:grid-cols-[1.1fr_.9fr]"><div className="rounded-[22px] border border-zinc-200 bg-white p-6 shadow-sm"><div className="flex items-center justify-between"><div><p className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Derniers mouvements</p><h3 className="mt-1 text-lg font-black text-[#0A1931]">Commandes récentes</h3></div><button type="button" onClick={()=>setActiveTab("orders")} className="text-[11px] font-black text-[#9e001f]">Tout voir →</button></div><div className="mt-4 space-y-2">{orders.slice(0,5).map((o:any)=><div key={o.id} className="flex items-center justify-between gap-3 rounded-xl bg-zinc-50 p-3 text-[12px]"><div><span className="font-bold text-[#0A1931]">{o.id.slice(0,8)}</span><span className="ml-2 text-zinc-500">{o.total.toLocaleString()} {o.currency}</span></div><span className="rounded-full bg-white px-3 py-1 text-[10px] font-bold text-zinc-500">{o.status}</span></div>)}{orders.length===0&&<p className="py-6 text-center text-sm text-zinc-500">Aucune commande récente.</p>}</div></div><div className="rounded-[22px] border border-[#e1c98b] bg-[#fffaf0] p-6"><p className="text-[10px] font-black uppercase tracking-wider text-[#b45309]">Contrôle rapide</p><h3 className="mt-1 text-lg font-black text-[#0A1931]">Besoin d’une action ?</h3><p className="mt-2 text-xs leading-5 text-zinc-600">Choisissez directement l’espace à ouvrir. Vos outils et vos droits restent identiques.</p><button type="button" onClick={()=>setActiveTab("commentaires")} className="mt-5 inline-flex h-10 items-center rounded-full bg-[#0A1931] px-4 text-[11px] font-black text-white">Modérer les commentaires →</button></div></section>
-          </div>
+        {activeTab === "overview" && (
+          <AdminAnalyticsView
+            stats={stats}
+            liveKpis={liveKpis}
+            orders={orders}
+            onNavigateTab={(tab) => setActiveTab(tab as any)}
+          />
         )}
 
         {activeTab==="landing" && <div className="space-y-6">
@@ -2030,6 +2057,7 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
           </div>
         )}
         </>}
+      </div>
       </div>
     </div>
   );

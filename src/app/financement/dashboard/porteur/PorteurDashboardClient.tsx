@@ -253,7 +253,7 @@ export default function PorteurDashboardClient({ user }: { user: UserProp }) {
           Pilotez vos campagnes, suivez les contributions en temps réel, fournissez vos documents légaux et échangez avec vos investisseurs.
         </p>
 
-        <div className="mt-8">
+        <div id="wizard" className="mt-8 scroll-mt-24">
           <ProjectWizard onCreated={loadProjects} />
         </div>
 

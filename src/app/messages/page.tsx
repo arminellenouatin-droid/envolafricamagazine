@@ -1,4 +1,5 @@
 "use client";
+import SvgIcon from "@/components/ui/Icon";
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
@@ -1127,7 +1128,7 @@ function MessagesContent() {
         {/* Sélecteur de plateforme Messagerie WAB <-> Marketplace <-> Crowdfunding <-> Jobs */}
         <div className="flex items-center rounded-full bg-black/30 p-1 border border-white/15 text-xs font-bold">
           <span className="flex items-center gap-1.5 rounded-full bg-[#9e001f] px-3 py-1 text-white shadow-sm">
-            <span className="material-symbols-outlined text-[15px]">chat</span>
+            <SvgIcon name="chat" className="text-[15px]" />
             <span>Réseau WAB</span>
           </span>
           <Link
@@ -1135,7 +1136,7 @@ function MessagesContent() {
             className="flex items-center gap-1.5 rounded-full px-3 py-1 text-white/80 hover:text-white transition"
             title="Accéder à la messagerie transactionnelle Marketplace"
           >
-            <span className="material-symbols-outlined text-[15px]">storefront</span>
+            <SvgIcon name="storefront" className="text-[15px]" />
             <span className="hidden sm:inline">Marketplace</span>
           </Link>
           <Link
@@ -1162,7 +1163,7 @@ function MessagesContent() {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all border border-white/20 shadow-sm active:scale-95 shrink-0"
             title="Fermer la messagerie et retourner au site"
           >
-            <span className="material-symbols-outlined text-sm">arrow_back</span>
+            <SvgIcon name="arrow_back" className="text-sm" />
             <span className="hidden sm:inline">Fermer / Retour au site</span>
             <span className="sm:hidden">Retour</span>
           </Link>
@@ -1239,14 +1240,14 @@ function MessagesContent() {
                 className="p-2 text-[#9e001f] hover:bg-black/5 rounded-full flex items-center justify-center"
                 title="Nouvelle discussion"
               >
-                <span className="material-symbols-outlined text-2xl">edit_square</span>
+                <SvgIcon name="edit_square" className="text-2xl" />
               </button>
               <Link
                 href="/wab"
                 className="px-2.5 py-1 text-xs font-bold text-gray-700 hover:text-gray-900 rounded-full hover:bg-black/5 flex items-center gap-1 border border-gray-300 sm:hidden"
                 title="Fermer"
               >
-                <span className="material-symbols-outlined text-base">close</span>
+                <SvgIcon name="close" className="text-base" />
                 <span>Fermer</span>
               </Link>
             </div>
@@ -1255,9 +1256,7 @@ function MessagesContent() {
           {/* Recherche */}
           <div className="p-3 bg-white border-b border-[#e9edef]">
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                search
-              </span>
+              <SvgIcon name="search" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 value={searchFilter}
@@ -1272,7 +1271,7 @@ function MessagesContent() {
           {notificationPermission === "default" && (
             <div className="mx-3 my-2 p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-2 text-xs">
               <div className="flex items-center gap-2 text-emerald-900 min-w-0">
-                <span className="material-symbols-outlined text-emerald-600 text-lg shrink-0">notifications_active</span>
+                <SvgIcon name="notifications_active" className="text-emerald-600 text-lg shrink-0" />
                 <span className="truncate">Alertes d&apos;appels & messages</span>
               </div>
               <button
@@ -1334,7 +1333,7 @@ function MessagesContent() {
               <div className="p-8 text-center text-xs text-gray-500">Chargement de vos échanges...</div>
             ) : filteredConversations.length === 0 ? (
               <div className="p-6 text-center text-xs text-gray-500">
-                <span className="material-symbols-outlined text-4xl text-gray-300 mb-2">forum</span>
+                <SvgIcon name="forum" className="text-4xl text-gray-300 mb-2" />
                 <p className="font-bold text-gray-700">Aucune discussion en cours.</p>
                 <p className="mt-1 text-gray-500">
                   {followedContacts.length > 0
@@ -1346,7 +1345,7 @@ function MessagesContent() {
                   onClick={openNewChatModal}
                   className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#9e001f] text-white font-bold text-xs shadow hover:bg-[#c8102e]"
                 >
-                  <span className="material-symbols-outlined text-base">person_search</span>
+                  <SvgIcon name="person_search" className="text-base" />
                   <span>Voir mes amis & contacts WAB</span>
                 </button>
               </div>
@@ -1397,19 +1396,19 @@ function MessagesContent() {
                           {parsedLast ? (
                             parsedLast.type === "voice" ? (
                               <span className="inline-flex items-center gap-1 text-emerald-600">
-                                <span className="material-symbols-outlined text-xs">mic</span> Message vocal
+                                <SvgIcon name="mic" className="text-xs" /> Message vocal
                               </span>
                             ) : parsedLast.type === "video" ? (
                               <span className="inline-flex items-center gap-1 text-[#9e001f]">
-                                <span className="material-symbols-outlined text-xs">videocam</span> Message vidéo
+                                <SvgIcon name="videocam" className="text-xs" /> Message vidéo
                               </span>
                             ) : parsedLast.type === "image" ? (
                               <span className="inline-flex items-center gap-1 text-blue-600">
-                                <span className="material-symbols-outlined text-xs">image</span> Photo
+                                <SvgIcon name="image" className="text-xs" /> Photo
                               </span>
                             ) : parsedLast.type === "document" ? (
                               <span className="inline-flex items-center gap-1 text-amber-700">
-                                <span className="material-symbols-outlined text-xs">description</span> Document
+                                <SvgIcon name="description" className="text-xs" /> Document
                               </span>
                             ) : (
                               parsedLast.text
@@ -1436,7 +1435,7 @@ function MessagesContent() {
             aria-label="Nouvelle discussion"
             className="absolute bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-6 w-14 h-14 rounded-full bg-[#25D366] hover:bg-[#20ba5a] text-white shadow-xl flex items-center justify-center transition-all hover:scale-105 active:scale-95 z-20 focus:outline-none ring-4 ring-[#25D366]/20"
           >
-            <span className="material-symbols-outlined text-3xl font-bold">add</span>
+            <SvgIcon name="add" className="text-3xl font-bold" />
           </button>
         </div>
 
@@ -1459,7 +1458,7 @@ function MessagesContent() {
                     className="md:hidden text-gray-600 hover:text-gray-900 mr-1 p-1 rounded-full hover:bg-black/5"
                     title="Retour aux discussions"
                   >
-                    <span className="material-symbols-outlined text-2xl">arrow_back</span>
+                    <SvgIcon name="arrow_back" className="text-2xl" />
                   </button>
 
                   <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200 shrink-0">
@@ -1500,7 +1499,7 @@ function MessagesContent() {
                     className="p-2 rounded-full hover:bg-black/5 text-emerald-700 hover:text-emerald-800 transition"
                     title="Lancer un appel vocal WAB"
                   >
-                    <span className="material-symbols-outlined text-xl">call</span>
+                    <SvgIcon name="call" className="text-xl" />
                   </button>
 
                   <button
@@ -1509,7 +1508,7 @@ function MessagesContent() {
                     className="p-2 rounded-full hover:bg-black/5 text-[#9e001f] hover:text-[#c8102e] transition"
                     title="Lancer un appel vidéo WAB"
                   >
-                    <span className="material-symbols-outlined text-xl">videocam</span>
+                    <SvgIcon name="videocam" className="text-xl" />
                   </button>
 
                   <Link
@@ -1517,7 +1516,7 @@ function MessagesContent() {
                     className="px-2.5 py-1 text-xs font-bold text-gray-700 hover:text-gray-900 rounded-full hover:bg-black/5 flex items-center gap-1 border border-gray-300 sm:hidden"
                     title="Fermer la messagerie"
                   >
-                    <span className="material-symbols-outlined text-base">close</span>
+                    <SvgIcon name="close" className="text-base" />
                     <span>Fermer</span>
                   </Link>
                 </div>
@@ -1532,7 +1531,7 @@ function MessagesContent() {
               >
                 {activeConversation.messages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-center p-6 text-gray-500">
-                    <span className="material-symbols-outlined text-4xl text-gray-400 mb-2">waving_hand</span>
+                    <SvgIcon name="waving_hand" className="text-4xl text-gray-400 mb-2" />
                     <p className="font-bold text-xs text-gray-700">Démarrez votre conversation avec {activeConversation.otherParticipant.fullName}</p>
                     <p className="text-[11px] text-gray-400 mt-1 max-w-xs">
                       Envoyez un message texte, un document ou une note vocale ci-dessous.
@@ -1600,9 +1599,7 @@ function MessagesContent() {
                                 className="w-full h-auto object-cover rounded-xl group-hover:scale-[1.02] transition-transform duration-200"
                               />
                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                                <span className="material-symbols-outlined text-white text-3xl opacity-0 group-hover:opacity-100 transition-opacity drop-shadow">
-                                  zoom_in
-                                </span>
+                                <SvgIcon name="zoom_in" className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" />
                               </div>
                             </div>
                           )}
@@ -1616,9 +1613,7 @@ function MessagesContent() {
                               rel="noreferrer"
                               className="flex items-center gap-3 p-2.5 rounded-xl bg-black/5 hover:bg-black/10 transition-colors"
                             >
-                              <span className="material-symbols-outlined text-2xl text-[#9e001f]">
-                                description
-                              </span>
+                              <SvgIcon name="description" className="w-6 h-6 text-[#9e001f]" />
                               <div className="min-w-0 flex-1">
                                 <p className="font-bold text-xs truncate">{parsed.name || "Document"}</p>
                                 {parsed.size && (
@@ -1627,9 +1622,7 @@ function MessagesContent() {
                                   </p>
                                 )}
                               </div>
-                              <span className="material-symbols-outlined text-gray-600 text-sm">
-                                download
-                              </span>
+                              <SvgIcon name="download" className="w-4 h-4 text-gray-600" />
                             </a>
                           )}
 
@@ -1637,12 +1630,10 @@ function MessagesContent() {
                             <span>{formatTime(m.created_at)}</span>
                             {isMe && (
                               m.status === "sending" ? (
-                                <span className="material-symbols-outlined text-xs text-amber-500 animate-spin" title="Envoi en cours...">
-                                  progress_activity
-                                </span>
+                                <SvgIcon name="progress_activity" className="w-3.5 h-3.5 text-amber-500 animate-spin" />
                               ) : m.status === "failed" ? (
                                 <div className="flex items-center gap-1 text-rose-500">
-                                  <span className="material-symbols-outlined text-xs">error</span>
+                                  <SvgIcon name="error" className="text-xs" />
                                   <button
                                     type="button"
                                     onClick={(e) => {
@@ -1655,14 +1646,7 @@ function MessagesContent() {
                                   </button>
                                 </div>
                               ) : (
-                                <span
-                                  className={`material-symbols-outlined text-xs ${
-                                    m.read_at ? "text-sky-500 font-bold" : "text-gray-400"
-                                  }`}
-                                  title={m.read_at ? "Lu" : "Distribué"}
-                                >
-                                  done_all
-                                </span>
+                                <SvgIcon name="done_all" className={`w-3.5 h-3.5 ${m.read_at ? "text-sky-500" : "text-gray-400"}`} />
                               )
                             )}
                           </div>
@@ -1708,7 +1692,7 @@ function MessagesContent() {
                         onClick={stopAndSendVoiceRecording}
                         className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-full p-1.5 flex items-center justify-center"
                       >
-                        <span className="material-symbols-outlined text-sm">send</span>
+                        <SvgIcon name="send" className="text-sm" />
                       </button>
                     </div>
                   </div>
@@ -1726,7 +1710,7 @@ function MessagesContent() {
                         }`}
                         title="Joindre un fichier (photo, document, audio, vidéo)"
                       >
-                        <span className="material-symbols-outlined text-2xl transition-transform">attach_file</span>
+                        <SvgIcon name="attach_file" className="text-2xl transition-transform" />
                       </button>
 
                       {showAttachMenu && (
@@ -1742,7 +1726,7 @@ function MessagesContent() {
                             className="flex items-center gap-3 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 rounded-xl transition text-left"
                           >
                             <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                              <span className="material-symbols-outlined text-base">image</span>
+                              <SvgIcon name="image" className="text-base" />
                             </span>
                             <span>Photos & Médias</span>
                           </button>
@@ -1756,7 +1740,7 @@ function MessagesContent() {
                             className="flex items-center gap-3 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 rounded-xl transition text-left"
                           >
                             <span className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-                              <span className="material-symbols-outlined text-base">description</span>
+                              <SvgIcon name="description" className="text-base" />
                             </span>
                             <span>Document (PDF...)</span>
                           </button>
@@ -1770,7 +1754,7 @@ function MessagesContent() {
                             className="flex items-center gap-3 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 rounded-xl transition text-left"
                           >
                             <span className="w-8 h-8 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
-                              <span className="material-symbols-outlined text-base">audiotrack</span>
+                              <SvgIcon name="audiotrack" className="text-base" />
                             </span>
                             <span>Fichier Audio</span>
                           </button>
@@ -1785,7 +1769,7 @@ function MessagesContent() {
                             className="flex items-center gap-3 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 rounded-xl transition text-left"
                           >
                             <span className="w-8 h-8 rounded-full bg-red-100 text-[#9e001f] flex items-center justify-center shrink-0">
-                              <span className="material-symbols-outlined text-base">videocam</span>
+                              <SvgIcon name="videocam" className="text-base" />
                             </span>
                             <span>Message Vidéo</span>
                           </button>
@@ -1811,7 +1795,7 @@ function MessagesContent() {
                         disabled={sending}
                         className="w-10 h-10 rounded-full bg-[#9e001f] hover:bg-[#c8102e] text-white flex items-center justify-center shrink-0 transition-colors shadow"
                       >
-                        <span className="material-symbols-outlined text-lg">send</span>
+                        <SvgIcon name="send" className="text-lg" />
                       </button>
                     ) : (
                       <button
@@ -1820,7 +1804,7 @@ function MessagesContent() {
                         className="w-10 h-10 rounded-full bg-[#25D366] hover:bg-[#20ba5a] text-white flex items-center justify-center shrink-0 transition-colors shadow-md"
                         title="Enregistrer un message vocal"
                       >
-                        <span className="material-symbols-outlined text-xl">mic</span>
+                        <SvgIcon name="mic" className="text-xl" />
                       </button>
                     )}
                   </>
@@ -1831,7 +1815,7 @@ function MessagesContent() {
             // Aucun chat sélectionné (Desktop placeholder)
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#f0f2f5]">
               <div className="w-20 h-20 rounded-full bg-[#9e001f]/10 text-[#9e001f] flex items-center justify-center mb-4">
-                <span className="material-symbols-outlined text-4xl">chat</span>
+                <SvgIcon name="chat" className="text-4xl" />
               </div>
               <h3 className="font-display font-black text-xl text-[#111b21] mb-2">
                 Messagerie Envol Africa
@@ -1844,7 +1828,7 @@ function MessagesContent() {
                 onClick={openNewChatModal}
                 className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#20ba5a] text-white px-5 py-2.5 rounded-full font-bold text-xs shadow-md"
               >
-                <span className="material-symbols-outlined text-lg">add</span>
+                <SvgIcon name="add" className="text-lg" />
                 Démarrer une discussion
               </button>
             </div>
@@ -1864,7 +1848,7 @@ function MessagesContent() {
                 onClick={() => setShowNewChatModal(false)}
                 className="text-gray-400 hover:text-gray-700"
               >
-                <span className="material-symbols-outlined">close</span>
+                <SvgIcon name="close" className="w-5 h-5" />
               </button>
             </div>
 
@@ -1945,7 +1929,7 @@ function MessagesContent() {
                         <p className="font-bold text-xs text-gray-900 truncate">{c.fullName}</p>
                         <p className="text-[11px] text-gray-500 truncate">{c.headline}</p>
                       </div>
-                      <span className="material-symbols-outlined text-gray-400 text-sm">chat</span>
+                      <SvgIcon name="chat" className="text-gray-400 text-sm" />
                     </button>
                   ));
                 })()
@@ -1962,7 +1946,7 @@ function MessagesContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center">
             <div className="w-14 h-14 rounded-full bg-[#9e001f]/10 text-[#9e001f] flex items-center justify-center mx-auto mb-3">
-              <span className="material-symbols-outlined text-3xl">videocam_off</span>
+              <SvgIcon name="videocam_off" className="text-3xl" />
             </div>
             <h3 className="font-display font-black text-lg text-[#111b21] mb-2">
               Messages Vidéo WAB

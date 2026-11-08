@@ -80,7 +80,7 @@ export const PLATFORM_CONFIGS: Record<PlatformKey, PlatformConfig> = {
     megaItems: [
       { label: "Dernier numéro", href: "/kiosque", icon: "newspaper" },
       { label: "Tous les magazines", href: "/kiosque", icon: "library_books" },
-      { label: "Mes achats", href: "/compte/commandes", icon: "receipt_long" },
+      { label: "Mes achats", href: "/compte/achats", icon: "receipt_long" },
     ],
     megaSections: [
       {

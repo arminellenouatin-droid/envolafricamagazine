@@ -133,17 +133,22 @@ body { transition: background-color 180ms ease, color 180ms ease; }
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "Source Serif 4", Georgia, serif;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4, .font-display {
+h1, h2, h3, h4, h5, h6, .font-display {
   font-family: Montserrat, sans-serif;
   font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
-.font-label {
-  font-family: Inter, sans-serif;
+.font-serif, .editorial-serif, .article-prose {
+  font-family: "Source Serif 4", Georgia, serif;
+}
+
+.font-label, .font-sans, .ui-sans {
+  font-family: Inter, system-ui, -apple-system, sans-serif;
 }
 
 /* Anti-FOIT (Flash of Unstyled Text) pour les icônes Google Material Symbols */

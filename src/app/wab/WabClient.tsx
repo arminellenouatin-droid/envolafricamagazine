@@ -558,6 +558,26 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
     }
   }
 
+  useEffect(() => {
+    const handleWabActions = () => {
+      if (typeof window === "undefined") return;
+      const hash = window.location.hash;
+      if (hash === "#publier") {
+        setPublishOpen(true);
+      } else if (hash === "#story") {
+        window.dispatchEvent(new CustomEvent("wab-open-story-creator"));
+        setPublishOpen(true);
+      } else if (hash === "#reel") {
+        triggerComposerWithKind("video");
+      } else if (hash === "#messages") {
+        window.location.assign("/wab/messages");
+      }
+    };
+    handleWabActions();
+    window.addEventListener("hashchange", handleWabActions);
+    return () => window.removeEventListener("hashchange", handleWabActions);
+  }, []);
+
   async function chooseFiles(files: FileList | null) {
     const picked = Array.from(files ?? []).slice(0, 10);
     if (!picked.length) return;

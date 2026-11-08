@@ -50,7 +50,7 @@ function clearAllGoogleTranslateCookies() {
 }
 
 /**
- * Écrit le cookie officiel attendu par Google Translate.
+ * Écrit le cookie officiel attendu par Google Translate sur tous les chemins et domaines pertinents.
  */
 function setGoogleTranslateCookie(lang: SupportedLanguage) {
   if (typeof document === "undefined") return;
@@ -60,7 +60,18 @@ function setGoogleTranslateCookie(lang: SupportedLanguage) {
   }
   const target = `/fr/${lang}`;
   const maxAge = 60 * 60 * 24 * 365; // 1 an
-  document.cookie = `googtrans=${target}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  const hostname = window.location.hostname;
+  const parts = hostname.split(".");
+  const domains: string[] = ["", hostname, `.${hostname}`];
+  if (parts.length >= 2) {
+    domains.push(`.${parts.slice(-2).join(".")}`);
+  }
+
+  domains.forEach((domain) => {
+    const domainClause = domain ? `; domain=${domain}` : "";
+    document.cookie = `googtrans=${target}; path=/; max-age=${maxAge}${domainClause}; SameSite=Lax`;
+    document.cookie = `googtrans=${target}; max-age=${maxAge}${domainClause}; SameSite=Lax`;
+  });
 }
 
 /**
@@ -159,6 +170,19 @@ export default function AutoTranslator() {
       // --- CAS D'UNE LANGUE ÉTRANGÈRE (EN, ES, PT, AR, SW) ---
       setGoogleTranslateCookie(target);
 
+      // Si l'utilisateur a explicitement cliqué pour changer de langue :
+      // On applique le cookie et on recharge immédiatement la page pour garantir
+      // que le moteur de traduction applique la langue à 100% du DOM sans conflits d'hydratation.
+      if (fromUserAction) {
+        const select = document.querySelector<HTMLSelectElement>(".goog-te-combo");
+        if (select && select.value !== target) {
+          select.value = target;
+          select.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        window.location.reload();
+        return;
+      }
+
       // Si le select Google Translate est déjà dans le DOM
       const select = document.querySelector<HTMLSelectElement>(".goog-te-combo");
       if (select) {
@@ -243,12 +267,21 @@ export default function AutoTranslator() {
       <style jsx global>{`
         .goog-te-banner-frame,
         .goog-te-banner-frame.skiptranslate,
-        iframe.skiptranslate,
+        iframe.goog-te-banner-frame,
         .goog-te-spinner-pos {
           display: none !important;
           visibility: hidden !important;
           height: 0 !important;
           border: 0 !important;
+        }
+        iframe.skiptranslate:not(.goog-te-banner-frame) {
+          opacity: 0 !important;
+          position: absolute !important;
+          top: -9999px !important;
+          left: -9999px !important;
+          width: 1px !important;
+          height: 1px !important;
+          pointer-events: none !important;
         }
         body {
           top: 0px !important;

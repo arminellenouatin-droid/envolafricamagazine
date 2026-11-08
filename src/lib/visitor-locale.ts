@@ -45,7 +45,7 @@ export function normalizeVisitorLocale(
   let finalLanguage: SupportedLanguage;
   let finalLanguageSource: "auto" | "manual";
 
-  if (value?.languageSource === "manual" || (value?.isManual && value?.language && value.language !== current?.language)) {
+  if (value?.languageSource === "manual" || (value?.isManual && value?.language)) {
     // Choix manuel explicite dans cette opération
     finalLanguage = normalizeLanguage(value.language);
     finalLanguageSource = "manual";
@@ -66,7 +66,7 @@ export function normalizeVisitorLocale(
   let finalCurrency: string;
   let finalCurrencySource: "auto" | "manual";
 
-  if (value?.currencySource === "manual" || (value?.isManual && value?.currency && value.currency !== current?.currency)) {
+  if (value?.currencySource === "manual" || (value?.isManual && value?.currency)) {
     // Choix manuel explicite de devise dans cette opération
     finalCurrency = normalizeCurrency(value.currency);
     finalCurrencySource = "manual";
