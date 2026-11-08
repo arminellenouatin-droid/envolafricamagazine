@@ -2057,6 +2057,7 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
           </div>
         )}
         </>}
+        </div>
       </div>
       </div>
     </div>
