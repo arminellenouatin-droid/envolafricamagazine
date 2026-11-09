@@ -107,16 +107,16 @@ export default function LoginPage() {
       setSocialLoading(null);
       return;
     }
-    const canonicalOrigin = typeof window !== "undefined"
-      ? (window.location.hostname === "envolafrica.site" || window.location.hostname === "www.envolafrica.site"
-          ? "https://www.envolafrica.site"
-          : window.location.origin)
-      : "https://www.envolafrica.site";
+    // URI de redirection officielle autorisée dans Google Cloud Console et Supabase
+    const authorizedCallback = "https://envolafrica.vercel.app/auth/callback";
+    const currentOrigin = typeof window !== "undefined" ? window.location.origin : "https://www.envolafrica.site";
+    const nextDestination = redirectParam || "/";
+    const targetRedirect = `${authorizedCallback}?origin=${encodeURIComponent(currentOrigin)}&next=${encodeURIComponent(nextDestination)}`;
 
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${canonicalOrigin}/auth/callback`,
+        redirectTo: targetRedirect,
         queryParams: { prompt: "select_account" },
       },
     });

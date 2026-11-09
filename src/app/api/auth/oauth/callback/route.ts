@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
   try {
     const rawNext = request.nextUrl.searchParams.get("next") || "/";
     const safeNext = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
+    const originParam = request.nextUrl.searchParams.get("origin") || request.nextUrl.searchParams.get("returnOrigin");
     const redirectUrl = new URL(safeNext, request.url);
     const code = request.nextUrl.searchParams.get("code");
     const config = getSupabaseConfig();
@@ -63,7 +64,24 @@ export async function GET(request: NextRequest) {
       providerId: socialUser.id,
     });
 
-    response.cookies.set(COOKIE_NAME, generateToken(user), COOKIE_OPTIONS);
+    const token = generateToken(user);
+    response.cookies.set(COOKIE_NAME, token, COOKIE_OPTIONS);
+
+    // Si l'utilisateur s'est connecté depuis un domaine externe autorisé (envolafrica.site ou localhost)
+    if (originParam) {
+      try {
+        const parsedOrigin = new URL(originParam);
+        const host = parsedOrigin.hostname.toLowerCase();
+        if (host === "envolafrica.site" || host === "www.envolafrica.site" || host === "localhost") {
+          const targetUrl = new URL("/auth/callback", parsedOrigin.origin);
+          targetUrl.hash = `session_token=${encodeURIComponent(token)}&next=${encodeURIComponent(safeNext)}`;
+          return NextResponse.redirect(targetUrl);
+        }
+      } catch {
+        // Fallback sur la redirection standard si l'origin est invalide
+      }
+    }
+
     return response;
   } catch (error) {
     console.error("[oauth/callback] Unhandled OAuth callback error:", error);

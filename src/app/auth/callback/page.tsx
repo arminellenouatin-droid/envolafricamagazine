@@ -15,19 +15,58 @@ export default function AuthCallbackPage() {
         const error = searchParams.get("error_description") || searchParams.get("error");
         const rawNext = searchParams.get("next") || "/";
         const safeNext = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
+        const originParam = searchParams.get("origin") || searchParams.get("returnOrigin");
 
         if (error) {
           window.location.replace(`/auth/login?oauthError=${encodeURIComponent(error)}`);
           return;
         }
 
-        // 1. Cas classique PKCE : code dans les searchParams avec double résolution (serveur + fallback client)
+        // 1. Cas transfert inter-domaines sécurisé (#session_token=...)
+        const hash = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : window.location.hash;
+        const hashParams = new URLSearchParams(hash);
+        const hashSessionToken = hashParams.get("session_token");
+        const hashNext = hashParams.get("next");
+        const finalNext = (hashNext && hashNext.startsWith("/") && !hashNext.startsWith("//")) ? hashNext : safeNext;
+
+        if (hashSessionToken) {
+          if (mounted) setStatusMessage("Validation de votre session sécurisée...");
+          const res = await fetch("/api/auth/oauth/session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionToken: hashSessionToken }),
+          });
+
+          if (res.ok) {
+            window.location.replace(finalNext);
+            return;
+          }
+        }
+
+        // 2. Cas flux implicit / fragment de hachage (#access_token=...)
+        const hashAccessToken = hashParams.get("access_token");
+        if (hashAccessToken) {
+          if (mounted) setStatusMessage("Validation de votre profil Google...");
+          const res = await fetch("/api/auth/oauth/session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ accessToken: hashAccessToken }),
+          });
+
+          if (res.ok) {
+            window.location.replace(finalNext);
+            return;
+          }
+        }
+
+        // 3. Cas classique PKCE : code dans les searchParams avec double résolution (serveur + fallback client)
         const code = searchParams.get("code");
         if (code) {
           if (mounted) setStatusMessage("Validation de votre autorisation Google...");
           try {
+            const originQuery = originParam ? `&origin=${encodeURIComponent(originParam)}` : "";
             const testRes = await fetch(
-              `/api/auth/oauth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(safeNext)}`,
+              `/api/auth/oauth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(safeNext)}${originQuery}`,
               { method: "GET", redirect: "manual" }
             );
 
@@ -62,32 +101,14 @@ export default function AuthCallbackPage() {
           }
 
           // Si le fallback local n'a pas résolu, redirection finale vers la route serveur
+          const originQuery = originParam ? `&origin=${encodeURIComponent(originParam)}` : "";
           window.location.replace(
-            `/api/auth/oauth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(safeNext)}`
+            `/api/auth/oauth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(safeNext)}${originQuery}`
           );
           return;
         }
 
-        // 2. Cas flux implicit / fragment de hachage (#access_token=...)
-        const hash = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : window.location.hash;
-        const hashParams = new URLSearchParams(hash);
-        const hashAccessToken = hashParams.get("access_token");
-
-        if (hashAccessToken) {
-          if (mounted) setStatusMessage("Validation de votre profil Google...");
-          const res = await fetch("/api/auth/oauth/session", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ accessToken: hashAccessToken }),
-          });
-
-          if (res.ok) {
-            window.location.replace(safeNext);
-            return;
-          }
-        }
-
-        // 3. Cas détection de session par le client Supabase Browser
+        // 4. Cas détection de session par le client Supabase Browser
         const supabase = getSupabaseBrowserClient();
         if (supabase) {
           const { data, error: sessionError } = await supabase.auth.getSession();
@@ -106,7 +127,7 @@ export default function AuthCallbackPage() {
           }
         }
 
-        // 4. Si aucun token n'a pu être résolu
+        // 5. Si aucun token n'a pu être résolu
         window.location.replace("/auth/login?oauthError=missing_code");
       } catch {
         window.location.replace("/auth/login?oauthError=oauth_failure");
