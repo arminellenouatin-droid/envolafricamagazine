@@ -38,7 +38,7 @@ function RegisterForm() {
       .then((data) => {
         if (!active) return;
         if (data?.user) {
-          router.replace(redirect && redirect !== "/" ? redirect : "/compte");
+          router.replace(redirect || "/");
           return;
         }
         setCheckingSession(false);

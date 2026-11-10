@@ -23,11 +23,13 @@ export async function POST(request: NextRequest) {
       if (decoded && typeof decoded === "object" && "id" in decoded && typeof decoded.id === "string") {
         const user = await findUserById(decoded.id);
         if (user) {
+          const token = generateToken(user);
           const response = NextResponse.json({
             success: true,
             user: { id: user.id, email: user.email, nom: user.nom, prenom: user.prenom, role: user.role },
+            sessionToken: token,
           });
-          response.cookies.set(COOKIE_NAME, generateToken(user), COOKIE_OPTIONS);
+          response.cookies.set(COOKIE_NAME, token, COOKIE_OPTIONS);
           return response;
         }
       }
@@ -69,11 +71,13 @@ export async function POST(request: NextRequest) {
       providerId: socialUser.id,
     });
 
+    const token = generateToken(user);
     const response = NextResponse.json({
       success: true,
       user: { id: user.id, email: user.email, nom: user.nom, prenom: user.prenom, role: user.role },
+      sessionToken: token,
     });
-    response.cookies.set(COOKIE_NAME, generateToken(user), COOKIE_OPTIONS);
+    response.cookies.set(COOKIE_NAME, token, COOKIE_OPTIONS);
     return response;
   } catch (error) {
     console.error("OAuth session error", error);

@@ -27,27 +27,49 @@ export default function LoginPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const sp = new URLSearchParams(window.location.search);
-      const r = sp.get("redirect") || sp.get("next");
-      if (r) setRedirectParam(r);
+      let targetDestination = sp.get("redirect") || sp.get("next") || "";
+
+      // Si aucune destination n'est fournie, vérifier si l'utilisateur provient d'une page du site
+      if (!targetDestination && document.referrer) {
+        try {
+          const refUrl = new URL(document.referrer);
+          if (
+            (refUrl.hostname === window.location.hostname || refUrl.hostname.includes("envolafrica")) &&
+            !refUrl.pathname.startsWith("/auth")
+          ) {
+            targetDestination = refUrl.pathname + refUrl.search;
+          }
+        } catch {}
+      }
+
+      if (targetDestination) {
+        setRedirectParam(targetDestination);
+      }
 
       const oauthErr = sp.get("oauthError");
       if (oauthErr) {
-        const errorMessages: Record<string, string> = {
-          access_denied: "Vous avez annulé ou refusé la connexion avec votre compte Google.",
-          email_missing: "Votre compte Google ne partage pas d'adresse e-mail vérifiée.",
-          configuration: "Le service d'authentification Google est momentanément indisponible sur cet environnement.",
-          missing_code: "Le code de sécurité Google a expiré ou est manquant. Veuillez réessayer.",
-          internal_error: "Une erreur est survenue lors de la création ou liaison de votre compte. Veuillez réessayer.",
-          oauth_failure: "La connexion Google a rencontré une interruption. Veuillez réessayer.",
-        };
-        setError(errorMessages[oauthErr] || decodeURIComponent(oauthErr));
+        if (oauthErr.toLowerCase().includes("pkce") || oauthErr.toLowerCase().includes("verifier")) {
+          // Erreur PKCE évitée : invitation propre à la connexion
+          setError("Votre session a été mise à jour. Vous pouvez vous connecter ci-dessous.");
+        } else {
+          const errorMessages: Record<string, string> = {
+            access_denied: "Vous avez annulé ou refusé la connexion avec votre compte Google.",
+            email_missing: "Votre compte Google ne partage pas d'adresse e-mail vérifiée.",
+            configuration: "Le service d'authentification Google est momentanément indisponible sur cet environnement.",
+            missing_code: "Le délai de sécurité a expiré. Veuillez cliquer à nouveau pour vous connecter.",
+            internal_error: "Une erreur est survenue lors de la création ou liaison de votre compte. Veuillez réessayer.",
+            oauth_failure: "La connexion Google a rencontré une interruption. Veuillez réessayer.",
+          };
+          setError(errorMessages[oauthErr] || decodeURIComponent(oauthErr));
+        }
       }
 
       fetch("/api/auth/me", { cache: "no-store" })
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data?.user) {
-            router.replace(r || "/compte");
+            // Redirige vers la page d'origine ou l'accueil "/", JAMAIS de force vers /admin
+            router.replace(targetDestination || "/");
           }
         })
         .catch(() => {});

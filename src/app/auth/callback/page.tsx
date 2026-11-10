@@ -18,7 +18,10 @@ export default function AuthCallbackPage() {
         const originParam = searchParams.get("origin") || searchParams.get("returnOrigin");
 
         if (error) {
-          window.location.replace(`/auth/login?oauthError=${encodeURIComponent(error)}`);
+          const cleanError = error.toLowerCase().includes("pkce") || error.toLowerCase().includes("verifier")
+            ? "oauth_failure"
+            : error;
+          window.location.replace(`/auth/login?oauthError=${encodeURIComponent(cleanError)}&next=${encodeURIComponent(safeNext)}`);
           return;
         }
 
@@ -43,7 +46,7 @@ export default function AuthCallbackPage() {
           }
         }
 
-        // 2. Cas flux implicit / fragment de hachage (#access_token=...)
+        // 2. Cas flux implicit universel (#access_token=...)
         const hashAccessToken = hashParams.get("access_token");
         if (hashAccessToken) {
           if (mounted) setStatusMessage("Validation de votre profil Google...");
@@ -54,12 +57,28 @@ export default function AuthCallbackPage() {
           });
 
           if (res.ok) {
+            const data = await res.json().catch(() => ({}));
+            // Si l'utilisateur s'était connecté depuis envolafrica.site, transférer la session
+            if (originParam && data?.sessionToken) {
+              try {
+                const parsedOrigin = new URL(originParam);
+                if (
+                  parsedOrigin.hostname.includes("envolafrica.site") &&
+                  window.location.hostname !== parsedOrigin.hostname
+                ) {
+                  window.location.replace(
+                    `${parsedOrigin.origin}/auth/callback#session_token=${encodeURIComponent(data.sessionToken)}&next=${encodeURIComponent(finalNext)}`
+                  );
+                  return;
+                }
+              } catch {}
+            }
             window.location.replace(finalNext);
             return;
           }
         }
 
-        // 3. Cas classique PKCE : code dans les searchParams avec double résolution (serveur + fallback client)
+        // 3. Cas classique code avec double résolution sécurisée
         const code = searchParams.get("code");
         if (code) {
           if (mounted) setStatusMessage("Validation de votre autorisation Google...");
@@ -81,56 +100,69 @@ export default function AuthCallbackPage() {
             // Continuer vers la résolution locale
           }
 
-          // Fallback : échange via le client navigateur Supabase (au cas où le verifier PKCE est local)
+          // Fallback : échange via le client navigateur Supabase
           const supabase = getSupabaseBrowserClient();
           if (supabase) {
-            const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-            if (!exchangeError && exchangeData?.session?.access_token) {
-              if (mounted) setStatusMessage("Finalisation de votre session sécurisée...");
-              const res = await fetch("/api/auth/oauth/session", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ accessToken: exchangeData.session.access_token }),
-              });
+            try {
+              const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+              if (!exchangeError && exchangeData?.session?.access_token) {
+                if (mounted) setStatusMessage("Finalisation de votre session sécurisée...");
+                const res = await fetch("/api/auth/oauth/session", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ accessToken: exchangeData.session.access_token }),
+                });
 
-              if (res.ok) {
-                window.location.replace(safeNext);
+                if (res.ok) {
+                  window.location.replace(finalNext);
+                  return;
+                }
+              }
+            } catch {}
+          }
+
+          // Vérifier si une session active est déjà établie
+          try {
+            const meRes = await fetch("/api/auth/me", { cache: "no-store" });
+            if (meRes.ok) {
+              const meData = await meRes.json();
+              if (meData?.user) {
+                window.location.replace(finalNext);
                 return;
               }
             }
-          }
+          } catch {}
 
-          // Si le fallback local n'a pas résolu, redirection finale vers la route serveur
-          const originQuery = originParam ? `&origin=${encodeURIComponent(originParam)}` : "";
-          window.location.replace(
-            `/api/auth/oauth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(safeNext)}${originQuery}`
-          );
+          // Retour propre vers le login en cas d'expiration sans message cryptique
+          window.location.replace(`/auth/login?oauthError=oauth_failure&next=${encodeURIComponent(finalNext)}`);
           return;
         }
 
         // 4. Cas détection de session par le client Supabase Browser
         const supabase = getSupabaseBrowserClient();
         if (supabase) {
-          const { data, error: sessionError } = await supabase.auth.getSession();
-          if (!sessionError && data?.session?.access_token) {
-            if (mounted) setStatusMessage("Finalisation de votre session sécurisée...");
-            const res = await fetch("/api/auth/oauth/session", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ accessToken: data.session.access_token }),
-            });
+          try {
+            const { data, error: sessionError } = await supabase.auth.getSession();
+            if (!sessionError && data?.session?.access_token) {
+              if (mounted) setStatusMessage("Finalisation de votre session sécurisée...");
+              const res = await fetch("/api/auth/oauth/session", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ accessToken: data.session.access_token }),
+              });
 
-            if (res.ok) {
-              window.location.replace(safeNext);
-              return;
+              if (res.ok) {
+                window.location.replace(finalNext);
+                return;
+              }
             }
-          }
+          } catch {}
         }
 
         // 5. Si aucun token n'a pu être résolu
-        window.location.replace("/auth/login?oauthError=missing_code");
+        window.location.replace(`/auth/login?oauthError=missing_code&next=${encodeURIComponent(safeNext)}`);
       } catch {
-        window.location.replace("/auth/login?oauthError=oauth_failure");
+        window.location.replace(`/auth/login?oauthError=oauth_failure&next=${encodeURIComponent(safeNext)}`);
       }
     }
 
