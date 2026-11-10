@@ -10,11 +10,12 @@ export default function AuthCallbackPage() {
     let mounted = true;
 
     async function handleAuthCallback() {
+      let safeNext = "/";
       try {
         const searchParams = new URLSearchParams(window.location.search);
         const error = searchParams.get("error_description") || searchParams.get("error");
         const rawNext = searchParams.get("next") || "/";
-        const safeNext = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
+        safeNext = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
         const originParam = searchParams.get("origin") || searchParams.get("returnOrigin");
 
         if (error) {
