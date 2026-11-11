@@ -60,10 +60,8 @@ function RegisterForm() {
       setSocialLoading(false);
       return;
     }
-    // URI de redirection officielle autorisée dans Google Cloud Console et Supabase
-    const authorizedCallback = "https://envolafrica.vercel.app/auth/callback";
-    const currentOrigin = typeof window !== "undefined" ? window.location.origin : "https://www.envolafrica.site";
-    const targetRedirect = `${authorizedCallback}?origin=${encodeURIComponent(currentOrigin)}&next=${encodeURIComponent(redirect)}`;
+    const callbackOrigin = typeof window !== "undefined" ? window.location.origin : "https://envolafrica.vercel.app";
+    const targetRedirect = `${callbackOrigin}/auth/callback?next=${encodeURIComponent(redirect || "/")}`;
 
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
