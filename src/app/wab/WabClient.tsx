@@ -1439,7 +1439,11 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                               {formatPostTime(post.createdAt)}
                             </a>
                             <span>·</span>
-                            <span className="material-symbols-outlined text-[13px]" title="Visible publiquement">public</span>
+                            <svg className="h-3 w-3 inline-block text-[#5f6368]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <circle cx="12" cy="12" r="10" />
+                              <line x1="2" y1="12" x2="22" y2="12" />
+                              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                            </svg>
                             {post.location && (
                               <>
                                 <span>·</span>
@@ -1536,9 +1540,10 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                                     <p className="text-[10px] text-[#5f6368]">Édition officielle Envol Africa Magazine</p>
                                   </div>
                                 </div>
-                                <span className="material-symbols-outlined text-[18px] text-[#9e001f] group-hover:translate-x-1 transition-transform">
-                                  arrow_forward
-                                </span>
+                                <svg className="h-4 w-4 text-[#9e001f] group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                  <line x1="5" y1="12" x2="19" y2="12" />
+                                  <polyline points="12 5 19 12 12 19" />
+                                </svg>
                               </a>
                             )}
                           </div>
@@ -1566,9 +1571,10 @@ export default function WabClient({ targetPostId }: { targetPostId?: string } = 
                                 <p className="text-[10px] text-[#5f6368]">Édition officielle Envol Africa Magazine</p>
                               </div>
                             </div>
-                            <span className="material-symbols-outlined text-[18px] text-[#9e001f] group-hover:translate-x-1 transition-transform">
-                              arrow_forward
-                            </span>
+                            <svg className="h-4 w-4 text-[#9e001f] group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                  <line x1="5" y1="12" x2="19" y2="12" />
+                                  <polyline points="12 5 19 12 12 19" />
+                                </svg>
                           </a>
                         )}
 

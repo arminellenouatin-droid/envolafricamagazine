@@ -235,9 +235,16 @@ export default function StoriesReelsCarousel() {
         {/* Tuile 1: Créer Story (Photo / Vidéo) */}
         <label className="group relative flex h-48 w-32 shrink-0 cursor-pointer flex-col justify-end overflow-hidden rounded-2xl border-2 border-dashed border-[#006874] bg-[#eefcfa] p-3 text-[#006874] transition hover:bg-[#dff7f4]">
           <div className="absolute inset-0 grid place-items-center">
-            <span className="material-symbols-outlined text-[36px] transition group-hover:scale-110">
-              {uploading ? "progress_activity" : "add_a_photo"}
-            </span>
+            {uploading ? (
+              <span className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-[#006874] border-t-transparent" />
+            ) : (
+              <svg className="h-9 w-9 transition group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+                <line x1="19" y1="8" x2="19" y2="12" strokeWidth="2" />
+                <line x1="17" y1="10" x2="21" y2="10" strokeWidth="2" />
+              </svg>
+            )}
           </div>
           <div className="relative z-10 text-center">
             <span className="block truncate text-xs font-bold text-[#001325]">
