@@ -19,31 +19,46 @@ export interface AgentKeyRecord {
   revokedBy?: string | null;
 }
 
-const LOCAL_KEYS_FILE = path.join(process.cwd(), "src", "data", "agent_keys.json");
+// Cache en mémoire pour garantir un fonctionnement sans plantage sur Vercel (read-only filesystem)
+let memoryKeysCache: AgentKeyRecord[] = [];
 
-function ensureLocalFile() {
-  if (!fs.existsSync(path.dirname(LOCAL_KEYS_FILE))) {
-    fs.mkdirSync(path.dirname(LOCAL_KEYS_FILE), { recursive: true });
+function getLocalKeysFilePath(): string {
+  // Sur Vercel ou conteneur serverless, seul /tmp est inscriptible
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NODE_ENV === "production") {
+    return path.join("/tmp", "agent_keys.json");
   }
-  if (!fs.existsSync(LOCAL_KEYS_FILE)) {
-    fs.writeFileSync(LOCAL_KEYS_FILE, JSON.stringify({ keys: [] }, null, 2), "utf-8");
-  }
+  return path.join(process.cwd(), "src", "data", "agent_keys.json");
 }
 
 function readLocalKeys(): AgentKeyRecord[] {
-  ensureLocalFile();
   try {
-    const raw = fs.readFileSync(LOCAL_KEYS_FILE, "utf-8");
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed.keys) ? parsed.keys : [];
-  } catch {
-    return [];
+    const filePath = getLocalKeysFilePath();
+    if (fs.existsSync(filePath)) {
+      const raw = fs.readFileSync(filePath, "utf-8");
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed.keys)) {
+        memoryKeysCache = parsed.keys;
+        return parsed.keys;
+      }
+    }
+  } catch (err) {
+    console.warn("[agent-keys] Lecture locale indisponible, utilisation du cache mémoire:", err);
   }
+  return memoryKeysCache;
 }
 
-function writeLocalKeys(keys: AgentKeyRecord[]) {
-  ensureLocalFile();
-  fs.writeFileSync(LOCAL_KEYS_FILE, JSON.stringify({ keys }, null, 2), "utf-8");
+function writeLocalKeys(keys: AgentKeyRecord[]): void {
+  memoryKeysCache = keys;
+  try {
+    const filePath = getLocalKeysFilePath();
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(filePath, JSON.stringify({ keys }, null, 2), "utf-8");
+  } catch (err) {
+    console.warn("[agent-keys] Avertissement écriture disque (lecture seule / sandbox), clé préservée en mémoire:", err);
+  }
 }
 
 /**
@@ -52,28 +67,32 @@ function writeLocalKeys(keys: AgentKeyRecord[]) {
 export async function listAgentKeys(): Promise<Omit<AgentKeyRecord, "keyHash">[]> {
   const client = getSupabaseAdmin();
   if (client) {
-    const { data, error } = await client
-      .from("agent_api_keys")
-      .select("id, name, key_prefix, scopes, created_at, created_by, last_used_at, is_revoked, revoked_at, revoked_by")
-      .order("created_at", { ascending: false });
+    try {
+      const { data, error } = await client
+        .from("agent_api_keys")
+        .select("id, name, key_prefix, scopes, created_at, created_by, last_used_at, is_revoked, revoked_at, revoked_by")
+        .order("created_at", { ascending: false });
 
-    if (!error && data) {
-      return data.map((row: any) => ({
-        id: row.id,
-        name: row.name,
-        keyPrefix: row.key_prefix,
-        scopes: row.scopes || [],
-        createdAt: row.created_at,
-        createdBy: row.created_by,
-        lastUsedAt: row.last_used_at,
-        isRevoked: Boolean(row.is_revoked),
-        revokedAt: row.revoked_at,
-        revokedBy: row.revoked_by,
-      }));
+      if (!error && Array.isArray(data)) {
+        return data.map((row: any) => ({
+          id: row.id,
+          name: row.name,
+          keyPrefix: row.key_prefix,
+          scopes: row.scopes || [],
+          createdAt: row.created_at,
+          createdBy: row.created_by,
+          lastUsedAt: row.last_used_at,
+          isRevoked: Boolean(row.is_revoked),
+          revokedAt: row.revoked_at,
+          revokedBy: row.revoked_by,
+        }));
+      }
+    } catch (err) {
+      console.warn("[agent-keys] Supabase listAgentKeys warning:", err);
     }
   }
 
-  // Fallback stockage local
+  // Fallback stockage local / mémoire
   const localKeys = readLocalKeys();
   return localKeys.map(({ keyHash, ...safe }) => safe);
 }
@@ -85,7 +104,11 @@ export async function createAgentKey(input: {
   name: string;
   scopes?: string[];
   createdBy: string;
-}): Promise<{ safeRecord: Omit<AgentKeyRecord, "keyHash">; rawSecretKey: string }> {
+}): Promise<{
+  safeRecord: Omit<AgentKeyRecord, "keyHash">;
+  rawSecretKey: string;
+  supabaseWarning?: string;
+}> {
   const rawSecret = `eam_live_${createOpaqueToken(24)}`;
   const keyPrefix = `${rawSecret.slice(0, 14)}...${rawSecret.slice(-4)}`;
   const keyHash = hashOpaqueToken(rawSecret);
@@ -104,36 +127,45 @@ export async function createAgentKey(input: {
     isRevoked: false,
   };
 
+  let supabaseWarning: string | undefined = undefined;
   const client = getSupabaseAdmin();
-  if (client) {
-    const { error } = await client.from("agent_api_keys").insert({
-      id: newKey.id,
-      name: newKey.name,
-      key_prefix: newKey.keyPrefix,
-      key_hash: newKey.keyHash,
-      scopes: newKey.scopes,
-      created_at: newKey.createdAt,
-      created_by: newKey.createdBy,
-      last_used_at: null,
-      is_revoked: false,
-    });
 
-    if (error) {
-      console.warn("[agent-keys] Supabase table inexistante ou erreur, fallback local:", error.message);
-      const keys = readLocalKeys();
-      keys.unshift(newKey);
-      writeLocalKeys(keys);
+  if (client) {
+    try {
+      const { error } = await client.from("agent_api_keys").insert({
+        id: newKey.id,
+        name: newKey.name,
+        key_prefix: newKey.keyPrefix,
+        key_hash: newKey.keyHash,
+        scopes: newKey.scopes,
+        created_at: newKey.createdAt,
+        created_by: newKey.createdBy,
+        last_used_at: null,
+        is_revoked: false,
+      });
+
+      if (error) {
+        console.warn("[agent-keys] Supabase table inexistante ou erreur:", error.message);
+        supabaseWarning = `Table Supabase non migrée (${error.message}). La clé est active en mémoire mais pour une persistance permanente, exécutez la migration 'supabase/agent_api_keys.sql' dans votre console Supabase.`;
+      }
+    } catch (dbErr: any) {
+      console.warn("[agent-keys] Supabase exception:", dbErr?.message);
+      supabaseWarning = `Avertissement Supabase: ${dbErr?.message || "Connexion indisponible"}.`;
     }
   } else {
-    const keys = readLocalKeys();
-    keys.unshift(newKey);
-    writeLocalKeys(keys);
+    supabaseWarning = "Supabase Admin non configuré : la clé est enregistrée localement/en mémoire.";
   }
+
+  // Toujours enregistrer en fallback local/mémoire pour garantir que la clé fonctionne immédiatement
+  const keys = readLocalKeys();
+  keys.unshift(newKey);
+  writeLocalKeys(keys);
 
   const { keyHash: _hash, ...safeRecord } = newKey;
   return {
     safeRecord,
     rawSecretKey: rawSecret,
+    supabaseWarning,
   };
 }
 
@@ -149,16 +181,20 @@ export async function revokeAgentKey(
   let updatedInSupabase = false;
 
   if (client) {
-    const { error } = await client
-      .from("agent_api_keys")
-      .update({
-        is_revoked: true,
-        revoked_at: now,
-        revoked_by: revokedBy,
-      })
-      .eq("id", id);
+    try {
+      const { error } = await client
+        .from("agent_api_keys")
+        .update({
+          is_revoked: true,
+          revoked_at: now,
+          revoked_by: revokedBy,
+        })
+        .eq("id", id);
 
-    if (!error) updatedInSupabase = true;
+      if (!error) updatedInSupabase = true;
+    } catch (err) {
+      console.warn("[agent-keys] Erreur révocation Supabase:", err);
+    }
   }
 
   // Mettre à jour en local
@@ -209,36 +245,40 @@ export async function verifyAgentToken(
   const client = getSupabaseAdmin();
 
   if (client) {
-    const { data } = await client
-      .from("agent_api_keys")
-      .select("id, name, key_prefix, scopes, created_at, created_by, is_revoked")
-      .eq("key_hash", tokenHash)
-      .eq("is_revoked", false)
-      .maybeSingle();
-
-    if (data) {
-      // Mettre à jour last_used_at en tâche asynchrone non-bloquante
-      void client
+    try {
+      const { data } = await client
         .from("agent_api_keys")
-        .update({ last_used_at: new Date().toISOString() })
-        .eq("id", data.id);
+        .select("id, name, key_prefix, scopes, created_at, created_by, is_revoked")
+        .eq("key_hash", tokenHash)
+        .eq("is_revoked", false)
+        .maybeSingle();
 
-      return {
-        valid: true,
-        keyRecord: {
-          id: data.id,
-          name: data.name,
-          keyPrefix: data.key_prefix,
-          scopes: data.scopes || ["all"],
-          createdAt: data.created_at,
-          createdBy: data.created_by,
-          isRevoked: false,
-        },
-      };
+      if (data) {
+        // Mettre à jour last_used_at en tâche asynchrone non-bloquante
+        void client
+          .from("agent_api_keys")
+          .update({ last_used_at: new Date().toISOString() })
+          .eq("id", data.id);
+
+        return {
+          valid: true,
+          keyRecord: {
+            id: data.id,
+            name: data.name,
+            keyPrefix: data.key_prefix,
+            scopes: data.scopes || ["all"],
+            createdAt: data.created_at,
+            createdBy: data.created_by,
+            isRevoked: false,
+          },
+        };
+      }
+    } catch (err) {
+      console.warn("[agent-keys] Erreur vérification Supabase:", err);
     }
   }
 
-  // Fallback vérification locale
+  // 3. Fallback vérification locale / mémoire
   const localKeys = readLocalKeys();
   const matched = localKeys.find((k) => k.keyHash === tokenHash && !k.isRevoked);
   if (matched) {

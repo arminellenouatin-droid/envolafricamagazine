@@ -35,6 +35,7 @@ export default function AdminApiKeysManager() {
   const [generating, setGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [warningMsg, setWarningMsg] = useState("");
 
   // Clé nouvellement générée affichée une seule fois
   const [newlyCreatedSecret, setNewlyCreatedSecret] = useState<string | null>(null);
@@ -87,6 +88,11 @@ export default function AdminApiKeysManager() {
       setSelectedScopes(["all"]);
       setShowCreateModal(false);
       setSuccessMsg("Clé d'API générée avec succès ! Pensez à la copier dès maintenant.");
+      if (data.supabaseWarning) {
+        setWarningMsg(data.supabaseWarning);
+      } else {
+        setWarningMsg("");
+      }
       await fetchKeys();
     } catch (err: any) {
       setErrorMsg(err.message);
@@ -161,6 +167,20 @@ export default function AdminApiKeysManager() {
         <div className="flex items-center justify-between p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
           <span>{successMsg}</span>
           <button type="button" onClick={() => setSuccessMsg("")} className="font-bold text-emerald-600 hover:text-emerald-800">×</button>
+        </div>
+      )}
+
+      {/* Avertissement Supabase Migration */}
+      {warningMsg && (
+        <div className="flex items-start justify-between p-4 rounded-xl bg-amber-50 border border-amber-300 text-xs text-amber-900">
+          <div className="flex gap-2.5">
+            <span className="text-base">⚠️</span>
+            <div>
+              <strong className="block font-bold">Persistance Supabase recommandée :</strong>
+              <p className="mt-0.5 leading-relaxed text-amber-800">{warningMsg}</p>
+            </div>
+          </div>
+          <button type="button" onClick={() => setWarningMsg("")} className="font-bold text-amber-700 hover:text-amber-900 ml-3">×</button>
         </div>
       )}
 

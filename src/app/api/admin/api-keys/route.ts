@@ -49,12 +49,13 @@ export async function POST(req: NextRequest) {
         message: "Nouvelle clé d'API agent générée avec succès ! Copiez-la maintenant car elle ne sera plus jamais affichée.",
         keyRecord: result.safeRecord,
         rawSecretKey: result.rawSecretKey,
+        supabaseWarning: result.supabaseWarning,
       },
       { status: 201 }
     );
   } catch (err: any) {
     console.error("[admin/api-keys] Erreur génération:", err);
-    return NextResponse.json({ error: "Erreur lors de la génération de la clé API" }, { status: 500 });
+    return NextResponse.json({ error: err?.message || "Erreur lors de la génération de la clé API" }, { status: 500 });
   }
 }
 

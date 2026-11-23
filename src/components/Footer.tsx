@@ -38,6 +38,7 @@ const resourceLinks: FooterLinkItem[] = [
   { name: "Publicités", href: "/publicite" },
   { name: "Programme d'affiliation", href: "/affiliation" },
   { name: "Kit Media", href: "/api/kit-media", download: true },
+  { name: "Documentation API", href: "/developpeurs" },
   { name: "FAQ", href: "/faq" },
   { name: "Assistance", href: "#assistance", isChatTrigger: true },
   { name: "Newsletter", href: "/#newsletter" },
