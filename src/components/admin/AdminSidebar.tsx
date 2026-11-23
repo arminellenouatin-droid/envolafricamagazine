@@ -84,6 +84,7 @@ export default function AdminSidebar({
       tabs: [
         { id: "tarifs", label: "Tarifs & Monétisation", icon: "payments" },
         { id: "kyc", label: "Conformité KYC & AML", icon: "verified_user" },
+        { id: "api-keys", label: "Agents & Clés API", icon: "key" },
         { id: "service", label: "Services & Rôles", icon: "handyman" },
         { id: "settings", label: "Configuration Système", icon: "settings" },
       ],

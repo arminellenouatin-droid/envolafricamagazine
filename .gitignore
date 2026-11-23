@@ -43,3 +43,7 @@ next-env.d.ts
 supabase/.temp/
 scratch/
 src/data/kyc-aml.json
+src/data/db.json
+src/data/db.backup.json
+src/data/agent_keys.json
+src/data/*.local.json

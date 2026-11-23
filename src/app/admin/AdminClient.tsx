@@ -8,6 +8,7 @@ import RichTextEditor from "@/components/RichTextEditor";
 import AffiliateManager from "@/components/admin/AffiliateManager";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminAnalyticsView from "@/components/admin/AdminAnalyticsView";
+import AdminApiKeysManager from "@/components/admin/AdminApiKeysManager";
 
 async function readApiResponse(response: Response) {
   const raw = await response.text();
@@ -2033,6 +2034,10 @@ export default function AdminDashboardClient({ user, stats, db }: { user: any, s
             <div className="mt-4 p-4 rounded-[12px] bg-zinc-50 border text-[12px]">✅ Page /service + /api/service POST + admin voit demandes + budget indicatif + company_name + contact_name + contact_phone</div>
             <Link href="/service" className="mt-4 inline-block h-9 px-4 rounded-full bg-[#0A1931] text-white text-[12px] font-bold">Voir /service →</Link>
           </div>
+        )}
+
+        {activeTab==="api-keys" && (
+          <AdminApiKeysManager />
         )}
 
         {activeTab==="settings" && (

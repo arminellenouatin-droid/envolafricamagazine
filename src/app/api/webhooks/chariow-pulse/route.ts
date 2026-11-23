@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { v4 as uuidv4 } from "uuid";
 import { verifyPulseSignature } from "@/lib/chariow";
 import {
   confirmOrderPayment,
@@ -19,7 +20,7 @@ import { settleWalletDeposit } from "@/lib/wallet/financial-core";
 
 export const dynamic = "force-dynamic";
 
-// Cache mémoire d'idempotence pour dédoublonner les livraisons Pulse répétées
+// Cache mémoire d'idempotence pour dédoublonner les livraisons Pulse répétées au sein du même conteneur
 const processedDeliveryIds = new Set<string>();
 
 export async function POST(req: NextRequest) {
@@ -43,20 +44,7 @@ export async function POST(req: NextRequest) {
       console.warn("Chariow Pulse: signature ignorée en environnement dev sans clé");
     }
 
-    // 3. Déduplication par Idempotence (x-pulse-delivery-id)
-    if (deliveryId) {
-      if (processedDeliveryIds.has(deliveryId)) {
-        return NextResponse.json({ status: "already_processed", deliveryId }, { status: 200 });
-      }
-      processedDeliveryIds.add(deliveryId);
-      // Nettoyage périodique pour éviter toute fuite mémoire
-      if (processedDeliveryIds.size > 5000) {
-        const first = Array.from(processedDeliveryIds).slice(0, 1000);
-        first.forEach((id) => processedDeliveryIds.delete(id));
-      }
-    }
-
-    // 4. Analyse du payload JSON
+    // 3. Analyse préalable du payload JSON
     let payload: any = null;
     try {
       payload = JSON.parse(rawBody);
@@ -84,6 +72,28 @@ export async function POST(req: NextRequest) {
     const userId = (customMetadata.user_id || "").trim();
     const productType = (customMetadata.product || customMetadata.type || "").trim();
 
+    // 4. Déduplication par Idempotence persistante (Serverless + Multi-instances)
+    const idempotencyKey = deliveryId ? `chariow_deliv_${deliveryId}` : `chariow_sale_${saleId}`;
+
+    if (processedDeliveryIds.has(idempotencyKey)) {
+      return NextResponse.json({ status: "already_processed", deliveryId: deliveryId || saleId }, { status: 200 });
+    }
+
+    const supabase = getSupabaseAdmin();
+    if (supabase) {
+      const { data: existingPayment } = await supabase
+        .from("payments")
+        .select("id")
+        .eq("provider_ref", idempotencyKey)
+        .limit(1)
+        .maybeSingle();
+
+      if (existingPayment) {
+        processedDeliveryIds.add(idempotencyKey);
+        return NextResponse.json({ status: "already_processed", deliveryId: deliveryId || saleId }, { status: 200 });
+      }
+    }
+
     // 5. Exécution des règlements selon le type de produit
     if (productType === "award_vote") {
       await settleAwardVoteSupabase(customMetadata, saleId);
@@ -106,7 +116,6 @@ export async function POST(req: NextRequest) {
         });
         await recordDonation({ order: confirmedOrder, paymentId: saleId, email: buyerEmail });
       } else {
-        const supabase = getSupabaseAdmin();
         if (supabase) {
           try {
             await supabase.from("donations").insert({
@@ -172,6 +181,31 @@ export async function POST(req: NextRequest) {
         currency,
         metadata: { ...customMetadata, gateway: "chariow" },
       });
+    }
+
+    // 6. Enregistrement persistant de l'idempotence
+    if (supabase) {
+      try {
+        await supabase.from("payments").insert({
+          id: uuidv4(),
+          order_id: orderId || "pulse_settlement",
+          provider: "chariow_pulse",
+          provider_ref: idempotencyKey,
+          amount: Number(amountVal) || 0,
+          currency: currency || "XOF",
+          status: "confirme",
+          webhook_signature_verified: true,
+          raw_webhook_payload: { deliveryId, saleId, event: eventName, productType },
+        });
+      } catch (e) {
+        console.warn("Idempotence log insert notice:", e);
+      }
+    }
+
+    processedDeliveryIds.add(idempotencyKey);
+    if (processedDeliveryIds.size > 5000) {
+      const first = Array.from(processedDeliveryIds).slice(0, 1000);
+      first.forEach((id) => processedDeliveryIds.delete(id));
     }
 
     return NextResponse.json({

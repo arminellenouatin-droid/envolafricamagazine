@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyDownloadToken } from "@/lib/download";
 import { findMagazineById, findUserById, listOrders } from "@/lib/core-db";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { getR2Client } from "@/lib/storage/client";
+import { getR2Config, isR2Configured } from "@/lib/storage/config";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export async function GET(req: NextRequest, context: { params: Promise<{ token: string }> }) {
   const { token } = await context.params;
@@ -24,20 +28,38 @@ export async function GET(req: NextRequest, context: { params: Promise<{ token: 
     return NextResponse.json({ error: "Accès non autorisé - achat requis" }, { status: 403 });
   }
 
-  // Pour demo, on retourne encore la couverture ; le fichier final devra venir de Storage signé.
   const magazine = payload.magazineId ? await findMagazineById(payload.magazineId) : null;
   if (!magazine) return NextResponse.json({ error: "Magazine introuvable" }, { status: 404 });
 
   const selectedFile = magazine.pdfs?.[payload.format === "numerique" ? "fr" : (payload.format || "fr")] || magazine.pdfs?.fr;
   let downloadUrl = selectedFile || magazine.cover;
   const privateMatch = selectedFile ? /^private-pdf:\/\/([^/]+)\/(.+)$/.exec(selectedFile) : null;
+
   if (privateMatch) {
-    const client = getSupabaseAdmin();
-    if (!client) return NextResponse.json({ error: "Stockage privé indisponible" }, { status: 503 });
-    const signed = await client.storage.from(privateMatch[1]).createSignedUrl(privateMatch[2], 300);
-    if (signed.error || !signed.data?.signedUrl) return NextResponse.json({ error: "Impossible de générer le lien temporaire" }, { status: 503 });
-    downloadUrl = signed.data.signedUrl;
+    const bucketName = privateMatch[1];
+    const objectPath = privateMatch[2];
+
+    if (isR2Configured() && (bucketName === getR2Config().R2_BUCKET_PRIVATE || bucketName === "envol-private")) {
+      try {
+        const r2 = getR2Client();
+        downloadUrl = await getSignedUrl(
+          r2,
+          new GetObjectCommand({ Bucket: bucketName, Key: objectPath }),
+          { expiresIn: 300 }
+        );
+      } catch (r2Err) {
+        console.error("Erreur génération URL présignée R2", r2Err);
+        return NextResponse.json({ error: "Impossible de générer le lien de téléchargement R2" }, { status: 503 });
+      }
+    } else {
+      const client = getSupabaseAdmin();
+      if (!client) return NextResponse.json({ error: "Stockage privé indisponible" }, { status: 503 });
+      const signed = await client.storage.from(bucketName).createSignedUrl(objectPath, 300);
+      if (signed.error || !signed.data?.signedUrl) return NextResponse.json({ error: "Impossible de générer le lien temporaire" }, { status: 503 });
+      downloadUrl = signed.data.signedUrl;
+    }
   }
+
   return NextResponse.json({
     success: true,
     message: "Lien sécurisé valide",

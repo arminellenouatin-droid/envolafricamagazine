@@ -53,8 +53,8 @@ export default function PreviewFlipbook({
   const renderTaskLeftRef = useRef<any>(null);
   const renderTaskRightRef = useRef<any>(null);
 
-  // Resolved PDF target URL: support previewUrl first, then pdfUrl, then fallback only if numero 23
-  const targetPdfUrl = previewUrl || pdfUrl || (numero === 23 ? "/magazines/23/numero-23.pdf" : "");
+  // Resolved PDF target URL: support previewUrl first, then pdfUrl
+  const targetPdfUrl = previewUrl || pdfUrl || "";
   const hasImagePages = Array.isArray(pages) && pages.length > 0;
   const maxPage = 8;
   const isBlocked = (p: number) => p >= 8;

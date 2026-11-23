@@ -49,7 +49,7 @@ function InternalBrowserContent() {
         {frameFailed && <div className="mt-4 rounded-2xl border border-[#e5bdbb] bg-white px-4 py-3 text-sm text-[#5c403f]">Ce site refuse probablement l’intégration dans une iframe. Vous pouvez utiliser le bouton « Ouvrir dehors » pour continuer sur le site officiel.</div>}
 
         <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <iframe title={`Navigation EAM vers ${target.hostname}`} src={targetHref} className="h-[calc(100vh-260px)] min-h-[560px] w-full" referrerPolicy="strict-origin-when-cross-origin" sandbox="allow-forms allow-modals allow-popups allow-presentation allow-scripts allow-same-origin" onError={() => setFrameFailed(true)} />
+          <iframe title={`Navigation EAM vers ${target.hostname}`} src={targetHref} className="h-[calc(100vh-260px)] min-h-[560px] w-full" referrerPolicy="strict-origin-when-cross-origin" sandbox="allow-forms allow-modals allow-popups allow-presentation allow-scripts" onError={() => setFrameFailed(true)} />
         </div>
       </div>
     </main>

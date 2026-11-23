@@ -98,38 +98,77 @@ export function plainTextToRichHtml(value: string) {
   return escapeHtml(value).replace(/\r?\n/g, "<br>");
 }
 
+function decodeProtocolEntities(url: string): string {
+  return url
+    .replace(/&#(\d+);?/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
+    .replace(/&#x([0-9a-f]+);?/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&colon;/gi, ":")
+    .replace(/[\0\s\t\r\n]+/g, "");
+}
+
 export function sanitizeRichText(value: string) {
-  const source = fixMojibake(String(value ?? ""))
+  let source = fixMojibake(String(value ?? ""))
+    .replace(/\0/g, "")
     .replace(/&amp;nbsp;?/gi, " ")
     .replace(/&nbsp;?/gi, " ")
     .replace(/\u00a0/g, " ");
+
   if (!/<[a-z][\s\S]*>/i.test(source)) return cleanTextContent(source);
+
+  // 1. Suppression multi-passes récursive des commentaires
+  let prev = "";
+  while (source !== prev) {
+    prev = source;
+    source = source.replace(/<!--[\s\S]*?-->/g, "");
+  }
+
+  // 2. Suppression multi-passes récursive des balises actives / exécutables
+  const DANGEROUS_ELEMENTS = /<\s*(script|style|iframe|object|embed|form|input|textarea|button|svg|math|base|link|meta|applet|frameset|frame|audio|video|source|track|canvas)\b[\s\S]*?(?:<\s*\/\s*\1\s*>|\/?>)/gi;
+  prev = "";
+  while (source !== prev) {
+    prev = source;
+    source = source.replace(DANGEROUS_ELEMENTS, "");
+  }
+
+  // 3. Filtrage strict par liste blanche et régénération sécurisée des balises autorisées
+  source = source.replace(/<\s*([^>]+)>/g, (_full, rawTag: string) => {
+    const closing = /^\s*\//.test(rawTag);
+    const tagMatch = rawTag.match(/^\s*\/?\s*([a-z0-9]+)/i);
+    if (!tagMatch) return "";
+    const tag = tagMatch[1].toLowerCase();
+    if (!ALLOWED_TAGS.has(tag)) return "";
+    if (closing) return tag === "br" || tag === "img" ? "" : `</${tag}>`;
+    if (tag === "br") return "<br>";
+
+    if (tag === "a") {
+      const hrefMatch = rawTag.match(/href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+      const rawHref = (hrefMatch?.[1] || hrefMatch?.[2] || hrefMatch?.[3] || "").trim();
+      const decodedHref = decodeProtocolEntities(rawHref);
+      // Whitelist stricte : seuls http, https et mailto sont tolérés
+      if (!/^(https?:\/\/|mailto:)/i.test(decodedHref) || /^(javascript|data|vbscript|file|blob):/i.test(decodedHref)) {
+        return "<a>";
+      }
+      return `<a href="${escapeHtml(rawHref)}" rel="noopener noreferrer" target="_blank">`;
+    }
+
+    if (tag === "img") {
+      const srcMatch = rawTag.match(/src\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+      const altMatch = rawTag.match(/alt\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+      const rawSrc = (srcMatch?.[1] || srcMatch?.[2] || srcMatch?.[3] || "").trim();
+      const decodedSrc = decodeProtocolEntities(rawSrc);
+      if ((!/^(https?:\/\/)/i.test(decodedSrc) && !/^\/[a-zA-Z0-9_\-\.\/]/.test(decodedSrc)) || /^(javascript|data|vbscript|file|blob):/i.test(decodedSrc)) {
+        return "";
+      }
+      const alt = (altMatch?.[1] || altMatch?.[2] || altMatch?.[3] || "").trim();
+      return `<img src="${escapeHtml(rawSrc)}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async">`;
+    }
+
+    // Toutes les autres balises autorisées sont régénérées SANS aucun attribut
+    return `<${tag}>`;
+  });
+
+  // 4. Nettoyage final des gestionnaires d'événements et styles résiduels
   return source
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/<\s*(script|style|iframe|object|embed|form|input|textarea|button|svg|math|base|link|meta)[\s\S]*?(?:<\s*\/\s*\1\s*>|\/?>)/gi, "")
-    .replace(/<\s*([^>]+)>/g, (full, rawTag: string) => {
-      const closing = /^\s*\//.test(rawTag);
-      const tagMatch = rawTag.match(/^\s*\/?\s*([a-z0-9]+)/i);
-      if (!tagMatch) return "";
-      const tag = tagMatch[1].toLowerCase();
-      if (!ALLOWED_TAGS.has(tag)) return "";
-      if (closing) return `</${tag}>`;
-      if (tag === "br") return "<br>";
-      if (tag === "a") {
-        const hrefMatch = rawTag.match(/href\s*=\s*[\"']([^\"']+)[\"']/i);
-        const href = (hrefMatch?.[1] ?? "").trim();
-        if (!/^(https?:\/\/|mailto:)/i.test(href)) return "<a>";
-        return `<a href="${escapeHtml(href)}" rel="noopener noreferrer" target="_blank">`;
-      }
-      if (tag === "img") {
-        const srcMatch = rawTag.match(/src\s*=\s*[\"']([^\"']+)[\"']/i);
-        const altMatch = rawTag.match(/alt\s*=\s*[\"']([^\"']*)[\"']/i);
-        const src = (srcMatch?.[1] ?? "").trim();
-        if (!/^(https?:\/\/|\/)/i.test(src)) return "";
-        return `<img src="${escapeHtml(src)}" alt="${escapeHtml(altMatch?.[1] ?? "")}" loading="lazy" decoding="async">`;
-      }
-      return `<${tag}>`;
-    })
     .replace(/\s+(style|class|id|title|align|face|color|size)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
     .replace(/\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "");
 }
@@ -162,4 +201,3 @@ export function linkifyHashtagsAndMentions(html: string): string {
     return processed;
   });
 }
-

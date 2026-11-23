@@ -1,0 +1,40 @@
+{
+  "users": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "nom": "Admin",
+      "prenom": "Demo",
+      "email": "admin@example.com",
+      "passwordHash": "$2b$10$demohashplaceholderdemohashplaceholderdemohashplaceholder",
+      "role": "admin",
+      "lang": "fr",
+      "currency": "XOF",
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "isVerified": true,
+      "twoFactorEnabled": true,
+      "country": "BJ",
+      "affiliateCode": "ADM0001",
+      "favorites": [],
+      "downloads": []
+    }
+  ],
+  "articles": [],
+  "magazines": [],
+  "orders": [],
+  "affiliateEarnings": [],
+  "donations": [],
+  "comments": [],
+  "settings": {
+    "homeSections": {},
+    "ads": [],
+    "serviceRequests": [],
+    "withdrawRequests": [],
+    "shippingRates": {
+      "BJ": 2000,
+      "CI": 2500,
+      "SN": 3000,
+      "TG": 2000,
+      "default": 5000
+    }
+  }
+}

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { findMagazineById } from "@/lib/core-db";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { createCanvas } from "@napi-rs/canvas";
+import { getR2Client } from "@/lib/storage/client";
+import { getR2Config, isR2Configured } from "@/lib/storage/config";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
 import fs from "fs";
 import path from "path";
 
@@ -56,12 +59,23 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
 
     if (ref.startsWith("private-pdf://")) {
       const parsed = parsePrivateRef(ref);
-      if (parsed && client) {
+      if (parsed) {
         const pdfKey = `${parsed.bucket}/${parsed.path}`;
         const cachedPdf = pdfBufferCache.get(pdfKey);
         if (cachedPdf && cachedPdf.expiresAt > now) {
           pdfBytes = cachedPdf.data;
-        } else {
+        } else if (isR2Configured() && (parsed.bucket === getR2Config().R2_BUCKET_PRIVATE || parsed.bucket === "envol-private")) {
+          try {
+            const r2 = getR2Client();
+            const r2Obj = await r2.send(new GetObjectCommand({ Bucket: parsed.bucket, Key: parsed.path }));
+            if (r2Obj.Body) {
+              pdfBytes = await r2Obj.Body.transformToByteArray();
+              pdfBufferCache.set(pdfKey, { data: pdfBytes, expiresAt: now + CACHE_TTL });
+            }
+          } catch (r2Err) {
+            console.error("Erreur lecture PDF depuis R2 privé", r2Err);
+          }
+        } else if (client) {
           const downloaded = await client.storage.from(parsed.bucket).download(parsed.path);
           if (downloaded.data) {
             pdfBytes = new Uint8Array(await downloaded.data.arrayBuffer());
@@ -125,4 +139,3 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 30;
-

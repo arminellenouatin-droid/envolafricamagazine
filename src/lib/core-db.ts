@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin, isProductionRuntime } from "@/lib/supabase-admin";
 import {
@@ -310,8 +311,8 @@ export async function createUser(input: Omit<User, "id" | "createdAt"> & { id?: 
       }
 
       if (isAffiliateError || isUniqueError) {
-        // Régénérer un code affilié unique aléatoire et réessayer
-        affiliateCode = `EAM-${Date.now().toString().slice(-4)}${Math.floor(1000 + Math.random() * 9000)}`;
+        // Régénérer un code affilié unique aléatoire cryptographique et réessayer
+        affiliateCode = `EAM-${Date.now().toString().slice(-4)}${crypto.randomInt(1000, 9999)}`;
         continue;
       }
 

@@ -44,27 +44,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Type non autorisé pour ${type}: ${file.type}` }, { status: 400 });
     }
 
+    const isPrivate = type === "pdf" || type === "private-pdf";
     const originalBuffer = Buffer.from(await file.arrayBuffer());
     const optimized = await optimizeImageBuffer(originalBuffer, file.name, file.type);
     const fileName = `${Date.now()}_${safeFileName(file.name).replace(/\.[^.]+$/, "")}.${optimized.extension}`;
     const storagePath = `${type}/${lang ? `${entityId}_${lang}` : entityId}/${fileName}`;
+
     if (isR2Configured()) {
       const r2 = getR2Client();
       const config = getR2Config();
-      const r2Key = `${config.R2_KEY_PREFIX}articles/${storagePath}`;
+      const bucket = isPrivate ? config.R2_BUCKET_PRIVATE : config.R2_BUCKET_PUBLIC;
+      const r2Key = isPrivate
+        ? `${config.R2_KEY_PREFIX}magazines/${storagePath}`
+        : `${config.R2_KEY_PREFIX}articles/${storagePath}`;
+      const cacheControl = isPrivate ? "private, no-cache, no-store" : "public, max-age=31536000, immutable";
+
       await r2.send(
         new PutObjectCommand({
-          Bucket: config.R2_BUCKET_PUBLIC,
+          Bucket: bucket,
           Key: r2Key,
           Body: optimized.buffer,
           ContentType: optimized.contentType,
-          CacheControl: "public, max-age=31536000, immutable",
+          CacheControl: cacheControl,
         })
       );
       return NextResponse.json({
         success: true,
-        url: publicUrl(r2Key),
+        url: isPrivate ? `private-pdf://${bucket}/${r2Key}` : publicUrl(r2Key),
         key: r2Key,
+        bucket,
+        isPrivate,
         fileName,
         type,
         lang,
@@ -79,10 +88,25 @@ export async function POST(req: NextRequest) {
     const supabase = getSupabaseAdmin();
 
     if (supabase) {
-      const { error: uploadError } = await supabase.storage.from("article-media").upload(storagePath, optimized.buffer, { contentType: optimized.contentType, upsert: false });
-      if (uploadError) return NextResponse.json({ error: `Stockage image indisponible : ${uploadError.message}` }, { status: 503 });
-      const { data } = supabase.storage.from("article-media").getPublicUrl(storagePath);
-      return NextResponse.json({ success: true, url: data.publicUrl, fileName, type, lang, size: optimized.finalSize, originalSize: optimized.originalSize, optimized: optimized.optimized, mimeType: optimized.contentType, storage: "supabase" });
+      const bucket = isPrivate ? "magazine-pdfs-private" : "article-media";
+      const { error: uploadError } = await supabase.storage.from(bucket).upload(storagePath, optimized.buffer, { contentType: optimized.contentType, upsert: false });
+      if (uploadError) return NextResponse.json({ error: `Stockage média indisponible : ${uploadError.message}` }, { status: 503 });
+      const publicUrlResult = isPrivate ? `private-pdf://${bucket}/${storagePath}` : supabase.storage.from(bucket).getPublicUrl(storagePath).data.publicUrl;
+      return NextResponse.json({
+        success: true,
+        url: publicUrlResult,
+        key: storagePath,
+        bucket,
+        isPrivate,
+        fileName,
+        type,
+        lang,
+        size: optimized.finalSize,
+        originalSize: optimized.originalSize,
+        optimized: optimized.optimized,
+        mimeType: optimized.contentType,
+        storage: "supabase",
+      });
     }
 
     // Fallback uniquement hors production, pour le développement local.
@@ -90,7 +114,18 @@ export async function POST(req: NextRequest) {
     const uploadDir = path.join(process.cwd(), "public", "uploads", "magazines", type, lang ? `${entityId}_${lang}` : entityId);
     await mkdir(uploadDir, { recursive: true });
     await writeFile(path.join(uploadDir, fileName), optimized.buffer);
-    return NextResponse.json({ success: true, url: `/uploads/magazines/${type}/${lang ? `${entityId}_${lang}` : entityId}/${fileName}`, fileName, type, lang, size: optimized.finalSize, originalSize: optimized.originalSize, optimized: optimized.optimized, mimeType: optimized.contentType, storage: "local-dev" });
+    return NextResponse.json({
+      success: true,
+      url: `/uploads/magazines/${type}/${lang ? `${entityId}_${lang}` : entityId}/${fileName}`,
+      fileName,
+      type,
+      lang,
+      size: optimized.finalSize,
+      originalSize: optimized.originalSize,
+      optimized: optimized.optimized,
+      mimeType: optimized.contentType,
+      storage: "local-dev",
+    });
   } catch (error) {
     console.error("Upload error", error);
     return NextResponse.json({ error: `Erreur upload : ${error instanceof Error ? error.message : "erreur inconnue"}` }, { status: 500 });
@@ -98,5 +133,5 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  return NextResponse.json({ message: "Upload endpoint", maxSize: "50MB", storage: "Supabase Storage en production" });
+  return NextResponse.json({ message: "Upload endpoint", maxSize: "50MB", storage: "Supabase Storage / Cloudflare R2 en production" });
 }

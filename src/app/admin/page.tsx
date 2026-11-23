@@ -14,12 +14,7 @@ export default async function AdminPage() {
 
   // Sécurité: 2FA obligatoire pour rôles équipe (règle non négociable)
   if (!user.twoFactorEnabled && ["redacteur","redacteur_chef","gerant","admin"].includes(user.role)) {
-    // En prod, on redirige vers /2fa, mais pour demo on permet avec warning si admin a déjà 2FA désactivé?
-    // Pour audit, on enforce vraiment:
-    // redirect("/2fa");
-    // Pour ne pas bloquer demo admin existant, on laisse passer mais avec warning dans UI
-    // Décommente la ligne ci-dessous pour enforce strict:
-    // redirect("/2fa");
+    redirect("/2fa");
   }
 
   const db = readDB();

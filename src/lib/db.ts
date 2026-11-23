@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { isProductionRuntime } from '@/lib/supabase-admin';
 
@@ -234,7 +235,8 @@ export function getUserById(id: string): User | undefined {
 }
 
 export function generateAffiliateCode(prenom?: string, nom?: string) {
-  return `EAM-${Math.floor(11000 + Math.random() * 88000)}`;
+  const code = crypto.randomInt(100000, 999999);
+  return `EAM-${code}`;
 }
 
 export function getArticleBySlug(slug: string): Article | undefined {
@@ -314,8 +316,8 @@ export function seedIfEmpty() {
         isSentinelle: i < 3,
         isEssor: i >=3 && i < 6,
         isOmbreDouce: i >=6 && i < 9,
-        views: Math.floor(Math.random()*5000)+500,
-        likes: Math.floor(Math.random()*400)+20,
+        views: 1250 + (i * 120),
+        likes: 120 + (i * 15),
         createdAt: new Date(now.getTime() - i*86400000).toISOString(),
         publishedAt: new Date(now.getTime() - i*86400000).toISOString(),
         language: "fr",
