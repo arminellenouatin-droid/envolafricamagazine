@@ -16,6 +16,8 @@ import {
   type User,
 } from "@/lib/db";
 
+export type { Article, Magazine, Order, User } from "@/lib/db";
+
 export class ProductionDatabaseNotConfiguredError extends Error {
   constructor() {
     super("La base de production n’est pas configurée. Définissez SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY.");

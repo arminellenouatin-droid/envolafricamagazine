@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { findMagazineById, listMagazines, type Magazine } from "@/lib/core-db";
+import { findMagazineById, listMagazines } from "@/lib/core-db";
+import type { Magazine } from "@/lib/db";
 import { getCurrentUserFromCookie } from "@/lib/auth";
 
 function sanitizePublicMagazine(magazine: Magazine, isAuthorized: boolean): Magazine {

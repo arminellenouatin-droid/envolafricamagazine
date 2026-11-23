@@ -202,7 +202,7 @@ function PlatformAdminLanding({ platform, user }: { platform: AdminPlatform; use
 
 export default function AdminDashboardClient({ user, stats, db }: { user: any, stats: any, db: any }) {
   const [activePlatform, setActivePlatform] = useState<AdminPlatform>("magazine");
-  const [activeTab, setActiveTab] = useState<"overview"|"landing"|"articles"|"magazines"|"users"|"orders"|"affiliate"|"abonnements"|"commentaires"|"service"|"settings"|"redacteurs"|"categories"|"tarifs"|"kyc">("overview");
+  const [activeTab, setActiveTab] = useState<"overview"|"landing"|"articles"|"magazines"|"users"|"orders"|"affiliate"|"abonnements"|"commentaires"|"service"|"settings"|"redacteurs"|"categories"|"tarifs"|"kyc"|"api-keys">("overview");
   const [articles, setArticles] = useState<any[]>(db.articles);
   const [magazines, setMagazines] = useState<any[]>(db.magazines);
   const [users, setUsers] = useState<any[]>(db.users);
